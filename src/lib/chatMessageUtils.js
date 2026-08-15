@@ -80,14 +80,26 @@ export function formatMatchInviteTitle(match) {
 export function buildMatchInvitePayload(match, playerCount = 0) {
   const max = Number(match?.max_players) || 4;
   const current = Number(playerCount || match?.current_players) || 0;
-  const status = match?.status === 'full' ? 'full' : 'open';
+  const matchType = match?.match_type || 'open';
+  const isFull = match?.status === 'full' || current >= max;
+  const status = isFull ? 'full' : (matchType === 'closed' ? 'closed' : 'open');
   return {
     match_id: match.id,
     title: formatMatchInviteTitle(match),
     venue: match.court_name || 'Bane ikke angivet',
     players: `${current}/${max}`,
     status,
+    match_type: matchType,
   };
+}
+
+/** @param {{ status?: string, match_type?: string } | null | undefined} invite */
+export function matchInviteJoinKind(invite) {
+  const status = String(invite?.status || '').toLowerCase();
+  const matchType = String(invite?.match_type || '').toLowerCase();
+  if (status === 'full') return 'full';
+  if (status === 'closed' || matchType === 'closed') return 'request';
+  return 'join';
 }
 
 export function buildVenueSharePayload(court) {

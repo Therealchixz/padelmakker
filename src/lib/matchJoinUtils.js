@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
-import { mapJoinMatchError, mapLeaveMatchError } from './matchJoinErrorUtils.js';
+import { mapJoinMatchError, mapLeaveMatchError, mapKickMatchError } from './matchJoinErrorUtils.js';
 
-export { mapJoinMatchError, mapLeaveMatchError } from './matchJoinErrorUtils.js';
+export { mapJoinMatchError, mapLeaveMatchError, mapKickMatchError } from './matchJoinErrorUtils.js';
 
 export async function rpcJoinOpenMatch({
   matchId,
@@ -27,6 +27,16 @@ export async function rpcLeaveMatch(matchId) {
     p_match_id: matchId,
   });
   const msg = mapLeaveMatchError(data, error);
+  if (msg) throw new Error(msg);
+  return data;
+}
+
+export async function rpcKickPlayer(matchId, targetUserId) {
+  const { data, error } = await supabase.rpc('kick_player_from_match', {
+    p_match_id: matchId,
+    p_target_user_id: targetUserId,
+  });
+  const msg = mapKickMatchError(data, error);
   if (msg) throw new Error(msg);
   return data;
 }

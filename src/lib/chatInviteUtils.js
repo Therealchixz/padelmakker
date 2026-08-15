@@ -60,10 +60,35 @@ export async function joinMatchFromChatInvite({
   if (matchErr) throw matchErr;
   if (!matchRow) throw new Error('Kampen findes ikke længere.');
 
+  const { data: existingPlayer } = await supabase
+    .from('match_players')
+    .select('user_id')
+    .eq('match_id', matchId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (existingPlayer) return { alreadyJoined: true };
+
   const matchType = matchRow.match_type || 'open';
   const status = (matchRow.status || 'open').toLowerCase();
   if (matchType === 'closed') {
-    throw new Error('Denne kamp kræver godkendelse fra opretteren.');
+    const { error } = await supabase.from('match_join_requests').insert({
+      match_id: matchId,
+      user_id: userId,
+      user_name: userName || 'Spiller',
+      user_emoji: userAvatar || '🎾',
+      status: 'pending',
+    });
+    if (error) {
+      if (error.code === '23505') return { alreadyRequested: true };
+      throw error;
+    }
+    const { error: nErr } = await supabase.rpc('notify_creator_join_request', {
+      p_match_id: matchId,
+      p_title: 'Ny tilmeldingsanmodning 🔒',
+      p_body: `${userName || 'En spiller'} anmoder om at deltage i din lukkede kamp.`,
+    });
+    if (nErr) console.warn('notify_creator_join_request (chat invite):', nErr.message || nErr);
+    return { requested: true };
   }
   if (!['open', 'full'].includes(status)) {
     throw new Error('Kampen accepterer ikke tilmeldinger lige nu.');

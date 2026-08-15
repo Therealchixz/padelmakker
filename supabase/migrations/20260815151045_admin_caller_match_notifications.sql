@@ -1,3 +1,5 @@
+-- Allow verified admins to send match notifications as caller.
+
 -- Restore rate limits on create_notification_for_user (7-param) + batch helper.
 
 CREATE OR REPLACE FUNCTION public.create_notification_for_user(
@@ -180,52 +182,5 @@ BEGIN
   END IF;
 
   RAISE EXCEPTION 'Ingen adgang til at sende denne notifikation';
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.create_notifications_for_users(
-  p_user_ids uuid[],
-  p_type text,
-  p_title text,
-  p_body text,
-  p_match_id uuid DEFAULT NULL,
-  p_entity_type text DEFAULT NULL,
-  p_entity_id uuid DEFAULT NULL
-)
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-SET row_security = off
-AS $$
-DECLARE
-  v_uid uuid;
-  v_count integer := 0;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Ikke logget ind';
-  END IF;
-  IF p_user_ids IS NULL OR array_length(p_user_ids, 1) IS NULL THEN
-    RETURN 0;
-  END IF;
-  FOREACH v_uid IN ARRAY p_user_ids LOOP
-    BEGIN
-      PERFORM public.create_notification_for_user(
-        v_uid, p_type, p_title, p_body, p_match_id, p_entity_type, p_entity_id
-      );
-      v_count := v_count + 1;
-    EXCEPTION
-      WHEN OTHERS THEN
-        IF SQLSTATE = 'P0001'
-           OR position('Ingen adgang' in SQLERRM) > 0
-           OR position('Vent 30 min' in SQLERRM) > 0
-           OR position('For mange' in SQLERRM) > 0
-           OR position('Rate limit' in SQLERRM) > 0
-           OR position('Manglende' in SQLERRM) > 0 THEN
-          RAISE;
-        END IF;
-    END;
-  END LOOP;
-  RETURN v_count;
 END;
 $$;

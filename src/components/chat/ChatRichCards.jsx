@@ -1,9 +1,19 @@
 import { MapPin, Swords } from 'lucide-react';
 import { safeHttpUrl } from '../../lib/safeUrl';
+import { matchInviteJoinKind } from '../../lib/chatMessageUtils';
 
 export function ChatInviteCard({ invite, mine, onJoin, joining = false, onOpenMatch }) {
   if (!invite) return null;
-  const isOpen = invite.status !== 'full';
+  const kind = matchInviteJoinKind(invite);
+  const isFull = kind === 'full';
+  const isClosed = kind === 'request';
+  const canAct = !isFull;
+  const badgeClass = isFull
+    ? ' pm-chat-v2-invite-badge--full'
+    : isClosed
+      ? ' pm-chat-v2-invite-badge--closed'
+      : '';
+  const badgeLabel = isFull ? 'Fuldt' : isClosed ? 'Lukket' : 'Åben';
 
   return (
     <div className="pm-chat-v2-invite-card">
@@ -20,8 +30,8 @@ export function ChatInviteCard({ invite, mine, onJoin, joining = false, onOpenMa
           {invite.venue}
         </div>
         <div className="pm-chat-v2-invite-foot">
-          <span className={`pm-chat-v2-invite-badge${isOpen ? '' : ' pm-chat-v2-invite-badge--full'}`}>
-            {isOpen ? 'Åben' : 'Fuldt'} · {invite.players}
+          <span className={`pm-chat-v2-invite-badge${badgeClass}`}>
+            {badgeLabel} · {invite.players}
           </span>
           <div className="pm-chat-v2-invite-actions">
             {onOpenMatch && invite.match_id ? (
@@ -33,14 +43,16 @@ export function ChatInviteCard({ invite, mine, onJoin, joining = false, onOpenMa
                 Se kamp
               </button>
             ) : null}
-            {!mine && isOpen ? (
+            {!mine && canAct ? (
               <button
                 type="button"
                 className="pm-chat-v2-invite-join"
                 onClick={() => onJoin?.(invite)}
                 disabled={joining}
               >
-                {joining ? 'Tilmelder…' : 'Tilmeld'}
+                {joining
+                  ? (isClosed ? 'Sender…' : 'Tilmelder…')
+                  : (isClosed ? 'Anmod' : 'Tilmeld')}
               </button>
             ) : null}
             {mine ? <span className="pm-chat-v2-invite-sent">Sendt</span> : null}

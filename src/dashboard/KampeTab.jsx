@@ -25,7 +25,7 @@ import {
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
-import { rpcJoinOpenMatch, rpcLeaveMatch } from '../lib/matchJoinUtils';
+import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
@@ -241,8 +241,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   detailMatchIdRef.current = detailMatchId;
   const isOnKampeDetailPage = !!kampeDetailRoute;
   const detailBackTo = location.state?.backTo || null;
-  /** 'idle' | 'loading' | 'ready' | 'missing' — hurtig fetch så "Se kamp" ikke venter på hele listen. */
+  /** 'idle' | 'loading' | 'ready' | 'missing' | 'error' — hurtig fetch så "Se kamp" ikke venter på hele listen. */
   const [detailFetchStatus, setDetailFetchStatus] = useState('idle');
+  const [detailHydrateNonce, setDetailHydrateNonce] = useState(0);
   const close2v2Detail = useCallback(() => {
     navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
   }, [navigate]);
@@ -639,13 +640,13 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         if (!cancelled) setDetailFetchStatus('ready');
       } catch (e) {
         console.warn('detail match hydrate:', e?.message || e);
-        if (!cancelled) setDetailFetchStatus('missing');
+        if (!cancelled) setDetailFetchStatus('error');
       }
     };
 
     void hydrateDetailMatch();
     return () => { cancelled = true; };
-  }, [tabActive, detailMatchId]);
+  }, [tabActive, detailMatchId, detailHydrateNonce]);
 
   const refreshJoinRequestsForMatch = useCallback(async (matchId) => {
     const key = String(matchId || "");
@@ -1425,39 +1426,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
-      const match = matches.find((m) => String(m.id) === String(matchId));
-      // Notify while recipient is still on the match — RPC requires related recipient.
-      const kickNotifyErr = await createNotification(
-        targetUserId,
-        'match_cancelled',
-        'Du er fjernet fra kampen ❌',
-        'En admin/opretter har fjernet dig fra kampen.',
-        matchId,
-      );
-      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
-
-      const { error } = await supabase.from("match_players").delete()
-        .eq("match_id", matchId).eq("user_id", targetUserId);
-      if (error) throw error;
-      const { data: remainingRows, error: remainingError } = await supabase
-        .from("match_players")
-        .select("user_id, team")
-        .eq("match_id", matchId);
-      if (remainingError) throw remainingError;
-      const mp = remainingRows ?? [];
-      const patch = { current_players: mp.length };
-      if (mp.length === 0) {
-        patch.status = "cancelled";
-      } else {
-        patch.status = "open";
-        if (match?.creator_id && String(match.creator_id) === String(targetUserId)) {
-          patch.creator_id = mp[0].user_id;
-        }
-      }
-      const { error: updateErr } = await supabase.from("matches").update(patch).eq("id", matchId);
-      if (updateErr) throw updateErr;
-
-      showToast(mp.length === 0 ? "Spiller fjernet — kampen er annulleret." : "Spiller fjernet.");
+      const result = await rpcKickPlayer(matchId, targetUserId);
+      showToast(result?.cancelled ? "Spiller fjernet — kampen er annulleret." : "Spiller fjernet.");
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
@@ -1528,6 +1498,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     try {
       const mpBefore = matchPlayers[matchId] || [];
       const isCreator = String(match.creator_id) === String(user.id);
+      const cancelNotifyIds = mpBefore.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
+      if (cancelNotifyIds.length) {
+        await createNotificationsForUsers(
+          cancelNotifyIds,
+          "match_cancelled",
+          "Kamp aflyst ❌",
+          isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`,
+          matchId,
+        );
+      }
       if (adminCanAct && !isCreator) {
         const { data, error } = await supabase.rpc("admin_delete_match", { p_match_id: matchId });
         if (error) throw error;
@@ -1550,14 +1530,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         if (!data?.length) throw new Error("Kampen blev ikke slettet");
       }
 
-      const cancelNotifyIds = mpBefore.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
-      void createNotificationsForUsers(
-        cancelNotifyIds,
-        "match_cancelled",
-        "Kamp aflyst ❌",
-        isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`,
-        matchId,
-      );
       if (String(detailMatchId) === String(matchId)) close2v2Detail();
       showToast("Kamp slettet.");
       await loadData();
@@ -2074,6 +2046,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
     const m = matches.find((x) => String(x.id) === String(detailMatchId));
     if (!m || getStatus(m) === 'cancelled') {
+      if (detailFetchStatus === 'error') return;
       if (detailFetchStatus === 'missing' || (!loadingMatches && detailFetchStatus !== 'loading')) {
         if (detailFetchStatus !== 'missing') setDetailFetchStatus('missing');
       }
@@ -2308,10 +2281,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (!isClosed && left > 0 && !joined) {
       return {
         label: "Tilmeld mig",
-        onClick: () => {
-          close2v2Detail();
-          setTeamSelectMatch(m.id);
-        },
+        onClick: () => setTeamSelectMatch(m.id),
         disabled: busy,
       };
     }
@@ -2319,10 +2289,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (!myRequest) {
         return {
           label: busyId === m.id + "-req" ? "Sender..." : "Anmod om tilmelding",
-          onClick: () => {
-            close2v2Detail();
-            void requestJoin(m.id);
-          },
+          onClick: () => void requestJoin(m.id),
           disabled: busyId === m.id + "-req",
         };
       }
@@ -2364,10 +2331,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (isCreator && (status === "open" || status === "full")) {
       return {
         label: isFull ? "Start kamp" : "Venter på spillere",
-        onClick: () => {
-          close2v2Detail();
-          void startMatch(m.id);
-        },
+        onClick: () => void startMatch(m.id),
         disabled: busy || !isFull,
         variant: isFull ? "primary" : "secondary",
       };
@@ -2375,10 +2339,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (status === "in_progress" && isPlayerInMatch && !mr) {
       return {
         label: "Indrapportér resultat",
-        onClick: () => {
-          close2v2Detail();
-          setResultMatch(m.id);
-        },
+        onClick: () => setResultMatch(m.id),
         disabled: busy,
       };
     }
@@ -2386,10 +2347,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (canConfirmPadelMatchResult({ result: mr, players: bundle.mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok) {
         return {
           label: "Bekræft resultat",
-          onClick: () => {
-            close2v2Detail();
-            setConfirmModalMatchId(m.id);
-          },
+          onClick: () => setConfirmModalMatchId(m.id),
           disabled: busy,
         };
       }
@@ -3109,6 +3067,20 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
               </button>
             </div>
           </div>
+        ) : detailFetchStatus === 'error' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Kampen kunne ikke indlæses</div>
+            <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
+            <div className="pm-state-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setDetailHydrateNonce((n) => n + 1)} style={{ ...btn(true), fontSize: "13px" }}>
+                Prøv igen
+              </button>
+              <button type="button" onClick={close2v2DetailToOrigin} style={{ ...btn(false), fontSize: "13px" }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
             <div className="pm-spinner pm-state-spinner" />
@@ -3713,7 +3685,17 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         );
       })()}
 
-      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      {viewPlayer && (
+        <PlayerProfileModal
+          player={viewPlayer}
+          onClose={() => setViewPlayer(null)}
+          onMessage={() => {
+            const pid = viewPlayer.id;
+            setViewPlayer(null);
+            navigate(`/dashboard/beskeder?med=${encodeURIComponent(String(pid))}`);
+          }}
+        />
+      )}
 
       {adminPinGateOpen ? (
         <AdminPinGate

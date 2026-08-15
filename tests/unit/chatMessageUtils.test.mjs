@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildMatchInvitePayload,
   enrichChatMessageSender,
+  matchInviteJoinKind,
   normalizeChatMessage,
 } from '../../src/lib/chatMessageUtils.js';
 
@@ -75,4 +77,46 @@ test('enrichChatMessageSender keeps existing sender fields', () => {
   });
   assert.equal(enriched.senderName, 'Allerede sat');
   assert.equal(enriched.senderAvatar, '🔥');
+});
+
+test('buildMatchInvitePayload marks closed matches as closed unless full', () => {
+  const closed = buildMatchInvitePayload({
+    id: 'm1',
+    date: '2026-08-20',
+    time: '18:00',
+    court_name: 'Padelhuset',
+    match_type: 'closed',
+    status: 'open',
+    max_players: 4,
+    current_players: 2,
+  });
+  assert.equal(closed.status, 'closed');
+  assert.equal(closed.match_type, 'closed');
+  assert.equal(matchInviteJoinKind(closed), 'request');
+
+  const fullClosed = buildMatchInvitePayload({
+    id: 'm2',
+    date: '2026-08-20',
+    time: '18:00',
+    court_name: 'Padelhuset',
+    match_type: 'closed',
+    status: 'full',
+    max_players: 4,
+    current_players: 4,
+  });
+  assert.equal(fullClosed.status, 'full');
+  assert.equal(matchInviteJoinKind(fullClosed), 'full');
+
+  const open = buildMatchInvitePayload({
+    id: 'm3',
+    date: '2026-08-20',
+    time: '18:00',
+    court_name: 'Padelhuset',
+    match_type: 'open',
+    status: 'open',
+    max_players: 4,
+    current_players: 1,
+  });
+  assert.equal(open.status, 'open');
+  assert.equal(matchInviteJoinKind(open), 'join');
 });

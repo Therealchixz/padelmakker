@@ -22,6 +22,7 @@ import {
   setLeagueTeamMessageReaction,
 } from '../lib/leagueTeamChatUtils';
 import { fetchInvitableMatches, buildInvitePayloadForMatch, joinMatchFromChatInvite, fetchShareableCourts } from '../lib/chatInviteUtils';
+import { mapUserFacingError } from '../lib/userFacingErrors';
 import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes';
 import { CHAT_MESSAGE_TYPES, buildTimeSuggestionPayload, buildVenueSharePayload, messagePreview } from '../lib/chatMessageUtils';
 import { onlineStatusLabel } from '../lib/chatPresenceUtils';
@@ -631,9 +632,12 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         userEmail: user.email,
         userAvatar: user.avatar,
       });
-      showToast?.(result?.alreadyJoined ? 'Du er allerede tilmeldt kampen.' : 'Du er tilmeldt kampen!');
-    } catch {
-      showToast?.('Kunne ikke tilmelde kampen.');
+      if (result?.alreadyJoined) showToast?.('Du er allerede tilmeldt kampen.');
+      else if (result?.alreadyRequested) showToast?.('Du har allerede anmodet om at deltage i denne kamp.');
+      else if (result?.requested) showToast?.('Anmodning sendt! Venter på godkendelse 🔒');
+      else showToast?.('Du er tilmeldt kampen!');
+    } catch (e) {
+      showToast?.(mapUserFacingError(e, 'Kunne ikke tilmelde kampen.'));
     } finally {
       setJoiningInviteId(null);
     }

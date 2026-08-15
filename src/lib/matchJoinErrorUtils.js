@@ -12,6 +12,15 @@ const JOIN_ERROR_MESSAGES = {
   not_in_match: 'Du er ikke tilmeldt denne kamp.',
 };
 
+const KICK_ERROR_MESSAGES = {
+  not_authenticated: 'Du skal være logget ind.',
+  match_not_found: 'Kampen findes ikke længere.',
+  match_locked: 'Du kan ikke fjerne spillere fra en kamp der er i gang eller afsluttet.',
+  not_allowed: 'Kun opretteren eller en admin kan fjerne spillere.',
+  not_in_match: 'Spilleren er ikke tilmeldt denne kamp.',
+  cannot_kick_self: 'Du kan ikke fjerne dig selv — forlad kampen i stedet.',
+};
+
 export function mapJoinMatchError(data, error) {
   if (error) return error.message || 'Kunne ikke tilmelde kampen.';
   const code = data?.error;
@@ -30,5 +39,13 @@ export function mapLeaveMatchError(data, error) {
   const code = data?.error;
   if (code && JOIN_ERROR_MESSAGES[code]) return JOIN_ERROR_MESSAGES[code];
   if (data?.success === false) return 'Kunne ikke forlade kampen.';
+  return null;
+}
+
+export function mapKickMatchError(data, error) {
+  if (error) return error.message || 'Kunne ikke fjerne spilleren.';
+  const code = data?.error;
+  if (code && KICK_ERROR_MESSAGES[code]) return KICK_ERROR_MESSAGES[code];
+  if (data?.success === false) return 'Kunne ikke fjerne spilleren.';
   return null;
 }

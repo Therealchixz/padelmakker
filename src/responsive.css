@@ -11096,6 +11096,10 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-chat-v2-invite-badge--closed {
+  color: var(--pm-text-muted, #6b7280);
+}
+
 .pm-chat-v2-invite-actions {
   display: flex;
   align-items: center;
