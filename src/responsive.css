@@ -11470,6 +11470,17 @@ button,
   line-height: 1.45;
 }
 
+.pm-field-note {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-muted);
+  font-size: 13px;
+  color: var(--pm-text-mid);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .pm-seg {
   display: flex;
   background: var(--pm-surface-muted);

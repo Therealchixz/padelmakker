@@ -317,13 +317,15 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Antal spillere</label>
-            <div className="pm-chips-row" style={{ flexWrap: 'wrap' }}>
+            <select
+              value={playerSlots}
+              onChange={(e) => handlePlayerSlotsChange(Number(e.target.value))}
+              style={inputStyle}
+            >
               {PLAYER_OPTIONS.map((p) => (
-                <button key={p} type="button" className={`pm-chip-btn${playerSlots === p ? ' active' : ''}`} onClick={() => handlePlayerSlotsChange(p)}>
-                  {p}
-                </button>
+                <option key={p} value={p}>{p} spillere</option>
               ))}
-            </div>
+            </select>
             <div className="pm-field-hint">
               {playerSlots % 4 !== 0
                 ? `${benchCountPerRound(playerSlots, courtsPerRound)} sidder over pr. runde`
@@ -333,7 +335,7 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Baner</label>
-            <div style={{ margin: '0 18px', padding: '10px 14px', borderRadius: 12, border: '1px solid var(--pm-border)', background: 'var(--pm-surface-muted)', fontSize: 13, color: 'var(--pm-text-mid)', fontWeight: 600 }}>
+            <div className="pm-field-note">
               {courtsPerRound} {courtsPerRound === 1 ? 'bane' : 'baner'} · alle spiller hver runde
             </div>
             <div className="pm-field-hint">Antal baner følger spillerantallet (4 spillere pr. bane).</div>
