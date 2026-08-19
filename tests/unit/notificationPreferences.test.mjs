@@ -1,37 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  isPushChannelEnabled,
-  isEmailChannelEnabled,
-  mergeNotificationPrefToggle,
-  mergeNotificationEmailToggle,
   normalizeNotificationPrefs,
+  getReactivationOpenMatches,
+  mergeReactivationOpenMatches,
 } from '../../src/lib/notificationPreferences.js';
 
-test('normalizeNotificationPrefs defaults all channels on', () => {
-  const p = normalizeNotificationPrefs(null);
-  assert.equal(p.push.kampe, true);
-  assert.equal(p.push.resultat, true);
+test('normalizeNotificationPrefs defaults reactivationOpenMatches to weekly', () => {
+  assert.equal(getReactivationOpenMatches(null), 'weekly');
+  assert.equal(getReactivationOpenMatches({}), 'weekly');
 });
 
-test('isPushChannelEnabled respects toggles and admin channel', () => {
-  const p = normalizeNotificationPrefs({ push: { kampe: false, system: true } });
-  assert.equal(isPushChannelEnabled(p, 'kampe'), false);
-  assert.equal(isPushChannelEnabled(p, 'admin'), true);
-  assert.equal(isPushChannelEnabled(p, 'resultat'), true);
+test('mergeReactivationOpenMatches persists valid values', () => {
+  const daily = mergeReactivationOpenMatches({}, 'daily');
+  assert.equal(daily.reactivationOpenMatches, 'daily');
+  assert.equal(getReactivationOpenMatches(daily), 'daily');
+
+  const off = mergeReactivationOpenMatches(daily, 'off');
+  assert.equal(off.reactivationOpenMatches, 'off');
 });
 
-test('mergeNotificationPrefToggle updates one channel', () => {
-  const next = mergeNotificationPrefToggle(normalizeNotificationPrefs(null), 'chat', false);
-  assert.equal(next.push.chat, false);
-  assert.equal(next.push.kampe, true);
-  assert.equal(next.email.opdagelse, false);
-});
-
-test('email discovery channel is opt-in', () => {
-  const p = normalizeNotificationPrefs(null);
-  assert.equal(p.email.opdagelse, false);
-  const on = mergeNotificationEmailToggle(p, 'opdagelse', true);
-  assert.equal(on.email.opdagelse, true);
-  assert.equal(isEmailChannelEnabled(on, 'opdagelse'), true);
+test('mergeReactivationOpenMatches ignores invalid values', () => {
+  const next = mergeReactivationOpenMatches({ reactivationOpenMatches: 'hourly' }, 'hourly');
+  assert.equal(next.reactivationOpenMatches, 'weekly');
 });

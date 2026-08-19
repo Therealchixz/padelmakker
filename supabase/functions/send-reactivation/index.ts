@@ -132,11 +132,9 @@ Deno.serve(async (req: Request) => {
     const pushLevel = typeof prefs?.pushLevel === "string" ? prefs.pushLevel : "all";
     if (pushLevel === "off") continue;
 
-    const pushBucket =
-      prefs && typeof prefs === "object" && prefs.push && typeof prefs.push === "object"
-        ? (prefs.push as Record<string, boolean>)
-        : null;
-    if (pushBucket && pushBucket.opdagelse === false) continue;
+    const reactivationFreq =
+      typeof prefs?.reactivationOpenMatches === "string" ? prefs.reactivationOpenMatches : "weekly";
+    if (reactivationFreq === "off") continue;
 
     const { data: subs } = await admin
       .from("push_subscriptions")

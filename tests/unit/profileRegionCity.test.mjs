@@ -27,8 +27,9 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.doesNotMatch(onboarding, /seeking_match/);
   assert.doesNotMatch(onboarding, /intent_now/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);
-  assert.match(profilTab, /Tilføj din by/);
-  assert.match(profilTab, /CityPlaceSearchField/);
+  assert.match(profilTab, /Vi bruger din by til at vise ca\. afstand/);
+  assert.match(profilTab, /Tips om åbne kampe nær dig/);
+  assert.match(profilTab, /reactivationOpenMatches|REACTIVATION_OPEN_MATCHES_OPTIONS/);
   assert.match(profilTab, /handleQuickCitySave/);
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
 });

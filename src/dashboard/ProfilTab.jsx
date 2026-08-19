@@ -26,6 +26,11 @@ import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { PillTabs } from '../components/PillTabs';
+import {
+  REACTIVATION_OPEN_MATCHES_OPTIONS,
+  getReactivationOpenMatches,
+  mergeReactivationOpenMatches,
+} from '../lib/notificationPreferences';
 import { ProfileBadgeGallery } from '../components/ProfileBadgeGallery';
 import { getProfileBadges } from '../lib/profileBadges';
 import {
@@ -245,7 +250,8 @@ export function ProfilTab({ user, showToast, setTab }) {
       label: user.city,
     } : null
   ));
-  const [quickCitySaving, setQuickCitySaving] = useState(false);
+  const [reactivationPref, setReactivationPref] = useState(() => getReactivationOpenMatches(user?.notification_prefs));
+  const [reactivationPrefSaving, setReactivationPrefSaving] = useState(false);
 
   useEffect(() => {
     if (!editing) setForm(profileFormState(user));
@@ -261,6 +267,26 @@ export function ProfilTab({ user, showToast, setTab }) {
       } : null);
     }
   }, [user?.city, user?.latitude, user?.longitude, editing]);
+
+  useEffect(() => {
+    setReactivationPref(getReactivationOpenMatches(user?.notification_prefs));
+  }, [user?.notification_prefs]);
+
+  const handleReactivationPrefChange = async (value) => {
+    if (value === reactivationPref) return;
+    setReactivationPrefSaving(true);
+    try {
+      await updateProfile({
+        notification_prefs: mergeReactivationOpenMatches(user?.notification_prefs, value),
+      });
+      setReactivationPref(value);
+      showToast('Indstilling gemt', 'success');
+    } catch (e) {
+      showToast(e?.message || 'Kunne ikke gemme indstilling', 'error');
+    } finally {
+      setReactivationPrefSaving(false);
+    }
+  };
 
   const handleQuickCitySave = async () => {
     if (!isValidCityPlace(quickCityPlace)) {
@@ -826,8 +852,9 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
                 Tilføj din by
               </div>
-              <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.45, marginBottom: '10px' }}>
-                {user.area} er en stor region. Med din by kan andre finde dig nemmere og se ca. afstand.
+              <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.55, marginBottom: '10px' }}>
+                Vi bruger din by til at vise ca. afstand til andre makkere (fx &quot;ca. 12 km&quot;) og til at tippe dig om åbne kampe i nærheden.
+                Vi følger dig ikke med GPS — du vælger bare hvor du typisk spiller fra.
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div style={{ flex: '1 1 180px' }}>
@@ -848,6 +875,29 @@ export function ProfilTab({ user, showToast, setTab }) {
                   {quickCitySaving ? 'Gemmer…' : 'Gem by'}
                 </button>
               </div>
+            </div>
+          ) : null}
+
+          {!editing && games === 0 ? (
+            <div style={{ ...profilePromptCardStyle, marginTop: !editing && isValidProfileRegion(user.area) && !isValidCityPlace(user) ? 12 : 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
+                Tips om åbne kampe nær dig
+              </div>
+              <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.55, marginBottom: '12px' }}>
+                Har du endnu ikke spillet en kamp, kan vi sende en kort besked når der er åbne kampe tæt på din by — så du nemmere finder din første.
+              </p>
+              <PillTabs
+                tabs={REACTIVATION_OPEN_MATCHES_OPTIONS.map((o) => ({ id: o.id, label: o.label }))}
+                value={reactivationPref}
+                onChange={(id) => { void handleReactivationPrefChange(id); }}
+                ariaLabel="Frekvens for tips om åbne kampe"
+                size="sm"
+                className="pm-pill-tabs--fill"
+              />
+              <p style={{ fontSize: '11px', color: theme.textLight, lineHeight: 1.45, marginTop: '10px', marginBottom: 0 }}>
+                {REACTIVATION_OPEN_MATCHES_OPTIONS.find((o) => o.id === reactivationPref)?.description}
+                {reactivationPrefSaving ? ' · Gemmer…' : ''}
+              </p>
             </div>
           ) : null}
 

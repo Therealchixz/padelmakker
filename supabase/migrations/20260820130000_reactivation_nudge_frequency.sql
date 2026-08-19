@@ -1,47 +1,6 @@
--- Sovende brugere (0 kampe): ugentlig push når der er åbne kampe nær byen.
--- Edge function: send-reactivation (cron ugentlig).
+-- Profil-valg for genaktiverings-push: off | weekly (default) | daily.
+-- Cron kører dagligt; SQL respekterer brugerens frekvens.
 
-create extension if not exists pg_net;
-
--- Haversine-afstand (km) — genbruges til geo-match i nudges.
-create or replace function public.haversine_km(
-  lat1 double precision,
-  lon1 double precision,
-  lat2 double precision,
-  lon2 double precision
-)
-returns double precision
-language sql
-immutable
-parallel safe
-as $$
-  select case
-    when lat1 is null or lon1 is null or lat2 is null or lon2 is null then null
-    else 6371.0 * 2 * asin(sqrt(
-      power(sin(radians(lat2 - lat1) / 2), 2) +
-      cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lon2 - lon1) / 2), 2)
-    ))
-  end;
-$$;
-
-revoke all on function public.haversine_km(double precision, double precision, double precision, double precision)
-  from public, anon, authenticated;
-
--- Dedup: max én reactivation-push pr. bruger pr. uge.
-create table if not exists public.reactivation_log (
-  user_id     uuid not null references public.profiles(id) on delete cascade,
-  kind        text not null default 'open_matches_weekly',
-  week_start  date not null,
-  sent_at     timestamptz not null default now(),
-  primary key (user_id, kind, week_start)
-);
-
-alter table public.reactivation_log enable row level security;
-
-comment on table public.reactivation_log is
-  'Dedup-log for ugentlige genaktiverings-push til sovende profiler (0 kampe).';
-
--- Returnerer brugere der skal have ugentlig "åbne kampe nær [by]"-nudge.
 create or replace function public.get_due_reactivation_nudges()
 returns table (
   user_id uuid,

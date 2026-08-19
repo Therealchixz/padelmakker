@@ -852,7 +852,7 @@ export function OnboardingPage() {
             }));
           }}
           inputStyle={obInput}
-          hint="Skriv og vælg din by eller postnummer — fx Langholt eller 9220 Aalborg Øst."
+          hint="Vi bruger din by til ca. afstand på Makkere og til tips om åbne kampe i nærheden — uden GPS."
         />
       </div>
       <div style={fieldWrap}>
