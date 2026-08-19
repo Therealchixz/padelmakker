@@ -3,10 +3,13 @@ const POSTNUMRE_URL = 'https://api.dataforsyningen.dk/postnumre/autocomplete';
 
 /** Kræver https://api.dataforsyningen.dk i CSP connect-src (vercel.json) på produktion. */
 
-const BEBYGGERLSE_TYPES = new Set(['by', 'bydel', 'forstad', 'landsby', 'sommerhusområde', 'sommerhusomraade']);
-
 function normalizeQuery(q) {
   return String(q || '').trim();
+}
+
+/** Postnummer-søgning (9310, 9400) — stednavne med fuzzy giver støj (fx "10, Aabenraa"). */
+function isPostnummerQuery(q) {
+  return /^\d{2,4}$/.test(normalizeQuery(q));
 }
 
 function kommuneLabel(item) {
@@ -15,15 +18,15 @@ function kommuneLabel(item) {
 }
 
 function mapStednavn(item) {
+  const hovedtype = String(item?.hovedtype || '').trim();
+  if (hovedtype !== 'Bebyggelse') return null;
+
   const center = item?.visueltcenter;
   if (!Array.isArray(center) || center.length < 2) return null;
   const city = String(item?.navn || '').trim();
   if (!city) return null;
   const kommune = kommuneLabel(item);
   const label = kommune ? `${city}, ${kommune}` : city;
-  const undertype = String(item?.undertype || '').toLowerCase();
-  const hovedtype = String(item?.hovedtype || '').trim();
-  const isBebyggelse = hovedtype === 'Bebyggelse' || BEBYGGERLSE_TYPES.has(undertype);
   return {
     id: String(item.id || item.href || label),
     label,
@@ -31,7 +34,7 @@ function mapStednavn(item) {
     latitude: Number(center[1]),
     longitude: Number(center[0]),
     source: 'stednavn',
-    rank: isBebyggelse ? 0 : hovedtype === 'Bebyggelse' ? 1 : 2,
+    rank: 0,
   };
 }
 
@@ -52,7 +55,7 @@ function mapPostnummer(item) {
     latitude: lat,
     longitude: lng,
     source: 'postnummer',
-    rank: 1,
+    rank: 0,
   };
 }
 
@@ -84,16 +87,21 @@ export async function searchDawaPlaces(query, { limit = 8, fetchImpl = fetch } =
   if (q.length < 2) return [];
 
   const enc = encodeURIComponent(q);
-  const [stedRaw, postRaw] = await Promise.all([
-    fetchImpl(`${STEDNAVNE_URL}?q=${enc}&fuzzy=`, { headers: { Accept: 'application/json' } }).then((r) => {
+  const postnummerMode = isPostnummerQuery(q);
+
+  const postPromise = fetchImpl(`${POSTNUMRE_URL}?q=${enc}`, { headers: { Accept: 'application/json' } }).then((r) => {
+    if (!r.ok) throw new Error(`DAWA postnumre ${r.status}`);
+    return r.json();
+  });
+
+  const stedPromise = postnummerMode
+    ? Promise.resolve([])
+    : fetchImpl(`${STEDNAVNE_URL}?q=${enc}&fuzzy=`, { headers: { Accept: 'application/json' } }).then((r) => {
       if (!r.ok) throw new Error(`DAWA stednavne ${r.status}`);
       return r.json();
-    }),
-    fetchImpl(`${POSTNUMRE_URL}?q=${enc}`, { headers: { Accept: 'application/json' } }).then((r) => {
-      if (!r.ok) throw new Error(`DAWA postnumre ${r.status}`);
-      return r.json();
-    }),
-  ]);
+    });
+
+  const [stedRaw, postRaw] = await Promise.all([stedPromise, postPromise]);
 
   const mapped = [
     ...(Array.isArray(stedRaw) ? stedRaw.map(mapStednavn).filter(Boolean) : []),

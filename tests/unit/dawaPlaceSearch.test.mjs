@@ -38,8 +38,42 @@ test('searchDawaPlaces maps stednavn and postnummer results', async () => {
   };
 
   const places = await searchDawaPlaces('lang', { fetchImpl });
-  assert.ok(places.length >= 2);
-  assert.equal(places[0].city, 'Langholt');
-  assert.equal(places[0].latitude, 57.06);
-  assert.equal(places[0].longitude, 9.93);
+  assert.ok(places.some((p) => p.city === 'Langholt'));
+  assert.ok(places.some((p) => p.city === 'Aalborg Øst'));
+});
+
+test('searchDawaPlaces uses postnumre only for digit queries (no stednavne noise)', async () => {
+  let stednavneCalled = false;
+  const fetchImpl = async (url) => {
+    if (String(url).includes('stednavne')) {
+      stednavneCalled = true;
+      return {
+        ok: true,
+        json: async () => [{
+          id: 'noise',
+          hovedtype: 'Andentopografi punkt',
+          navn: '10',
+          visueltcenter: [9.5, 55.5],
+          kommuner: [{ navn: 'Aabenraa' }],
+        }],
+      };
+    }
+    return {
+      ok: true,
+      json: async () => [{
+        tekst: '9310 Vodskov',
+        postnummer: {
+          nr: '9310',
+          navn: 'Vodskov',
+          visueltcenter_x: 9.95,
+          visueltcenter_y: 57.1,
+        },
+      }],
+    };
+  };
+
+  const places = await searchDawaPlaces('9310', { fetchImpl });
+  assert.equal(stednavneCalled, false);
+  assert.equal(places.length, 1);
+  assert.equal(places[0].label, '9310 Vodskov');
 });
