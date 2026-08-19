@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ADMIN_PIN_SESSION_MINUTES } from '../lib/adminPinConfig';
 import { theme, btn, font } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
+import { scrollFormFieldIntoView } from '../lib/formValidationScroll';
 
 function digitsOnly(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 6);
@@ -33,6 +34,8 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
   const [pinConfirm, setPinConfirm] = useState('');
   const [errorText, setErrorText] = useState('');
   const [lockUntil, setLockUntil] = useState(null);
+  const pinFieldRef = useRef(null);
+  const pinConfirmFieldRef = useRef(null);
 
   const mode = useMemo(() => (hasPin ? 'verify' : 'setup'), [hasPin]);
 
@@ -85,10 +88,12 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     const confirmPin = digitsOnly(pinConfirm);
     if (!pinIsValid(setupPin)) {
       setErrorText('Koden skal være præcis 6 tal.');
+      scrollFormFieldIntoView(pinFieldRef.current);
       return;
     }
     if (setupPin !== confirmPin) {
       setErrorText('Koderne matcher ikke.');
+      scrollFormFieldIntoView(pinConfirmFieldRef.current);
       return;
     }
 
@@ -115,6 +120,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     const verifyPin = digitsOnly(pin);
     if (!pinIsValid(verifyPin)) {
       setErrorText('Indtast din 6-cifrede kode.');
+      scrollFormFieldIntoView(pinFieldRef.current);
       return;
     }
 
@@ -189,7 +195,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
             </div>
           ) : (
             <>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label ref={pinFieldRef} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: theme.textMid }}>
                   {mode === 'setup' ? 'Ny kode (6 tal)' : 'Kode (6 tal)'}
                 </span>
@@ -218,7 +224,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
               </label>
 
               {mode === 'setup' && (
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label ref={pinConfirmFieldRef} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: theme.textMid }}>
                     Bekræft kode
                   </span>

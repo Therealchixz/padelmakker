@@ -28,6 +28,7 @@ import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
+import { scrollFormFieldIntoView } from '../lib/formValidationScroll';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { DateInputField } from '../components/DateInputField';
@@ -208,6 +209,8 @@ export function LigaTab({
   const [createForm, setCreateForm] = useState({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
   const [createStep, setCreateStep] = useState(1);
   const [createStepErr, setCreateStepErr] = useState('');
+  const ligaCreateNameFieldRef = useRef(null);
+  const ligaCreateStartDateFieldRef = useRef(null);
 
   // Scroll til toppen ved skift mellem trin i opret-wizarden
   useEffect(() => {
@@ -626,8 +629,17 @@ export function LigaTab({
   };
 
   const createLeague = async () => {
-    if (!createForm.name.trim() || !createForm.start_date) {
-      showToast('Udfyld navn og startdato.'); return;
+    if (!createForm.name.trim()) {
+      setCreateStep(1);
+      setCreateStepErr('Angiv et navn til ligaen.');
+      scrollFormFieldIntoView(ligaCreateNameFieldRef.current);
+      return;
+    }
+    if (!createForm.start_date) {
+      setCreateStep(1);
+      setCreateStepErr('Angiv en sæsonstart-dato.');
+      scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
+      return;
     }
     setBusyId('create');
     try {
@@ -995,7 +1007,7 @@ export function LigaTab({
           {/* Step 1: Grundlæggende info */}
           {createStep === 1 && (
             <>
-              <div className="pm-field">
+              <div className="pm-field" ref={ligaCreateNameFieldRef}>
                 <label>Ligaens navn</label>
                 <input
                   value={createForm.name}
@@ -1024,7 +1036,7 @@ export function LigaTab({
                 </div>
                 <div className="pm-field-hint">Hold inddeles automatisk i divisioner efter niveau, når ligaen starter.</div>
               </div>
-              <div className="pm-field">
+              <div className="pm-field" ref={ligaCreateStartDateFieldRef}>
                 <label>Tilmeldingsfrist &amp; sæsonstart</label>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -1179,8 +1191,16 @@ export function LigaTab({
               <button
                 type="button"
                 onClick={() => {
-                  if (createStep === 1 && !createForm.name.trim()) { setCreateStepErr('Angiv et navn til ligaen.'); return; }
-                  if (createStep === 1 && !createForm.start_date) { setCreateStepErr('Angiv en sæsonstart-dato.'); return; }
+                  if (createStep === 1 && !createForm.name.trim()) {
+                    setCreateStepErr('Angiv et navn til ligaen.');
+                    scrollFormFieldIntoView(ligaCreateNameFieldRef.current);
+                    return;
+                  }
+                  if (createStep === 1 && !createForm.start_date) {
+                    setCreateStepErr('Angiv en sæsonstart-dato.');
+                    scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
+                    return;
+                  }
                   setCreateStepErr('');
                   setCreateStep(s => s + 1);
                 }}

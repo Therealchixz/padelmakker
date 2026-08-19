@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Info } from "lucide-react";
+import { scrollFormFieldIntoView, scrollToFieldById } from "../lib/formValidationScroll";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Typer — resultatstruktur til gemning/API
@@ -227,6 +228,11 @@ export default function PadelMatchResultInput({
   }, [initialData]);
 
   const [forms, setForms] = useState<[SetForm, SetForm, SetForm]>(initialForms);
+  const setCardRefs = [
+    useRef<HTMLDivElement>(null),
+    useRef<HTMLDivElement>(null),
+    useRef<HTMLDivElement>(null),
+  ] as const;
 
   const updateForm = useCallback((index: 0 | 1 | 2, patch: Partial<SetForm>) => {
     setForms((prev) => {
@@ -347,9 +353,26 @@ export default function PadelMatchResultInput({
     return true;
   }, [namesOk, setErrors, forms, matchDecidedAfterTwo, setsWon, matchCompleteWithOneSet]);
 
+  const scrollToFirstInvalid = () => {
+    if (playersEditable && !namesOk) {
+      scrollToFieldById(!team1.trim() ? "padel-team1" : "padel-team2");
+      return;
+    }
+    const maxSet = matchCompleteWithOneSet ? 1 : matchDecidedAfterTwo ? 2 : 3;
+    for (let i = 0; i < maxSet; i++) {
+      if (setErrors[i] || isSetEmpty(forms[i as 0 | 1 | 2])) {
+        scrollFormFieldIntoView(setCardRefs[i].current);
+        return;
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formValid) return;
+    if (!formValid) {
+      scrollToFirstInvalid();
+      return;
+    }
 
     const normalized: PadelSet[] = [];
     const maxSet = matchCompleteWithOneSet ? 1 : matchDecidedAfterTwo ? 2 : 3;
@@ -428,6 +451,7 @@ export default function PadelMatchResultInput({
 
     return (
       <div
+        ref={setCardRefs[index]}
         key={n}
         role="group"
         aria-label={`Sæt ${n}`}
@@ -535,14 +559,14 @@ export default function PadelMatchResultInput({
         )}
         <button
           type="submit"
-          disabled={!formValid}
           style={{
             flex: 2, padding: '14px', borderRadius: 10, border: 'none',
             background: formValid ? 'var(--pm-navy)' : 'var(--pm-text-light)',
             color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
-            cursor: formValid ? 'pointer' : 'default', fontFamily: 'inherit',
+            cursor: 'pointer', fontFamily: 'inherit',
             boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            opacity: formValid ? 1 : 0.85,
           }}
         >
           Bekræft resultat

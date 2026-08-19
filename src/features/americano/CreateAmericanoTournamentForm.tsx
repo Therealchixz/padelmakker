@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useScrollToFieldOnError } from '../../lib/formValidationScroll'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 import {
   getCreateFormSchedulePreview,
@@ -174,14 +175,7 @@ export function CreateAmericanoTournamentForm({
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
-  useEffect(() => {
-    if (!step1Error) return
-    const id = window.setTimeout(() => {
-      nameFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      nameInputRef.current?.focus({ preventScroll: true })
-    }, 50)
-    return () => window.clearTimeout(id)
-  }, [step1Error])
+  useScrollToFieldOnError(step1Error, nameFieldRef, nameInputRef)
 
   const syncPrice = (raw: string) => {
     setPriceInput(raw)

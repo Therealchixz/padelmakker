@@ -10,6 +10,7 @@ import { TurnstileWidget } from '../components/TurnstileWidget'
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
 import { writePendingSignupEmail } from '../lib/signupEmailPending'
 import { tryAutoEnrollGrowthCampaign } from '../lib/growthCampaign'
+import { scrollToFieldById } from '../lib/formValidationScroll'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -220,10 +221,12 @@ export function PhoneVerificationPage() {
     const normalizedPhone = normalizePhoneToE164(phoneInput)
     if (!normalizedPhone) {
       setErr('Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).')
+      scrollToFieldById('verify-phone')
       return
     }
     if (mode === 'signup' && turnstileEnabled && !captchaToken) {
       setErr('Bekræft venligst, at du ikke er en robot.')
+      scrollToFieldById('verify-captcha')
       return
     }
 
@@ -273,10 +276,12 @@ export function PhoneVerificationPage() {
     const token = cleanOtp(otpCode)
     if (!pendingPhone) {
       setErr('Send en SMS-kode først.')
+      scrollToFieldById('verify-phone')
       return
     }
     if (token.length !== 6) {
       setErr('Koden skal være 6 cifre.')
+      scrollToFieldById('verify-otp')
       return
     }
 
@@ -422,7 +427,7 @@ export function PhoneVerificationPage() {
           )}
 
           {mode === 'signup' && turnstileEnabled && (
-            <div style={{ marginBottom: '14px' }}>
+            <div id="verify-captcha" style={{ marginBottom: '14px' }}>
               <TurnstileWidget
                 siteKey={turnstileSiteKey}
                 onTokenChange={setCaptchaToken}
@@ -432,31 +437,14 @@ export function PhoneVerificationPage() {
           )}
           <button
             type="submit"
-            disabled={
-              submitting ||
-              !normalizedDraftPhone ||
-              (!canResend && otpSent) ||
-              (mode === 'signup' && turnstileEnabled && !captchaToken)
-            }
+            disabled={submitting || (!canResend && otpSent)}
             style={{
               ...btn(true),
               width: '100%',
               justifyContent: 'center',
               marginBottom: '14px',
-              opacity:
-                submitting ||
-                !normalizedDraftPhone ||
-                (!canResend && otpSent) ||
-                (mode === 'signup' && turnstileEnabled && !captchaToken)
-                  ? 0.55
-                  : 1,
-              cursor:
-                submitting ||
-                !normalizedDraftPhone ||
-                (!canResend && otpSent) ||
-                (mode === 'signup' && turnstileEnabled && !captchaToken)
-                  ? 'not-allowed'
-                  : 'pointer',
+              opacity: submitting || (!canResend && otpSent) ? 0.55 : 1,
+              cursor: submitting || (!canResend && otpSent) ? 'not-allowed' : 'pointer',
             }}
           >
             {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
@@ -470,7 +458,7 @@ export function PhoneVerificationPage() {
               void verifyCode()
             }}
           >
-            <div style={labelStyle}>SMS-kode (6 cifre)</div>
+            <div id="verify-otp" style={labelStyle}>SMS-kode (6 cifre)</div>
             <p style={{ fontSize: '12px', color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
               Koden står i SMS’en fra os. Kommer den ikke frem, vent et minut og tryk «Send kode igen».
             </p>
@@ -482,13 +470,13 @@ export function PhoneVerificationPage() {
             />
             <button
               type="submit"
-              disabled={submitting || cleanOtp(otpCode).length !== 6}
+              disabled={submitting}
               style={{
                 ...btn(true),
                 width: '100%',
                 justifyContent: 'center',
-                opacity: submitting || cleanOtp(otpCode).length !== 6 ? 0.55 : 1,
-                cursor: submitting || cleanOtp(otpCode).length !== 6 ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.55 : 1,
+                cursor: submitting ? 'not-allowed' : 'pointer',
               }}
             >
               {submitting ? 'Bekræfter...' : 'Bekræft telefonnummer'}

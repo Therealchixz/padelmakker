@@ -9,6 +9,7 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 import { readAuthReturnFromSearch, authReturnSignupUrl } from '../lib/authReturnPath';
+import { scrollToFieldById } from '../lib/formValidationScroll';
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -30,8 +31,16 @@ export function LoginPage() {
   const [forgotSent, setForgotSent] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) { setErr("Indtast email og adgangskode"); return; }
-    if (turnstileEnabled && !captchaToken) { setErr("Bekræft venligst, at du ikke er en robot."); return; }
+    if (!email.trim() || !password.trim()) {
+      setErr("Indtast email og adgangskode");
+      scrollToFieldById(!email.trim() ? 'login-email' : 'login-password');
+      return;
+    }
+    if (turnstileEnabled && !captchaToken) {
+      setErr("Bekræft venligst, at du ikke er en robot.");
+      scrollToFieldById('login-captcha');
+      return;
+    }
     setSubmitting(true); setErr("");
     try {
       await signIn(email.trim(), password, turnstileEnabled ? captchaToken : "");
@@ -44,8 +53,16 @@ export function LoginPage() {
   };
 
   const handleForgotPassword = async () => {
-    if (!email.trim() || !email.includes("@")) { setErr("Indtast din email først"); return; }
-    if (turnstileEnabled && !captchaToken) { setErr("Bekræft venligst, at du ikke er en robot."); return; }
+    if (!email.trim() || !email.includes("@")) {
+      setErr("Indtast din email først");
+      scrollToFieldById('forgot-email');
+      return;
+    }
+    if (turnstileEnabled && !captchaToken) {
+      setErr("Bekræft venligst, at du ikke er en robot.");
+      scrollToFieldById('forgot-captcha');
+      return;
+    }
     setSubmitting(true); setErr("");
     try {
       const payload = {
@@ -84,7 +101,7 @@ export function LoginPage() {
               <label htmlFor="forgot-email" style={labelStyle}>Email</label>
               <input id="forgot-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
               {turnstileEnabled && (
-                <div style={{ marginBottom: "14px" }}>
+                <div id="forgot-captcha" style={{ marginBottom: "14px" }}>
                   <TurnstileWidget
                     siteKey={turnstileSiteKey}
                     onTokenChange={setCaptchaToken}
@@ -93,7 +110,7 @@ export function LoginPage() {
                 </div>
               )}
               {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
-              <button type="submit" disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+              <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
               </button>
             </form>
@@ -132,7 +149,7 @@ export function LoginPage() {
             </button>
           </div>
           {turnstileEnabled && (
-            <div style={{ marginBottom: "14px" }}>
+            <div id="login-captcha" style={{ marginBottom: "14px" }}>
               <TurnstileWidget
                 siteKey={turnstileSiteKey}
                 onTokenChange={setCaptchaToken}
@@ -141,7 +158,7 @@ export function LoginPage() {
             </div>
           )}
           {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
-          <button type="submit" disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+          <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
             {submitting ? "Logger ind..." : "Log ind"}
           </button>
         </form>

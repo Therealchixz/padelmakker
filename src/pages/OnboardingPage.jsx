@@ -30,6 +30,11 @@ import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } fro
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 import { mapAuthErrorMessage } from '../lib/authErrorMessages';
 import { mapUserFacingError } from '../lib/userFacingErrors';
+import {
+  scrollFormFieldIntoView,
+  scrollOnboardingValidationError,
+  resolveOnboardingFieldIdFromMissing,
+} from '../lib/formValidationScroll';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
@@ -225,6 +230,39 @@ export function OnboardingPage() {
     return true;
   };
   const missingRequirements = missingStepRequirements();
+  const missingRequirementsRef = useRef(null);
+
+  const scrollToMissingOnStep = () => {
+    const fieldId = resolveOnboardingFieldIdFromMissing(missingStepRequirements(step));
+    if (fieldId) {
+      scrollOnboardingValidationError(null, missingStepRequirements(step));
+      return;
+    }
+    scrollFormFieldIntoView(missingRequirementsRef.current, { block: 'center' });
+  };
+
+  const handleContinue = () => {
+    if (canNext()) {
+      setErr('');
+      setStep((s) => s + 1);
+      return;
+    }
+    scrollToMissingOnStep();
+  };
+
+  const handleFinishClick = () => {
+    if (!acceptedTerms) {
+      setErr("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
+      scrollOnboardingValidationError("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
+      return;
+    }
+    if (!oauthSession && turnstileEnabled && !captchaToken) {
+      setErr("Bekræft venligst, at du ikke er en robot.");
+      scrollOnboardingValidationError("Bekræft venligst, at du ikke er en robot.");
+      return;
+    }
+    void finish();
+  };
 
   const missingStepRequirementsRef = useRef(missingStepRequirements);
   missingStepRequirementsRef.current = missingStepRequirements;
@@ -308,10 +346,12 @@ export function OnboardingPage() {
   const finish = async () => {
     if (!acceptedTerms) {
       setErr("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
+      scrollOnboardingValidationError("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
       return;
     }
     if (!oauthSession && turnstileEnabled && !captchaToken) {
       setErr("Bekræft venligst, at du ikke er en robot.");
+      scrollOnboardingValidationError("Bekræft venligst, at du ikke er en robot.");
       return;
     }
 
@@ -320,16 +360,19 @@ export function OnboardingPage() {
       const nameCheck = validateFirstLastName(form.first_name, form.last_name);
       if (!nameCheck.valid) {
         setErr(nameCheck.message);
+        scrollOnboardingValidationError(nameCheck.message);
         return;
       }
       const normalizedPhone = phoneExempt ? '' : normalizePhoneToE164(form.phone);
       if (!phoneExempt && !normalizedPhone) {
         setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
+        scrollOnboardingValidationError("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       if (!isValidProfileRegion(form.area)) {
         setErr("Vælg din region — by er valgfri.");
+        scrollOnboardingValidationError("Vælg din region — by er valgfri.");
         return;
       }
       const levelNum = Number(form.levelNumeric);
@@ -388,22 +431,27 @@ export function OnboardingPage() {
 
       if (form.password.length < 8) {
         setErr("Adgangskoden skal være mindst 8 tegn.");
+        scrollOnboardingValidationError("Adgangskoden skal være mindst 8 tegn.");
         return;
       }
       if (form.password !== form.password_confirm) {
         setErr("Adgangskoderne er ikke ens — tjek begge felter.");
+        scrollOnboardingValidationError("Adgangskoderne er ikke ens — tjek begge felter.");
         return;
       }
       if (!isValidSignupEmail(form.email)) {
         setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
+        scrollOnboardingValidationError("Indtast en gyldig e-mail (fx navn@domæne.dk).");
         return;
       }
       if (!isValidSignupEmail(form.email_confirm)) {
         setErr("Gentag din e-mail i feltet Bekræft email.");
+        scrollOnboardingValidationError("Gentag din e-mail i feltet Bekræft email.");
         return;
       }
       if (normalizedEmail !== normalizedEmailConfirm) {
         setErr("E-mailadresserne matcher ikke - tjek begge felter.");
+        scrollOnboardingValidationError("E-mailadresserne matcher ikke - tjek begge felter.");
         return;
       }
       if (avatarFile) {
@@ -640,6 +688,7 @@ export function OnboardingPage() {
         return (
           <button
             key={c.value}
+            id={c.value === 1 ? 'onb-level-section' : undefined}
             type="button"
             onClick={() => set("levelNumeric", c.value)}
             aria-pressed={sel}
@@ -742,6 +791,7 @@ export function OnboardingPage() {
             {PLAY_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
+            id="onb-court-side"
             aria-label="Side på banen"
             value={form.court_side}
             onChange={e => set("court_side", e.target.value)}
@@ -757,7 +807,7 @@ export function OnboardingPage() {
 
     /* ============ Trin 3 · Område (mockup: Onboarding · 3 Område) ============ */
     <div key={2}>
-      <div style={fieldWrap}>
+      <div id="onb-region" style={fieldWrap}>
         <label style={obLabel}>Region</label>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {REGIONS.map((r) => (
@@ -864,6 +914,7 @@ export function OnboardingPage() {
         />
       </div>
       <label
+        id="onb-terms"
         style={{
           ...whiteCard,
           display: "flex",
@@ -912,7 +963,7 @@ export function OnboardingPage() {
         </span>
       </label>
       {turnstileEnabled && (
-        <div style={{ ...insetCard, marginBottom: "14px" }}>
+        <div id="onb-captcha" style={{ ...insetCard, marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
             <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.accent, flexShrink: 0 }} />
             <span style={{ fontSize: "12px", color: theme.textMid, flex: 1 }}>
@@ -943,8 +994,6 @@ export function OnboardingPage() {
       )}
     </div>,
   ];
-
-  const nextDisabled = step < 3 ? !canNext() : (submitting || !acceptedTerms || (!oauthSession && turnstileEnabled && !captchaToken));
 
   return (
     <div
@@ -1009,6 +1058,7 @@ export function OnboardingPage() {
         )}
         {step < 3 && missingRequirements.length > 0 && (
           <div
+            ref={missingRequirementsRef}
             aria-live="polite"
             style={{
               ...insetCard,
@@ -1027,18 +1077,17 @@ export function OnboardingPage() {
           {step < 3 ? (
             <button
               type="button"
-              disabled={nextDisabled}
-              onClick={() => canNext() && setStep(s => s + 1)}
-              style={{ ...btnNavy, opacity: nextDisabled ? 0.45 : 1, cursor: nextDisabled ? "not-allowed" : "pointer" }}
+              onClick={handleContinue}
+              style={{ ...btnNavy, opacity: canNext() ? 1 : 0.75, cursor: "pointer" }}
             >
               Fortsæt <ArrowRight size={16} strokeWidth={2.4} />
             </button>
           ) : (
             <button
               type="button"
-              onClick={finish}
-              disabled={nextDisabled}
-              style={{ ...btnNavy, opacity: nextDisabled ? 0.45 : 1, cursor: nextDisabled ? "not-allowed" : "pointer" }}
+              onClick={handleFinishClick}
+              disabled={submitting}
+              style={{ ...btnNavy, opacity: submitting ? 0.45 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
             >
               {submitting ? "Opretter..." : "Opret profil"} <ArrowRight size={16} strokeWidth={2.4} />
             </button>

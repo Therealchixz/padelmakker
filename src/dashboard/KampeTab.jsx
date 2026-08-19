@@ -62,6 +62,7 @@ import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { absoluteUrl } from '../lib/siteMeta';
 import { buildPublicMatchPath } from '../lib/publicShareRoutes';
+import { scrollFormFieldIntoView } from '../lib/formValidationScroll';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { ConfirmResultModal } from './ConfirmResultModal';
@@ -277,6 +278,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const [createdMatchReceipt, setCreatedMatchReceipt] = useState(null); // match row after creation
   const [receiptUrlCopied, setReceiptUrlCopied] = useState(false);
   const padelCreateFormRef = useRef(null);
+  const padelCreateVenueFieldRef = useRef(null);
+  const padelCreateDateFieldRef = useRef(null);
+  const padelCreateTimeFieldRef = useRef(null);
+  const padelCreateDurationFieldRef = useRef(null);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
@@ -1045,13 +1050,31 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
   const createMatch = async () => {
     if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
-      showToast("Vælg hvilken bane der er booket.");
+      setPadelCreateStep(1);
+      setPadelCreateStepErr("Vælg hvilken bane der er booket.");
+      scrollPadelCreateField("venue");
+      return;
+    }
+    if (!newMatch.date) {
+      setPadelCreateStep(1);
+      setPadelCreateStepErr("Angiv en dato.");
+      scrollPadelCreateField("date");
       return;
     }
     const startM = timeToMinutes(newMatch.time);
-    if (!Number.isFinite(startM)) { showToast("Vælg en gyldig starttid."); return; }
+    if (!Number.isFinite(startM)) {
+      setPadelCreateStep(1);
+      setPadelCreateStepErr("Vælg en gyldig starttid.");
+      scrollPadelCreateField("time");
+      return;
+    }
     const dur = parseInt(newMatch.duration, 10);
-    if (!dur || dur < 60) { showToast("Varighed skal være mindst 1 time."); return; }
+    if (!dur || dur < 60) {
+      setPadelCreateStep(1);
+      setPadelCreateStepErr("Varighed skal være mindst 1 time.");
+      scrollPadelCreateField("duration");
+      return;
+    }
     const endM = startM + dur;
     const endH = String(Math.floor(endM / 60) % 24).padStart(2, "0");
     const endMin = String(endM % 60).padStart(2, "0");
@@ -1101,26 +1124,37 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     finally { setCreating(false); }
   };
 
+  const scrollPadelCreateField = (field) => {
+    const refMap = {
+      venue: padelCreateVenueFieldRef,
+      date: padelCreateDateFieldRef,
+      time: padelCreateTimeFieldRef,
+      duration: padelCreateDurationFieldRef,
+    };
+    scrollFormFieldIntoView(refMap[field]?.current);
+  };
+
   const validatePadelCreateStep = (step) => {
     if (step === 1) {
-      if (venueOptions.length === 0) return "Ingen baner tilgængelige i dit område endnu.";
+      if (venueOptions.length === 0) return { message: "Ingen baner tilgængelige i dit område endnu.", field: null };
       if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
-        return "Vælg hvilken bane der er booket.";
+        return { message: "Vælg hvilken bane der er booket.", field: "venue" };
       }
-      if (!newMatch.date) return "Angiv en dato.";
+      if (!newMatch.date) return { message: "Angiv en dato.", field: "date" };
       const startM = timeToMinutes(newMatch.time);
-      if (!Number.isFinite(startM)) return "Vælg en gyldig starttid.";
+      if (!Number.isFinite(startM)) return { message: "Vælg en gyldig starttid.", field: "time" };
       const dur = parseInt(newMatch.duration, 10);
-      if (!dur || dur < 60) return "Varighed skal være mindst 1 time.";
+      if (!dur || dur < 60) return { message: "Varighed skal være mindst 1 time.", field: "duration" };
       return null;
     }
     return null;
   };
 
   const goPadelCreateNext = () => {
-    const err = validatePadelCreateStep(padelCreateStep);
-    if (err) {
-      setPadelCreateStepErr(err);
+    const result = validatePadelCreateStep(padelCreateStep);
+    if (result) {
+      setPadelCreateStepErr(result.message);
+      if (result.field) scrollPadelCreateField(result.field);
       return;
     }
     setPadelCreateStepErr("");
@@ -3273,7 +3307,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     style={{ marginTop: "4px" }}
                   />
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
+                <div ref={padelCreateVenueFieldRef} style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>
                     {newMatch.court_booked ? "Hvilken bane er booket?" : "Hvor vil du helst spille? (valgfrit)"}
                   </label>
@@ -3291,7 +3325,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                       : "Vælg «Ikke valgt endnu», eller peg på et center du overvejer — du behøver ikke have booket endnu."}
                   </p>
                 </div>
-                <div style={{ minWidth: 0 }}>
+                <div ref={padelCreateDateFieldRef} style={{ minWidth: 0 }}>
                   <label style={labelStyle}>Dato</label>
                   <input
                     type="date"
@@ -3301,7 +3335,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     style={{ ...inputStyle, fontSize: "13px", appearance: "none", WebkitAppearance: "none" }}
                   />
                 </div>
-                <div>
+                <div ref={padelCreateTimeFieldRef}>
                   <label style={labelStyle}>Starttid</label>
                   <select
                     value={newMatch.time}
@@ -3313,7 +3347,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     ))}
                   </select>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
+                <div ref={padelCreateDurationFieldRef} style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>Varighed</label>
                   <select
                     value={newMatch.duration}
@@ -3476,7 +3510,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           })()}
 
           {padelCreateStepErr && (
-            <div style={{ margin: "12px 0 0", color: theme.red, fontSize: 12 }}>{padelCreateStepErr}</div>
+            <div role="alert" style={{ margin: "12px 0 0", color: theme.red, fontSize: 12 }}>{padelCreateStepErr}</div>
           )}
 
           <div className="pm-form-submit pm-form-submit-actions" style={{ marginTop: 16 }}>

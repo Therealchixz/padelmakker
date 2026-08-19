@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { scrollToFieldById } from '../lib/formValidationScroll';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { KeyRound } from 'lucide-react';
 
@@ -11,8 +12,16 @@ export function ResetPasswordPage({ onDone }) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleReset = async () => {
-    if (!password || password.length < 8) { setErr("Adgangskode skal være mindst 8 tegn"); return; }
-    if (password !== confirm) { setErr("Adgangskoderne matcher ikke"); return; }
+    if (!password || password.length < 8) {
+      setErr("Adgangskode skal være mindst 8 tegn");
+      scrollToFieldById('reset-password');
+      return;
+    }
+    if (password !== confirm) {
+      setErr("Adgangskoderne matcher ikke");
+      scrollToFieldById('reset-confirm');
+      return;
+    }
     setSubmitting(true); setErr("");
     try {
       const { error } = await supabase.auth.updateUser({ password });
