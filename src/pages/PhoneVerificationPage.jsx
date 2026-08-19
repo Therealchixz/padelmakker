@@ -9,6 +9,7 @@ import { mapPhoneAuthErrorMessage } from '../lib/authErrorMessages'
 import { TurnstileWidget } from '../components/TurnstileWidget'
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
 import { writePendingSignupEmail } from '../lib/signupEmailPending'
+import { tryAutoEnrollGrowthCampaign } from '../lib/growthCampaign'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -303,6 +304,7 @@ export function PhoneVerificationPage() {
             phone_verified_at: new Date().toISOString(),
           },
         })
+        void tryAutoEnrollGrowthCampaign()
         setInfo('Telefonnummer bekræftet. Du bliver sendt videre...')
         navigate('/dashboard', { replace: true })
         return

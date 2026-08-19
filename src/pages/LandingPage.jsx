@@ -5,6 +5,7 @@ import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered, LogIn } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
+import { fetchGrowthCampaignPublic, formatCampaignSpotsLabel } from '../lib/growthCampaign';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { useAuth } from '../lib/AuthContext';
@@ -34,6 +35,7 @@ export function LandingPage() {
   const [navHeight, setNavHeight] = useState(0);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
   const [publicStats, setPublicStats] = useState(null);
+  const [campaignStats, setCampaignStats] = useState(null);
   const [inviteNote, setInviteNote] = useState('');
   const toggleTheme = () => setDark((isDark) => !isDark);
 
@@ -41,6 +43,9 @@ export function LandingPage() {
     let cancelled = false;
     void fetchLandingPublicStats().then((stats) => {
       if (!cancelled) setPublicStats(stats);
+    });
+    void fetchGrowthCampaignPublic().then((stats) => {
+      if (!cancelled) setCampaignStats(stats);
     });
     return () => {
       cancelled = true;
@@ -480,6 +485,45 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      {campaignStats?.found && campaignStats.is_open ? (
+        <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(16px,4vw,24px) clamp(24px,5vw,32px)' }}>
+          <div
+            className="pm-reveal pm-visible"
+            style={{
+              ...landingInfoCardStyle,
+              borderColor: theme.accent + '44',
+              background: `linear-gradient(135deg, ${theme.accentBg}, ${theme.surface})`,
+            }}
+          >
+            <p style={{ ...landingSectionKickerStyle, margin: '0 0 8px' }}>Kampagne</p>
+            <h2 style={{ ...heading('clamp(20px,4vw,26px)'), margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+              Første 200 — vær med i lodtrækningen
+            </h2>
+            <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.65, margin: '0 0 14px' }}>
+              {campaignStats.prize_description || 'Padel-præmie til de første 200 med fuld profil.'}
+              {' '}Eksisterende brugere tæller med — pladser fordeles efter hvem der først opfylder kravene.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px' }}>
+              <div style={{ fontSize: 'clamp(28px,6vw,36px)', fontWeight: 800, color: theme.accent, letterSpacing: '-0.03em', fontFamily: font }}>
+                {formatCampaignSpotsLabel(campaignStats)}
+              </div>
+              <span style={{ fontSize: '13px', color: theme.textMid, fontWeight: 600 }}>pladser taget</span>
+              <Link
+                to="/kampagne/forste-200"
+                style={{ fontSize: '14px', fontWeight: 600, color: theme.accent, textDecoration: 'none', marginLeft: 'auto' }}
+              >
+                Læs regler →
+              </Link>
+              {!session ? (
+                <button type="button" onClick={() => navigate('/opret')} style={{ ...btn(true), padding: '10px 16px', fontSize: '13px' }}>
+                  Opret profil og deltag
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="pm-landing-mobile-mockup-section" style={{ background: theme.surface }}>
         {showDeferredSections ? (

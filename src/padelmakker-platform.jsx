@@ -38,6 +38,7 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) 
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+const CampaignRulesPageLazy = lazy(() => import("./pages/CampaignRulesPage").then((m) => ({ default: m.CampaignRulesPage })));
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, profileLoadError, phoneVerificationExempt, refreshProfile, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
@@ -198,6 +199,7 @@ export default function PadelMakker() {
             <Route path="/om" element={<OmPageLazy />} />
             <Route path="/faq" element={<FaqPageLazy />} />
             <Route path="/elo" element={<EloExplainerPageLazy />} />
+            <Route path="/kampagne/forste-200" element={<CampaignRulesPageLazy />} />
             <Route path="/events" element={<PublicEventsPageLazy />} />
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />

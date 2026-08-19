@@ -37,6 +37,7 @@ import {
   computeAdminConsoleStats,
   filterRatingAdminFlags,
 } from '../lib/adminConsoleUtils';
+import { growthCampaignEntriesToCsv } from '../lib/growthCampaign';
 
 function adminDisplayName(user) {
   const fullName = String(user?.full_name || '').trim();
@@ -240,6 +241,9 @@ export function AdminTab({ initialSubTab = null }) {
     openFlags: 0,
     highFlags: 0,
   });
+  const [campaignExportLoading, setCampaignExportLoading] = useState(false);
+  const [campaignExportCount, setCampaignExportCount] = useState(null);
+  const [campaignExportError, setCampaignExportError] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -617,6 +621,41 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
+  const fetchCampaignEntryCount = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_growth_campaign_public', { p_slug: 'first_200' });
+      if (error) throw error;
+      if (data?.found) {
+        setCampaignExportCount(Number(data.spots_taken ?? 0));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const exportCampaignEntries = async () => {
+    setCampaignExportLoading(true);
+    setCampaignExportError('');
+    try {
+      const { data, error } = await supabase.rpc('admin_list_growth_campaign_entries', { p_slug: 'first_200' });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const csv = growthCampaignEntriesToCsv(rows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `forste-200-deltagere-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setCampaignExportCount(rows.length);
+    } catch (err) {
+      setCampaignExportError(err?.message || 'Kunne ikke eksportere kampagne-deltagere');
+    } finally {
+      setCampaignExportLoading(false);
+    }
+  };
+
   const deleteAmericano = async (id, name) => {
     const ok = await ask({
       message: `Slet Americano/Mexicano "${name}"? Dette kan ikke fortrydes.`,
@@ -831,6 +870,7 @@ export function AdminTab({ initialSubTab = null }) {
       // hele konsol-datasættet, medmindre det er over 30 sekunder gammelt.
       // "Opdater"-knappen og visibilitychange henter altid (via fetchAdminConsole direkte).
       if (Date.now() - consoleFetchedAtRef.current > 30_000) void fetchAdminConsole();
+      if (activeSubTab === 'oversigt') void fetchCampaignEntryCount();
     }
   }, [
     activeSubTab,
@@ -1364,6 +1404,33 @@ export function AdminTab({ initialSubTab = null }) {
                 <div className="pm-admin-kpi-footer">{card.footer}</div>
               </button>
             ))}
+          </div>
+
+          <div className="pm-ui-card" style={{ marginBottom: 16, padding: '16px 18px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div className="pm-admin-section-title" style={{ marginBottom: 4 }}>Første 200 — lodtrækning</div>
+                <div style={{ fontSize: 13, color: theme.textMid }}>
+                  {campaignExportCount != null
+                    ? `${campaignExportCount} deltagere registreret`
+                    : 'Hent deltagerliste til lodtrækning'}
+                </div>
+                {campaignExportError ? (
+                  <div className="pm-admin-error-msg" style={{ marginTop: 8 }}>{campaignExportError}</div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void fetchCampaignEntryCount();
+                  void exportCampaignEntries();
+                }}
+                style={btn(false)}
+                disabled={campaignExportLoading}
+              >
+                {campaignExportLoading ? 'Eksporterer…' : 'Download CSV'}
+              </button>
+            </div>
           </div>
 
           <AdminAuditLogPanel

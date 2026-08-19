@@ -25,6 +25,7 @@ import {
   TOURNAMENT_RANKING_EMPTY_WEEK,
 } from '../lib/tournamentCopy';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
+import { MonthMasterTeaser } from '../components/GrowthCampaignBanner';
 
 const RANKING_PAGE_SIZE = 50;
 const PERIOD_HISTORY_LIMIT = 1500;
@@ -714,6 +715,8 @@ export function RankingTab({ user }) {
         size="sm"
         style={{ marginBottom: '16px' }}
       />
+
+      {period === 'month' ? <MonthMasterTeaser compact /> : null}
 
       <div style={{ fontSize: '12px', color: theme.textLight, marginBottom: '16px', textAlign: 'center' }}>
         {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}

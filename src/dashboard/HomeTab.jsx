@@ -32,6 +32,7 @@ import {
   isMatchFilterActive,
   countOpenMatchesMatchingFilter,
 } from '../lib/matchSearchFilterUtils';
+import { GrowthCampaignBanner, MonthMasterTeaser } from '../components/GrowthCampaignBanner';
 
 const HOME_FEED_CACHE_BY_USER = new Map();
 
@@ -1173,6 +1174,9 @@ export function HomeTab({ user, setTab, showToast }) {
         </div>
         <div className="pm-home-bell"><NotificationBell /></div>
       </div>
+
+      <GrowthCampaignBanner />
+      <MonthMasterTeaser />
 
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
