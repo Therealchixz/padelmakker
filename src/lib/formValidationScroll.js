@@ -84,3 +84,18 @@ export function scrollOnboardingValidationError(message, missingLabels) {
   if (fieldId) return scrollToFieldById(fieldId);
   return undefined;
 }
+
+/** Ekstra input-styling når et felt har valideringsfejl (rød kant). */
+export function fieldValidationErrorStyle(hasError) {
+  if (!hasError) return {};
+  return {
+    borderColor: 'var(--pm-red)',
+    boxShadow: '0 0 0 1px color-mix(in srgb, var(--pm-red) 27%, transparent)',
+  };
+}
+
+/** Besked til inline fejl under felt — returnerer null hvis feltet ikke matcher. */
+export function fieldValidationMessage(fieldError, fieldKey) {
+  if (!fieldError || fieldError.field !== fieldKey) return null;
+  return fieldError.message;
+}

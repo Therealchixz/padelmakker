@@ -62,7 +62,7 @@ import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { absoluteUrl } from '../lib/siteMeta';
 import { buildPublicMatchPath } from '../lib/publicShareRoutes';
-import { scrollFormFieldIntoView } from '../lib/formValidationScroll';
+import { scrollFormFieldIntoView, fieldValidationErrorStyle, fieldValidationMessage } from '../lib/formValidationScroll';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { ConfirmResultModal } from './ConfirmResultModal';
@@ -272,7 +272,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     useProfileEloBundle(user.id, eloSyncKeyKampe);
   const [showCreate, setShowCreate]   = useState(false);
   const [padelCreateStep, setPadelCreateStep] = useState(1);
-  const [padelCreateStepErr, setPadelCreateStepErr] = useState("");
+  const [padelCreateFieldError, setPadelCreateFieldError] = useState(null);
   const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [showLigaCreate, setShowLigaCreate] = useState(false);
   const [createdMatchReceipt, setCreatedMatchReceipt] = useState(null); // match row after creation
@@ -338,7 +338,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   useEffect(() => {
     if (!showCreate) {
       setPadelCreateStep(1);
-      setPadelCreateStepErr("");
+      setPadelCreateFieldError(null);
     }
   }, [showCreate]);
 
@@ -1051,27 +1051,27 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const createMatch = async () => {
     if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
       setPadelCreateStep(1);
-      setPadelCreateStepErr("Vælg hvilken bane der er booket.");
+      setPadelCreateFieldError({ field: 'venue', message: 'Vælg hvilken bane der er booket.' });
       scrollPadelCreateField("venue");
       return;
     }
     if (!newMatch.date) {
       setPadelCreateStep(1);
-      setPadelCreateStepErr("Angiv en dato.");
+      setPadelCreateFieldError({ field: 'date', message: 'Angiv en dato.' });
       scrollPadelCreateField("date");
       return;
     }
     const startM = timeToMinutes(newMatch.time);
     if (!Number.isFinite(startM)) {
       setPadelCreateStep(1);
-      setPadelCreateStepErr("Vælg en gyldig starttid.");
+      setPadelCreateFieldError({ field: 'time', message: 'Vælg en gyldig starttid.' });
       scrollPadelCreateField("time");
       return;
     }
     const dur = parseInt(newMatch.duration, 10);
     if (!dur || dur < 60) {
       setPadelCreateStep(1);
-      setPadelCreateStepErr("Varighed skal være mindst 1 time.");
+      setPadelCreateFieldError({ field: 'duration', message: 'Varighed skal være mindst 1 time.' });
       scrollPadelCreateField("duration");
       return;
     }
@@ -1117,7 +1117,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
       setShowCreate(false);
       setPadelCreateStep(1);
-      setPadelCreateStepErr("");
+      setPadelCreateFieldError(null);
       setCreatedMatchReceipt(created);
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
@@ -1125,6 +1125,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   };
 
   const scrollPadelCreateField = (field) => {
+    if (field === 'general') {
+      scrollFormFieldIntoView(padelCreateFormRef.current, { block: 'start' });
+      return;
+    }
     const refMap = {
       venue: padelCreateVenueFieldRef,
       date: padelCreateDateFieldRef,
@@ -1136,7 +1140,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
   const validatePadelCreateStep = (step) => {
     if (step === 1) {
-      if (venueOptions.length === 0) return { message: "Ingen baner tilgængelige i dit område endnu.", field: null };
+      if (venueOptions.length === 0) return { message: "Ingen baner tilgængelige i dit område endnu.", field: "general" };
       if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
         return { message: "Vælg hvilken bane der er booket.", field: "venue" };
       }
@@ -1153,11 +1157,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const goPadelCreateNext = () => {
     const result = validatePadelCreateStep(padelCreateStep);
     if (result) {
-      setPadelCreateStepErr(result.message);
-      if (result.field) scrollPadelCreateField(result.field);
+      setPadelCreateFieldError({ field: result.field ?? 'general', message: result.message });
+      scrollPadelCreateField(result.field ?? 'general');
       return;
     }
-    setPadelCreateStepErr("");
+    setPadelCreateFieldError(null);
     setPadelCreateStep((s) => Math.min(3, s + 1));
   };
 
@@ -3277,8 +3281,19 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             })}
           </div>
 
-          {padelCreateStep === 1 && (
+          {padelCreateStep === 1 && (() => {
+            const padelGeneralError = fieldValidationMessage(padelCreateFieldError, 'general');
+            const padelVenueError = fieldValidationMessage(padelCreateFieldError, 'venue');
+            const padelDateError = fieldValidationMessage(padelCreateFieldError, 'date');
+            const padelTimeError = fieldValidationMessage(padelCreateFieldError, 'time');
+            const padelDurationError = fieldValidationMessage(padelCreateFieldError, 'duration');
+            return (
             <>
+              {padelGeneralError && (
+                <div role="alert" style={{ margin: '0 0 12px', color: theme.red, fontSize: 12, fontWeight: 600 }}>
+                  {padelGeneralError}
+                </div>
+              )}
               <p style={{ fontSize: "13px", color: theme.textMid, margin: "0 0 16px" }}>
                 Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.
               </p>
@@ -3313,7 +3328,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                   </label>
                   <VenueRegionPicker
                     value={newMatch.court_id}
-                    onChange={(id) => setNewMatch((m) => ({ ...m, court_id: id }))}
+                    onChange={(id) => {
+                      setNewMatch((m) => ({ ...m, court_id: id }));
+                      if (padelCreateFieldError?.field === 'venue') setPadelCreateFieldError(null);
+                    }}
                     options={createVenueOptions}
                     placeholder={newMatch.court_booked ? "Vælg booket center" : "Ikke valgt endnu"}
                     emptyLabel="Indlæser centre…"
@@ -3324,6 +3342,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                       ? "Vælg det center, hvor du har booket tid."
                       : "Vælg «Ikke valgt endnu», eller peg på et center du overvejer — du behøver ikke have booket endnu."}
                   </p>
+                  {padelVenueError && (
+                    <div id="padel-create-venue-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                      {padelVenueError}
+                    </div>
+                  )}
                 </div>
                 <div ref={padelCreateDateFieldRef} style={{ minWidth: 0 }}>
                   <label style={labelStyle}>Dato</label>
@@ -3331,28 +3354,59 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     type="date"
                     value={newMatch.date}
                     min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setNewMatch((m) => ({ ...m, date: e.target.value }))}
-                    style={{ ...inputStyle, fontSize: "13px", appearance: "none", WebkitAppearance: "none" }}
+                    onChange={(e) => {
+                      setNewMatch((m) => ({ ...m, date: e.target.value }));
+                      if (padelCreateFieldError?.field === 'date') setPadelCreateFieldError(null);
+                    }}
+                    style={{
+                      ...inputStyle,
+                      fontSize: "13px",
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      ...fieldValidationErrorStyle(Boolean(padelDateError)),
+                    }}
+                    aria-invalid={padelDateError ? true : undefined}
+                    aria-describedby={padelDateError ? 'padel-create-date-error' : undefined}
                   />
+                  {padelDateError && (
+                    <div id="padel-create-date-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                      {padelDateError}
+                    </div>
+                  )}
                 </div>
                 <div ref={padelCreateTimeFieldRef}>
                   <label style={labelStyle}>Starttid</label>
                   <select
                     value={newMatch.time}
-                    onChange={(e) => setNewMatch((m) => ({ ...m, time: e.target.value }))}
-                    style={{ ...inputStyle, fontSize: "13px" }}
+                    onChange={(e) => {
+                      setNewMatch((m) => ({ ...m, time: e.target.value }));
+                      if (padelCreateFieldError?.field === 'time') setPadelCreateFieldError(null);
+                    }}
+                    style={{ ...inputStyle, fontSize: "13px", ...fieldValidationErrorStyle(Boolean(padelTimeError)) }}
+                    aria-invalid={padelTimeError ? true : undefined}
+                    aria-describedby={padelTimeError ? 'padel-create-time-error' : undefined}
                   >
                     {TIME_OPTIONS.map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
+                  {padelTimeError && (
+                    <div id="padel-create-time-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                      {padelTimeError}
+                    </div>
+                  )}
                 </div>
                 <div ref={padelCreateDurationFieldRef} style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>Varighed</label>
                   <select
                     value={newMatch.duration}
-                    onChange={(e) => setNewMatch((m) => ({ ...m, duration: e.target.value }))}
-                    style={{ ...inputStyle, fontSize: "13px" }}
+                    onChange={(e) => {
+                      setNewMatch((m) => ({ ...m, duration: e.target.value }));
+                      if (padelCreateFieldError?.field === 'duration') setPadelCreateFieldError(null);
+                    }}
+                    style={{ ...inputStyle, fontSize: "13px", ...fieldValidationErrorStyle(Boolean(padelDurationError)) }}
+                    aria-invalid={padelDurationError ? true : undefined}
+                    aria-describedby={padelDurationError ? 'padel-create-duration-error' : undefined}
                   >
                     <option value="60">1 time</option>
                     <option value="90">1½ time</option>
@@ -3360,6 +3414,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     <option value="150">2½ timer</option>
                     <option value="180">3 timer</option>
                   </select>
+                  {padelDurationError && (
+                    <div id="padel-create-duration-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                      {padelDurationError}
+                    </div>
+                  )}
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>Hvilket niveau søger du?</label>
@@ -3389,7 +3448,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                 Pris, betaling og kamptype konfigureres i næste trin.
               </div>
             </>
-          )}
+            );
+          })()}
 
           {padelCreateStep === 2 && (
             <>
@@ -3509,15 +3569,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             );
           })()}
 
-          {padelCreateStepErr && (
-            <div role="alert" style={{ margin: "12px 0 0", color: theme.red, fontSize: 12 }}>{padelCreateStepErr}</div>
-          )}
 
           <div className="pm-form-submit pm-form-submit-actions" style={{ marginTop: 16 }}>
             {padelCreateStep > 1 ? (
               <button
                 type="button"
-                onClick={() => { setPadelCreateStep((s) => s - 1); setPadelCreateStepErr(""); }}
+                onClick={() => { setPadelCreateStep((s) => s - 1); setPadelCreateFieldError(null); }}
                 disabled={creating}
                 style={{ ...btn(false, { size: "md", fontWeight: 600 }), flex: 1 }}
               >
@@ -3526,7 +3583,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             ) : (
               <button
                 type="button"
-                onClick={() => { setShowCreate(false); setPadelCreateStep(1); setPadelCreateStepErr(""); }}
+                onClick={() => { setShowCreate(false); setPadelCreateStep(1); setPadelCreateFieldError(null); }}
                 disabled={creating}
                 style={{ ...btn(false, { size: "md", fontWeight: 600 }), flex: 1 }}
               >

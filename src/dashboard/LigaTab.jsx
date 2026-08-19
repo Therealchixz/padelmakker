@@ -28,7 +28,7 @@ import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
-import { scrollFormFieldIntoView } from '../lib/formValidationScroll';
+import { scrollFormFieldIntoView, fieldValidationErrorStyle, fieldValidationMessage } from '../lib/formValidationScroll';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { DateInputField } from '../components/DateInputField';
@@ -208,7 +208,7 @@ export function LigaTab({
   const ligaCreateFormRef = useRef(null);
   const [createForm, setCreateForm] = useState({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
   const [createStep, setCreateStep] = useState(1);
-  const [createStepErr, setCreateStepErr] = useState('');
+  const [createFieldError, setCreateFieldError] = useState(null);
   const ligaCreateNameFieldRef = useRef(null);
   const ligaCreateStartDateFieldRef = useRef(null);
 
@@ -631,13 +631,13 @@ export function LigaTab({
   const createLeague = async () => {
     if (!createForm.name.trim()) {
       setCreateStep(1);
-      setCreateStepErr('Angiv et navn til ligaen.');
+      setCreateFieldError({ field: 'name', message: 'Angiv et navn til ligaen.' });
       scrollFormFieldIntoView(ligaCreateNameFieldRef.current);
       return;
     }
     if (!createForm.start_date) {
       setCreateStep(1);
-      setCreateStepErr('Angiv en sæsonstart-dato.');
+      setCreateFieldError({ field: 'start_date', message: 'Angiv en sæsonstart-dato.' });
       scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
       return;
     }
@@ -666,7 +666,7 @@ export function LigaTab({
       if (error) throw error;
       setCreateOpen(false);
       setCreateStep(1);
-      setCreateStepErr('');
+      setCreateFieldError(null);
       setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
       setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
@@ -970,6 +970,8 @@ export function LigaTab({
 
       {isAdmin && createOpen ? (() => {
         const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
+        const ligaNameError = fieldValidationMessage(createFieldError, 'name');
+        const ligaStartDateError = fieldValidationMessage(createFieldError, 'start_date');
         const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
         const MATCH_SYSTEMS = [
           { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Alle hold mødes én gang. Hele kampprogrammet genereres ved start.' },
@@ -1008,13 +1010,24 @@ export function LigaTab({
           {createStep === 1 && (
             <>
               <div className="pm-field" ref={ligaCreateNameFieldRef}>
-                <label>Ligaens navn</label>
+                <label htmlFor="liga-create-name">Ligaens navn</label>
                 <input
+                  id="liga-create-name"
                   value={createForm.name}
-                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={e => {
+                    setCreateForm(f => ({ ...f, name: e.target.value }));
+                    if (createFieldError?.field === 'name') setCreateFieldError(null);
+                  }}
                   placeholder="F.eks. Sommer Liga 2026"
-                  style={ligaInputStyle}
+                  style={{ ...ligaInputStyle, ...fieldValidationErrorStyle(Boolean(ligaNameError)) }}
+                  aria-invalid={ligaNameError ? true : undefined}
+                  aria-describedby={ligaNameError ? 'liga-create-name-error' : undefined}
                 />
+                {ligaNameError && (
+                  <div id="liga-create-name-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                    {ligaNameError}
+                  </div>
+                )}
               </div>
               <div className="pm-field">
                 <label>Region</label>
@@ -1051,11 +1064,19 @@ export function LigaTab({
                     <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Start</div>
                     <DateInputField
                       value={createForm.start_date}
-                      onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))}
-                      inputStyle={ligaInputStyle}
+                      onChange={e => {
+                        setCreateForm(f => ({ ...f, start_date: e.target.value }));
+                        if (createFieldError?.field === 'start_date') setCreateFieldError(null);
+                      }}
+                      inputStyle={{ ...ligaInputStyle, ...fieldValidationErrorStyle(Boolean(ligaStartDateError)) }}
                     />
                   </div>
                 </div>
+                {ligaStartDateError && (
+                  <div id="liga-create-start-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                    {ligaStartDateError}
+                  </div>
+                )}
               </div>
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -1141,7 +1162,7 @@ export function LigaTab({
               <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Grundlæggende info</span>
-                  <button type="button" onClick={() => { setCreateStep(1); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
+                  <button type="button" onClick={() => { setCreateStep(1); setCreateFieldError(null); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
                 </div>
                 <SummaryRow label="Navn" value={createForm.name || '—'} />
                 <SummaryRow label="Region" value={createForm.region || '—'} />
@@ -1156,7 +1177,7 @@ export function LigaTab({
               <div style={{ margin: '0 18px 14px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Regler &amp; kampsystem</span>
-                  <button type="button" onClick={() => { setCreateStep(2); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
+                  <button type="button" onClick={() => { setCreateStep(2); setCreateFieldError(null); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
                 </div>
                 <SummaryRow label="Kampsystem" value={ligaMatchSystemLabel(createForm.match_system)} />
                 {createForm.match_system === 'knockout' ? (
@@ -1172,18 +1193,15 @@ export function LigaTab({
             </>
           )}
 
-          {createStepErr && (
-            <div style={{ margin: '0 18px 10px', color: theme.red, fontSize: 12 }}>{createStepErr}</div>
-          )}
 
           {/* Navigation */}
           <div style={{ display: 'flex', gap: 10, padding: '0 18px' }}>
             {createStep > 1 ? (
-              <button type="button" onClick={() => { setCreateStep(s => s - 1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+              <button type="button" onClick={() => { setCreateStep(s => s - 1); setCreateFieldError(null); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
                 ← Tilbage
               </button>
             ) : (
-              <button type="button" onClick={() => { setCreateOpen(false); setCreateStep(1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+              <button type="button" onClick={() => { setCreateOpen(false); setCreateStep(1); setCreateFieldError(null); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
                 Annullér
               </button>
             )}
@@ -1192,16 +1210,16 @@ export function LigaTab({
                 type="button"
                 onClick={() => {
                   if (createStep === 1 && !createForm.name.trim()) {
-                    setCreateStepErr('Angiv et navn til ligaen.');
+                    setCreateFieldError({ field: 'name', message: 'Angiv et navn til ligaen.' });
                     scrollFormFieldIntoView(ligaCreateNameFieldRef.current);
                     return;
                   }
                   if (createStep === 1 && !createForm.start_date) {
-                    setCreateStepErr('Angiv en sæsonstart-dato.');
+                    setCreateFieldError({ field: 'start_date', message: 'Angiv en sæsonstart-dato.' });
                     scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
                     return;
                   }
-                  setCreateStepErr('');
+                  setCreateFieldError(null);
                   setCreateStep(s => s + 1);
                 }}
                 style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
