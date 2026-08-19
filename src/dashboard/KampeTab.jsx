@@ -3334,7 +3334,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     const lvlMax = eloToLevel(Number(newMatch.level_max) || clampElo(myElo + 100, myElo));
                     return (
                       <>
-                        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "0 8px 8px", marginTop: 4 }}>
+                        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "4px 10px 10px", marginTop: 6 }}>
                           <LevelRangeSlider
                             minVal={lvlMin}
                             maxVal={lvlMax}
@@ -3343,7 +3343,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                             onMaxChange={(v) => setNewMatch((m) => ({ ...m, level_max: String(levelToElo(v)) }))}
                           />
                         </div>
-                        <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+                        <p style={{ fontSize: "12px", color: theme.textMid, marginTop: "8px", lineHeight: 1.45 }}>
                           Spillere på niveau {formatPlaytomicLevelRange(lvlMin, lvlMax)} matcher kampen.
                         </p>
                       </>
