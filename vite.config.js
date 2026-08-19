@@ -76,6 +76,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
         },
+        '/api/dawa': {
+          target: 'https://api.dataforsyningen.dk',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/dawa/, ''),
+        },
       },
     },
   }

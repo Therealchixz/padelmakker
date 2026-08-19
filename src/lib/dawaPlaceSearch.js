@@ -1,6 +1,8 @@
 const STEDNAVNE_URL = 'https://api.dataforsyningen.dk/stednavne/autocomplete';
 const POSTNUMRE_URL = 'https://api.dataforsyningen.dk/postnumre/autocomplete';
 
+/** Kræver https://api.dataforsyningen.dk i CSP connect-src (vercel.json) på produktion. */
+
 const BEBYGGERLSE_TYPES = new Set(['by', 'bydel', 'forstad', 'landsby', 'sommerhusområde', 'sommerhusomraade']);
 
 function normalizeQuery(q) {
