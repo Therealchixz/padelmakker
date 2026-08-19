@@ -29,10 +29,6 @@ const PAYMENT_OPTIONS = [
 // Full range 4–16, matching the original
 const PLAYER_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-const RANGE_MIN = 1.0
-const RANGE_MAX = 5.0
-const RANGE_STEP = 0.1
-
 import { supabase } from '../../lib/supabase'
 import { theme, btn } from '../../lib/platformTheme'
 import type { AmericanoPoints, AmericanoOpponentPasses, AmericanoTournamentFormat } from './types'
@@ -43,7 +39,8 @@ import {
   AMERICANO_VENUE_NONE,
 } from '../../lib/matchVenueOptions'
 import { VenueRegionPicker } from '../../components/VenueRegionPicker'
-import { LevelRangeSlider as SharedLevelRangeSlider } from '../../components/LevelRangeSlider.jsx'
+import { LevelRangeSlider } from '../../components/LevelRangeSlider.jsx'
+import { formatPlaytomicLevelRange } from '../../lib/padelLevelUtils'
 
 type CourtOption = { id: string; name: string }
 
@@ -87,27 +84,6 @@ function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
         )
       })}
     </div>
-  )
-}
-
-// ── Dual range slider ──
-function LevelRangeSlider({
-  minVal, maxVal,
-  onMinChange, onMaxChange,
-}: {
-  minVal: number; maxVal: number
-  onMinChange: (v: number) => void; onMaxChange: (v: number) => void
-}) {
-  return (
-    <SharedLevelRangeSlider
-      minVal={minVal}
-      maxVal={maxVal}
-      onMinChange={onMinChange}
-      onMaxChange={onMaxChange}
-      min={RANGE_MIN}
-      max={RANGE_MAX}
-      step={RANGE_STEP}
-    />
   )
 }
 
@@ -396,13 +372,17 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Niveau-interval</label>
-            <div style={{ margin: '0 18px', background: 'var(--pm-surface)', border: '1px solid var(--pm-border)', borderRadius: 12, padding: '0 8px 8px' }}>
+            <div className="pm-level-range-box">
               <LevelRangeSlider
-                minVal={levelMin} maxVal={levelMax}
-                onMinChange={setLevelMin} onMaxChange={setLevelMax}
+                minVal={levelMin}
+                maxVal={levelMax}
+                onMinChange={setLevelMin}
+                onMaxChange={setLevelMax}
               />
             </div>
-            <div className="pm-field-hint">Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)} · Kan håndhæves ved tilmelding (slås til i næste trin)</div>
+            <p className="pm-level-range-hint">
+              Spillere på niveau {formatPlaytomicLevelRange(levelMin, levelMax)} matcher turneringen. Kan håndhæves ved tilmelding (slås til i næste trin).
+            </p>
           </div>
 
           <button
