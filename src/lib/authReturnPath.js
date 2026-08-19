@@ -28,13 +28,11 @@ export function persistAuthReturnPath(path) {
   }
 }
 
-/** @param {string} [search] */
-export function readAuthReturnFromSearch(search = '') {
-  if (typeof window !== 'undefined' && !search) {
-    readAuthReturnFromSearch(window.location.search);
-    return;
-  }
-  const params = new URLSearchParams(search);
+/** @param {string | undefined} [search] URL search string (e.g. location.search). Omit to use window.location.search. */
+export function readAuthReturnFromSearch(search) {
+  const resolved = search ?? (typeof window !== 'undefined' ? window.location.search : '');
+  if (!resolved) return;
+  const params = new URLSearchParams(resolved.startsWith('?') ? resolved : `?${resolved}`);
   const next = params.get('next');
   if (next) persistAuthReturnPath(next);
 }
