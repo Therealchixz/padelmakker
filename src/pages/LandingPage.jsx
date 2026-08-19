@@ -486,7 +486,19 @@ export function LandingPage() {
         </div>
       </section>
 
-      {campaignStats?.found && campaignStats.is_open ? (
+      {campaignStats?.found && campaignStats.draw_completed ? (
+        <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(16px,4vw,24px) clamp(24px,5vw,32px)' }}>
+          <div className="pm-reveal pm-visible" style={landingInfoCardStyle}>
+            <p style={{ ...landingSectionKickerStyle, margin: '0 0 8px' }}>Kampagne</p>
+            <h2 style={{ ...heading('clamp(20px,4vw,26px)'), margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+              Første 200 — lodtrækning gennemført
+            </h2>
+            <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.65, margin: 0 }}>
+              Lodtrækningen er afsluttet. Vinderen er kontaktet direkte.
+            </p>
+          </div>
+        </section>
+      ) : campaignStats?.found && campaignStats.is_open ? (
         <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(16px,4vw,24px) clamp(24px,5vw,32px)' }}>
           <div
             className="pm-reveal pm-visible"

@@ -29,6 +29,52 @@ export function GrowthCampaignBanner() {
 
   const spots = formatCampaignSpotsLabel(status);
 
+  if (status.is_winner) {
+    return (
+      <div
+        style={{
+          margin: '0 18px 12px',
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: theme.greenBg,
+          border: `1px solid ${theme.green}44`,
+          fontSize: 13,
+          lineHeight: 1.5,
+          color: theme.textMid,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Gift size={18} color={theme.green} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
+          <div>
+            <strong style={{ color: theme.text }}>Tillykke — du vandt Første 200!</strong>
+            {' '}Du blev trukket som vinder (lod #{status.entry_number}). Vi kontakter dig snart om præmien.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status.draw_completed && status.enrolled) {
+    return (
+      <div
+        style={{
+          margin: '0 18px 12px',
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: theme.surfaceAlt,
+          border: `1px solid ${theme.border}`,
+          fontSize: 13,
+          lineHeight: 1.5,
+          color: theme.textMid,
+        }}
+      >
+        Lodtrækningen for Første 200 er gennemført. Dit lod var #{status.entry_number}. Tak for deltagelsen!
+      </div>
+    );
+  }
+
+  if (status.draw_completed) return null;
+
   if (status.enrolled && status.entry_number) {
     return (
       <div

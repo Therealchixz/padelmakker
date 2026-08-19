@@ -37,7 +37,7 @@ import {
   computeAdminConsoleStats,
   filterRatingAdminFlags,
 } from '../lib/adminConsoleUtils';
-import { growthCampaignEntriesToCsv } from '../lib/growthCampaign';
+import { growthCampaignEntriesToCsv, fetchAdminGrowthCampaignDrawStatus, adminDrawGrowthCampaign, formatCampaignSpotsLabel } from '../lib/growthCampaign';
 
 function adminDisplayName(user) {
   const fullName = String(user?.full_name || '').trim();
@@ -244,6 +244,9 @@ export function AdminTab({ initialSubTab = null }) {
   const [campaignExportLoading, setCampaignExportLoading] = useState(false);
   const [campaignExportCount, setCampaignExportCount] = useState(null);
   const [campaignExportError, setCampaignExportError] = useState('');
+  const [campaignDrawStatus, setCampaignDrawStatus] = useState(null);
+  const [campaignDrawLoading, setCampaignDrawLoading] = useState(false);
+  const [campaignDrawError, setCampaignDrawError] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -623,13 +626,60 @@ export function AdminTab({ initialSubTab = null }) {
 
   const fetchCampaignEntryCount = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_growth_campaign_public', { p_slug: 'first_200' });
-      if (error) throw error;
-      if (data?.found) {
-        setCampaignExportCount(Number(data.spots_taken ?? 0));
+      const status = await fetchAdminGrowthCampaignDrawStatus('first_200');
+      if (status?.found) {
+        setCampaignExportCount(Number(status.spots_taken ?? 0));
+        setCampaignDrawStatus(status);
       }
     } catch {
       /* ignore */
+    }
+  };
+
+  const drawCampaignWinner = async () => {
+    const status = campaignDrawStatus ?? await fetchAdminGrowthCampaignDrawStatus('first_200');
+    if (!status) {
+      setCampaignDrawError('Kunne ikke hente kampagne-status');
+      return;
+    }
+    if (status.draw_completed) return;
+
+    const spots = formatCampaignSpotsLabel(status);
+    const needsPartialConfirm = !status.is_full;
+    const confirmMsg = needsPartialConfirm
+      ? `Kun ${spots} deltagere er tilmeldt (ikke fulde 200). Vil du trække lod alligevel?`
+      : `Træk én tilfældig vinder blandt ${spots} deltagere? Dette kan ikke fortrydes.`;
+
+    const ok = await ask({
+      message: confirmMsg,
+      confirmLabel: needsPartialConfirm ? 'Ja, træk lod nu' : 'Træk lod',
+      danger: !needsPartialConfirm,
+    });
+    if (!ok) return;
+
+    setCampaignDrawLoading(true);
+    setCampaignDrawError('');
+    try {
+      const result = await adminDrawGrowthCampaign({ allowPartial: needsPartialConfirm });
+      if (!result?.ok) {
+        if (result?.error === 'campaign_not_full') {
+          setCampaignDrawError(`Kampagnen er ikke fuld (${result.spots_taken}/${result.spots_total}).`);
+        } else if (result?.error === 'no_entries') {
+          setCampaignDrawError('Ingen deltagere at trække lod blandt.');
+        } else {
+          setCampaignDrawError('Lodtrækning mislykkedes.');
+        }
+        return;
+      }
+      await fetchCampaignEntryCount();
+      await ask({
+        message: `Vinder: ${result.winner_name || 'Spiller'} (lod #${result.winner_entry_number}). Vinderen får besked i appen.`,
+        notice: true,
+      });
+    } catch (err) {
+      setCampaignDrawError(err?.message || 'Kunne ikke trække lod');
+    } finally {
+      setCampaignDrawLoading(false);
     }
   };
 
@@ -1407,29 +1457,60 @@ export function AdminTab({ initialSubTab = null }) {
           </div>
 
           <div className="pm-ui-card" style={{ marginBottom: 16, padding: '16px 18px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                 <div className="pm-admin-section-title" style={{ marginBottom: 4 }}>Første 200 — lodtrækning</div>
                 <div style={{ fontSize: 13, color: theme.textMid }}>
-                  {campaignExportCount != null
-                    ? `${campaignExportCount} deltagere registreret`
-                    : 'Hent deltagerliste til lodtrækning'}
+                  {campaignDrawStatus
+                    ? `${formatCampaignSpotsLabel(campaignDrawStatus)} deltagere`
+                    : campaignExportCount != null
+                      ? `${campaignExportCount} deltagere registreret`
+                      : 'Hent deltagerliste til lodtrækning'}
                 </div>
+                {campaignDrawStatus?.draw_completed ? (
+                  <div style={{ fontSize: 13, color: theme.green, marginTop: 8, fontWeight: 600 }}>
+                    Vinder: {campaignDrawStatus.winner_name || 'Spiller'} (lod #{campaignDrawStatus.winner_entry_number})
+                    {campaignDrawStatus.drawn_by_name ? ` · trukket af ${campaignDrawStatus.drawn_by_name}` : ''}
+                  </div>
+                ) : campaignDrawStatus?.can_draw && !campaignDrawStatus?.is_full ? (
+                  <div style={{ fontSize: 12, color: theme.warm, marginTop: 6 }}>
+                    Kampagnen er ikke fuld endnu — du kan stadig trække lod med bekræftelse.
+                  </div>
+                ) : null}
                 {campaignExportError ? (
                   <div className="pm-admin-error-msg" style={{ marginTop: 8 }}>{campaignExportError}</div>
                 ) : null}
+                {campaignDrawError ? (
+                  <div className="pm-admin-error-msg" style={{ marginTop: 8 }}>{campaignDrawError}</div>
+                ) : null}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void fetchCampaignEntryCount();
-                  void exportCampaignEntries();
-                }}
-                style={btn(false)}
-                disabled={campaignExportLoading}
-              >
-                {campaignExportLoading ? 'Eksporterer…' : 'Download CSV'}
-              </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => void exportCampaignEntries()}
+                  style={btn(false)}
+                  disabled={campaignExportLoading || campaignDrawLoading}
+                >
+                  {campaignExportLoading ? 'Eksporterer…' : 'Download CSV'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void drawCampaignWinner()}
+                  style={btn(true)}
+                  disabled={
+                    campaignDrawLoading
+                    || campaignExportLoading
+                    || campaignDrawStatus?.draw_completed
+                    || campaignDrawStatus?.can_draw === false
+                  }
+                >
+                  {campaignDrawLoading
+                    ? 'Trækker lod…'
+                    : campaignDrawStatus?.draw_completed
+                      ? 'Lodtrækning gennemført'
+                      : 'Træk lod'}
+                </button>
+              </div>
             </div>
           </div>
 

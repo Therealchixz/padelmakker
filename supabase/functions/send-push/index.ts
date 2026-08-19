@@ -265,6 +265,15 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     urgency: "low",
     cooldownSeconds: 0,
   },
+  growth_campaign_winner: {
+    channel: "system",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 0,
+    renotify: true,
+  },
   system_flag: {
     channel: "admin",
     level: "critical",

@@ -24,6 +24,7 @@ export const ADMIN_AUDIT_ACTION_LABELS = {
   correct_match_result: '2v2-resultat rettet',
   correct_americano_tournament: 'Americano rettet',
   correct_league_match: 'Liga-kamp rettet',
+  growth_campaign_draw: 'Første 200 lodtrækning',
 };
 
 export function adminAuditActionLabel(action) {

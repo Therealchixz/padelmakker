@@ -19,7 +19,26 @@ export const FIRST_200_SLUG = 'first_200';
  *   enrolled?: boolean;
  *   entry_number?: number | null;
  *   campaign_full?: boolean;
+ *   draw_completed?: boolean;
+ *   is_winner?: boolean;
  * }} GrowthCampaignStatus */
+
+/** @typedef {{
+ *   found?: boolean;
+ *   slug?: string;
+ *   title?: string;
+ *   spots_taken?: number;
+ *   spots_total?: number;
+ *   status?: string;
+ *   can_draw?: boolean;
+ *   is_full?: boolean;
+ *   draw_completed?: boolean;
+ *   draw_at?: string | null;
+ *   winner_user_id?: string | null;
+ *   winner_entry_number?: number | null;
+ *   winner_name?: string | null;
+ *   drawn_by_name?: string | null;
+ * }} GrowthCampaignDrawStatus */
 
 function isMissingRpcError(error) {
   const msg = String(error?.message || '').toLowerCase();
@@ -109,5 +128,37 @@ export async function tryAutoEnrollGrowthCampaign(slug = FIRST_200_SLUG) {
     console.warn('tryAutoEnrollGrowthCampaign:', e);
     return null;
   }
+}
+
+/** @returns {Promise<GrowthCampaignDrawStatus | null>} */
+export async function fetchAdminGrowthCampaignDrawStatus(slug = FIRST_200_SLUG) {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase.rpc('admin_get_growth_campaign_draw_status', { p_slug: slug });
+    if (error) {
+      if (!isMissingRpcError(error)) console.warn('admin_get_growth_campaign_draw_status:', error.message || error);
+      return null;
+    }
+    if (!data || typeof data !== 'object' || data.found === false) return null;
+    return /** @type {GrowthCampaignDrawStatus} */ (data);
+  } catch (e) {
+    console.warn('admin_get_growth_campaign_draw_status:', e);
+    return null;
+  }
+}
+
+/**
+ * @param {{ slug?: string; allowPartial?: boolean }} [options]
+ * @returns {Promise<Record<string, unknown> | null>}
+ */
+export async function adminDrawGrowthCampaign(options = {}) {
+  const slug = options.slug ?? FIRST_200_SLUG;
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase.rpc('admin_draw_growth_campaign', {
+    p_slug: slug,
+    p_allow_partial: Boolean(options.allowPartial),
+  });
+  if (error) throw error;
+  return data && typeof data === 'object' ? data : null;
 }
 
