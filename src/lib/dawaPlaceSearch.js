@@ -120,6 +120,36 @@ export function isValidCityPlace(place) {
   return city.length > 0 && Number.isFinite(Number(place.latitude)) && Number.isFinite(Number(place.longitude));
 }
 
+/** Bynavn gemt uden koordinater — km kan ikke vises før DAWA-valg. */
+export function hasIncompleteCityProfile(profile) {
+  if (!profile) return false;
+  if (isValidCityPlace(profile)) return false;
+  return String(profile.city || '').trim().length > 0;
+}
+
+/**
+ * Slå eksisterende bynavn op i DAWA (backfill når kun city-tekst er gemt).
+ * Foretrækker præcis bynavn-match og bebyggelse frem for postnummer.
+ */
+export async function resolveCityPlaceFromName(name, { fetchImpl = fetch } = {}) {
+  const q = normalizeQuery(name);
+  if (q.length < 2) return null;
+
+  const places = await searchDawaPlaces(q, { limit: 12, fetchImpl });
+  if (!places.length) return null;
+
+  const qLower = q.toLowerCase();
+  const exactCity = places.filter((p) => p.city.toLowerCase() === qLower);
+  if (exactCity.length) {
+    return exactCity.find((p) => p.source === 'stednavn') || exactCity[0];
+  }
+
+  const labelStarts = places.filter((p) => p.label.toLowerCase().startsWith(qLower));
+  if (labelStarts.length) return labelStarts[0];
+
+  return places[0];
+}
+
 /** Byg place-objekt fra profil-række (onboarding/profil). */
 export function cityPlaceFromProfile(profile) {
   if (!profile) return null;

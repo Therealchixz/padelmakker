@@ -22,7 +22,7 @@ import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { CityPlaceSearchField } from '../components/CityPlaceSearchField';
-import { isValidCityPlace } from '../lib/dawaPlaceSearch';
+import { isValidCityPlace, hasIncompleteCityProfile, resolveCityPlaceFromName } from '../lib/dawaPlaceSearch';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { PillTabs } from '../components/PillTabs';
@@ -288,6 +288,30 @@ export function ProfilTab({ user, showToast, setTab }) {
     }
   };
 
+  const handleConfirmStoredCity = async () => {
+    const name = String(user?.city || '').trim();
+    if (!name || isValidCityPlace(user)) return;
+    setQuickCitySaving(true);
+    try {
+      const resolved = await resolveCityPlaceFromName(name);
+      if (!resolved) {
+        showToast('Kunne ikke finde byen automatisk — vælg fra listen.', 'error');
+        return;
+      }
+      await updateProfile({
+        city: resolved.city,
+        latitude: resolved.latitude,
+        longitude: resolved.longitude,
+      });
+      setQuickCityPlace(resolved);
+      showToast('By bekræftet — afstande vises nu på Makkere', 'success');
+    } catch (e) {
+      showToast(e?.message || 'Kunne ikke gemme by', 'error');
+    } finally {
+      setQuickCitySaving(false);
+    }
+  };
+
   const handleQuickCitySave = async () => {
     if (!isValidCityPlace(quickCityPlace)) {
       showToast('Vælg din by fra listen', 'error');
@@ -531,6 +555,35 @@ export function ProfilTab({ user, showToast, setTab }) {
       showToast('Vælg din region — by er valgfri.');
       return;
     }
+    const cityText = String(form.city || '').trim();
+    let cityFields = { city: null, latitude: null, longitude: null };
+    if (cityText) {
+      if (isValidCityPlace(form)) {
+        cityFields = { city: cityText, latitude: form.latitude, longitude: form.longitude };
+      } else {
+        setSaving(true);
+        try {
+          const resolved = await resolveCityPlaceFromName(cityText);
+          if (!resolved) {
+            showToast('Vælg din by fra listen — vi skal bruge præcis placering for afstand.', 'error');
+            return;
+          }
+          cityFields = {
+            city: resolved.city,
+            latitude: resolved.latitude,
+            longitude: resolved.longitude,
+          };
+        } catch (e) {
+          showToast(e?.message || 'Kunne ikke slå by op', 'error');
+          return;
+        } finally {
+          setSaving(false);
+        }
+      }
+    } else {
+      showToast('Vælg din by fra listen.', 'error');
+      return;
+    }
     setSaving(true);
     let avatarValue = form.avatar;
     if (pendingAvatarFile) {
@@ -548,9 +601,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     try {
       await updateProfile({
         area: region,
-        city: isValidCityPlace(form) ? form.city.trim() : (form.city.trim() || null),
-        latitude: isValidCityPlace(form) ? form.latitude : null,
-        longitude: isValidCityPlace(form) ? form.longitude : null,
+        ...cityFields,
         level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
@@ -850,11 +901,20 @@ export function ProfilTab({ user, showToast, setTab }) {
           {!editing && isValidProfileRegion(user.area) && !isValidCityPlace(user) ? (
             <div style={profilePromptCardStyle}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
-                Tilføj din by
+                {hasIncompleteCityProfile(user) ? 'Bekræft din by' : 'Tilføj din by'}
               </div>
               <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.55, marginBottom: '10px' }}>
-                Vi bruger din by til at vise ca. afstand til andre makkere (fx &quot;ca. 12 km&quot;) og til at tippe dig om åbne kampe i nærheden.
-                Vi følger dig ikke med GPS — du vælger bare hvor du typisk spiller fra.
+                {hasIncompleteCityProfile(user) ? (
+                  <>
+                    Du har angivet &quot;{user.city}&quot;, men vi mangler præcis placering for at vise ca. afstand til andre makkere.
+                    Vælg byen fra listen — eller bekræft automatisk.
+                  </>
+                ) : (
+                  <>
+                    Vi bruger din by til at vise ca. afstand til andre makkere (fx &quot;ca. 12 km&quot;) og til at tippe dig om åbne kampe i nærheden.
+                    Vi følger dig ikke med GPS — du vælger bare hvor du typisk spiller fra.
+                  </>
+                )}
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div style={{ flex: '1 1 180px' }}>
@@ -862,10 +922,21 @@ export function ProfilTab({ user, showToast, setTab }) {
                     id="profil-quick-city"
                     value={quickCityPlace}
                     onChange={setQuickCityPlace}
+                    seedQuery={user?.city || ''}
                     inputStyle={{ ...inputStyle, marginBottom: 0 }}
                     placeholder="Søg efter by eller postnummer…"
                   />
                 </div>
+                {hasIncompleteCityProfile(user) ? (
+                  <button
+                    type="button"
+                    onClick={handleConfirmStoredCity}
+                    disabled={quickCitySaving}
+                    style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', opacity: quickCitySaving ? 0.6 : 1 }}
+                  >
+                    {quickCitySaving ? 'Gemmer…' : `Bekræft ${user.city}`}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleQuickCitySave}
@@ -1450,6 +1521,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         <CityPlaceSearchField
           id="profil-city"
           required
+          seedQuery={form.city || ''}
           value={isValidCityPlace(form) ? {
             city: form.city,
             latitude: form.latitude,

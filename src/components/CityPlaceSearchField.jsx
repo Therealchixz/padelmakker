@@ -47,11 +47,15 @@ export function CityPlaceSearchField({
   error = '',
   hint = '',
   disabled = false,
+  seedQuery = '',
 }) {
   const listId = useId();
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
-  const [query, setQuery] = useState(() => (isValidCityPlace(value) ? value.label || value.city : ''));
+  const [query, setQuery] = useState(() => {
+    if (isValidCityPlace(value)) return value.label || value.city;
+    return String(seedQuery || '').trim();
+  });
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,8 +64,10 @@ export function CityPlaceSearchField({
   useEffect(() => {
     if (isValidCityPlace(value)) {
       setQuery(value.label || value.city);
+    } else if (String(seedQuery || '').trim()) {
+      setQuery(String(seedQuery).trim());
     }
-  }, [value?.city, value?.latitude, value?.longitude, value?.label]);
+  }, [value?.city, value?.latitude, value?.longitude, value?.label, seedQuery]);
 
   useEffect(() => {
     if (!open) return undefined;
