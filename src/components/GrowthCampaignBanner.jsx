@@ -185,37 +185,32 @@ export function GrowthCampaignBanner() {
 }
 
 export function MonthMasterTeaser({ compact = false }) {
-  const style = compact
-    ? {
-      margin: '0 18px 10px',
-      padding: '10px 12px',
-      borderRadius: 10,
-      background: theme.surfaceAlt,
-      border: `1px solid ${theme.border}`,
-      fontSize: 12,
-      color: theme.textMid,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      fontFamily: font,
-    }
-    : {
-      margin: '0 18px 14px',
-      padding: '12px 14px',
-      borderRadius: 12,
-      background: `linear-gradient(135deg, ${theme.surfaceAlt}, ${theme.surface})`,
-      border: `1px solid ${theme.border}`,
-      fontSize: 13,
-      lineHeight: 1.5,
-      color: theme.textMid,
-      fontFamily: font,
-    };
-
   return (
-    <div style={style}>
-      <Trophy size={compact ? 16 : 18} color={theme.amber} style={{ flexShrink: 0 }} aria-hidden />
-      <span>
-        <strong style={{ color: theme.text }}>Månedens mester</strong> — kommer snart, når der er flere aktive spillere.
+    <div
+      style={{
+        margin: compact ? '0 18px 10px' : '0 18px 12px',
+        padding: compact ? '10px 12px' : '12px 14px',
+        borderRadius: compact ? 10 : 12,
+        background: compact ? theme.surfaceAlt : `linear-gradient(135deg, ${theme.surfaceAlt}, ${theme.surface})`,
+        border: `1px solid ${theme.border}`,
+        fontSize: compact ? 12 : 13,
+        lineHeight: 1.5,
+        color: theme.textMid,
+        fontFamily: font,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+      }}
+    >
+      <Trophy
+        size={compact ? 16 : 18}
+        color={theme.amber}
+        style={{ flexShrink: 0, marginTop: 2 }}
+        aria-hidden
+      />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <strong style={{ color: theme.text }}>Månedens mester</strong>
+        {' '}— kommer snart, når der er flere aktive spillere.
       </span>
     </div>
   );
