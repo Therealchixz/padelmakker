@@ -60,6 +60,8 @@ import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, Se
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
+import { absoluteUrl } from '../lib/siteMeta';
+import { buildPublicMatchPath } from '../lib/publicShareRoutes';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { ConfirmResultModal } from './ConfirmResultModal';
@@ -3586,7 +3588,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                 </div>
                 <div className="pm-state-title" style={{ fontSize: '16px', marginBottom: '8px' }}>Ingen åbne kampe i dit område</div>
                 <div className="pm-state-copy" style={{ marginBottom: '20px', maxWidth: 280, margin: '0 auto 20px' }}>
-                  Der er ikke oprettet nogen kampe, der matcher dine filtre lige nu. Opret den første – eller udvid din søgning.
+                  Opret den første kamp i dit område — og del linket i Messenger, når du mangler spillere.
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 8px' }}>
                   <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), justifyContent: 'center', fontSize: '14px', padding: '12px' }}>
@@ -3723,9 +3725,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         const datePart = m.date ? formatMatchDateDa(m.date) : '';
         const timePart = matchTimeLabel(m);
         const timeStr = timePart && timePart !== '—' ? `Kl. ${timePart}` : '';
-        const matchUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}${buildKampe2v2DetailPath(m.id)}`
-          : buildKampe2v2DetailPath(m.id);
+        const matchUrl = absoluteUrl(buildPublicMatchPath(m.id));
         const handleCopy = () => {
           if (!matchUrl) return;
           navigator.clipboard?.writeText(matchUrl).then(() => {

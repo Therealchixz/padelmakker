@@ -1500,8 +1500,11 @@ export function HomeTab({ user, setTab, showToast }) {
                       <button type="button" onClick={() => setTab("makkere")} style={activityActionBtnStyle(theme.accent)}>
                         Find makker
                       </button>
-                      <button type="button" onClick={() => setTab("kampe")} style={activityActionBtnStyle(theme.textMid)}>
+                      <button type="button" onClick={() => setTab("kampe", { search: "create=1" })} style={activityActionBtnStyle(theme.textMid)}>
                         Opret kamp
+                      </button>
+                      <button type="button" onClick={() => setTab("kampe", { search: "format=americano&create=1" })} style={activityActionBtnStyle(theme.textMid)}>
+                        Opret turnering
                       </button>
                     </div>
                   </>

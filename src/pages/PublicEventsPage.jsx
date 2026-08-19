@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { CalendarDays } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { formatMatchDateDa, formatTimeSlotDa } from '../lib/matchDisplayUtils';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
+import { buildPublicTournamentPath } from '../lib/publicShareRoutes';
+import { authReturnSignupUrl } from '../lib/authReturnPath';
 
 function statusLabel(status) {
   if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: theme.warningBorder, color: theme.amberText };
@@ -204,6 +206,10 @@ export function PublicEventsPage() {
                     padding: '18px 18px 16px',
                   }}
                 >
+                  <Link
+                    to={buildPublicTournamentPath(row.id)}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                  >
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', marginBottom: '8px' }}>
                     <span
                       style={{
@@ -234,6 +240,16 @@ export function PublicEventsPage() {
                     <p style={{ fontSize: '13px', color: theme.textLight, margin: '10px 0 0', lineHeight: 1.5 }}>
                       {desc.length > 220 ? `${desc.slice(0, 217)}…` : desc}
                     </p>
+                  )}
+                  </Link>
+                  {!user && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(authReturnSignupUrl(buildPublicTournamentPath(row.id)))}
+                      style={{ ...btn(true), marginTop: '12px', width: '100%', fontSize: '13px', padding: '10px 16px' }}
+                    >
+                      Opret profil og tilmeld dig
+                    </button>
                   )}
                 </li>
               );

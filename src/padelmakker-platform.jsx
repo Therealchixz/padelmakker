@@ -11,6 +11,11 @@ import {
 import { font, theme, btn } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
+import {
+  readAuthReturnFromSearch,
+  consumeAuthReturnPath,
+  mapAuthReturnToDashboardPath,
+} from "./lib/authReturnPath";
 
 const ResetPasswordPageLazy = lazy(() =>
   import("./pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
@@ -32,6 +37,8 @@ const OmPageLazy = lazy(() => import("./pages/OmPage").then((m) => ({ default: m
 const FaqPageLazy = lazy(() => import("./pages/FaqPage").then((m) => ({ default: m.FaqPage })));
 const EloExplainerPageLazy = lazy(() => import("./pages/EloExplainerPage").then((m) => ({ default: m.EloExplainerPage })));
 const PublicEventsPageLazy = lazy(() => import("./pages/PublicEventsPage").then((m) => ({ default: m.PublicEventsPage })));
+const PublicMatchPageLazy = lazy(() => import("./pages/PublicMatchPage").then((m) => ({ default: m.PublicMatchPage })));
+const PublicTournamentPageLazy = lazy(() => import("./pages/PublicTournamentPage").then((m) => ({ default: m.PublicTournamentPage })));
 const DashboardPageLazy = lazy(() => import("./dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 const HelpContactPageLazy = lazy(() => import("./pages/HelpContactPage").then((m) => ({ default: m.HelpContactPage })));
 const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) => ({ default: m.InstallAppPage })));
@@ -68,6 +75,17 @@ export default function PadelMakker() {
   const navigate = useNavigate();
   const location = useLocation();
   const showPublicLanding = new URLSearchParams(location.search).get("forside") === "1";
+
+  useEffect(() => {
+    readAuthReturnFromSearch(location.search);
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!canUseApp || requiresEmailVerification || requiresPhoneVerification) return;
+    const returnPath = consumeAuthReturnPath();
+    if (!returnPath) return;
+    navigate(mapAuthReturnToDashboardPath(returnPath), { replace: true });
+  }, [canUseApp, requiresEmailVerification, requiresPhoneVerification, navigate]);
   const showToast = useCallback((msg, type) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     const message = String(msg || '');
@@ -201,6 +219,8 @@ export default function PadelMakker() {
             <Route path="/elo" element={<EloExplainerPageLazy />} />
             <Route path="/kampagne/forste-200" element={<CampaignRulesPageLazy />} />
             <Route path="/events" element={<PublicEventsPageLazy />} />
+            <Route path="/kamp/:matchId" element={<PublicMatchPageLazy />} />
+            <Route path="/turnering/:tournamentId" element={<PublicTournamentPageLazy />} />
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />
             <Route

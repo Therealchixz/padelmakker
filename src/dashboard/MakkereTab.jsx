@@ -885,6 +885,15 @@ export function MakkereTab({ user, showToast }) {
                 Justér makker-filter
               </button>
             )}
+            {activeFilterCount === 0 && !makkerFilterOn && (
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/kampe?create=1')}
+                style={{ ...btn(false), marginTop: '10px', fontSize: '13px' }}
+              >
+                Opret kamp og del link
+              </button>
+            )}
           </div>
         )}
       </div>

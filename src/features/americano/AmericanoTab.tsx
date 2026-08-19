@@ -46,6 +46,9 @@ import {
   buildKampeListPath,
   KAMPE_FORMAT_AMERICANO,
 } from '../../lib/kampeDetailRoutes'
+import { absoluteUrl } from '../../lib/siteMeta'
+import { buildPublicTournamentPath } from '../../lib/publicShareRoutes'
+import { shareAmericanoTournament, shareResultToastMessage } from '../../lib/shareUtils'
 
 const font = 'var(--pm-font)'
 
@@ -1652,15 +1655,18 @@ export function AmericanoTab({
         const formatLabel = t.format === 'mexicano' ? 'MEXICANO' : 'AMERICANO'
         const datePart = t.tournament_date ? formatMatchDateDa(t.tournament_date) : ''
         const timeStr = t.time_slot ? `Kl. ${formatTimeSlotDa(t.time_slot)}` : ''
-        const tournamentUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}${buildKampeAmericanoDetailPath(t.id)}`
-          : ''
+        const tournamentUrl = absoluteUrl(buildPublicTournamentPath(t.id))
         const handleCopy = () => {
           if (!tournamentUrl) return
           navigator.clipboard?.writeText(tournamentUrl).then(() => {
             setReceiptUrlCopied(true)
             setTimeout(() => setReceiptUrlCopied(false), 2000)
           }).catch(() => showToast('Kopiering mislykkedes'))
+        }
+        const handleShare = async () => {
+          const result = await shareAmericanoTournament({ tournament: t })
+          const msg = shareResultToastMessage(result)
+          if (msg) showToast(msg, result.ok ? 'success' : 'error')
         }
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: theme.bg, display: 'flex', flexDirection: 'column', fontFamily: font }}>
@@ -1748,13 +1754,7 @@ export function AmericanoTab({
               <div style={{ padding: '0 18px', display: 'flex', flexDirection: 'column' as const, gap: 9 }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (typeof navigator !== 'undefined' && navigator.share) {
-                      void navigator.share({ title: t.name, url: tournamentUrl }).catch(() => {})
-                    } else {
-                      handleCopy()
-                    }
-                  }}
+                  onClick={() => { void handleShare() }}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
                 >
                   <Share2 size={15} />

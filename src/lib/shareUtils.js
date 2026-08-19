@@ -1,6 +1,6 @@
 import { absoluteUrl } from './siteMeta';
 import { formatMatchDateDa, matchTimeLabel } from './matchDisplayUtils';
-import { buildKampe2v2DetailPath } from './kampeDetailRoutes.js';
+import { buildPublicMatchPath, buildPublicTournamentPath } from './publicShareRoutes.js';
 
 /**
  * @typedef {{ ok: boolean; method: 'share' | 'clipboard' | 'none'; error?: string }} ShareResult
@@ -75,7 +75,7 @@ export async function sharePadelMatch({ match, hostName }) {
   const when = [dateTxt, timeTxt].filter(Boolean).join(' kl. ');
   const host = hostName?.trim() || 'En spiller';
 
-  const url = absoluteUrl(buildKampe2v2DetailPath(String(match.id)));
+  const url = absoluteUrl(buildPublicMatchPath(String(match.id)));
   const text = [
     `${host} inviterer dig til en padel-kamp på ${court}${when ? ` (${when})` : ''}.`,
     'Log ind eller opret gratis profil på PadelMakker for at se kampen og tilmelde dig:',
@@ -83,6 +83,35 @@ export async function sharePadelMatch({ match, hostName }) {
 
   return shareViaWebOrClipboard({
     title: 'Padel-kamp på PadelMakker',
+    text,
+    url,
+  });
+}
+
+/**
+ * @param {{ tournament: { id: string, name?: string, tournament_date?: string, time_slot?: string, court_name?: string }, hostName?: string }} options
+ * @returns {Promise<ShareResult>}
+ */
+export async function shareAmericanoTournament({ tournament, hostName }) {
+  if (!tournament?.id) {
+    return { ok: false, method: 'none', error: 'Turnering mangler' };
+  }
+
+  const dateTxt = tournament.tournament_date ? formatMatchDateDa(tournament.tournament_date) : '';
+  const timeTxt = tournament.time_slot ? String(tournament.time_slot).trim() : '';
+  const court = tournament.court_name || 'padel';
+  const when = [dateTxt, timeTxt ? `kl. ${timeTxt}` : ''].filter(Boolean).join(' ');
+  const host = hostName?.trim() || 'En spiller';
+  const title = tournament.name?.trim() || 'Americano/Mexicano';
+
+  const url = absoluteUrl(buildPublicTournamentPath(String(tournament.id)));
+  const text = [
+    `${host} inviterer dig til "${title}"${when ? ` (${when})` : ''} på ${court}.`,
+    'Opret gratis profil på PadelMakker for at tilmelde dig:',
+  ].join('\n');
+
+  return shareViaWebOrClipboard({
+    title: `${title} · PadelMakker`,
     text,
     url,
   });

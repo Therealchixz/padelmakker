@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
@@ -8,10 +8,16 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
+import { readAuthReturnFromSearch, authReturnSignupUrl } from '../lib/authReturnPath';
 
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const signupUrl = useMemo(() => authReturnSignupUrl(new URLSearchParams(location.search).get('next')), [location.search]);
+  useEffect(() => {
+    readAuthReturnFromSearch(location.search);
+  }, [location.search]);
   const turnstileSiteKey = getTurnstileSiteKey();
   const turnstileEnabled = isTurnstileEnabled();
   const [email, setEmail]         = useState("");
@@ -143,7 +149,7 @@ export function LoginPage() {
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
         <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12.5px", color: theme.textMid }}>
           Ny her?{" "}
-          <Link to="/opret" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+          <Link to={signupUrl} style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
             Opret en profil
           </Link>
         </p>
