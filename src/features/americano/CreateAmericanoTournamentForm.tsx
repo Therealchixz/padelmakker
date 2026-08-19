@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 import {
   getCreateFormSchedulePreview,
@@ -132,6 +132,8 @@ export function CreateAmericanoTournamentForm({
   const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
   const [description, setDescription] = useState('')
   const [step1Error, setStep1Error] = useState<string | null>(null)
+  const nameFieldRef = useRef<HTMLDivElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Step 2 state
   const [pricePerPerson, setPricePerPerson] = useState(0)
@@ -171,6 +173,15 @@ export function CreateAmericanoTournamentForm({
   useEffect(() => {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
+
+  useEffect(() => {
+    if (!step1Error) return
+    const id = window.setTimeout(() => {
+      nameFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      nameInputRef.current?.focus({ preventScroll: true })
+    }, 50)
+    return () => window.clearTimeout(id)
+  }, [step1Error])
 
   const syncPrice = (raw: string) => {
     setPriceInput(raw)
@@ -292,16 +303,30 @@ export function CreateAmericanoTournamentForm({
             </div>
           </div>
 
-          <div className="pm-field">
-            <label>Turneringens navn</label>
+          <div className="pm-field" ref={nameFieldRef}>
+            <label htmlFor="americano-create-name">Turneringens navn</label>
             <input
+              id="americano-create-name"
+              ref={nameInputRef}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (step1Error) setStep1Error(null)
+              }}
               onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
               placeholder={`F.eks. Fredags ${formatLabel}`}
-              style={inputStyle}
+              style={{
+                ...inputStyle,
+                ...(step1Error ? { borderColor: theme.red, boxShadow: `0 0 0 1px ${theme.red}44` } : {}),
+              }}
+              aria-invalid={step1Error ? true : undefined}
+              aria-describedby={step1Error ? 'americano-create-name-error' : undefined}
             />
-            {step1Error && <div style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>{step1Error}</div>}
+            {step1Error && (
+              <div id="americano-create-name-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
+                {step1Error}
+              </div>
+            )}
           </div>
 
           <div className="pm-field">
