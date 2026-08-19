@@ -38,6 +38,7 @@ import {
   toggleFavoriteForUser,
   writeLocalFavoritesSet,
 } from '../lib/userFavorites';
+import { formatProfileLocationLine } from '../lib/profileLocationLabel.js';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
@@ -191,7 +192,10 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
           </div>
           <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
             <MapPin size={10} />
-            {[p.city || (p.area ? p.area.replace('Region ', '') : null), p.games_played ? `${p.games_played} kampe` : null].filter(Boolean).join(' · ')}
+            {[
+              formatProfileLocationLine(viewer, p),
+              p.games_played ? `${p.games_played} kampe` : null,
+            ].filter(Boolean).join(' · ')}
           </div>
         </div>
       </div>
@@ -839,7 +843,11 @@ export function MakkereTab({ user, showToast }) {
                   </div>
                   <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <MapPin size={10} />
-                    {[p.city || p.area, `${displayGames(p)} kampe`, p.court_side].filter(Boolean).join(' · ')}
+                    {[
+                      formatProfileLocationLine(user, p),
+                      `${displayGames(p)} kampe`,
+                      p.court_side,
+                    ].filter(Boolean).join(' · ')}
                   </div>
                   {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>

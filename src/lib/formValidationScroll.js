@@ -54,6 +54,7 @@ export const ONBOARDING_MISSING_FIELD_IDS = {
   spillestil: 'onb-style',
   'side på banen': 'onb-court-side',
   region: 'onb-region',
+  by: 'onb-city',
   'accept af vilkår og privatlivspolitik': 'onb-terms',
 };
 
@@ -70,6 +71,7 @@ export function resolveOnboardingFieldIdFromErrorMessage(message) {
   if (msg.includes('robot')) return 'onb-captcha';
   if (msg.includes('telefonnummer')) return 'onb-phone';
   if (msg.includes('region')) return 'onb-region';
+  if (msg.includes('by')) return 'onb-city';
   if (msg.includes('adgangskoderne er ikke ens') || msg.includes('matcher ikke')) return 'onb-password-confirm';
   if (msg.includes('adgangskode')) return 'onb-password';
   if (msg.includes('gentag din e-mail') || msg.includes('bekræft email')) return 'onb-email-confirm';

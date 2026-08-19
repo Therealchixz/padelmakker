@@ -34,5 +34,6 @@ test('fieldValidationMessage returns message only for matching field', () => {
 test('ONBOARDING_MISSING_FIELD_IDS covers step requirements', () => {
   assert.equal(ONBOARDING_MISSING_FIELD_IDS.niveau, 'onb-level-section');
   assert.equal(ONBOARDING_MISSING_FIELD_IDS.region, 'onb-region');
+  assert.equal(ONBOARDING_MISSING_FIELD_IDS.by, 'onb-city');
   assert.equal(ONBOARDING_MISSING_FIELD_IDS['accept af vilkår og privatlivspolitik'], 'onb-terms');
 });

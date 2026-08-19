@@ -159,6 +159,14 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     urgency: "low",
     cooldownSeconds: 7200,
   },
+  open_matches_weekly: {
+    channel: "opdagelse",
+    level: "normal",
+    sendPush: true,
+    silent: true,
+    urgency: "low",
+    cooldownSeconds: 604800,
+  },
   team_invite: {
     channel: "liga",
     level: "critical",

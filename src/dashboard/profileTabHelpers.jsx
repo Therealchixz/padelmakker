@@ -16,6 +16,8 @@ export function profileFormState(p) {
     full_name: p.full_name || p.name || "",
     area: canonicalRegionForForm(p.area || p.region || ''),
     city: p.city != null ? String(p.city).trim() : '',
+    latitude: p.latitude != null ? Number(p.latitude) : null,
+    longitude: p.longitude != null ? Number(p.longitude) : null,
     levelNumeric: profilePlaytomicLevel(p),
     play_style: p.play_style || "Ved ikke endnu",
     court_side: p.court_side || "",

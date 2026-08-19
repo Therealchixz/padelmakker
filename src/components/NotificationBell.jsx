@@ -402,6 +402,12 @@ export function NotificationBell({ tourForceOpen = false }) {
       navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`);
       return;
     }
+    if (n?.type === 'open_matches_weekly') {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate('/dashboard/kampe');
+      return;
+    }
     const kampeTarget = notificationKampeTarget(n);
     if (!kampeTarget) {
       if (n?.type === 'elo_change') {
@@ -460,6 +466,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       case "americano_spot_open": return "\uD83D\uDD14";
       case "americano_cancelled": return "\u274C";
       case "match_watch_match": return "\uD83D\uDD0D";
+      case "open_matches_weekly": return "\uD83D\uDD0D";
       case "makker_suggestion": return "\uD83E\uDD1D";
       case "league_started": return "\uD83C\uDFBE";
       case "user_report": return "\uD83D\uDEA8";

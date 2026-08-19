@@ -13,20 +13,22 @@ const kampeTab = readFileSync(join(dir, '../../src/dashboard/KampeTab.jsx'), 'ut
 const dash = readFileSync(join(dir, '../../src/dashboard/DashboardPage.jsx'), 'utf8');
 const matchFilterPage = readFileSync(join(dir, '../../src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
 
-test('region påkrævet og by valgfri i onboarding og profil', () => {
+test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.match(profileUtils, /isValidProfileRegion/);
   assert.match(profileUtils, /city: metaCity \|\| null/);
   assert.doesNotMatch(profileUtils, /meta\.area \|\| meta\.region \|\| meta\.city/);
   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
-  assert.match(onboarding, /Region.*\*.*valgfri/s);
+  assert.match(onboarding, /missing\.push\("by"\)/);
+  assert.match(onboarding, /CityPlaceSearchField/);
   assert.match(onboarding, /Bekræft e-mail/);
   assert.match(onboarding, /Dit område/);
   assert.match(makkereTab, /loadError/);
-  assert.match(makkereTab, /pm-state-card--error/);
+  assert.match(makkereTab, /formatProfileLocationLine/);
   assert.doesNotMatch(onboarding, /seeking_match/);
   assert.doesNotMatch(onboarding, /intent_now/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);
   assert.match(profilTab, /Tilføj din by/);
+  assert.match(profilTab, /CityPlaceSearchField/);
   assert.match(profilTab, /handleQuickCitySave/);
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
 });

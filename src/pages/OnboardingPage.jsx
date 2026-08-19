@@ -40,6 +40,8 @@ import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
 import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
+import { CityPlaceSearchField } from '../components/CityPlaceSearchField';
+import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { ArrowRight, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
@@ -72,7 +74,7 @@ export function OnboardingPage() {
   const [err, setErr]             = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showFineTune, setShowFineTune] = useState(false);
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", latitude: null, longitude: null, cityLabel: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -215,6 +217,7 @@ export function OnboardingPage() {
 
     if (targetStep === 2) {
       if (!isValidProfileRegion(form.area)) missing.push("region");
+      if (!isValidCityPlace(form)) missing.push("by");
       // Tilgængelighed er valgfri ved onboarding — kan altid sættes/ændres på profilen
     }
 
@@ -371,8 +374,13 @@ export function OnboardingPage() {
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       if (!isValidProfileRegion(form.area)) {
-        setErr("Vælg din region — by er valgfri.");
-        scrollOnboardingValidationError("Vælg din region — by er valgfri.");
+        setErr("Vælg din region.");
+        scrollOnboardingValidationError("Vælg din region.");
+        return;
+      }
+      if (!isValidCityPlace(form)) {
+        setErr("Vælg din by fra listen — det hjælper andre med at finde dig.");
+        scrollOnboardingValidationError("Vælg din by fra listen — det hjælper andre med at finde dig.");
         return;
       }
       const levelNum = Number(form.levelNumeric);
@@ -383,7 +391,9 @@ export function OnboardingPage() {
         play_style: form.style,
         court_side: form.court_side || null,
         area: form.area,
-        city: form.city.trim() || null,
+        city: form.city.trim(),
+        latitude: Number(form.latitude),
+        longitude: Number(form.longitude),
         availability: form.availability,
         available_days: form.available_days,
         bio: sanitizeText(form.bio),
@@ -815,18 +825,35 @@ export function OnboardingPage() {
           ))}
         </div>
       </div>
-      <div style={fieldWrap}>
-        <label htmlFor="onb-city" style={obLabel}>
-          By <span style={{ color: theme.textLight, fontWeight: 400 }}>(valgfri)</span>
+      <div id="onb-city" style={fieldWrap}>
+        <label htmlFor="onb-city-input" style={obLabel}>
+          By <span style={{ color: theme.red }}>*</span>
         </label>
-        <input
-          id="onb-city"
-          value={form.city}
-          onChange={e => set("city", e.target.value)}
-          placeholder="F.eks. Aarhus, København, Aalborg..."
-          style={obInput}
+        <CityPlaceSearchField
+          id="onb-city-input"
+          required
+          value={isValidCityPlace(form) ? {
+            city: form.city,
+            latitude: form.latitude,
+            longitude: form.longitude,
+            label: form.cityLabel || form.city,
+          } : null}
+          onChange={(place) => {
+            if (!place) {
+              setForm((f) => ({ ...f, city: '', cityLabel: '', latitude: null, longitude: null }));
+              return;
+            }
+            setForm((f) => ({
+              ...f,
+              city: place.city,
+              cityLabel: place.label || place.city,
+              latitude: place.latitude,
+              longitude: place.longitude,
+            }));
+          }}
+          inputStyle={obInput}
+          hint="Skriv og vælg din by eller postnummer — fx Langholt eller 9220 Aalborg Øst."
         />
-        <div style={fieldHint}>Byen er valgfri og kan tilføjes under profil senere.</div>
       </div>
       <div style={fieldWrap}>
         <label style={obLabel}>Hvornår kan du spille? <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>

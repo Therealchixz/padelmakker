@@ -233,6 +233,9 @@ export function NotifikationerPage({ onBack }) {
     if (n?.type === 'makker_suggestion' && n?.entity_id) {
       navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`); return;
     }
+    if (n?.type === 'open_matches_weekly') {
+      navigate('/dashboard/kampe'); return;
+    }
     const kampeTarget = notificationKampeTarget(n);
     if (kampeTarget) {
       navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {

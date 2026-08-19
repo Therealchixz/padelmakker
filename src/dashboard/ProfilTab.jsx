@@ -21,6 +21,8 @@ import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
+import { CityPlaceSearchField } from '../components/CityPlaceSearchField';
+import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { PillTabs } from '../components/PillTabs';
@@ -235,7 +237,14 @@ export function ProfilTab({ user, showToast, setTab }) {
   const { ligaRelationStats, ligaRelationLoading } = useLigaPartnerOpponentStats(user?.id, !!user?.id);
 
   const [form, setForm] = useState(() => profileFormState(user));
-  const [quickCity, setQuickCity] = useState(() => user?.city || '');
+  const [quickCityPlace, setQuickCityPlace] = useState(() => (
+    isValidCityPlace(user) ? {
+      city: user.city,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      label: user.city,
+    } : null
+  ));
   const [quickCitySaving, setQuickCitySaving] = useState(false);
 
   useEffect(() => {
@@ -243,16 +252,34 @@ export function ProfilTab({ user, showToast, setTab }) {
   }, [user, editing]);
 
   useEffect(() => {
-    if (!editing) setQuickCity(user?.city || '');
-  }, [user?.city, editing]);
+    if (!editing) {
+      setQuickCityPlace(isValidCityPlace(user) ? {
+        city: user.city,
+        latitude: user.latitude,
+        longitude: user.longitude,
+        label: user.city,
+      } : null);
+    }
+  }, [user?.city, user?.latitude, user?.longitude, editing]);
 
   const handleQuickCitySave = async () => {
-    const trimmed = quickCity.trim();
-    if (trimmed === String(user?.city || '').trim()) return;
+    if (!isValidCityPlace(quickCityPlace)) {
+      showToast('Vælg din by fra listen', 'error');
+      return;
+    }
+    const sameCity = String(user?.city || '').trim() === String(quickCityPlace.city || '').trim();
+    const sameCoords =
+      Number(user?.latitude) === Number(quickCityPlace.latitude)
+      && Number(user?.longitude) === Number(quickCityPlace.longitude);
+    if (sameCity && sameCoords) return;
     setQuickCitySaving(true);
     try {
-      await updateProfile({ city: trimmed || null });
-      showToast(trimmed ? 'By gemt' : 'By fjernet', 'success');
+      await updateProfile({
+        city: quickCityPlace.city,
+        latitude: quickCityPlace.latitude,
+        longitude: quickCityPlace.longitude,
+      });
+      showToast('By gemt', 'success');
     } catch (e) {
       showToast(e?.message || 'Kunne ikke gemme by', 'error');
     } finally {
@@ -495,7 +522,9 @@ export function ProfilTab({ user, showToast, setTab }) {
     try {
       await updateProfile({
         area: region,
-        city: form.city.trim() || null,
+        city: isValidCityPlace(form) ? form.city.trim() : (form.city.trim() || null),
+        latitude: isValidCityPlace(form) ? form.latitude : null,
+        longitude: isValidCityPlace(form) ? form.longitude : null,
         level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
@@ -792,25 +821,28 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           ) : null}
 
-          {!editing && isValidProfileRegion(user.area) && !String(user.city || '').trim() ? (
+          {!editing && isValidProfileRegion(user.area) && !isValidCityPlace(user) ? (
             <div style={profilePromptCardStyle}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
-                Tilføj din by <span style={{ fontWeight: 500, color: theme.textLight }}>(valgfri)</span>
+                Tilføj din by
               </div>
               <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.45, marginBottom: '10px' }}>
-                {user.area} er en stor region. Med din by kan andre finde dig nemmere.
+                {user.area} er en stor region. Med din by kan andre finde dig nemmere og se ca. afstand.
               </p>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <input
-                  value={quickCity}
-                  onChange={(e) => setQuickCity(e.target.value)}
-                  placeholder="F.eks. Aalborg, Aarhus, Odense..."
-                  style={{ ...inputStyle, flex: '1 1 160px', marginBottom: 0 }}
-                />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div style={{ flex: '1 1 180px' }}>
+                  <CityPlaceSearchField
+                    id="profil-quick-city"
+                    value={quickCityPlace}
+                    onChange={setQuickCityPlace}
+                    inputStyle={{ ...inputStyle, marginBottom: 0 }}
+                    placeholder="Søg efter by eller postnummer…"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={handleQuickCitySave}
-                  disabled={quickCitySaving}
+                  disabled={quickCitySaving || !isValidCityPlace(quickCityPlace)}
                   style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', opacity: quickCitySaving ? 0.6 : 1 }}
                 >
                   {quickCitySaving ? 'Gemmer…' : 'Gem by'}
@@ -1364,13 +1396,30 @@ export function ProfilTab({ user, showToast, setTab }) {
           className="pm-pill-tabs--wrap"
           style={{ marginBottom: '14px' }}
         />
-        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-        <input
+        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ color: theme.red }}>*</span></label>
+        <CityPlaceSearchField
           id="profil-city"
-          value={form.city}
-          onChange={e => set("city", e.target.value)}
-          placeholder="F.eks. Aarhus, København, Aalborg..."
-          style={{ ...inputStyle, marginBottom: "14px" }}
+          required
+          value={isValidCityPlace(form) ? {
+            city: form.city,
+            latitude: form.latitude,
+            longitude: form.longitude,
+            label: form.city,
+          } : null}
+          onChange={(place) => {
+            if (!place) {
+              setForm((f) => ({ ...f, city: '', latitude: null, longitude: null }));
+              return;
+            }
+            setForm((f) => ({
+              ...f,
+              city: place.city,
+              latitude: place.latitude,
+              longitude: place.longitude,
+            }));
+          }}
+          inputStyle={{ ...inputStyle, marginBottom: '14px' }}
+          placeholder="Søg efter by eller postnummer…"
         />
 
         <div style={labelStyle}>Niveau</div>
