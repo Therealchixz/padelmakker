@@ -1,0 +1,5 @@
+-- Samme cast i create_play_intent.
+--
+-- Denne rettelse er efterfølgende overskrevet af migration 20260820171616_play_intent_pool_functions (som allerede indeholder castet),
+-- som indeholder den endelige version. Bevares kun for at holde
+-- migrationshistorikken i takt med det, der er kørt i produktion.

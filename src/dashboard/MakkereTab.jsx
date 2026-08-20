@@ -13,7 +13,7 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { supabase } from '../lib/supabase';
-import { getMatchSuggestions, matchReason } from '../lib/matchmakingUtils';
+import { getMatchSuggestionsWithMeta, matchReason } from '../lib/matchmakingUtils';
 import {
   getMatchmakingSignalMaps,
   getPendingInviteChecks,
@@ -471,7 +471,7 @@ export function MakkereTab({ user, showToast }) {
   );
 
   // Matchmaking-forslag (beregnes client-side paa allerede-hentede spillere)
-  const suggestions = useMemo(() => getMatchSuggestions(user, players, {
+  const suggestionResult = useMemo(() => getMatchSuggestionsWithMeta(user, players, {
     limit: 10,
     eloByUserId,
     gamesByUserId,
@@ -480,6 +480,7 @@ export function MakkereTab({ user, showToast }) {
     pastMatchesByUserId,
     favoriteIds: favorites,
   }), [user, players, eloByUserId, gamesByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
+  const suggestions = suggestionResult.suggestions;
 
   const activeSuggestions = useMemo(
     () => suggestions.filter((s) => !dismissedSugg.has(String(s?.profile?.id))),
@@ -666,6 +667,12 @@ export function MakkereTab({ user, showToast }) {
               </button>
             )}
           </div>
+
+          {suggestionResult.relaxed && visibleSuggestions.some(s => s.beyondPreferredRadius) && (
+            <p style={{ margin: '0 18px 10px', fontSize: 12.5, lineHeight: 1.45, color: theme.textMid }}>
+              Der er få spillere tæt på dig lige nu, så vi har udvidet søgningen. Afstanden står på hvert forslag.
+            </p>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {visibleSuggestions.map(s => (

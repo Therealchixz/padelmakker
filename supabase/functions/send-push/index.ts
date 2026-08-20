@@ -159,6 +159,32 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     urgency: "low",
     cooldownSeconds: 7200,
   },
+  /* Pulje-forslag kræver svar inden for en frist — derfor samme vægt som en invitation. */
+  match_proposal: {
+    channel: "invitation",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
+  match_proposal_confirmed: {
+    channel: "kampe",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+  },
+  match_proposal_declined: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: true,
+    urgency: "low",
+    cooldownSeconds: 300,
+  },
   open_matches_weekly: {
     channel: "opdagelse",
     level: "normal",

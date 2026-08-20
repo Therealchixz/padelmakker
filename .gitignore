@@ -17,3 +17,6 @@ tests/e2e/main.spec.ts
 tests/example.spec.ts
 
 .vercel
+
+# Supabase CLI scratch
+supabase/.temp/

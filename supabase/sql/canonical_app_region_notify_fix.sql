@@ -62,6 +62,19 @@ COMMENT ON FUNCTION public.canonical_app_region(text) IS
 REVOKE ALL ON FUNCTION public.canonical_app_region(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.canonical_app_region(text) TO authenticated;
 
+/** Niveau uden efterladt komma/nul: 3.0 → "3", 3.5 → "3.5". */
+CREATE OR REPLACE FUNCTION public.format_padel_level(p_level numeric)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path TO 'public'
+AS $function$
+  SELECT rtrim(rtrim(to_char(COALESCE(p_level, 0), 'FM9.9'), '0'), '.');
+$function$;
+
+REVOKE ALL ON FUNCTION public.format_padel_level(numeric) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.format_padel_level(numeric) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.notify_makker_watchers(p_subject_user_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -118,7 +131,10 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'error', 'Kun dig selv kan underrette makker-watchere');
   END IF;
 
-  v_subject_level := public.match_filter_prefs_level('{}'::jsonb, v_subject.level);
+  -- profiles.level er `real`. Uden ::numeric kan Postgres ikke slå funktionen
+  -- op, og hele funktionen faldt i EXCEPTION-blokken — derfor blev der aldrig
+  -- sendt en eneste makker-notifikation.
+  v_subject_level := public.match_filter_prefs_level('{}'::jsonb, v_subject.level::numeric);
   v_subject_name := COALESCE(NULLIF(trim(v_subject.full_name), ''), NULLIF(trim(v_subject.name), ''), 'En spiller');
   v_subject_region := public.canonical_app_region(v_subject.area);
   v_subject_days := CASE
@@ -131,7 +147,7 @@ BEGIN
   v_body := format(
     '%s søger makker · Niveau ~%s%s',
     v_subject_name,
-    trim(to_char(v_subject_level, 'FM9.9')),
+    public.format_padel_level(v_subject_level),
     CASE WHEN v_subject_region <> '' THEN ' · ' || v_subject_region ELSE '' END
   );
 
@@ -174,7 +190,7 @@ BEGIN
     SELECT b.level_min, b.level_max INTO v_filt_lo, v_filt_hi
     FROM public.makker_filter_level_bounds(
       COALESCE(v_row.prefs, '{}'::jsonb),
-      public.match_filter_prefs_level(COALESCE(v_row.prefs, '{}'::jsonb), v_row.level)
+      public.match_filter_prefs_level(COALESCE(v_row.prefs, '{}'::jsonb), v_row.level::numeric)
     ) b;
 
     IF v_subject_level < v_filt_lo OR v_subject_level > v_filt_hi THEN

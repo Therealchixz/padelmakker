@@ -35,11 +35,40 @@ const DEFAULTS = {
   /** Soft max når begge har koordinater — længere kun hvis begge er rejsevillige. */
   maxDistanceKm: 60,
   maxTravelWillingKm: 120,
+  /** Under dette antal forslag udvides søgningen frem for at vise en tom liste. */
+  minSuggestions: 3,
 };
+
+/**
+ * Trinvis opblødning. Første trin er det vi helst vil vise: lokalt og
+ * niveaunært. Er feltet for tyndt, udvides der frem for at efterlade brugeren
+ * med en tom skærm — resultater ud over første trin markeres
+ * `beyondPreferredRadius`, så UI kan skrive afstanden tydeligt.
+ */
+const RELAXATION_LADDER = [
+  { maxDistanceKm: 60, maxEloDiff: 260, requireTimeOverlap: true },
+  { maxDistanceKm: 120, maxEloDiff: 350, requireTimeOverlap: false },
+  { maxDistanceKm: 260, maxEloDiff: 500, requireTimeOverlap: false },
+  {
+    maxDistanceKm: Number.POSITIVE_INFINITY,
+    maxEloDiff: Number.POSITIVE_INFINITY,
+    requireTimeOverlap: false,
+  },
+];
 
 function clamp01(v) {
   if (!Number.isFinite(v)) return 0;
   return Math.max(0, Math.min(1, v));
+}
+
+/**
+ * Læs en valgfri øvre grænse. Infinity betyder "ingen grænse" og skal derfor
+ * slippe igennem — Number.isFinite() ville ellers sende den i fallback.
+ */
+function limitOrNull(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
 }
 
 function toNumber(value, fallback = 0) {
@@ -243,18 +272,20 @@ function geoScore(myProfile, theirProfile) {
   return 0.1;
 }
 
-/** 0 = tæt, 1 = medium, 2 = samme region (uden km), 3 = fjern. Bruges til sortering. */
+/** Lavere = tættere på. Bruges til sortering, så lokale altid ligger øverst. */
 function distanceBand(myProfile, candidate) {
   const km = distanceKmBetweenProfiles(myProfile, candidate);
   if (km != null) {
     if (km <= 30) return 0;
     if (km <= 60) return 1;
-    return 3;
+    if (km <= 120) return 3;
+    if (km <= 260) return 4;
+    return 5;
   }
   const myRegion = profileMatchRegion(myProfile);
   const theirRegion = profileMatchRegion(candidate);
   if (myRegion && theirRegion && myRegion === theirRegion) return 2;
-  return 3;
+  return 5;
 }
 
 function withinSuggestionDistance(myProfile, candidate, opts = {}) {
@@ -262,14 +293,14 @@ function withinSuggestionDistance(myProfile, candidate, opts = {}) {
   if (km == null) return true; // ingen coords → region/score håndterer resten
 
   const bothTravel = Boolean(myProfile?.travel_willing && candidate?.travel_willing);
-  const maxKm = Number.isFinite(opts?.maxDistanceKm)
-    ? Number(opts.maxDistanceKm)
+  const explicitMax = limitOrNull(opts?.maxDistanceKm);
+  const maxKm = explicitMax != null
+    ? explicitMax
     : bothTravel
       ? DEFAULTS.maxTravelWillingKm
       : DEFAULTS.maxDistanceKm;
-  const travelCap = Number.isFinite(opts?.maxTravelWillingKm)
-    ? Number(opts.maxTravelWillingKm)
-    : DEFAULTS.maxTravelWillingKm;
+  const explicitTravelCap = limitOrNull(opts?.maxTravelWillingKm);
+  const travelCap = explicitTravelCap != null ? explicitTravelCap : DEFAULTS.maxTravelWillingKm;
   const cap = bothTravel ? Math.max(maxKm, travelCap) : maxKm;
   return km <= cap;
 }
@@ -429,7 +460,8 @@ function passesHardFilters(myProfile, candidate, myElo, candidateElo, opts) {
   if (candidate?.is_banned) return false;
   if (!isActive(candidate)) return false;
 
-  const maxEloDiff = Number.isFinite(opts?.maxEloDiff) ? Number(opts.maxEloDiff) : DEFAULTS.maxEloDiff;
+  const explicitEloDiff = limitOrNull(opts?.maxEloDiff);
+  const maxEloDiff = explicitEloDiff != null ? explicitEloDiff : DEFAULTS.maxEloDiff;
   if (Math.abs(myElo - candidateElo) > maxEloDiff) return false;
 
   const requireTimeOverlap = opts?.requireTimeOverlap !== false;
@@ -513,9 +545,30 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
 }
 
 /**
- * Filtrer og sorter spillere efter matchmaking-score.
+ * Byg opblødningstrappen. Sætter kalderen selv en radius, respekteres den som
+ * eneste trin — ellers udvides der automatisk indtil der er nok forslag.
  */
-export function getMatchSuggestions(myProfile, candidates, opts = {}) {
+function relaxationStepsFor(opts) {
+  const explicitDistance = limitOrNull(opts?.maxDistanceKm);
+  const explicitElo = limitOrNull(opts?.maxEloDiff);
+  if (explicitDistance != null || explicitElo != null) {
+    return [
+      {
+        maxDistanceKm: explicitDistance != null ? explicitDistance : DEFAULTS.maxDistanceKm,
+        maxEloDiff: explicitElo != null ? explicitElo : DEFAULTS.maxEloDiff,
+        requireTimeOverlap: opts?.requireTimeOverlap !== false,
+      },
+    ];
+  }
+  return RELAXATION_LADDER;
+}
+
+/**
+ * Filtrer og sorter spillere efter matchmaking-score.
+ *
+ * @returns {{ suggestions: object[], preferredRadiusKm: number, appliedRadiusKm: number, relaxed: boolean }}
+ */
+export function getMatchSuggestionsWithMeta(myProfile, candidates, opts = {}) {
   const {
     limit = 10,
     seekingOnly = false,
@@ -525,19 +578,32 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
     exposureCountByUserId = {},
     pastMatchesByUserId = {},
     favoriteIds = null,
+    minSuggestions = DEFAULTS.minSuggestions,
   } = opts;
 
   const myElo = resolveElo(myProfile, eloByUserId);
+  const steps = relaxationStepsFor(opts);
+  const preferredRadiusKm = steps[0].maxDistanceKm;
 
-  const filtered = candidates.filter((candidate) => {
+  const pool = candidates.filter((candidate) => {
     if (seekingOnly && !candidate?.seeking_match) return false;
-    const candidateElo = resolveElo(candidate, eloByUserId);
-    return passesHardFilters(myProfile, candidate, myElo, candidateElo, opts);
+    return true;
   });
+
+  let filtered = [];
+  let appliedStep = steps[0];
+  for (const step of steps) {
+    appliedStep = step;
+    filtered = pool.filter((candidate) => {
+      const candidateElo = resolveElo(candidate, eloByUserId);
+      return passesHardFilters(myProfile, candidate, myElo, candidateElo, { ...opts, ...step });
+    });
+    if (filtered.length >= minSuggestions) break;
+  }
 
   const myRegion = profileMatchRegion(myProfile);
 
-  return filtered
+  const suggestions = filtered
     .map((candidate) => {
       const score = scoreCandidate(myProfile, candidate, {
         ...opts,
@@ -559,6 +625,7 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
         sameRegion,
         distanceKm: km,
         distanceBand: band,
+        beyondPreferredRadius: km != null && km > preferredRadiusKm,
       };
     })
     .sort((a, b) => {
@@ -574,6 +641,20 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
       return String(a.profile?.id || '').localeCompare(String(b.profile?.id || ''));
     })
     .slice(0, limit);
+
+  return {
+    suggestions,
+    preferredRadiusKm,
+    appliedRadiusKm: appliedStep.maxDistanceKm,
+    relaxed: appliedStep !== steps[0],
+  };
+}
+
+/**
+ * Bagudkompatibel indgang — returnerer kun listen.
+ */
+export function getMatchSuggestions(myProfile, candidates, opts = {}) {
+  return getMatchSuggestionsWithMeta(myProfile, candidates, opts).suggestions;
 }
 
 /**
@@ -586,6 +667,7 @@ export function matchReason(breakdown, candidate, myProfile = null) {
   const km = distanceKmBetweenProfiles(myProfile, candidate);
   if (km != null && km <= 30) reasons.push('Tæt på dig');
   else if (km != null && km <= 60) reasons.push('I nærheden');
+  else if (km != null) reasons.push(`${Math.round(km)} km væk`);
   else {
     const myRegion = profileMatchRegion(myProfile);
     const theirRegion = profileMatchRegion(candidate);

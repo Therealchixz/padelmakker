@@ -26,6 +26,7 @@ import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInsta
 import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
+import { PlayIntentPanel } from '../components/PlayIntentPanel';
 import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
 import {
   normalizeMatchSearchPrefs,
@@ -1183,6 +1184,15 @@ export function HomeTab({ user, setTab, showToast }) {
 
       {/* Seek card (toggle aktiv søgning) */}
       {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
+
+      {/* Pulje: meld dig klar i et tidsrum — appen samler de fire */}
+      {showToast ? (
+        <PlayIntentPanel
+          user={user}
+          showToast={showToast}
+          onMatchCreated={() => setTab('kampe')}
+        />
+      ) : null}
 
       {/* Quick 2×2 grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 0' }}>

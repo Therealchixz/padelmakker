@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { scoreCandidate, getMatchSuggestions, matchReason } from '../../src/lib/matchmakingUtils.js';
+import {
+  scoreCandidate,
+  getMatchSuggestions,
+  getMatchSuggestionsWithMeta,
+  matchReason,
+} from '../../src/lib/matchmakingUtils.js';
 
 const ACTIVE = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
@@ -240,11 +245,67 @@ test('getMatchSuggestions excludes far players when both have coordinates', () =
     court_side: 'hojre',
   });
 
-  const result = getMatchSuggestions(me, [aarhus, holstebro, local], { limit: 10 });
+  const local2 = profile({ id: 'local2', area: 'Nordjylland', latitude: 57.02, longitude: 9.9, elo_rating: 1010 });
+  const local3 = profile({ id: 'local3', area: 'Nordjylland', latitude: 57.11, longitude: 10.02, elo_rating: 990 });
+
+  const result = getMatchSuggestions(me, [aarhus, holstebro, local, local2, local3], { limit: 10 });
   const ids = result.map((r) => r.profile.id);
   assert.ok(ids.includes('local'), 'local nearby should remain');
   assert.ok(!ids.includes('aarhus'), 'Aarhus should be filtered by distance');
   assert.ok(!ids.includes('holstebro'), 'Holstebro should be filtered by distance');
+});
+
+test('radius udvides frem for tom liste, men lokale ligger stadig først', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland', latitude: 57.081, longitude: 9.928 });
+  const local = profile({ id: 'local', area: 'Nordjylland', latitude: 57.049, longitude: 9.919, elo_rating: 1020 });
+  const aarhus = profile({
+    id: 'aarhus',
+    area: 'Østjylland',
+    latitude: 56.157,
+    longitude: 10.173,
+    elo_rating: 1000,
+  });
+
+  const { suggestions, relaxed, preferredRadiusKm, appliedRadiusKm } =
+    getMatchSuggestionsWithMeta(me, [aarhus, local], { limit: 10 });
+  const ids = suggestions.map((s) => s.profile.id);
+
+  assert.ok(relaxed, 'kun én lokal → radius skal udvides');
+  assert.ok(appliedRadiusKm > preferredRadiusKm);
+  assert.deepEqual(ids, ['local', 'aarhus'], 'lokal først, fjern kandidat bagefter');
+  assert.equal(suggestions[0].beyondPreferredRadius, false);
+  assert.equal(suggestions[1].beyondPreferredRadius, true);
+});
+
+test('tom lokal radius giver stadig forslag i stedet for ingenting', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland', latitude: 57.081, longitude: 9.928 });
+  const holstebro = profile({
+    id: 'holstebro',
+    area: 'Vestjylland',
+    latitude: 56.348,
+    longitude: 8.585,
+    elo_rating: 1000,
+  });
+
+  const result = getMatchSuggestions(me, [holstebro], { limit: 5 });
+  assert.equal(result.length, 1, 'hellere ét fjernt forslag end en tom skærm');
+  assert.equal(result[0].profile.id, 'holstebro');
+  assert.ok(result[0].beyondPreferredRadius);
+  assert.match(matchReason(result[0].breakdown, holstebro, me), /\d+ km væk/);
+});
+
+test('eksplicit maxDistanceKm blødes ikke op', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland', latitude: 57.081, longitude: 9.928 });
+  const holstebro = profile({
+    id: 'holstebro',
+    area: 'Vestjylland',
+    latitude: 56.348,
+    longitude: 8.585,
+    elo_rating: 1000,
+  });
+
+  const result = getMatchSuggestions(me, [holstebro], { limit: 5, maxDistanceKm: 60 });
+  assert.equal(result.length, 0, 'kalderens egen radius skal respekteres');
 });
 
 test('nearby candidate ranks above same-region but farther candidate', () => {

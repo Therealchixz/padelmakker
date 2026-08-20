@@ -1,0 +1,5 @@
+-- Cast af profiles.level (real) til numeric i notify_makker_watchers.
+--
+-- Denne rettelse er efterfølgende overskrevet af migration 20260820172133_notify_makker_use_level_formatter,
+-- som indeholder den endelige version. Bevares kun for at holde
+-- migrationshistorikken i takt med det, der er kørt i produktion.
