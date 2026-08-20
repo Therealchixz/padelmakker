@@ -127,27 +127,80 @@ export function hasIncompleteCityProfile(profile) {
   return String(profile.city || '').trim().length > 0;
 }
 
+/** Kandidater til DAWA-opslag (fx "Aarhus, Hadsten" → Aarhus + Hadsten). */
+export function cityNameCandidates(name) {
+  const raw = normalizeQuery(name);
+  if (!raw) return [];
+  const parts = raw.split(/[,;/|]+/).map((s) => s.trim()).filter((s) => s.length >= 2);
+  const out = [];
+  const push = (s) => {
+    const t = normalizeQuery(s);
+    if (t.length < 2) return;
+    if (!out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
+  };
+  push(raw);
+  for (const p of parts) push(p);
+  for (const p of [...out]) {
+    push(p.replace(/^Århus$/i, 'Aarhus'));
+    push(p.replace(/^København\s+S$/i, 'København'));
+  }
+  return out;
+}
+
 /**
  * Slå eksisterende bynavn op i DAWA (backfill når kun city-tekst er gemt).
  * Foretrækker præcis bynavn-match og bebyggelse frem for postnummer.
  */
 export async function resolveCityPlaceFromName(name, { fetchImpl = fetch } = {}) {
-  const q = normalizeQuery(name);
-  if (q.length < 2) return null;
+  const candidates = cityNameCandidates(name);
+  if (!candidates.length) return null;
 
-  const places = await searchDawaPlaces(q, { limit: 12, fetchImpl });
-  if (!places.length) return null;
+  for (const q of candidates) {
+    const places = await searchDawaPlaces(q, { limit: 12, fetchImpl });
+    if (!places.length) continue;
 
-  const qLower = q.toLowerCase();
-  const exactCity = places.filter((p) => p.city.toLowerCase() === qLower);
-  if (exactCity.length) {
-    return exactCity.find((p) => p.source === 'stednavn') || exactCity[0];
+    const qLower = q.toLowerCase();
+    const exactCity = places.filter((p) => p.city.toLowerCase() === qLower);
+    if (exactCity.length) {
+      // Postnummer-centrum er mere pålideligt end små bebyggelser med samme navn.
+      const post = exactCity.find((p) => p.source === 'postnummer');
+      if (post) return preferDisplayCity(post, q);
+      const mainTown = exactCity.find((p) => {
+        const label = String(p.label || '').toLowerCase();
+        return label === `${qLower}, ${qLower}` || label.startsWith(`${qLower}, ${qLower}`);
+      });
+      if (mainTown) return preferDisplayCity(mainTown, q);
+      return preferDisplayCity(exactCity[0], q);
+    }
+
+    // Prefix-match: "København" → "København K" (postdistrikt).
+    const prefixCity = places.filter((p) => p.city.toLowerCase().startsWith(qLower));
+    if (prefixCity.length) {
+      const post = prefixCity.find((p) => p.source === 'postnummer');
+      return preferDisplayCity(post || prefixCity[0], q);
+    }
+
+    // Kun fuzzy fallback når der kun er ét kandidatnavn — ellers prøv næste kandidat.
+    if (candidates.length === 1) {
+      const labelStarts = places.filter((p) => p.label.toLowerCase().startsWith(qLower));
+      if (labelStarts.length) return preferDisplayCity(labelStarts[0], q);
+      return preferDisplayCity(places[0], q);
+    }
   }
 
-  const labelStarts = places.filter((p) => p.label.toLowerCase().startsWith(qLower));
-  if (labelStarts.length) return labelStarts[0];
+  return null;
+}
 
-  return places[0];
+/** Behold søgenavn som by når DAWA returnerer distrikt (fx København → København K). */
+function preferDisplayCity(place, query) {
+  if (!place) return null;
+  const q = normalizeQuery(query);
+  if (!q) return place;
+  const city = String(place.city || '');
+  if (city.toLowerCase().startsWith(q.toLowerCase()) && q.length >= 4 && city.length > q.length) {
+    return { ...place, city: q, label: q };
+  }
+  return place;
 }
 
 /** Byg place-objekt fra profil-række (onboarding/profil). */

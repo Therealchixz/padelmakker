@@ -5,6 +5,7 @@ import {
   isValidCityPlace,
   hasIncompleteCityProfile,
   resolveCityPlaceFromName,
+  cityNameCandidates,
 } from '../../src/lib/dawaPlaceSearch.js';
 
 test('isValidCityPlace requires city and coordinates', () => {
@@ -50,8 +51,54 @@ test('resolveCityPlaceFromName prefers exact city match', async () => {
 
   const place = await resolveCityPlaceFromName('Aalborg', { fetchImpl });
   assert.equal(place.city, 'Aalborg');
-  assert.equal(place.source, 'stednavn');
   assert.ok(Number.isFinite(place.latitude));
+});
+
+test('resolveCityPlaceFromName prefers postnummer over same-named villages', async () => {
+  const fetchImpl = async (url) => {
+    if (String(url).includes('stednavne')) {
+      return {
+        ok: true,
+        json: async () => [{
+          id: 'wrong',
+          hovedtype: 'Bebyggelse',
+          navn: 'Vejen',
+          visueltcenter: [10.43, 57.48],
+          kommuner: [{ navn: 'Frederikshavn' }],
+        }, {
+          id: 'right',
+          hovedtype: 'Bebyggelse',
+          navn: 'Vejen',
+          visueltcenter: [9.13, 55.47],
+          kommuner: [{ navn: 'Vejen' }],
+        }],
+      };
+    }
+    return {
+      ok: true,
+      json: async () => [{
+        tekst: '6600 Vejen',
+        postnummer: {
+          nr: '6600',
+          navn: 'Vejen',
+          visueltcenter_x: 9.11,
+          visueltcenter_y: 55.48,
+        },
+      }],
+    };
+  };
+
+  const place = await resolveCityPlaceFromName('Vejen', { fetchImpl });
+  assert.equal(place.city, 'Vejen');
+  assert.equal(place.source, 'postnummer');
+  assert.ok(place.latitude < 56);
+});
+
+test('cityNameCandidates splits comma cities and normalizes Århus', () => {
+  const c = cityNameCandidates('Aarhus, Hadsten');
+  assert.ok(c.includes('Aarhus'));
+  assert.ok(c.includes('Hadsten'));
+  assert.ok(cityNameCandidates('Århus').includes('Aarhus'));
 });
 
 test('searchDawaPlaces maps stednavn and postnummer results', async () => {

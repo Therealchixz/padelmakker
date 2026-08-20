@@ -22,6 +22,8 @@ import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 import { WelcomeScreen } from '../components/WelcomeScreen';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
+import { CityRequiredModal } from '../components/CityRequiredModal';
+import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import {
   KAMPE_NOTIFICATION_TYPES,
   KAMPE_ENTITY_NOTIFICATION_TYPES,
@@ -729,7 +731,7 @@ const accountMenuRowBtnStyle = ({ isDanger = false, isLast = false } = {}) => ({
 });
 
 export function DashboardPage({ user, onLogout, showToast }) {
-  const { user: authUser, refreshProfileQuiet } = useAuth();
+  const { user: authUser, refreshProfileQuiet, updateProfile } = useAuth();
   const ask = useConfirm();
   const displayName = resolveDisplayName(user, authUser);
   const navigate = useNavigate();
@@ -1718,6 +1720,15 @@ export function DashboardPage({ user, onLogout, showToast }) {
       )}
 
       <PendingResultConfirmModal user={user} />
+
+      <CityRequiredModal
+        open={Boolean(user?.id) && !isValidCityPlace(user)}
+        user={user}
+        showToast={showToast}
+        onSaved={async (fields) => {
+          await updateProfile(fields);
+        }}
+      />
 
       {feedbackOpen && (
         <AppModal

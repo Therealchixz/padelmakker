@@ -32,6 +32,8 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.match(profilTab, /reactivationOpenMatches|REACTIVATION_OPEN_MATCHES_OPTIONS/);
   assert.match(profilTab, /handleQuickCitySave/);
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
+  assert.match(dash, /CityRequiredModal/);
+  assert.match(dash, /!isValidCityPlace\(user\)/);
 });
 
 test('aktiv søgning på Find makker og Kampe', () => {
