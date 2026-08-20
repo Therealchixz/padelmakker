@@ -44,7 +44,10 @@ function upcomingSaturdayYmd() {
   return d.toISOString().slice(0, 10);
 }
 
-test('fetchPlaytomicSchedule returns free slots for Padelboxen', async () => {
+// GitHubs runners rammer CloudFront-blokering, så live-kald kun kører lokalt.
+const skipLive = process.env.CI ? 'Live Playtomic-kald hører ikke hjemme i CI' : false;
+
+test('fetchPlaytomicSchedule returns free slots for Padelboxen', { skip: skipLive }, async () => {
   const cfg = getPlaytomicVenue('playtomic_padelboxen');
   const dateYmd = upcomingSaturdayYmd();
   const result = await fetchPlaytomicSchedule(cfg, dateYmd);
@@ -59,7 +62,7 @@ test('fetchPlaytomicSchedule returns free slots for Padelboxen', async () => {
   }
 });
 
-test('fetchPlaytomicSchedule resolves Padel 6100 court names', async () => {
+test('fetchPlaytomicSchedule resolves Padel 6100 court names', { skip: skipLive }, async () => {
   const result = await fetchPlaytomicSchedule(getPlaytomicVenue('playtomic_padel6100'), upcomingSaturdayYmd());
   assert.ok(!result.error, result.error);
   assert.ok(result.courts.length > 0);
