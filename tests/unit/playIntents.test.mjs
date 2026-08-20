@@ -82,6 +82,17 @@ test('skrivning til pulje-tabeller går kun gennem RPC', () => {
   }
 });
 
+test('oprydning skelner mellem dem der sagde ja og dem der aldrig svarede', () => {
+  // Uden dette skel ville næste kørsel danne præcis samme døde gruppe igen.
+  assert.match(POOL_SQL, /SET status = 'open', proposal_id = NULL[\s\S]{0,320}?m\.response = 'accepted'/);
+  assert.match(POOL_SQL, /SET status = 'cancelled', proposal_id = NULL[\s\S]{0,320}?m\.response <> 'accepted'/);
+});
+
+test('oprydningen er sat på skema hvert 15. minut', () => {
+  assert.match(POOL_SQL, /cron\.schedule\(\s*'expire-play-intents',\s*'\*\/15 \* \* \* \*'/);
+  assert.match(POOL_SQL, /cron\.unschedule\('expire-play-intents'\)/);
+});
+
 test('notifikationspolitik dækker de nye forslags-typer', () => {
   const policy = readFileSync('src/lib/notificationPolicy.js', 'utf8');
   for (const type of ['match_proposal', 'match_proposal_confirmed', 'match_proposal_declined']) {
