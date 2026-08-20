@@ -39,3 +39,40 @@ export function dayLabel(isoDate) {
 export function shortTime(value) {
   return String(value || '').slice(0, 5);
 }
+
+/**
+ * Resterende svartid på et kampforslag.
+ *
+ * Fristen er et døgn, men aldrig senere end to timer før spilletid, så den
+ * kan sagtens være kort. Derfor markeres de sidste tre timer som `urgent`,
+ * så kortet kan skille sig ud, mens der stadig er tid til at booke bane.
+ *
+ * @returns {{ label: string, urgent: boolean, expired: boolean } | null}
+ */
+export function deadlineInfo(expiresAt, now = Date.now()) {
+  /* new Date(null) er 1970 og dermed "udløbet" — det ville slå Bekræft-knappen
+     fra på et gyldigt forslag, hvis fristen manglede. */
+  if (expiresAt == null || expiresAt === '') return null;
+
+  const target = new Date(expiresAt).getTime();
+  if (!Number.isFinite(target)) return null;
+
+  const ms = target - now;
+  if (ms <= 0) return { label: 'Udløbet', urgent: true, expired: true };
+
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return { label: 'Under 1 min tilbage', urgent: true, expired: false };
+  if (minutes < 60) return { label: `${minutes} min tilbage`, urgent: true, expired: false };
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return {
+      label: `${hours} ${hours === 1 ? 'time' : 'timer'} tilbage`,
+      urgent: hours < 3,
+      expired: false,
+    };
+  }
+
+  const days = Math.floor(hours / 24);
+  return { label: `${days} ${days === 1 ? 'dag' : 'dage'} tilbage`, urgent: false, expired: false };
+}

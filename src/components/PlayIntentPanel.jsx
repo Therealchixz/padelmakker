@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarClock, Check, X, Users } from 'lucide-react';
+import { CalendarClock, Check, Clock, X, Users } from 'lucide-react';
 import { theme, btn } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
 import {
@@ -7,6 +7,7 @@ import {
   cancelPlayIntent,
   createPlayIntent,
   dayLabel,
+  deadlineInfo,
   fetchMyPlayIntents,
   fetchPendingProposals,
   isoDateOffset,
@@ -31,8 +32,16 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [intents, setIntents] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [busyProposal, setBusyProposal] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const userId = user?.id;
+
+  /* Fristen kan være helt nede på 30 minutter ved kort varsel, så nedtællingen
+     skal opdatere sig selv frem for at fryse på det tidspunkt siden blev åbnet. */
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const reload = useCallback(async () => {
     if (!userId) return;
@@ -116,45 +125,76 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
 
   return (
     <div style={{ margin: '0 18px 18px' }}>
-      {proposals.map((p) => (
-        <div
-          key={p.id}
-          style={{
-            border: `1.5px solid ${theme.accent}`,
-            borderRadius: 14,
-            padding: '14px 16px',
-            marginBottom: 10,
-            background: 'var(--pm-surface-muted)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <Users size={15} color={theme.accent} />
-            <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
+      {proposals.map((p) => {
+        const deadline = deadlineInfo(p.expires_at, now);
+        const expired = Boolean(deadline?.expired);
+        return (
+          <div
+            key={p.id}
+            style={{
+              border: `1.5px solid ${expired ? theme.border : theme.accent}`,
+              borderRadius: 14,
+              padding: '14px 16px',
+              marginBottom: 10,
+              background: 'var(--pm-surface-muted)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Users size={15} color={expired ? theme.textLight : theme.accent} />
+              <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
+            </div>
+            <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 10 }}>
+              {dayLabel(p.play_date)} kl. {shortTime(p.start_time)}–{shortTime(p.end_time)}
+              {p.region ? ` · ${p.region}` : ''}
+            </div>
+            {deadline && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  marginBottom: 12,
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: deadline.urgent ? theme.red : theme.textMid,
+                  background: 'transparent',
+                  border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
+                }}
+              >
+                <Clock size={12} /> {deadline.label}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                disabled={busyProposal === p.id || expired}
+                onClick={() => respond(p.id, true)}
+                style={{
+                  ...btn(true),
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  opacity: expired ? 0.5 : 1,
+                }}
+              >
+                <Check size={15} /> Jeg er med
+              </button>
+              <button
+                type="button"
+                disabled={busyProposal === p.id}
+                onClick={() => respond(p.id, false)}
+                style={{ ...btn(false), flex: 1 }}
+              >
+                Kan ikke
+              </button>
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 12 }}>
-            {dayLabel(p.play_date)} kl. {shortTime(p.start_time)}–{shortTime(p.end_time)}
-            {p.region ? ` · ${p.region}` : ''}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              disabled={busyProposal === p.id}
-              onClick={() => respond(p.id, true)}
-              style={{ ...btn(true), flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-            >
-              <Check size={15} /> Jeg er med
-            </button>
-            <button
-              type="button"
-              disabled={busyProposal === p.id}
-              onClick={() => respond(p.id, false)}
-              style={{ ...btn(false), flex: 1 }}
-            >
-              Kan ikke
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         type="button"

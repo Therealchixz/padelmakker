@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import {
   PLAY_TIME_BANDS,
   dayLabel,
+  deadlineInfo,
   isoDateOffset,
   shortTime,
   timeBandByKey,
@@ -43,6 +44,41 @@ test('dayLabel viser dansk ugedag og dato', () => {
 test('shortTime klipper sekunder fra Postgres-tider', () => {
   assert.equal(shortTime('17:00:00'), '17:00');
   assert.equal(shortTime(null), '');
+});
+
+test('nedtælling viser dage, timer og minutter', () => {
+  const now = Date.UTC(2026, 7, 20, 12, 0, 0);
+  const at = (ms) => deadlineInfo(new Date(now + ms).toISOString(), now);
+
+  assert.equal(at(26 * 3600e3).label, '1 dag tilbage');
+  assert.equal(at(5 * 3600e3).label, '5 timer tilbage');
+  assert.equal(at(3600e3).label, '1 time tilbage');
+  assert.equal(at(25 * 60e3).label, '25 min tilbage');
+  assert.equal(at(20e3).label, 'Under 1 min tilbage');
+});
+
+test('de sidste tre timer markeres som hastende — der skal nås en banebooking', () => {
+  const now = Date.UTC(2026, 7, 20, 12, 0, 0);
+  const at = (ms) => deadlineInfo(new Date(now + ms).toISOString(), now);
+
+  assert.equal(at(5 * 3600e3).urgent, false);
+  assert.equal(at(2 * 3600e3).urgent, true);
+  assert.equal(at(40 * 60e3).urgent, true);
+});
+
+test('udløbet frist markeres, så knappen kan slås fra', () => {
+  const now = Date.UTC(2026, 7, 20, 12, 0, 0);
+  const past = deadlineInfo(new Date(now - 60e3).toISOString(), now);
+  assert.equal(past.expired, true);
+  assert.equal(past.label, 'Udløbet');
+
+  // Præcis på fristen tæller som udløbet — ikke "0 min tilbage".
+  assert.equal(deadlineInfo(new Date(now).toISOString(), now).expired, true);
+});
+
+test('deadlineInfo er robust over for manglende eller ugyldig dato', () => {
+  assert.equal(deadlineInfo(null), null);
+  assert.equal(deadlineInfo('ikke en dato'), null);
 });
 
 test('puljen kræver fire spillere før der dannes et forslag', () => {

@@ -16,6 +16,7 @@ export {
   isoDateOffset,
   dayLabel,
   shortTime,
+  deadlineInfo,
 } from './playIntentUtils';
 
 /**
