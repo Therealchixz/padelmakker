@@ -12,9 +12,21 @@ import { dayLabel, isoDateOffset } from './playIntentUtils';
 
 export {
   PLAY_TIME_BANDS,
+  PLAY_WINDOW_PRESETS,
+  PLAY_TIME_SLOTS,
+  PLAY_START_SLOTS,
+  MIN_PLAY_WINDOW_MINUTES,
   timeBandByKey,
+  timeToMinutes,
+  minutesToTime,
+  windowMinutes,
+  isValidPlayWindow,
+  matchingPresetKey,
+  endSlotsAfter,
+  clampEndToWindow,
   isoDateOffset,
   dayLabel,
+  dayChoiceLabel,
   shortTime,
   deadlineInfo,
 } from './playIntentUtils';

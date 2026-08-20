@@ -3,11 +3,18 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
+  PLAY_START_SLOTS,
   PLAY_TIME_BANDS,
+  PLAY_TIME_SLOTS,
+  PLAY_WINDOW_PRESETS,
+  dayChoiceLabel,
   dayLabel,
   deadlineInfo,
+  endSlotsAfter,
   isProposalNotification,
+  isValidPlayWindow,
   isoDateOffset,
+  matchingPresetKey,
   shortTime,
   timeBandByKey,
 } from '../../src/lib/playIntentUtils.js';
@@ -24,8 +31,40 @@ test('alle tidsbånd er mindst 90 minutter — ellers afviser RPC dem', () => {
 });
 
 test('timeBandByKey finder bånd og returnerer null for ukendte', () => {
-  assert.equal(timeBandByKey('aften')?.start, '17:00');
+  assert.equal(timeBandByKey('aften')?.start, '18:00');
   assert.equal(timeBandByKey('nat'), null);
+});
+
+test('hurtige valg overlapper ikke og dækker 06:00–23:30', () => {
+  assert.equal(PLAY_WINDOW_PRESETS[0].start, '06:00');
+  assert.equal(PLAY_WINDOW_PRESETS.at(-1).end, '23:30');
+  for (let i = 1; i < PLAY_WINDOW_PRESETS.length; i += 1) {
+    const prev = PLAY_WINDOW_PRESETS[i - 1];
+    const cur = PLAY_WINDOW_PRESETS[i];
+    assert.equal(prev.end, cur.start, `${prev.key} og ${cur.key} overlapper`);
+  }
+});
+
+test('10:00–12:00 er ét gyldigt vindue, 10:00–11:00 er for kort', () => {
+  assert.equal(isValidPlayWindow('10:00', '12:00'), true);
+  assert.equal(matchingPresetKey('10:00', '12:00'), null);
+  assert.equal(isValidPlayWindow('10:00', '11:00'), false);
+  assert.equal(endSlotsAfter('10:00')[0], '11:30');
+});
+
+test('starttider slutter, når der ikke er 1½ time tilbage', () => {
+  assert.equal(PLAY_TIME_SLOTS[0], '06:00');
+  assert.equal(PLAY_TIME_SLOTS.at(-1), '23:30');
+  assert.equal(PLAY_START_SLOTS[0], '06:00');
+  assert.equal(PLAY_START_SLOTS.at(-1), '22:00');
+  assert.equal(endSlotsAfter('22:00').at(-1), '23:30');
+  assert.deepEqual(endSlotsAfter('22:30'), []);
+});
+
+test('dayChoiceLabel siger I dag og I morgen i stedet for ugedagen', () => {
+  assert.equal(dayChoiceLabel(isoDateOffset(0)), 'I dag');
+  assert.equal(dayChoiceLabel(isoDateOffset(1)), 'I morgen');
+  assert.equal(dayChoiceLabel('2026-08-25'), 'Tir 25/8');
 });
 
 test('isoDateOffset giver gyldige ISO-datoer og bevæger sig fremad', () => {

@@ -1,33 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CalendarClock, Check, Clock, X, Users } from 'lucide-react';
-import { theme, btn } from '../lib/platformTheme';
+import { theme, btn, font, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
 import {
-  PLAY_TIME_BANDS,
+  PLAY_WINDOW_PRESETS,
+  PLAY_START_SLOTS,
   cancelPlayIntent,
+  clampEndToWindow,
   createPlayIntent,
+  dayChoiceLabel,
   dayLabel,
   deadlineInfo,
+  endSlotsAfter,
   fetchMyPlayIntents,
   fetchPendingProposals,
+  isValidPlayWindow,
   isoDateOffset,
+  matchingPresetKey,
   respondToMatchProposal,
   shortTime,
 } from '../lib/playIntents';
 
 const DAY_CHOICES = Array.from({ length: 14 }, (_, i) => isoDateOffset(i));
+const DEFAULT_START = '18:00';
+const DEFAULT_END = '21:00';
 
 /**
  * "Jeg vil spille" — lav-forpligtelses indgang til en kamp.
  *
- * Brugeren vælger dag og tidsbånd; systemet finder de øvrige tre og sender et
- * forslag. Formålet er at fjerne organiseringsbyrden, ikke at erstatte det at
- * oprette en kamp manuelt.
+ * Brugeren vælger dag og et frit tidsrum; systemet finder de øvrige tre og
+ * sender et forslag. Formålet er at fjerne organiseringsbyrden, ikke at
+ * erstatte det at oprette en kamp manuelt.
  */
 export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(DAY_CHOICES[0]);
-  const [bandKey, setBandKey] = useState('aften');
+  const [start, setStart] = useState(DEFAULT_START);
+  const [end, setEnd] = useState(DEFAULT_END);
   const [saving, setSaving] = useState(false);
   const [intents, setIntents] = useState([]);
   const [proposals, setProposals] = useState([]);
@@ -55,18 +64,27 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
 
   useEffect(() => { void reload(); }, [reload]);
 
-  const band = useMemo(
-    () => PLAY_TIME_BANDS.find((b) => b.key === bandKey) || PLAY_TIME_BANDS[0],
-    [bandKey]
-  );
+  const presetKey = matchingPresetKey(start, end);
+  const endOptions = endSlotsAfter(start);
+  const windowOk = isValidPlayWindow(start, end);
+
+  const applyPreset = useCallback((preset) => {
+    setStart(preset.start);
+    setEnd(preset.end);
+  }, []);
+
+  const onStartChange = useCallback((nextStart) => {
+    setStart(nextStart);
+    setEnd((prev) => clampEndToWindow(nextStart, prev));
+  }, []);
 
   const submit = useCallback(async () => {
-    if (!userId || saving) return;
+    if (!userId || saving || !windowOk) return;
     setSaving(true);
     const res = await createPlayIntent({
       playDate: day,
-      startTime: band.start,
-      endTime: band.end,
+      startTime: start,
+      endTime: end,
       viewerId: userId,
     });
     setSaving(false);
@@ -88,7 +106,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
       showToast?.('Du er meldt klar. Vi giver besked, når der er fire.', 'success');
     }
     await reload();
-  }, [userId, saving, day, band, showToast, reload]);
+  }, [userId, saving, windowOk, day, start, end, showToast, reload]);
 
   const respond = useCallback(async (proposalId, accept) => {
     setBusyProposal(proposalId);
@@ -246,73 +264,121 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
         </div>
       )}
 
-      <AppModal open={open} onClose={() => setOpen(false)} ariaLabel="Meld dig klar til at spille">
-        <h3 style={{ fontSize: 17, fontWeight: 600, color: theme.text, margin: '0 0 4px' }}>
-          Hvornår kan du spille?
-        </h3>
-        <p style={{ fontSize: 13, color: theme.textMid, margin: '0 0 16px', lineHeight: 1.45 }}>
-          Vi samler fire spillere, der passer sammen, og sender jer et forslag. Du bekræfter, før der sker noget.
-        </p>
+      <AppModal
+        open={open}
+        onClose={() => setOpen(false)}
+        ariaLabel="Meld dig klar til at spille"
+        maxWidthPreset="sm"
+        footer={(
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving || !windowOk}
+            style={{ ...btn(true), width: '100%', opacity: windowOk ? 1 : 0.5 }}
+          >
+            {saving ? 'Melder dig klar…' : `Meld mig klar · ${shortTime(start)}–${shortTime(end)}`}
+          </button>
+        )}
+      >
+        <div className="pm-modal-body pm-modal-body--compact" style={{ fontFamily: font }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: theme.text, margin: '0 0 6px' }}>
+            Hvornår kan du spille?
+          </h3>
+          <p style={{ fontSize: 13, color: theme.textMid, margin: '0 0 18px', lineHeight: 1.45 }}>
+            Vælg det tidsrum, du kan. Vi finder tre andre i samme hul og sender et forslag — du bekræfter, før der sker noget.
+          </p>
 
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: theme.text, marginBottom: 8 }}>Dag</div>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 16 }}>
-          {DAY_CHOICES.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDay(d)}
-              style={{
-                flexShrink: 0,
-                padding: '8px 12px',
-                borderRadius: 9,
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                border: `1px solid ${d === day ? theme.accent : theme.border}`,
-                background: d === day ? theme.accent : 'transparent',
-                color: d === day ? theme.onAccent : theme.textMid,
-              }}
-            >
-              {dayLabel(d)}
-            </button>
-          ))}
+          <div style={labelStyle}>Dag</div>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
+            {DAY_CHOICES.map((d) => {
+              const selected = d === day;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDay(d)}
+                  style={{
+                    flexShrink: 0,
+                    padding: '8px 13px',
+                    borderRadius: 999,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: font,
+                    cursor: 'pointer',
+                    border: `1px solid ${selected ? theme.accent : theme.border}`,
+                    background: selected ? theme.accent : theme.surface,
+                    color: selected ? theme.onAccent : theme.text,
+                  }}
+                >
+                  {dayChoiceLabel(d)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={labelStyle}>Hurtigt valg</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, marginBottom: 16 }}>
+            {PLAY_WINDOW_PRESETS.map((p) => {
+              const selected = p.key === presetKey;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyPreset(p)}
+                  style={{
+                    padding: '9px 6px',
+                    borderRadius: 12,
+                    fontFamily: font,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    border: `1.5px solid ${selected ? theme.accent : theme.border}`,
+                    background: selected ? 'var(--pm-accent-bg)' : theme.surface,
+                    color: selected ? theme.accent : theme.text,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '-0.01em' }}>{p.label}</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, marginTop: 2, color: selected ? theme.accent : theme.textLight }}>
+                    {shortTime(p.start)}–{shortTime(p.end)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div>
+              <label htmlFor="play-intent-start" style={labelStyle}>Fra</label>
+              <select
+                id="play-intent-start"
+                value={start}
+                onChange={(e) => onStartChange(e.target.value)}
+                style={inputStyle}
+              >
+                {PLAY_START_SLOTS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="play-intent-end" style={labelStyle}>Til</label>
+              <select
+                id="play-intent-end"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+                style={inputStyle}
+              >
+                {endOptions.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: theme.textLight, margin: 0, lineHeight: 1.4 }}>
+            {windowOk
+              ? `Klar ${dayChoiceLabel(day).toLowerCase()} kl. ${start}–${end}. Mindst 1½ time, så der er plads til en kamp.`
+              : 'Vælg mindst 1½ time.'}
+          </p>
         </div>
-
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: theme.text, marginBottom: 8 }}>Tidsrum</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-          {PLAY_TIME_BANDS.map((b) => (
-            <button
-              key={b.key}
-              type="button"
-              onClick={() => setBandKey(b.key)}
-              style={{
-                padding: '10px 12px',
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                textAlign: 'left',
-                border: `1px solid ${b.key === bandKey ? theme.accent : theme.border}`,
-                background: b.key === bandKey ? 'var(--pm-surface-muted)' : 'transparent',
-                color: theme.text,
-              }}
-            >
-              {b.label}
-              <div style={{ fontSize: 11.5, fontWeight: 500, color: theme.textLight, marginTop: 2 }}>
-                {b.start}–{b.end}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={submit}
-          disabled={saving}
-          style={{ ...btn(true), width: '100%' }}
-        >
-          {saving ? 'Melder dig klar…' : 'Meld mig klar'}
-        </button>
       </AppModal>
     </div>
   );
