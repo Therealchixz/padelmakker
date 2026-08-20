@@ -158,6 +158,21 @@ export function shortTime(value) {
   return String(value || '').slice(0, 5);
 }
 
+/** Chip-tid: "17:00–23:00" bliver "17–23", "17:30–21:00" bliver "17:30–21". */
+export function compactHourRange(start, end) {
+  const label = (value) => {
+    const t = shortTime(value);
+    if (!t) return '';
+    const [h, m] = t.split(':');
+    if (m === '00') return String(Number(h));
+    return t;
+  };
+  const a = label(start);
+  const b = label(end);
+  if (!a || !b) return '';
+  return `${a}–${b}`;
+}
+
 /**
  * Resterende svartid på et kampforslag.
  *

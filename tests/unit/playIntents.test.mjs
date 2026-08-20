@@ -18,6 +18,7 @@ import {
   isoDateOffset,
   matchingPresetKey,
   shortTime,
+  compactHourRange,
   timeBandByKey,
   toggleSelectedDay,
 } from '../../src/lib/playIntentUtils.js';
@@ -108,16 +109,23 @@ test('dateBadge giver dagtal og trebogstavs-måned til kortet', () => {
   assert.deepEqual(dateBadge(''), { day: '', month: '' });
 });
 
-test('aktive hensigter vises som kort med fortryd-knap', () => {
+test('aktive hensigter vises som chips under knappen', () => {
   const src = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
-  assert.match(src, /pm-play-intent-list/);
-  assert.match(src, /pm-play-intent-cancel/);
-  assert.match(src, /pm-play-intent-date/);
+  assert.match(src, /pm-play-intent-block/);
+  assert.match(src, /pm-play-intent-chips/);
+  assert.match(src, /pm-play-intent-chip__x/);
 });
 
 test('shortTime klipper sekunder fra Postgres-tider', () => {
   assert.equal(shortTime('17:00:00'), '17:00');
   assert.equal(shortTime(null), '');
+});
+
+test('compactHourRange forkorter hele timer på chips', () => {
+  assert.equal(compactHourRange('17:00', '23:00'), '17–23');
+  assert.equal(compactHourRange('07:00:00', '11:00'), '7–11');
+  assert.equal(compactHourRange('17:30', '21:00'), '17:30–21');
+  assert.equal(compactHourRange(null, '21:00'), '');
 });
 
 test('nedtælling viser dage, timer og minutter', () => {

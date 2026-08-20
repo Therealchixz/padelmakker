@@ -31,6 +31,7 @@ export {
   toggleSelectedDay,
   formatSelectedDays,
   shortTime,
+  compactHourRange,
   deadlineInfo,
 } from './playIntentUtils';
 

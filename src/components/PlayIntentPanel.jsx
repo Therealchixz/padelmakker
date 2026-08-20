@@ -7,8 +7,8 @@ import {
   PLAY_START_SLOTS,
   cancelPlayIntent,
   clampEndToWindow,
+  compactHourRange,
   createPlayIntents,
-  dateBadge,
   dayChoiceLabel,
   dayLabel,
   deadlineInfo,
@@ -238,66 +238,56 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
         );
       })}
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        style={{
-          ...btn(true),
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          padding: '13px 16px',
-        }}
-      >
-        <CalendarClock size={17} /> Jeg vil spille
-      </button>
+      <div className={`pm-play-intent-block${intents.length ? ' pm-play-intent-block--active' : ''}`}>
+        <button
+          type="button"
+          className="pm-play-intent-cta"
+          onClick={() => setOpen(true)}
+          style={{
+            ...btn(true),
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '13px 16px',
+          }}
+        >
+          <CalendarClock size={17} /> Jeg vil spille
+        </button>
 
-      {intents.length > 0 && (
-        <div className="pm-play-intent-list" aria-label="Dine spilletider">
-          <div className="pm-play-intent-list__head">
-            <span className="pm-play-intent-list__title">Meldt klar</span>
-            <span className="pm-play-intent-list__count">{intents.length}</span>
-          </div>
-          {intents.map((it) => {
-            const badge = dateBadge(it.play_date);
-            const proposed = it.status === 'proposed';
-            return (
-              <div key={it.id} className="pm-play-intent-row">
-                <div className="pm-play-intent-date" aria-hidden>
-                  <span className="pm-play-intent-date__day">{badge.day}</span>
-                  <span className="pm-play-intent-date__month">{badge.month}</span>
-                </div>
-                <div className="pm-play-intent-row__body">
-                  <div className="pm-play-intent-row__time">
-                    {shortTime(it.start_time)}–{shortTime(it.end_time)}
-                  </div>
-                  <div className="pm-play-intent-row__meta">
-                    <span>{dayChoiceLabel(it.play_date)}</span>
-                    <span
-                      className={`pm-play-intent-status ${proposed ? 'pm-play-intent-status--proposed' : 'pm-play-intent-status--open'}`}
+        {intents.length > 0 && (
+          <div className="pm-play-intent-chips" aria-label="Dine spilletider">
+            {intents.map((it) => {
+              const proposed = it.status === 'proposed';
+              return (
+                <span
+                  key={it.id}
+                  className={`pm-play-intent-chip${proposed ? ' pm-play-intent-chip--proposed' : ''}`}
+                >
+                  {proposed ? (
+                    <span className="pm-play-intent-chip__dot" title="Afventer svar" />
+                  ) : null}
+                  <span>
+                    {dayChoiceLabel(it.play_date)} · {compactHourRange(it.start_time, it.end_time)}
+                  </span>
+                  {it.status === 'open' && (
+                    <button
+                      type="button"
+                      className="pm-play-intent-chip__x"
+                      onClick={() => drop(it.id)}
+                      disabled={droppingId === it.id}
+                      aria-label={`Fortryd ${dayLabel(it.play_date)}`}
                     >
-                      {proposed ? 'Afventer svar' : 'Venter på flere'}
-                    </span>
-                  </div>
-                </div>
-                {it.status === 'open' && (
-                  <button
-                    type="button"
-                    className="pm-play-intent-cancel"
-                    onClick={() => drop(it.id)}
-                    disabled={droppingId === it.id}
-                    aria-label={`Fortryd ${dayLabel(it.play_date)}`}
-                  >
-                    <X size={16} aria-hidden />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                      <X size={14} aria-hidden />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <AppModal
         open={open}
