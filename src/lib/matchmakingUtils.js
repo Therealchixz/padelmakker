@@ -10,6 +10,7 @@
 
 import { SEEK_MAKKER_TTL_DAYS } from './platformConstants.js';
 import { canonicalAppRegion } from './appRegions.js';
+import { haversineKm } from './geoDistance.js';
 
 /** Kanonisk landsdel for matchmaking (legacy "Region X" → app-region). */
 export function profileMatchRegion(profile) {
@@ -19,17 +20,21 @@ export function profileMatchRegion(profile) {
 const INACTIVE_DAYS = 14;
 const SEEKING_FRESH_HOURS = SEEK_MAKKER_TTL_DAYS * 24;
 
+/** Vægte: geo højere — padel-makkere skal typisk kunne mødes i praksis. */
 const DIRECTIONAL_WEIGHTS = {
-  skill: 0.32,
-  time: 0.23,
-  geo: 0.22,
-  intent: 0.13,
-  courtSide: 0.1,
+  skill: 0.28,
+  time: 0.22,
+  geo: 0.30,
+  intent: 0.12,
+  courtSide: 0.08,
 };
 
 const DEFAULTS = {
   maxEloDiff: 260,
   requireTimeOverlap: true,
+  /** Soft max når begge har koordinater — længere kun hvis begge er rejsevillige. */
+  maxDistanceKm: 60,
+  maxTravelWillingKm: 120,
 };
 
 function clamp01(v) {
@@ -206,45 +211,67 @@ function hasTimeOverlapSignal(myProfile, theirProfile) {
   return { hasComparable, hasOverlap, daysOverlap, availOverlap };
 }
 
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+/** Afstand i km mellem profiler, eller null hvis koordinater mangler. */
+export function distanceKmBetweenProfiles(a, b) {
+  const lat1 = toNumber(a?.latitude, NaN);
+  const lon1 = toNumber(a?.longitude, NaN);
+  const lat2 = toNumber(b?.latitude, NaN);
+  const lon2 = toNumber(b?.longitude, NaN);
+  if (![lat1, lon1, lat2, lon2].every(Number.isFinite)) return null;
+  return haversineKm(lat1, lon1, lat2, lon2);
 }
 
 function geoScore(myProfile, theirProfile) {
-  const hasCoords =
-    myProfile?.latitude != null &&
-    myProfile?.longitude != null &&
-    theirProfile?.latitude != null &&
-    theirProfile?.longitude != null;
+  const km = distanceKmBetweenProfiles(myProfile, theirProfile);
 
-  if (hasCoords) {
-    const km = haversineKm(
-      toNumber(myProfile.latitude),
-      toNumber(myProfile.longitude),
-      toNumber(theirProfile.latitude),
-      toNumber(theirProfile.longitude)
-    );
-    if (km <= 10) return 1.0;
-    if (km <= 30) return 0.75;
-    if (km <= 60) return 0.4;
-    return Math.max(0.05, 0.1 - (km - 60) / 200);
+  if (km != null) {
+    // Skarp kurve: lokale makkere først, 100+ km er næsten ubrugeligt.
+    if (km <= 15) return 1.0;
+    if (km <= 30) return 0.85;
+    if (km <= 45) return 0.55;
+    if (km <= 60) return 0.28;
+    if (km <= 90) return 0.08;
+    return 0.02;
   }
 
   const myArea = profileMatchRegion(myProfile);
   const theirArea = profileMatchRegion(theirProfile);
-  if (!myArea || !theirArea) return 0.3;
-  if (myArea === theirArea) return 0.85;
+  if (!myArea || !theirArea) return 0.25;
+  if (myArea === theirArea) return 0.7;
   /* Begge er villige til at rejse → mindre straf for forskellige områder */
-  if (myProfile?.travel_willing && theirProfile?.travel_willing) return 0.35;
-  return 0.15;
+  if (myProfile?.travel_willing && theirProfile?.travel_willing) return 0.3;
+  return 0.1;
+}
+
+/** 0 = tæt, 1 = medium, 2 = samme region (uden km), 3 = fjern. Bruges til sortering. */
+function distanceBand(myProfile, candidate) {
+  const km = distanceKmBetweenProfiles(myProfile, candidate);
+  if (km != null) {
+    if (km <= 30) return 0;
+    if (km <= 60) return 1;
+    return 3;
+  }
+  const myRegion = profileMatchRegion(myProfile);
+  const theirRegion = profileMatchRegion(candidate);
+  if (myRegion && theirRegion && myRegion === theirRegion) return 2;
+  return 3;
+}
+
+function withinSuggestionDistance(myProfile, candidate, opts = {}) {
+  const km = distanceKmBetweenProfiles(myProfile, candidate);
+  if (km == null) return true; // ingen coords → region/score håndterer resten
+
+  const bothTravel = Boolean(myProfile?.travel_willing && candidate?.travel_willing);
+  const maxKm = Number.isFinite(opts?.maxDistanceKm)
+    ? Number(opts.maxDistanceKm)
+    : bothTravel
+      ? DEFAULTS.maxTravelWillingKm
+      : DEFAULTS.maxDistanceKm;
+  const travelCap = Number.isFinite(opts?.maxTravelWillingKm)
+    ? Number(opts.maxTravelWillingKm)
+    : DEFAULTS.maxTravelWillingKm;
+  const cap = bothTravel ? Math.max(maxKm, travelCap) : maxKm;
+  return km <= cap;
 }
 
 function normalizeCourtSide(value) {
@@ -411,6 +438,8 @@ function passesHardFilters(myProfile, candidate, myElo, candidateElo, opts) {
     if (overlap.hasComparable && !overlap.hasOverlap) return false;
   }
 
+  if (!withinSuggestionDistance(myProfile, candidate, opts)) return false;
+
   return true;
 }
 
@@ -520,16 +549,21 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
         favoriteIds,
       });
       const sameRegion = Boolean(myRegion && profileMatchRegion(candidate) === myRegion);
+      const km = distanceKmBetweenProfiles(myProfile, candidate);
+      const band = distanceBand(myProfile, candidate);
       return {
         profile: candidate,
         score: score.total,
         breakdown: score.breakdown,
         resolvedElo: score.resolvedElo,
         sameRegion,
+        distanceKm: km,
+        distanceBand: band,
       };
     })
     .sort((a, b) => {
-      // Region-first: lokale først, resten fylder listen (aldrig tom pga. region).
+      // Nærhed først: ≤30 km, så ≤60 km, så samme region, så resten.
+      if (a.distanceBand !== b.distanceBand) return a.distanceBand - b.distanceBand;
       if (myRegion && a.sameRegion !== b.sameRegion) {
         return a.sameRegion ? -1 : 1;
       }
@@ -549,10 +583,15 @@ export function matchReason(breakdown, candidate, myProfile = null) {
   const reasons = [];
   if ((breakdown?.favoriteBoost || 0) > 0) reasons.push('⭐ Favorit');
   if ((breakdown?.pastMatchesBoost || 0) >= 0.05) reasons.push('Spillet sammen før');
-  const myRegion = profileMatchRegion(myProfile);
-  const theirRegion = profileMatchRegion(candidate);
-  if (myRegion && theirRegion && myRegion === theirRegion) reasons.push('Samme region');
-  else if ((breakdown?.geo || 0) >= 0.75) reasons.push('Tæt på dig');
+  const km = distanceKmBetweenProfiles(myProfile, candidate);
+  if (km != null && km <= 30) reasons.push('Tæt på dig');
+  else if (km != null && km <= 60) reasons.push('I nærheden');
+  else {
+    const myRegion = profileMatchRegion(myProfile);
+    const theirRegion = profileMatchRegion(candidate);
+    if (myRegion && theirRegion && myRegion === theirRegion) reasons.push('Samme region');
+    else if ((breakdown?.geo || 0) >= 0.75) reasons.push('Tæt på dig');
+  }
   if ((breakdown?.reciprocal || 0) >= 0.75) reasons.push('Gensidig match');
   if ((breakdown?.skill || 0) >= 0.8) reasons.push('Tæt ELO-niveau');
   if ((breakdown?.time || 0) >= 0.75) reasons.push('Samme spilledage');

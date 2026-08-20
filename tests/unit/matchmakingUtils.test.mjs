@@ -87,7 +87,7 @@ test('fallback scores for empty profiles do not exceed the new floor', () => {
   /* Empty profiles should not rank as high as fully-filled ones */
   assert.ok(result.breakdown.time <= 0.4, `time fallback tightened: ${result.breakdown.time}`);
   assert.ok(result.breakdown.intent <= 0.45, `intent fallback tightened: ${result.breakdown.intent}`);
-  assert.ok(result.breakdown.geo <= 0.35, `geo fallback tightened: ${result.breakdown.geo}`);
+  assert.ok(result.breakdown.geo <= 0.3, `geo fallback tightened: ${result.breakdown.geo}`);
 });
 
 test('matchReason mentions favoriter and past-history when relevant', () => {
@@ -202,6 +202,80 @@ test('getMatchSuggestions still shows remote players when no locals match', () =
   const result = getMatchSuggestions(me, [remote], { limit: 5 });
   assert.equal(result.length, 1);
   assert.equal(result[0].profile.id, 'remote');
+});
+
+test('getMatchSuggestions excludes far players when both have coordinates', () => {
+  // Nørresundby ≈ 57.08, 9.93 — Aarhus ≈ 56.16, 10.17 (~110+ km)
+  const me = profile({
+    id: 'me',
+    area: 'Nordjylland',
+    latitude: 57.081,
+    longitude: 9.928,
+  });
+  const local = profile({
+    id: 'local',
+    area: 'Nordjylland',
+    latitude: 57.049,
+    longitude: 9.919,
+    elo_rating: 1020,
+  });
+  const aarhus = profile({
+    id: 'aarhus',
+    area: 'Østjylland',
+    latitude: 56.157,
+    longitude: 10.173,
+    elo_rating: 1000,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+  const holstebro = profile({
+    id: 'holstebro',
+    area: 'Vestjylland',
+    latitude: 56.348,
+    longitude: 8.585,
+    elo_rating: 1000,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+
+  const result = getMatchSuggestions(me, [aarhus, holstebro, local], { limit: 10 });
+  const ids = result.map((r) => r.profile.id);
+  assert.ok(ids.includes('local'), 'local nearby should remain');
+  assert.ok(!ids.includes('aarhus'), 'Aarhus should be filtered by distance');
+  assert.ok(!ids.includes('holstebro'), 'Holstebro should be filtered by distance');
+});
+
+test('nearby candidate ranks above same-region but farther candidate', () => {
+  const me = profile({
+    id: 'me',
+    area: 'Nordjylland',
+    latitude: 57.081,
+    longitude: 9.928,
+    elo_rating: 1000,
+  });
+  const nearby = profile({
+    id: 'nearby',
+    area: 'Nordjylland',
+    latitude: 57.05,
+    longitude: 9.92,
+    elo_rating: 1050,
+  });
+  const farther = profile({
+    id: 'farther',
+    area: 'Nordjylland',
+    latitude: 57.45,
+    longitude: 10.05, // ~45 km nordpå
+    elo_rating: 1000,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+
+  const result = getMatchSuggestions(me, [farther, nearby], { limit: 5 });
+  assert.equal(result[0].profile.id, 'nearby');
+  assert.ok((result[0].distanceBand ?? 9) < (result[1].distanceBand ?? 9));
 });
 
 test('matchReason mentions same region when areas match canonically', () => {
