@@ -9,6 +9,7 @@ import {
   PLAY_WINDOW_PRESETS,
   dayChoiceLabel,
   dayLabel,
+  dateBadge,
   deadlineInfo,
   endSlotsAfter,
   formatSelectedDays,
@@ -100,6 +101,18 @@ test('dayLabel viser dansk ugedag og dato', () => {
   // 2026-08-25 er en tirsdag.
   assert.equal(dayLabel('2026-08-25'), 'Tir 25/8');
   assert.equal(dayLabel(''), '');
+});
+
+test('dateBadge giver dagtal og trebogstavs-måned til kortet', () => {
+  assert.deepEqual(dateBadge('2026-08-24'), { day: '24', month: 'AUG' });
+  assert.deepEqual(dateBadge(''), { day: '', month: '' });
+});
+
+test('aktive hensigter vises som kort med fortryd-knap', () => {
+  const src = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
+  assert.match(src, /pm-play-intent-list/);
+  assert.match(src, /pm-play-intent-cancel/);
+  assert.match(src, /pm-play-intent-date/);
 });
 
 test('shortTime klipper sekunder fra Postgres-tider', () => {

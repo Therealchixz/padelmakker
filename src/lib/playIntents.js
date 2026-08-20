@@ -26,6 +26,7 @@ export {
   clampEndToWindow,
   isoDateOffset,
   dayLabel,
+  dateBadge,
   dayChoiceLabel,
   toggleSelectedDay,
   formatSelectedDays,

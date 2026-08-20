@@ -104,6 +104,7 @@ export function isoDateOffset(days = 0) {
 }
 
 const WEEKDAYS = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+const MONTHS_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAJ', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
 
 /** "Tir 25/8" — kort og læsbar dag-etiket. */
 export function dayLabel(isoDate) {
@@ -111,6 +112,13 @@ export function dayLabel(isoDate) {
   if (!y || !m || !d) return '';
   const dt = new Date(Date.UTC(y, m - 1, d));
   return `${WEEKDAYS[dt.getUTCDay()]} ${d}/${m}`;
+}
+
+/** Datobadge til kort: dagtal + trebogstavs-måned, som på Kommende-listen. */
+export function dateBadge(isoDate) {
+  const [y, m, d] = String(isoDate || '').split('-').map(Number);
+  if (!y || !m || !d) return { day: '', month: '' };
+  return { day: String(d), month: MONTHS_SHORT[m - 1] };
 }
 
 /** Chip-tekst: "I dag" / "I morgen" slår ugedagen, så man ikke skal tælle. */
