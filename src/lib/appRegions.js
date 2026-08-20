@@ -8,7 +8,10 @@ export const APP_REGIONS = [...BANER_REGION_ORDER];
 export { BANER_REGION_SUBTITLE };
 export const DEFAULT_APP_REGION = 'Hovedstaden';
 
-/** Gamle profil-værdier (5 administrative regioner) → app-landsdele. */
+/**
+ * Gamle profil-værdier (5 administrative regioner + bynavn) → app-landsdele.
+ * Skal holdes i sync med public.canonical_app_region() i Supabase.
+ */
 export const LEGACY_ADMIN_REGION_TO_APP = {
   'Region Nordjylland': 'Nordjylland',
   'Region Hovedstaden': 'Hovedstaden',
@@ -16,6 +19,7 @@ export const LEGACY_ADMIN_REGION_TO_APP = {
   'Region Syddanmark': 'Sydjylland',
   Sønderjylland: 'Sydjylland',
   'Region Midtjylland': 'Østjylland',
+  København: 'Hovedstaden',
 };
 
 /** Gamle by-id'er fra filter-UI → app-landsdele. */
