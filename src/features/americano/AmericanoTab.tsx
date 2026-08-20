@@ -64,7 +64,7 @@ type AmericanoSubTab = 'open' | 'playing' | 'completed'
 
 type Props = {
   profile?: ProfileLike | null
-  showToast: (msg: string) => void
+  showToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   /** Gendan underfane efter tab/fokus/genindlæsning i samme session */
   initialSubTab?: AmericanoSubTab
   onAmericanoSubTabChange?: (tab: AmericanoSubTab) => void

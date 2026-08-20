@@ -169,6 +169,16 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     cooldownSeconds: 30,
     renotify: true,
   },
+  /* Sidste skub inden fristen — må ikke lyde svagere end forslaget selv. */
+  match_proposal_reminder: {
+    channel: "invitation",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
   match_proposal_confirmed: {
     channel: "kampe",
     level: "critical",

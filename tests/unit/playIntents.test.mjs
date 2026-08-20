@@ -6,6 +6,7 @@ import {
   PLAY_TIME_BANDS,
   dayLabel,
   deadlineInfo,
+  isProposalNotification,
   isoDateOffset,
   shortTime,
   timeBandByKey,
@@ -131,7 +132,73 @@ test('oprydningen er sat på skema hvert 15. minut', () => {
 
 test('notifikationspolitik dækker de nye forslags-typer', () => {
   const policy = readFileSync('src/lib/notificationPolicy.js', 'utf8');
-  for (const type of ['match_proposal', 'match_proposal_confirmed', 'match_proposal_declined']) {
+  for (const type of [
+    'match_proposal',
+    'match_proposal_reminder',
+    'match_proposal_confirmed',
+    'match_proposal_declined',
+  ]) {
     assert.ok(policy.includes(`${type}:`), `${type} mangler i notificationPolicy`);
+  }
+});
+
+const REMINDER_SQL = readFileSync('supabase/sql/match_proposal_reminders.sql', 'utf8');
+const REMINDER_FN = readFileSync('supabase/functions/send-reminders/index.ts', 'utf8');
+
+test('kun dem der endnu ikke har svaret får en påmindelse', () => {
+  assert.match(REMINDER_SQL, /pr\.status = 'pending'/);
+  assert.match(REMINDER_SQL, /mem\.response = 'pending'/);
+});
+
+test('påmindelsen sendes i tide, men ikke oveni selve forslaget', () => {
+  // Under 20 min når skubbet ikke frem, og et forslag med kort lunte er lige
+  // blevet varslet — begge grænser skal stå, ellers bliver det støj.
+  assert.match(
+    REMINDER_SQL,
+    /pr\.expires_at between now\(\) \+ interval '20 minutes' and now\(\) \+ interval '3 hours'/
+  );
+  assert.match(REMINDER_SQL, /pr\.created_at <= now\(\) - interval '45 minutes'/);
+});
+
+test('påmindelsen genbruger reminder_log, så ingen skubbes to gange', () => {
+  assert.match(REMINDER_SQL, /union all select \* from proposal_deadlines/);
+  assert.match(REMINDER_SQL, /from reminder_log rl/);
+});
+
+test('påmindelsen sendes som invitation, ikke som stille kamp-besked', () => {
+  assert.match(REMINDER_FN, /proposal_deadline"\s*\?\s*"invitation"/);
+  assert.match(REMINDER_FN, /if \(row\.kind === "proposal_deadline"\) return "match_proposal_reminder";/);
+  assert.match(REMINDER_FN, /urgency: urgent \? "high" : "normal"/);
+});
+
+test('påmindelsen peger på forslaget, så trykket fører det rigtige sted hen', () => {
+  assert.match(REMINDER_FN, /entityType: "match_proposal", entityId: row\.entity_id/);
+});
+
+test('push-kanalen følger beskeden i stedet for altid at være kampe', () => {
+  assert.match(REMINDER_FN, /pushBucket\[channel\] === false/);
+});
+
+test('forslags-beskeder genkendes, men ikke bekræftelsen der peger på kampen', () => {
+  assert.equal(isProposalNotification('match_proposal'), true);
+  assert.equal(isProposalNotification('match_proposal_reminder'), true);
+  assert.equal(isProposalNotification('match_proposal_declined'), true);
+  // Bekræftede forslag har et rigtigt match_id og hører hjemme i Kampe.
+  assert.equal(isProposalNotification('match_proposal_confirmed'), false);
+  assert.equal(isProposalNotification('match_reminder'), false);
+  assert.equal(isProposalNotification(null), false);
+});
+
+test('et tryk på en forslags-besked fører til Hjem, hvor kortet står', () => {
+  for (const file of ['src/components/NotificationBell.jsx', 'src/pages/NotifikationerPage.jsx']) {
+    const src = readFileSync(file, 'utf8');
+    assert.match(
+      src,
+      /isProposalNotification\(n\?\.type\)/,
+      `${file} navigerer ikke på forslags-beskeder`
+    );
+    assert.match(src, /navigate\('\/dashboard\/hjem'\)/, `${file} peger ikke på Hjem`);
+    // Uden dette er beskeden ikke klikbar, og navigationen ovenfor er død kode.
+    assert.match(src, /isProposalNotification\(n\.type\)/, `${file} markerer den ikke klikbar`);
   }
 });

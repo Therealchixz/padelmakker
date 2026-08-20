@@ -89,7 +89,7 @@ export async function sharePadelMatch({ match, hostName }) {
 }
 
 /**
- * @param {{ tournament: { id: string, name?: string, tournament_date?: string, time_slot?: string, court_name?: string }, hostName?: string }} options
+ * @param {{ tournament: { id: string, name?: string, tournament_date?: string, time_slot?: string, court_name?: string | null }, hostName?: string }} options
  * @returns {Promise<ShareResult>}
  */
 export async function shareAmericanoTournament({ tournament, hostName }) {

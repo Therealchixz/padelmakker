@@ -10,6 +10,7 @@ import {
   kampeFocusFooterLabel,
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
+import { isProposalNotification } from '../lib/playIntentUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import {
   deleteNotificationsForUser,
@@ -236,6 +237,10 @@ export function NotifikationerPage({ onBack }) {
     if (n?.type === 'open_matches_weekly') {
       navigate('/dashboard/kampe'); return;
     }
+    // Forslagskortet med ja/nej-knapperne bor på Hjem.
+    if (isProposalNotification(n?.type)) {
+      navigate('/dashboard/hjem'); return;
+    }
     const kampeTarget = notificationKampeTarget(n);
     if (kampeTarget) {
       navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
@@ -331,7 +336,8 @@ export function NotifikationerPage({ onBack }) {
             || (n.type === 'user_report' && profile?.role === 'admin')
             || n.type === 'makker_suggestion'
             || n.type === 'elo_change'
-            || n.type === 'result_submitted';
+            || n.type === 'result_submitted'
+            || isProposalNotification(n.type);
           const isResultPending = n.type === 'result_submitted';
           const canMarkReadOnly = !n.read && !isClickable && !isResultPending;
           return (

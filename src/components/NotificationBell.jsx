@@ -30,6 +30,7 @@ import {
   kampeFocusFooterLabel,
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
+import { isProposalNotification } from '../lib/playIntentUtils';
 import {
   deleteNotificationsForUser,
   emitNotificationsSync,
@@ -406,6 +407,14 @@ export function NotificationBell({ tourForceOpen = false }) {
       await markNotifRead(n);
       setOpen(false);
       navigate('/dashboard/kampe');
+      return;
+    }
+    // Forslagskortet med ja/nej-knapperne bor på Hjem — en påmindelse om at
+    // svare skal føre direkte derhen.
+    if (isProposalNotification(n?.type)) {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate('/dashboard/hjem');
       return;
     }
     const kampeTarget = notificationKampeTarget(n);
@@ -818,12 +827,14 @@ export function NotificationBell({ tourForceOpen = false }) {
               const kampeTarget = notificationKampeTarget(n);
               const isEloProfile = n.type === 'elo_change' && !kampeTarget;
               const isMakkerSuggestion = n.type === 'makker_suggestion' && Boolean(n.entity_id);
+              const isProposal = isProposalNotification(n.type);
               const isClickable =
                 Boolean(kampeTarget)
                 || isAdminResultError
                 || isAdminUserReport
                 || isEloProfile
-                || isMakkerSuggestion;
+                || isMakkerSuggestion
+                || isProposal;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")

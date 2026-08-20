@@ -1,7 +1,8 @@
 // Supabase Edge Function: send-reminders
-// Cron-driven. Finds due match/tournament reminders (+ result nudges) via the
-// public.get_due_reminders() SQL function, writes an in-app notification, and
-// sends Web Push — reusing the same VAPID setup as send-push.
+// Cron-driven. Finds due match/tournament reminders (+ result nudges and
+// unanswered pool proposals) via the public.get_due_reminders() SQL function,
+// writes an in-app notification, and sends Web Push — reusing the same VAPID
+// setup as send-push.
 //
 // Auth: caller MUST present the shared secret (x-cron-secret header) that is
 // stored server-side in public.app_config — so only the scheduled job can
@@ -16,8 +17,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
 
 type DueRow = {
-  kind: "reminder_24h" | "reminder_1h" | "result_nudge";
-  entity_type: "match" | "americano";
+  kind: "reminder_24h" | "reminder_1h" | "result_nudge" | "proposal_deadline";
+  entity_type: "match" | "americano" | "match_proposal";
   entity_id: string;
   user_id: string;
   match_id: string | null;
@@ -45,6 +46,15 @@ function tournamentLabel(fmt: string | null): string {
 function buildContent(row: DueRow): { title: string; body: string } {
   const hhmm = hhmmCph(row.start_at);
   const onCourt = row.label ? ` på ${row.label}` : "";
+  if (row.kind === "proposal_deadline") {
+    // start_at bærer her svarfristen, ikke spilletidspunktet.
+    return {
+      title: "De andre venter på dit svar ⏳",
+      body: row.label
+        ? `Bekræft kampen ${row.label} inden kl. ${hhmm}, ellers falder den fra hinanden.`
+        : `Bekræft kampen inden kl. ${hhmm}, ellers falder den fra hinanden.`,
+    };
+  }
   if (row.kind === "result_nudge") {
     return {
       title: "Husk at indtaste resultat 🎾",
@@ -64,8 +74,32 @@ function buildContent(row: DueRow): { title: string; body: string } {
 }
 
 function notifTypeFor(row: DueRow): string {
+  if (row.kind === "proposal_deadline") return "match_proposal_reminder";
   if (row.kind === "result_nudge") return "result_nudge";
   return row.entity_type === "americano" ? "tournament_reminder" : "match_reminder";
+}
+
+/** Hvor notifikationen peger hen, når den åbnes. */
+function targetFor(row: DueRow): {
+  matchId: string | null;
+  entityType: string | null;
+  entityId: string | null;
+} {
+  if (row.entity_type === "americano") {
+    return { matchId: null, entityType: "americano", entityId: row.entity_id };
+  }
+  if (row.entity_type === "match_proposal") {
+    return { matchId: null, entityType: "match_proposal", entityId: row.entity_id };
+  }
+  return { matchId: row.match_id, entityType: null, entityId: null };
+}
+
+/**
+ * Et forslag udløber, hvis ingen svarer, så påmindelsen skal have samme vægt
+ * som selve invitationen — ikke ligge stille i 'kampe'-kanalen.
+ */
+function channelFor(row: DueRow): string {
+  return row.kind === "proposal_deadline" ? "invitation" : "kampe";
 }
 
 function jsonResponse(obj: unknown, status = 200) {
@@ -151,10 +185,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const { title, body } = buildContent(row);
-    const isAmericano = row.entity_type === "americano";
-    const matchId = isAmericano ? null : row.match_id;
-    const entityType = isAmericano ? "americano" : null;
-    const entityId = isAmericano ? row.entity_id : null;
+    const { matchId, entityType, entityId } = targetFor(row);
+    const channel = channelFor(row);
+    const urgent = row.kind === "proposal_deadline";
 
     // In-app notification (service role bypasses RLS).
     const { error: notifErr } = await admin.from("notifications").insert({
@@ -173,7 +206,7 @@ Deno.serve(async (req: Request) => {
       notified++;
     }
 
-    // Respect the user's push prefs for the 'kampe' channel.
+    // Respect the user's push prefs for the notification's channel.
     const { data: prof } = await admin
       .from("profiles")
       .select("notification_prefs")
@@ -190,7 +223,7 @@ Deno.serve(async (req: Request) => {
       prefs && typeof prefs === "object" && prefs.push && typeof prefs.push === "object"
         ? (prefs.push as Record<string, boolean>)
         : null;
-    if (pushBucket && pushBucket.kampe === false) {
+    if (pushBucket && pushBucket[channel] === false) {
       continue; // in-app only
     }
 
@@ -217,10 +250,10 @@ Deno.serve(async (req: Request) => {
       entityType,
       entityId,
       type: notifTypeFor(row),
-      channel: "kampe",
-      level: "normal",
+      channel,
+      level: urgent ? "critical" : "normal",
       silent: false,
-      renotify: false,
+      renotify: urgent,
       tag: `pm:reminder:${row.entity_id}:${row.kind}`,
       unreadCount,
     });
@@ -232,7 +265,7 @@ Deno.serve(async (req: Request) => {
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             payload,
-            { TTL: 1800, urgency: "normal" },
+            { TTL: 1800, urgency: urgent ? "high" : "normal" },
           );
           pushed++;
         } catch (err: unknown) {

@@ -250,6 +250,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       label: user.city,
     } : null
   ));
+  const [quickCitySaving, setQuickCitySaving] = useState(false);
   const [reactivationPref, setReactivationPref] = useState(() => getReactivationOpenMatches(user?.notification_prefs));
   const [reactivationPrefSaving, setReactivationPrefSaving] = useState(false);
 

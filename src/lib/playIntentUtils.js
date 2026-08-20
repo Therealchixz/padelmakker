@@ -2,6 +2,20 @@
  * Pulje-model — ren logik (ingen Supabase-import), så den kan unit-testes.
  */
 
+/**
+ * Notifikationer der handler om et pulje-forslag. De håndteres på Hjem, hvor
+ * kortet med ja/nej-knapperne står — ikke i Kampe-fanen som øvrige kampbeskeder.
+ */
+export const PROPOSAL_NOTIF_TYPES = Object.freeze([
+  'match_proposal',
+  'match_proposal_reminder',
+  'match_proposal_declined',
+]);
+
+export function isProposalNotification(type) {
+  return PROPOSAL_NOTIF_TYPES.includes(String(type || ''));
+}
+
 /** Faste tidsbånd — to tryk er nok til at melde sig klar. */
 export const PLAY_TIME_BANDS = [
   { key: 'morgen', label: 'Morgen', start: '07:00', end: '11:00' },

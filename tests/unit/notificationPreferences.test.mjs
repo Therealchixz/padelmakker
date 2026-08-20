@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  normalizeNotificationPrefs,
   getReactivationOpenMatches,
   mergeReactivationOpenMatches,
 } from '../../src/lib/notificationPreferences.js';
