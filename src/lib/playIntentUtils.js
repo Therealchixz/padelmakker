@@ -58,6 +58,19 @@ export const PLAY_WINDOW_PRESETS = Object.freeze([
   { key: 'sen', label: 'Sen aften', start: '21:00', end: '23:30' },
 ]);
 
+/** Hele dagen overlapper båndene med vilje — det er et separat hurtigt valg. */
+export const PLAY_ALL_DAY = Object.freeze({
+  key: 'hele',
+  label: 'Hele dagen',
+  start: '06:00',
+  end: '23:30',
+});
+
+export function isAllDayWindow(start, end) {
+  return String(start || '').slice(0, 5) === PLAY_ALL_DAY.start
+    && String(end || '').slice(0, 5) === PLAY_ALL_DAY.end;
+}
+
 /** @deprecated Brug PLAY_WINDOW_PRESETS — beholdt så ældre imports ikke knækker. */
 export const PLAY_TIME_BANDS = PLAY_WINDOW_PRESETS;
 
@@ -77,6 +90,7 @@ export function isValidPlayWindow(start, end) {
 }
 
 export function matchingPresetKey(start, end) {
+  if (isAllDayWindow(start, end)) return PLAY_ALL_DAY.key;
   return PLAY_WINDOW_PRESETS.find((p) => p.start === start && p.end === end)?.key || null;
 }
 
@@ -158,8 +172,9 @@ export function shortTime(value) {
   return String(value || '').slice(0, 5);
 }
 
-/** Chip-tid: "17:00–23:00" bliver "17–23", "17:30–21:00" bliver "17:30–21". */
+/** Chip-tid: "17:00–23:00" bliver "17–23". Hele dagen vises som tekst. */
 export function compactHourRange(start, end) {
+  if (isAllDayWindow(start, end)) return 'hele dagen';
   const label = (value) => {
     const t = shortTime(value);
     if (!t) return '';

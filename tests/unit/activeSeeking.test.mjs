@@ -49,12 +49,12 @@ test('onboarding-prompt bruger modal-body med ordentlig padding', () => {
   assert.doesNotMatch(onboarding, /padding: '4px 2px 8px'/);
 });
 
-test('ActiveSeekingPanel integreret på Hjem, Makkere og Kampe', () => {
+test('ActiveSeekingPanel integreret på Makkere og Kampe, ikke Hjem', () => {
   const home = readFileSync(join(root, 'src/dashboard/HomeTab.jsx'), 'utf8');
   const makkere = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
   const kampe = readFileSync(join(root, 'src/dashboard/KampeTab.jsx'), 'utf8');
-  assert.match(home, /ActiveSeekingPanel/);
-  assert.match(home, /variant="homeCard"/);
+  assert.doesNotMatch(home, /ActiveSeekingPanel/);
+  assert.doesNotMatch(home, /homeCard/);
   assert.match(home, /ActiveSeekingOnboardingPrompt/);
   assert.match(makkere, /ActiveSeekingPanel/);
   assert.match(makkere, /channel="makker"/);

@@ -7,6 +7,8 @@ import {
   PLAY_TIME_BANDS,
   PLAY_TIME_SLOTS,
   PLAY_WINDOW_PRESETS,
+  PLAY_ALL_DAY,
+  isAllDayWindow,
   dayChoiceLabel,
   dayLabel,
   dateBadge,
@@ -47,6 +49,16 @@ test('hurtige valg overlapper ikke og dækker 06:00–23:30', () => {
     const cur = PLAY_WINDOW_PRESETS[i];
     assert.equal(prev.end, cur.start, `${prev.key} og ${cur.key} overlapper`);
   }
+});
+
+test('hele dagen er 06:00–23:30 og vises som eget valg', () => {
+  assert.equal(PLAY_ALL_DAY.start, '06:00');
+  assert.equal(PLAY_ALL_DAY.end, '23:30');
+  assert.equal(isAllDayWindow('06:00', '23:30'), true);
+  assert.equal(isAllDayWindow('06:00:00', '23:30:00'), true);
+  assert.equal(isAllDayWindow('18:00', '21:00'), false);
+  assert.equal(matchingPresetKey('06:00', '23:30'), 'hele');
+  assert.equal(compactHourRange('06:00', '23:30'), 'hele dagen');
 });
 
 test('10:00–12:00 er ét gyldigt vindue, 10:00–11:00 er for kort', () => {

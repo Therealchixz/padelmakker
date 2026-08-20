@@ -4,6 +4,7 @@ import { theme, btn, font, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
 import {
   PLAY_WINDOW_PRESETS,
+  PLAY_ALL_DAY,
   PLAY_START_SLOTS,
   cancelPlayIntent,
   clampEndToWindow,
@@ -16,6 +17,7 @@ import {
   fetchMyPlayIntents,
   fetchPendingProposals,
   formatSelectedDays,
+  isAllDayWindow,
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
@@ -305,8 +307,8 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
             {saving
               ? 'Melder dig klar…'
               : days.length > 1
-                ? `Meld mig klar · ${days.length} dage · ${shortTime(start)}–${shortTime(end)}`
-                : `Meld mig klar · ${shortTime(start)}–${shortTime(end)}`}
+                ? `Meld mig klar · ${days.length} dage · ${compactHourRange(start, end)}`
+                : `Meld mig klar · ${compactHourRange(start, end)}`}
           </button>
         )}
       >
@@ -352,6 +354,26 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
 
           <div style={labelStyle}>Hurtigt valg</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, marginBottom: 16 }}>
+            <button
+              type="button"
+              onClick={() => applyPreset(PLAY_ALL_DAY)}
+              style={{
+                gridColumn: '1 / -1',
+                padding: '9px 6px',
+                borderRadius: 12,
+                fontFamily: font,
+                cursor: 'pointer',
+                textAlign: 'center',
+                border: `1.5px solid ${presetKey === PLAY_ALL_DAY.key ? theme.accent : theme.border}`,
+                background: presetKey === PLAY_ALL_DAY.key ? 'var(--pm-accent-bg)' : theme.surface,
+                color: presetKey === PLAY_ALL_DAY.key ? theme.accent : theme.text,
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '-0.01em' }}>{PLAY_ALL_DAY.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 500, marginTop: 2, color: presetKey === PLAY_ALL_DAY.key ? theme.accent : theme.textLight }}>
+                {shortTime(PLAY_ALL_DAY.start)}–{shortTime(PLAY_ALL_DAY.end)}
+              </div>
+            </button>
             {PLAY_WINDOW_PRESETS.map((p) => {
               const selected = p.key === presetKey;
               return (
@@ -409,7 +431,9 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
           </div>
           <p style={{ fontSize: 12, color: theme.textLight, margin: 0, lineHeight: 1.4 }}>
             {windowOk
-              ? `Klar ${daysSummary} kl. ${start}–${end}. Mindst 1½ time, så der er plads til en kamp.`
+              ? isAllDayWindow(start, end)
+                ? `Klar ${daysSummary} hele dagen.`
+                : `Klar ${daysSummary} kl. ${start}–${end}. Mindst 1½ time, så der er plads til en kamp.`
               : 'Vælg mindst 1½ time.'}
           </p>
         </div>

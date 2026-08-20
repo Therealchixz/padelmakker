@@ -13,6 +13,7 @@ import { dayLabel, isoDateOffset } from './playIntentUtils';
 export {
   PLAY_TIME_BANDS,
   PLAY_WINDOW_PRESETS,
+  PLAY_ALL_DAY,
   PLAY_TIME_SLOTS,
   PLAY_START_SLOTS,
   MIN_PLAY_WINDOW_MINUTES,
@@ -22,6 +23,7 @@ export {
   windowMinutes,
   isValidPlayWindow,
   matchingPresetKey,
+  isAllDayWindow,
   endSlotsAfter,
   clampEndToWindow,
   isoDateOffset,

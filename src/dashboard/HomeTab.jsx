@@ -25,9 +25,8 @@ import { addMatchToCalendar } from '../lib/calendarExport';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
-import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
-import { PlayIntentPanel } from '../components/PlayIntentPanel';
 import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
+import { PlayIntentPanel } from '../components/PlayIntentPanel';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -1181,9 +1180,6 @@ export function HomeTab({ user, setTab, showToast }) {
 
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
-
-      {/* Seek card (toggle aktiv søgning) */}
-      {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
 
       {/* Pulje: meld dig klar i et tidsrum — appen samler de fire */}
       {showToast ? (
