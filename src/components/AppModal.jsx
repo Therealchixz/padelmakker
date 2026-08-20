@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import { theme, resolveModalMaxWidth } from '../lib/platformTheme';
 
 const FOCUSABLE_SELECTOR = [
@@ -25,6 +26,7 @@ export function AppModal({
   contentStyle = {},
   backdropStyle = {},
   footer = null,
+  showClose = false,
 }) {
   const contentRef = useRef(null);
   const openerRef = useRef(null);
@@ -139,6 +141,18 @@ export function AppModal({
           ...contentStyle,
         }}
       >
+        {showClose && typeof onClose === 'function' ? (
+          <div className="pm-app-modal-close-bar">
+            <button
+              type="button"
+              className="pm-app-modal-close"
+              onClick={onClose}
+              aria-label="Luk"
+            >
+              <X size={18} aria-hidden />
+            </button>
+          </div>
+        ) : null}
         {children}
         {footer ? <div className="pm-app-modal-footer">{footer}</div> : null}
       </div>

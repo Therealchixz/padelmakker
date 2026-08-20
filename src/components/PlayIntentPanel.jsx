@@ -7,18 +7,20 @@ import {
   PLAY_START_SLOTS,
   cancelPlayIntent,
   clampEndToWindow,
-  createPlayIntent,
+  createPlayIntents,
   dayChoiceLabel,
   dayLabel,
   deadlineInfo,
   endSlotsAfter,
   fetchMyPlayIntents,
   fetchPendingProposals,
+  formatSelectedDays,
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
   respondToMatchProposal,
   shortTime,
+  toggleSelectedDay,
 } from '../lib/playIntents';
 
 const DAY_CHOICES = Array.from({ length: 14 }, (_, i) => isoDateOffset(i));
@@ -28,13 +30,13 @@ const DEFAULT_END = '21:00';
 /**
  * "Jeg vil spille" — lav-forpligtelses indgang til en kamp.
  *
- * Brugeren vælger dag og et frit tidsrum; systemet finder de øvrige tre og
- * sender et forslag. Formålet er at fjerne organiseringsbyrden, ikke at
- * erstatte det at oprette en kamp manuelt.
+ * Brugeren vælger én eller flere dage og et frit tidsrum; systemet finder de
+ * øvrige tre og sender et forslag. Formålet er at fjerne organiseringsbyrden,
+ * ikke at erstatte det at oprette en kamp manuelt.
  */
 export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [open, setOpen] = useState(false);
-  const [day, setDay] = useState(DAY_CHOICES[0]);
+  const [days, setDays] = useState([DAY_CHOICES[0]]);
   const [start, setStart] = useState(DEFAULT_START);
   const [end, setEnd] = useState(DEFAULT_END);
   const [saving, setSaving] = useState(false);
@@ -67,6 +69,8 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const presetKey = matchingPresetKey(start, end);
   const endOptions = endSlotsAfter(start);
   const windowOk = isValidPlayWindow(start, end);
+  const daysOk = days.length > 0;
+  const daysSummary = formatSelectedDays(days);
 
   const applyPreset = useCallback((preset) => {
     setStart(preset.start);
@@ -78,35 +82,51 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     setEnd((prev) => clampEndToWindow(nextStart, prev));
   }, []);
 
+  const toggleDay = useCallback((isoDate) => {
+    setDays((prev) => toggleSelectedDay(prev, isoDate));
+  }, []);
+
   const submit = useCallback(async () => {
-    if (!userId || saving || !windowOk) return;
+    if (!userId || saving || !windowOk || !daysOk) return;
     setSaving(true);
-    const res = await createPlayIntent({
-      playDate: day,
+    const results = await createPlayIntents({
+      playDates: days,
       startTime: start,
       endTime: end,
       viewerId: userId,
     });
     setSaving(false);
 
-    if (!res.ok) {
-      showToast?.(res.error, 'error');
+    const ok = results.filter((r) => r.ok);
+    const failed = results.filter((r) => !r.ok);
+    const formed = ok.filter((r) => r.formed);
+
+    if (ok.length === 0) {
+      showToast?.(failed[0]?.error || 'Kunne ikke melde dig klar', 'error');
       return;
     }
 
     setOpen(false);
-    if (res.formed) {
+    if (formed.length > 0) {
       showToast?.('I er 4 — bekræft kampen nedenfor', 'success');
-    } else if (res.othersWaiting > 0) {
-      showToast?.(
-        `Du er meldt klar. ${res.othersWaiting} ${res.othersWaiting === 1 ? 'anden står' : 'andre står'} klar i samme tidsrum.`,
-        'success'
-      );
+    } else if (ok.length === 1) {
+      const waiting = ok[0].othersWaiting;
+      if (waiting > 0) {
+        showToast?.(
+          `Du er meldt klar. ${waiting} ${waiting === 1 ? 'anden står' : 'andre står'} klar i samme tidsrum.`,
+          'success'
+        );
+      } else {
+        showToast?.('Du er meldt klar. Vi giver besked, når der er fire.', 'success');
+      }
     } else {
-      showToast?.('Du er meldt klar. Vi giver besked, når der er fire.', 'success');
+      showToast?.(`Du er meldt klar ${ok.length} dage. Vi giver besked, når der er fire.`, 'success');
+    }
+    if (failed.length > 0) {
+      showToast?.(failed[0].error, 'error');
     }
     await reload();
-  }, [userId, saving, windowOk, day, start, end, showToast, reload]);
+  }, [userId, saving, windowOk, daysOk, days, start, end, showToast, reload]);
 
   const respond = useCallback(async (proposalId, accept) => {
     setBusyProposal(proposalId);
@@ -269,14 +289,19 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
         onClose={() => setOpen(false)}
         ariaLabel="Meld dig klar til at spille"
         maxWidthPreset="sm"
+        showClose
         footer={(
           <button
             type="button"
             onClick={submit}
-            disabled={saving || !windowOk}
-            style={{ ...btn(true), width: '100%', opacity: windowOk ? 1 : 0.5 }}
+            disabled={saving || !windowOk || !daysOk}
+            style={{ ...btn(true), width: '100%', opacity: windowOk && daysOk ? 1 : 0.5 }}
           >
-            {saving ? 'Melder dig klar…' : `Meld mig klar · ${shortTime(start)}–${shortTime(end)}`}
+            {saving
+              ? 'Melder dig klar…'
+              : days.length > 1
+                ? `Meld mig klar · ${days.length} dage · ${shortTime(start)}–${shortTime(end)}`
+                : `Meld mig klar · ${shortTime(start)}–${shortTime(end)}`}
           </button>
         )}
       >
@@ -288,15 +313,19 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
             Vælg det tidsrum, du kan. Vi finder tre andre i samme hul og sender et forslag — du bekræfter, før der sker noget.
           </p>
 
-          <div style={labelStyle}>Dag</div>
+          <div style={labelStyle}>Dage</div>
+          <p style={{ fontSize: 12, color: theme.textLight, margin: '-4px 0 8px', lineHeight: 1.4 }}>
+            Tryk flere dage, hvis du kan det samme tidsrum mere end én gang.
+          </p>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
             {DAY_CHOICES.map((d) => {
-              const selected = d === day;
+              const selected = days.includes(d);
               return (
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setDay(d)}
+                  onClick={() => toggleDay(d)}
+                  aria-pressed={selected}
                   style={{
                     flexShrink: 0,
                     padding: '8px 13px',
@@ -375,7 +404,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
           </div>
           <p style={{ fontSize: 12, color: theme.textLight, margin: 0, lineHeight: 1.4 }}>
             {windowOk
-              ? `Klar ${dayChoiceLabel(day).toLowerCase()} kl. ${start}–${end}. Mindst 1½ time, så der er plads til en kamp.`
+              ? `Klar ${daysSummary} kl. ${start}–${end}. Mindst 1½ time, så der er plads til en kamp.`
               : 'Vælg mindst 1½ time.'}
           </p>
         </div>

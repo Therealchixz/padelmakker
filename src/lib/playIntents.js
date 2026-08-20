@@ -27,6 +27,8 @@ export {
   isoDateOffset,
   dayLabel,
   dayChoiceLabel,
+  toggleSelectedDay,
+  formatSelectedDays,
   shortTime,
   deadlineInfo,
 } from './playIntentUtils';
@@ -68,6 +70,16 @@ export async function createPlayIntent({ playDate, startTime, endTime, viewerId 
     proposalId: proposal.proposal_id || null,
     poolSize: Number(proposal.pool_size) || 1,
   };
+}
+
+/** Samme tidsrum på flere dage — én hensigt pr. dato. */
+export async function createPlayIntents({ playDates, startTime, endTime, viewerId }) {
+  const dates = [...new Set((playDates || []).filter(Boolean))].sort();
+  const results = [];
+  for (const playDate of dates) {
+    results.push(await createPlayIntent({ playDate, startTime, endTime, viewerId }));
+  }
+  return results;
 }
 
 export async function cancelPlayIntent(intentId) {

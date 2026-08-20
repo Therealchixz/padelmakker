@@ -4548,6 +4548,35 @@ button,
 }
 
 /* AppModal: valgfri fastlåst (sticky) bund-CTA */
+.pm-app-modal-close-bar {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: 10px 10px 0;
+}
+
+.pm-app-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt);
+  color: var(--pm-text-mid);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pm-app-modal-close:hover {
+  color: var(--pm-text);
+  background: var(--pm-surface-muted);
+}
+
+.pm-app-modal-content:has(.pm-app-modal-close-bar) .pm-modal-body {
+  padding-top: 8px;
+}
+
 .pm-app-modal-footer {
   flex-shrink: 0;
   border-top: 1px solid var(--pm-border);

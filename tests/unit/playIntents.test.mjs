@@ -11,12 +11,14 @@ import {
   dayLabel,
   deadlineInfo,
   endSlotsAfter,
+  formatSelectedDays,
   isProposalNotification,
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
   shortTime,
   timeBandByKey,
+  toggleSelectedDay,
 } from '../../src/lib/playIntentUtils.js';
 
 const POOL_SQL = readFileSync('supabase/sql/play_intent_pool.sql', 'utf8');
@@ -65,6 +67,25 @@ test('dayChoiceLabel siger I dag og I morgen i stedet for ugedagen', () => {
   assert.equal(dayChoiceLabel(isoDateOffset(0)), 'I dag');
   assert.equal(dayChoiceLabel(isoDateOffset(1)), 'I morgen');
   assert.equal(dayChoiceLabel('2026-08-25'), 'Tir 25/8');
+});
+
+test('toggleSelectedDay lader én vælge flere dage uden at tømme listen', () => {
+  const a = isoDateOffset(0);
+  const b = isoDateOffset(1);
+  const c = isoDateOffset(2);
+  assert.deepEqual(toggleSelectedDay([a], a), [a]);
+  assert.deepEqual(toggleSelectedDay([a], b), [a, b].sort());
+  assert.deepEqual(toggleSelectedDay([a, b], a), [b]);
+  assert.deepEqual(toggleSelectedDay([c, a], b), [a, b, c]);
+});
+
+test('formatSelectedDays beskriver en, to eller flere dage', () => {
+  const today = isoDateOffset(0);
+  const tomorrow = isoDateOffset(1);
+  assert.equal(formatSelectedDays([today]), 'i dag');
+  assert.equal(formatSelectedDays([today, tomorrow]), 'i dag og i morgen');
+  assert.equal(formatSelectedDays(['2026-08-25', '2026-08-26', '2026-08-27']), '3 dage');
+  assert.equal(formatSelectedDays([]), '');
 });
 
 test('isoDateOffset giver gyldige ISO-datoer og bevæger sig fremad', () => {

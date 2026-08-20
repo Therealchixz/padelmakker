@@ -121,6 +121,30 @@ export function dayChoiceLabel(isoDate) {
   return dayLabel(isoDate);
 }
 
+/** Flere dage i én hensigt: slå til/fra, men behold mindst én. */
+export function toggleSelectedDay(selected, isoDate) {
+  const next = new Set((selected || []).filter(Boolean));
+  if (!isoDate) return [...next].sort();
+  if (next.has(isoDate)) {
+    if (next.size <= 1) return [...next].sort();
+    next.delete(isoDate);
+  } else {
+    next.add(isoDate);
+  }
+  return [...next].sort();
+}
+
+/** "i dag", "i dag og i morgen", "3 dage". */
+export function formatSelectedDays(isoDates) {
+  const sorted = [...new Set((isoDates || []).filter(Boolean))].sort();
+  if (sorted.length === 0) return '';
+  if (sorted.length === 1) return dayChoiceLabel(sorted[0]).toLowerCase();
+  if (sorted.length === 2) {
+    return `${dayChoiceLabel(sorted[0]).toLowerCase()} og ${dayChoiceLabel(sorted[1]).toLowerCase()}`;
+  }
+  return `${sorted.length} dage`;
+}
+
 /** Postgres `time` kommer som "17:00:00" — vi viser kun time og minut. */
 export function shortTime(value) {
   return String(value || '').slice(0, 5);
