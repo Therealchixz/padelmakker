@@ -224,3 +224,34 @@ export function deadlineInfo(expiresAt, now = Date.now()) {
   const days = Math.floor(hours / 24);
   return { label: `${days} ${days === 1 ? 'dag' : 'dage'} tilbage`, urgent: false, expired: false };
 }
+
+/**
+ * Åbne kampe der overlapper de hensigter, brugeren lige har meldt.
+ * Deduperes på id, så flere dage ikke gentager samme kamp.
+ */
+export function uniqueOverlappingMatches(results) {
+  const seen = new Set();
+  const out = [];
+  for (const result of results || []) {
+    for (const match of result?.overlappingMatches || []) {
+      const id = match?.id;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(match);
+    }
+  }
+  return out;
+}
+
+export function overlappingMatchToast(matches) {
+  const list = uniqueOverlappingMatches([{ overlappingMatches: matches }]);
+  if (list.length === 0) return '';
+  if (list.length === 1) {
+    const court = String(list[0].court_name || '').trim();
+    const time = String(list[0].time || '').trim();
+    const where = court && court !== 'en bane' ? ` på ${court}` : ' i dit tidsrum';
+    const when = time ? ` kl. ${time}` : '';
+    return `Der er allerede en åben kamp${where}${when} — se Kampe.`;
+  }
+  return `Der er allerede ${list.length} åbne kampe i dit tidsrum — se Kampe.`;
+}

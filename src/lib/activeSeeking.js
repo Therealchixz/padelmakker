@@ -316,7 +316,13 @@ export function buildSeekingProfilePatch(user, channel, enabled, regionOverride)
  * @param {SeekingChannel} channel
  */
 export function seekingChannelLabel(channel) {
-  return channel === 'kamp' ? 'Søger kamp' : 'Søger makker';
+  return channel === 'kamp' ? 'Besked om kampe' : 'Synlig som makker';
+}
+
+export function seekingChannelHint(channel) {
+  return channel === 'kamp'
+    ? '24 timer: besked om nye åbne kampe — uden at vælge tid'
+    : 'Synlig for andre der leder efter makker';
 }
 
 /**
@@ -359,8 +365,8 @@ export function seekingHomeStatusLabel(user) {
   const makker = isSeekingUiActive(user, 'makker');
   const kamp = isSeekingUiActive(user, 'kamp');
   if (makker && kamp) return 'Makker og kamp aktive';
-  if (makker) return 'Søger makker';
-  if (kamp) return 'Søger kamp';
+  if (makker) return 'Synlig som makker';
+  if (kamp) return 'Besked om kampe';
   if (isSeekingTtlExpired(user, 'makker') || isSeekingTtlExpired(user, 'kamp')) {
     return 'Udløbet — slå til for at forny';
   }

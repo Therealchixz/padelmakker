@@ -12,6 +12,7 @@ import {
   buildSeekingProfilePatch,
   buildExpiredSeekingSyncPatch,
   hasSeekingRegion,
+  seekingChannelHint,
   seekingChannelLabel,
   seekingFilterPath,
   seekingVisibleDurationLabel,
@@ -262,7 +263,7 @@ export function ActiveSeekingPanel({
                 {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}
               </>
             ) : (
-              <p className="pm-active-seeking-hint">Slå til for besked når der er match</p>
+              <p className="pm-active-seeking-hint">{seekingChannelHint(ch)}</p>
             )}
           </div>
           <ToggleSwitch
@@ -306,7 +307,7 @@ export function ActiveSeekingPanel({
             </>
           ) : (
             <p className="pm-active-seeking-hint">
-              Få besked og bliv synlig når der er match på dit niveau
+              {seekingChannelHint(ch)}
             </p>
           )}
         </div>

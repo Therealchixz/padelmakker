@@ -23,6 +23,8 @@ import {
   compactHourRange,
   timeBandByKey,
   toggleSelectedDay,
+  uniqueOverlappingMatches,
+  overlappingMatchToast,
 } from '../../src/lib/playIntentUtils.js';
 
 const POOL_SQL = readFileSync('supabase/sql/play_intent_pool.sql', 'utf8');
@@ -126,6 +128,7 @@ test('aktive hensigter vises som chips under knappen', () => {
   assert.match(src, /pm-play-intent-block/);
   assert.match(src, /pm-play-intent-chips/);
   assert.match(src, /pm-play-intent-chip__x/);
+  assert.match(src, /åben kamp i samme hul/);
 });
 
 test('shortTime klipper sekunder fra Postgres-tider', () => {
@@ -173,6 +176,37 @@ test('udløbet frist markeres, så knappen kan slås fra', () => {
 test('deadlineInfo er robust over for manglende eller ugyldig dato', () => {
   assert.equal(deadlineInfo(null), null);
   assert.equal(deadlineInfo('ikke en dato'), null);
+});
+
+test('en hensigt matcher også åbne kampe i samme tidsrum', () => {
+  const notifySql = readFileSync('supabase/sql/play_intent_open_match_notify.sql', 'utf8');
+  assert.match(notifySql, /FROM public\.play_intents i/);
+  assert.match(notifySql, /play_intent_overlaps_match_time/);
+  assert.match(notifySql, /overlapping_matches/);
+  assert.match(POOL_SQL, /overlapping_matches/);
+  assert.match(POOL_SQL, /play_intent_overlaps_match_time/);
+});
+
+test('toast beskriver én eller flere overlappinge åbne kampe', () => {
+  assert.equal(overlappingMatchToast([]), '');
+  assert.match(
+    overlappingMatchToast([{ id: 'a', court_name: 'Padel House', time: '18:00' }]),
+    /Padel House/
+  );
+  assert.match(
+    overlappingMatchToast([
+      { id: 'a', court_name: 'Padel House', time: '18:00' },
+      { id: 'b', court_name: 'Anden hal', time: '19:00' },
+    ]),
+    /2 åbne kampe/
+  );
+  assert.equal(
+    uniqueOverlappingMatches([
+      { overlappingMatches: [{ id: 'a', court_name: 'A' }] },
+      { overlappingMatches: [{ id: 'a', court_name: 'A' }, { id: 'b', court_name: 'B' }] },
+    ]).length,
+    2,
+  );
 });
 
 test('puljen kræver fire spillere før der dannes et forslag', () => {

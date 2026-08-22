@@ -24,6 +24,8 @@ import {
   respondToMatchProposal,
   shortTime,
   toggleSelectedDay,
+  overlappingMatchToast,
+  uniqueOverlappingMatches,
 } from '../lib/playIntents';
 
 const DAY_CHOICES = Array.from({ length: 14 }, (_, i) => isoDateOffset(i));
@@ -46,6 +48,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [intents, setIntents] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [droppingId, setDroppingId] = useState(null);
+  const [busyProposal, setBusyProposal] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
   const userId = user?.id;
@@ -103,6 +106,8 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     const ok = results.filter((r) => r.ok);
     const failed = results.filter((r) => !r.ok);
     const formed = ok.filter((r) => r.formed);
+    const overlapping = uniqueOverlappingMatches(ok);
+    const overlapMsg = overlappingMatchToast(overlapping);
 
     if (ok.length === 0) {
       showToast?.(failed[0]?.error || 'Kunne ikke melde dig klar', 'error');
@@ -112,6 +117,8 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     setOpen(false);
     if (formed.length > 0) {
       showToast?.('I er 4 — bekræft kampen nedenfor', 'success');
+    } else if (overlapMsg) {
+      showToast?.(overlapMsg, 'success');
     } else if (ok.length === 1) {
       const waiting = ok[0].othersWaiting;
       if (waiting > 0) {
@@ -120,10 +127,10 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
           'success'
         );
       } else {
-        showToast?.('Du er meldt klar. Vi giver besked, når der er fire.', 'success');
+        showToast?.('Du er meldt klar. Vi giver besked, når der er fire — eller hvis nogen opretter en kamp i samme hul.', 'success');
       }
     } else {
-      showToast?.(`Du er meldt klar ${ok.length} dage. Vi giver besked, når der er fire.`, 'success');
+      showToast?.(`Du er meldt klar ${ok.length} dage. Vi giver besked, når der er fire — eller hvis nogen opretter en kamp i samme hul.`, 'success');
     }
     if (failed.length > 0) {
       showToast?.(failed[0].error, 'error');
@@ -317,7 +324,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
             Hvornår kan du spille?
           </h3>
           <p style={{ fontSize: 13, color: theme.textMid, margin: '0 0 18px', lineHeight: 1.45 }}>
-            Vælg det tidsrum, du kan. Vi finder tre andre i samme hul og sender et forslag — du bekræfter, før der sker noget.
+            Vælg det tidsrum, du kan. Vi matcher dig med tre andre — og giver besked, hvis der allerede er en åben kamp i samme hul.
           </p>
 
           <div style={labelStyle}>Dage</div>

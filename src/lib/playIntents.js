@@ -35,6 +35,8 @@ export {
   shortTime,
   compactHourRange,
   deadlineInfo,
+  uniqueOverlappingMatches,
+  overlappingMatchToast,
 } from './playIntentUtils';
 
 /**
@@ -73,6 +75,9 @@ export async function createPlayIntent({ playDate, startTime, endTime, viewerId 
     formed: Boolean(proposal.formed),
     proposalId: proposal.proposal_id || null,
     poolSize: Number(proposal.pool_size) || 1,
+    overlappingMatches: Array.isArray(data.overlapping_matches)
+      ? data.overlapping_matches
+      : [],
   };
 }
 

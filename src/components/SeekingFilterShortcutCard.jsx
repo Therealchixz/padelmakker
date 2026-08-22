@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme } from '../lib/platformTheme';
 import { seekingVisibleDurationLabel } from '../lib/platformConstants';
+import { seekingChannelLabel } from '../lib/activeSeeking';
 import {
   normalizeMatchSearchPrefs,
   describeMatchFilter,
@@ -119,7 +120,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
-              {isKamp ? 'Søger kamp' : 'Søger makker'}
+              {seekingChannelLabel(isKamp ? 'kamp' : 'makker')}
             </span>
             {feedVisibleNow ? (
               <span

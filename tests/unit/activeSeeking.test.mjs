@@ -24,6 +24,13 @@ test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /canonicalRegionForForm\(user\?\.area\)/);
 });
 
+test('søger-labels skelner mellem tidsspecifik hensigt og 24t-besked', () => {
+  assert.match(activeSeeking, /Besked om kampe/);
+  assert.match(activeSeeking, /Synlig som makker/);
+  assert.match(activeSeeking, /seekingChannelHint/);
+  assert.match(panel, /seekingChannelHint/);
+});
+
 test('ActiveSeekingPanel har home dropdown og compact med optimistisk state', () => {
   assert.match(panel, /variant === 'compact'/);
   assert.match(panel, /homeExpanded/);

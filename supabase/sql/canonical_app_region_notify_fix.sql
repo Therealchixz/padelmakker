@@ -335,6 +335,48 @@ BEGIN
     v_match_elo
   );
 
+  -- Fase 1: konkrete spilletider slår vag "søger kamp"-watch. Ingen daglig cap —
+  -- brugeren har selv sagt hvornår de kan. Kræver play_intent_overlaps_match_time.
+  FOR v_row IN
+    SELECT DISTINCT ON (i.user_id) i.user_id
+    FROM public.play_intents i
+    JOIN public.profiles p ON p.id = i.user_id
+    WHERE i.status = 'open'
+      AND i.play_date = v_match.date
+      AND i.user_id IS DISTINCT FROM v_match.creator_id
+      AND COALESCE(p.is_banned, false) = false
+      AND i.user_id <> ALL (
+        SELECT mp.user_id FROM public.match_players mp
+        WHERE mp.match_id = p_match_id AND mp.user_id IS NOT NULL
+      )
+      AND public.play_intent_overlaps_match_time(
+        i.start_time, i.end_time, v_match.time, v_match.time_end
+      )
+      AND (
+        v_creator_region = ''
+        OR i.region = v_creator_region
+        OR public.canonical_app_region(p.area) = v_creator_region
+      )
+      AND GREATEST(100, ROUND(COALESCE(p.elo_rating, 1000))::integer) BETWEEN v_elo_min AND v_elo_max
+      AND NOT EXISTS (
+        SELECT 1 FROM public.notifications n
+        WHERE n.user_id = i.user_id
+          AND n.type = 'match_watch_match'
+          AND n.match_id = p_match_id
+          AND n.created_at >= now() - interval '7 days'
+      )
+    ORDER BY i.user_id
+    LIMIT v_max_per_match
+  LOOP
+    EXIT WHEN v_notified >= v_max_per_match;
+
+    INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
+    VALUES (v_row.user_id, 'match_watch_match', v_title, v_body, p_match_id, false);
+
+    v_notified := v_notified + 1;
+    v_recipient_ids := array_append(v_recipient_ids, v_row.user_id);
+  END LOOP;
+
   FOR v_row IN
     SELECT p.id AS user_id
     FROM public.profiles p
@@ -344,6 +386,7 @@ BEGIN
       AND p.id <> ALL (
         SELECT mp.user_id FROM public.match_players mp WHERE mp.match_id = p_match_id
       )
+      AND p.id <> ALL (v_recipient_ids)
       AND (
         v_creator_region = ''
         OR public.canonical_app_region(p.area) = v_creator_region
