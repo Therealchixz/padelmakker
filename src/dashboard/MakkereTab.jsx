@@ -597,6 +597,16 @@ export function MakkereTab({ user, showToast }) {
   const paginated = rankedSearch.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const handleFilterChange = (fn) => { fn(); setPage(0); };
+  const resetCriteria = () => {
+    setFilterElo('all');
+    setFilterArea('all');
+    setFilterStyle('all');
+    setFilterIntent('all');
+    setFilterCourtSide('all');
+    setFilterSeeking(false);
+    setFilterFav(false);
+    setPage(0);
+  };
   const handleInviteSent = useCallback(({ candidateId, matchId }) => {
     const changed = recordInviteSent(user.id, { candidateId, matchId });
     if (changed) setTelemetryVersion((prev) => prev + 1);
@@ -784,7 +794,8 @@ export function MakkereTab({ user, showToast }) {
         />
         {activeFilterCount > 0 && (
           <button
-            onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
+            type="button"
+            onClick={resetCriteria}
             style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
           >
             Nulstil
@@ -829,14 +840,30 @@ export function MakkereTab({ user, showToast }) {
               {COURT_SIDES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <button
-            type="button"
-            onClick={() => handleFilterChange(() => setFilterSeeking((v) => !v))}
-            className={`pm-ui-btn-chip ${filterSeeking ? 'pm-ui-btn-chip-active' : ''}`}
-            style={{ padding: '8px 14px', fontSize: '13px', alignSelf: 'flex-start' }}
-          >
-            ⚡ {filterSeeking ? 'Kun søgende spillere' : 'Vis kun søgende spillere'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button
+              type="button"
+              onClick={() => handleFilterChange(() => setFilterSeeking((v) => !v))}
+              className={`pm-ui-btn-chip ${filterSeeking ? 'pm-ui-btn-chip-active' : ''}`}
+              style={{ padding: '8px 14px', fontSize: '13px' }}
+            >
+              ⚡ {filterSeeking ? 'Kun søgende spillere' : 'Vis kun søgende spillere'}
+            </button>
+            <button
+              type="button"
+              onClick={resetCriteria}
+              disabled={activeFilterCount === 0}
+              style={{
+                ...btn(false),
+                padding: '8px 14px',
+                fontSize: '13px',
+                minHeight: 44,
+                opacity: activeFilterCount === 0 ? 0.45 : 1,
+              }}
+            >
+              Nulstil kriterier
+            </button>
+          </div>
         </div>
       )}
 
