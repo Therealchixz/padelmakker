@@ -27,6 +27,7 @@ test('makker filter core matches seeking profiles by level and extras', () => {
   assert.match(core, /subjectPassesMakkerLevelFilter/);
   assert.match(core, /MAKKER_FILTER_PREFS_VERSION = 2/);
   assert.match(core, /courtSideMatchesMakkerFilter/);
+  assert.match(core, /profileFitsMakkerSearchFrame/);
 });
 
 test('makker filter v2 SQL helpers and notify', () => {
@@ -39,6 +40,18 @@ test('makker filter v2 SQL helpers and notify', () => {
 test('notification policy routes makker_suggestion to opdagelse', () => {
   const policy = readFileSync(join(root, 'src/lib/notificationPolicy.js'), 'utf8');
   assert.match(policy, /makker_suggestion[\s\S]*channel:\s*["']opdagelse["']/);
+});
+
+test('makkere-søg rangerer alle spillere og bruger ramme uden region-cut', () => {
+  const core = readFileSync(join(root, 'src/lib/makkerSearchFilterCore.js'), 'utf8');
+  const tab = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
+  const mm = readFileSync(join(root, 'src/lib/matchmakingUtils.js'), 'utf8');
+  assert.match(core, /profileFitsMakkerSearchFrame/);
+  assert.match(mm, /export function rankMakkerSearchResults/);
+  assert.match(tab, /rankMakkerSearchResults/);
+  assert.match(tab, /profileFitsMakkerSearchFrame/);
+  assert.match(tab, /Søg makker/);
+  assert.doesNotMatch(tab, /profileMatchesMakkerFilter/);
 });
 
 test('to der begge søger makker får besked begge veje', () => {

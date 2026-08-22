@@ -174,16 +174,21 @@ export function daysOverlap(watcherDays, subjectDays) {
 
 /**
  * Matcher en profil mod makker-filteret UDEN at kræve at de søger lige nu.
- * Bruges til "Find makker"-browse-listen, så den afspejler de gemte filtre.
+ * Bruges til notifikationer og "kun i min region".
+ *
+ * @param {{ ignoreRegion?: boolean }} [opts] ignoreRegion: behold spillere
+ *   i andre regioner — afstand rangeres i UI i stedet for at skjule dem.
  */
-export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {
+export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId, opts = {}) {
   if (!subjectProfile || !isMakkerFilterConfigured(prefs, watcherProfile)) return false;
   if (watcherUserId && String(subjectProfile.id) === String(watcherUserId)) return false;
 
-  const filterRegion = resolveMakkerFilterRegion(prefs, watcherProfile);
-  const subjectRegion = canonicalRegionForForm(subjectProfile?.area) || subjectProfile?.area || '';
-  if (filterRegion && subjectRegion && filterRegion.toLowerCase() !== subjectRegion.toLowerCase()) {
-    return false;
+  if (!opts.ignoreRegion) {
+    const filterRegion = resolveMakkerFilterRegion(prefs, watcherProfile);
+    const subjectRegion = canonicalRegionForForm(subjectProfile?.area) || subjectProfile?.area || '';
+    if (filterRegion && subjectRegion && filterRegion.toLowerCase() !== subjectRegion.toLowerCase()) {
+      return false;
+    }
   }
 
   const myLevel = resolveMakkerFilterLevel(prefs, watcherProfile);
@@ -199,6 +204,14 @@ export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile
   if (!courtSideMatchesMakkerFilter(prefs.partnerCourtSide, subjectProfile.court_side)) return false;
 
   return true;
+}
+
+/**
+ * Søgeramme til "Find makker"-listen: niveau, dage, stil, intention, side.
+ * Region er IKKE et hard filter — fjerne spillere vises, men rangeres lavere.
+ */
+export function profileFitsMakkerSearchFrame(subjectProfile, prefs, watcherProfile, watcherUserId) {
+  return profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId, { ignoreRegion: true });
 }
 
 export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {

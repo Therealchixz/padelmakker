@@ -288,6 +288,33 @@ function distanceBand(myProfile, candidate) {
   return 5;
 }
 
+/** Nærhed først, derefter score — bruges både til forslag og fuld makker-søgning. */
+function compareRankedSuggestions(a, b, myRegion) {
+  if (a.distanceBand !== b.distanceBand) return a.distanceBand - b.distanceBand;
+  if (myRegion && a.sameRegion !== b.sameRegion) {
+    return a.sameRegion ? -1 : 1;
+  }
+  if (b.score !== a.score) return b.score - a.score;
+  const aExposure = Number(a.breakdown?.exposureCount || 0);
+  const bExposure = Number(b.breakdown?.exposureCount || 0);
+  if (aExposure !== bExposure) return aExposure - bExposure;
+  return String(a.profile?.id || '').localeCompare(String(b.profile?.id || ''));
+}
+
+function buildRankedCandidate(myProfile, candidate, opts, myRegion) {
+  const score = scoreCandidate(myProfile, candidate, opts);
+  const km = distanceKmBetweenProfiles(myProfile, candidate);
+  return {
+    profile: candidate,
+    score: score.total,
+    breakdown: score.breakdown,
+    resolvedElo: score.resolvedElo,
+    sameRegion: Boolean(myRegion && profileMatchRegion(candidate) === myRegion),
+    distanceKm: km,
+    distanceBand: distanceBand(myProfile, candidate),
+  };
+}
+
 function withinSuggestionDistance(myProfile, candidate, opts = {}) {
   const km = distanceKmBetweenProfiles(myProfile, candidate);
   if (km == null) return true; // ingen coords → region/score håndterer resten
@@ -603,43 +630,25 @@ export function getMatchSuggestionsWithMeta(myProfile, candidates, opts = {}) {
 
   const myRegion = profileMatchRegion(myProfile);
 
+  const scoreOpts = {
+    ...opts,
+    eloByUserId,
+    gamesByUserId,
+    inviteStatsByUserId,
+    exposureCountByUserId,
+    pastMatchesByUserId,
+    favoriteIds,
+  };
+
   const suggestions = filtered
     .map((candidate) => {
-      const score = scoreCandidate(myProfile, candidate, {
-        ...opts,
-        eloByUserId,
-        gamesByUserId,
-        inviteStatsByUserId,
-        exposureCountByUserId,
-        pastMatchesByUserId,
-        favoriteIds,
-      });
-      const sameRegion = Boolean(myRegion && profileMatchRegion(candidate) === myRegion);
-      const km = distanceKmBetweenProfiles(myProfile, candidate);
-      const band = distanceBand(myProfile, candidate);
+      const ranked = buildRankedCandidate(myProfile, candidate, scoreOpts, myRegion);
       return {
-        profile: candidate,
-        score: score.total,
-        breakdown: score.breakdown,
-        resolvedElo: score.resolvedElo,
-        sameRegion,
-        distanceKm: km,
-        distanceBand: band,
-        beyondPreferredRadius: km != null && km > preferredRadiusKm,
+        ...ranked,
+        beyondPreferredRadius: ranked.distanceKm != null && ranked.distanceKm > preferredRadiusKm,
       };
     })
-    .sort((a, b) => {
-      // Nærhed først: ≤30 km, så ≤60 km, så samme region, så resten.
-      if (a.distanceBand !== b.distanceBand) return a.distanceBand - b.distanceBand;
-      if (myRegion && a.sameRegion !== b.sameRegion) {
-        return a.sameRegion ? -1 : 1;
-      }
-      if (b.score !== a.score) return b.score - a.score;
-      const aExposure = Number(a.breakdown?.exposureCount || 0);
-      const bExposure = Number(b.breakdown?.exposureCount || 0);
-      if (aExposure !== bExposure) return aExposure - bExposure;
-      return String(a.profile?.id || '').localeCompare(String(b.profile?.id || ''));
-    })
+    .sort((a, b) => compareRankedSuggestions(a, b, myRegion))
     .slice(0, limit);
 
   return {
@@ -655,6 +664,46 @@ export function getMatchSuggestionsWithMeta(myProfile, candidates, opts = {}) {
  */
 export function getMatchSuggestions(myProfile, candidates, opts = {}) {
   return getMatchSuggestionsWithMeta(myProfile, candidates, opts).suggestions;
+}
+
+/**
+ * Ranger ALLE spillere efter sandsynligt makker-match.
+ *
+ * I modsætning til getMatchSuggestionsWithMeta:
+ * - Ingen hard cut på afstand, ELO eller spilledage — fjerne spillere
+ *   ligger længere nede, de skjules ikke.
+ * - Banned og egen profil udelades. Inaktive vises, men scorer lavere.
+ * - Sortering: afstandsbånd → samme region → score.
+ */
+export function rankMakkerSearchResults(myProfile, candidates, opts = {}) {
+  const {
+    eloByUserId = {},
+    gamesByUserId = {},
+    inviteStatsByUserId = {},
+    exposureCountByUserId = {},
+    pastMatchesByUserId = {},
+    favoriteIds = null,
+  } = opts;
+
+  const myRegion = profileMatchRegion(myProfile);
+  const scoreOpts = {
+    ...opts,
+    eloByUserId,
+    gamesByUserId,
+    inviteStatsByUserId,
+    exposureCountByUserId,
+    pastMatchesByUserId,
+    favoriteIds,
+  };
+
+  return (candidates || [])
+    .filter((candidate) => {
+      if (!candidate || candidate.id === myProfile?.id) return false;
+      if (candidate.is_banned) return false;
+      return true;
+    })
+    .map((candidate) => buildRankedCandidate(myProfile, candidate, scoreOpts, myRegion))
+    .sort((a, b) => compareRankedSuggestions(a, b, myRegion));
 }
 
 /**

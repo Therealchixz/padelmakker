@@ -10,6 +10,7 @@ import {
   isMakkerFilterConfigured,
   seekingProfileMatchesFilter,
   profileMatchesMakkerFilter,
+  profileFitsMakkerSearchFrame,
   buildProfilePatchFromMakkerSearchPrefs,
   MAKKER_FILTER_PREFS_VERSION,
   DEFAULT_LEVEL_WINDOW,
@@ -50,6 +51,7 @@ export {
   describeMakkerFilter,
   seekingProfileMatchesFilter,
   profileMatchesMakkerFilter,
+  profileFitsMakkerSearchFrame,
   buildProfilePatchFromMakkerSearchPrefs,
   notifyMakkerWatchersForProfile,
 };

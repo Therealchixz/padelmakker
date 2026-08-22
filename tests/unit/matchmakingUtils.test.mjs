@@ -6,6 +6,7 @@ import {
   getMatchSuggestions,
   getMatchSuggestionsWithMeta,
   matchReason,
+  rankMakkerSearchResults,
 } from '../../src/lib/matchmakingUtils.js';
 
 const ACTIVE = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -337,6 +338,47 @@ test('nearby candidate ranks above same-region but farther candidate', () => {
   const result = getMatchSuggestions(me, [farther, nearby], { limit: 5 });
   assert.equal(result[0].profile.id, 'nearby');
   assert.ok((result[0].distanceBand ?? 9) < (result[1].distanceBand ?? 9));
+});
+
+test('rankMakkerSearchResults keeps far players and still ranks locals first', () => {
+  const me = profile({
+    id: 'me',
+    area: 'Nordjylland',
+    latitude: 57.081,
+    longitude: 9.928,
+  });
+  const local = profile({
+    id: 'local',
+    area: 'Nordjylland',
+    latitude: 57.049,
+    longitude: 9.919,
+    elo_rating: 1020,
+  });
+  const local2 = profile({ id: 'local2', area: 'Nordjylland', latitude: 57.02, longitude: 9.9, elo_rating: 1010 });
+  const local3 = profile({ id: 'local3', area: 'Nordjylland', latitude: 57.11, longitude: 10.02, elo_rating: 990 });
+  const aarhus = profile({
+    id: 'aarhus',
+    area: 'Østjylland',
+    latitude: 56.157,
+    longitude: 10.173,
+    elo_rating: 1000,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+  const banned = profile({ id: 'banned', is_banned: true, latitude: 57.05, longitude: 9.92 });
+
+  const suggestions = getMatchSuggestions(me, [aarhus, local, local2, local3], { limit: 10 });
+  assert.ok(!suggestions.some((s) => s.profile.id === 'aarhus'), 'forslag skjuler Aarhus når der er nok lokale');
+
+  const ranked = rankMakkerSearchResults(me, [aarhus, local, local2, local3, banned, me]);
+  const ids = ranked.map((r) => r.profile.id);
+  assert.ok(ids.includes('aarhus'), 'søgning vises Aarhus længere nede i stedet for at skjule');
+  assert.ok(!ids.includes('banned'), 'banned spillere vises ikke');
+  assert.ok(!ids.includes('me'), 'egen profil vises ikke');
+  assert.ok(ids.indexOf('local') < ids.indexOf('aarhus'), 'lokal før Aarhus');
+  assert.ok(ids.indexOf('local2') < ids.indexOf('aarhus'));
+  assert.equal(ranked.find((r) => r.profile.id === 'aarhus')?.distanceBand > 0, true);
 });
 
 test('matchReason mentions same region when areas match canonically', () => {

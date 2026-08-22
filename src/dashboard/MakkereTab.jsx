@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
-import { theme, btn, inputStyle, tag, heading, makkerMatchBadge } from '../lib/platformTheme';
+import { theme, btn, inputStyle, tag, makkerMatchBadge } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, intentDisplayLabel, COURT_SIDES } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
-import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { supabase } from '../lib/supabase';
-import { getMatchSuggestionsWithMeta, matchReason } from '../lib/matchmakingUtils';
+import { getMatchSuggestionsWithMeta, matchReason, rankMakkerSearchResults } from '../lib/matchmakingUtils';
 import {
   getMatchmakingSignalMaps,
   getPendingInviteChecks,
@@ -26,7 +26,7 @@ import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
-  profileMatchesMakkerFilter,
+  profileFitsMakkerSearchFrame,
   describeMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
@@ -248,7 +248,7 @@ export function MakkereTab({ user, showToast }) {
   const [filterCourtSide, setFilterCourtSide] = useState('all');
   const [filterSeeking, setFilterSeeking] = useState(() => shouldShowSeekingFromUrl);
   const [filterFav, setFilterFav]     = useState(false);
-  const [showFilters, setShowFilters] = useState(() => shouldShowSeekingFromUrl);
+  const [showFilters, setShowFilters] = useState(true);
   const [players, setPlayers]         = useState([]);
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
@@ -554,22 +554,37 @@ export function MakkereTab({ user, showToast }) {
     };
   }, [user?.id]);
 
-  // Filtrer til browse-listen
-  const filtered = players.filter(p => {
-    const n = p.full_name || p.name || '';
-    const c = p.city || '';
-    if (search && !n.toLowerCase().includes(search.toLowerCase()) && !c.toLowerCase().includes(search.toLowerCase())) return false;
-    // Dit gemte makker-filter gælder også browse-listen (én kilde til sandhed)
-    if (makkerFilterOn && !profileMatchesMakkerFilter(p, makkerFilterPrefs, user, user.id)) return false;
-    if (filterArea !== 'all' && p.area !== filterArea) return false;
-    if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
-    if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
-    if (filterIntent !== 'all' && p.intent_now !== filterIntent) return false;
-    if (filterCourtSide !== 'all' && p.court_side !== filterCourtSide) return false;
-    if (filterSeeking && !isSeekingActive(p)) return false;
-    if (filterFav && !favorites.has(String(p.id))) return false;
-    return true;
-  });
+  // Søgeliste: alle spillere inden for rammen, rangeret efter afstand + match
+  const rankedSearch = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const pool = players.filter((p) => {
+      const n = (p.full_name || p.name || '').toLowerCase();
+      const c = (p.city || '').toLowerCase();
+      if (q && !n.includes(q) && !c.includes(q)) return false;
+      if (makkerFilterOn && !profileFitsMakkerSearchFrame(p, makkerFilterPrefs, user, user.id)) return false;
+      if (filterArea !== 'all' && p.area !== filterArea) return false;
+      if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
+      if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
+      if (filterIntent !== 'all' && p.intent_now !== filterIntent) return false;
+      if (filterCourtSide !== 'all' && p.court_side !== filterCourtSide) return false;
+      if (filterSeeking && !isSeekingActive(p)) return false;
+      if (filterFav && !favorites.has(String(p.id))) return false;
+      return true;
+    });
+    return rankMakkerSearchResults(user, pool, {
+      eloByUserId,
+      gamesByUserId,
+      inviteStatsByUserId,
+      exposureCountByUserId,
+      pastMatchesByUserId,
+      favoriteIds: favorites,
+    });
+  }, [
+    players, search, makkerFilterOn, makkerFilterPrefs, user, filterArea, filterElo,
+    filterStyle, filterIntent, filterCourtSide, filterSeeking, filterFav, favorites,
+    displayElo, myElo, eloByUserId, gamesByUserId, inviteStatsByUserId,
+    exposureCountByUserId, pastMatchesByUserId,
+  ]);
 
   const activeFilterCount = [
     filterElo !== 'all', filterArea !== 'all', filterStyle !== 'all',
@@ -577,9 +592,9 @@ export function MakkereTab({ user, showToast }) {
   ].filter(Boolean).length;
 
   const PAGE_SIZE = 20;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(rankedSearch.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
-  const paginated = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const paginated = rankedSearch.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const handleFilterChange = (fn) => { fn(); setPage(0); };
   const handleInviteSent = useCallback(({ candidateId, matchId }) => {
@@ -694,17 +709,19 @@ export function MakkereTab({ user, showToast }) {
       {/* Divider */}
       <div style={{ borderTop: '1px solid ' + theme.border, marginBottom: '20px' }} />
 
-      {/* Browse / søg alle */}
-      <div ref={seekingResultsRef} style={{ margin: '0 18px 12px', scrollMarginTop: '86px' }}>
-        <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Alle spillere</h3>
+      {/* Søg blandt alle spillere */}
+      <div ref={seekingResultsRef} style={{ margin: '0 18px 8px', scrollMarginTop: '86px' }}>
+        <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Søg makker</h3>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.45, color: theme.textMid }}>
+          Alle spillere på appen, rangeret efter hvor godt I passer — tæt på først, længere væk længere nede.
+        </p>
       </div>
 
-      {/* Aktivt makker-filter — gælder også listen herunder */}
       {makkerFilterOn && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.blueBg, border: `1px solid ${theme.accent}` }}>
           <SlidersHorizontal size={15} color={theme.accent} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dit makker-filter er aktivt</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dine makker-kriterier</div>
             <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {describeMakkerFilter(makkerFilterPrefs, user).summary}
             </div>
@@ -724,14 +741,12 @@ export function MakkereTab({ user, showToast }) {
         <input
           value={search}
           onChange={e => handleFilterChange(() => setSearch(e.target.value))}
-          placeholder="Søg efter navn eller by..."
+          placeholder="Søg efter navn eller by…"
           style={{ ...inputStyle, paddingLeft: '36px' }}
         />
       </div>
 
-      {/* Filterknap + aktive filtre */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {!makkerFilterOn && (
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
@@ -739,7 +754,7 @@ export function MakkereTab({ user, showToast }) {
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', fontSize: '13px' }}
         >
           <SlidersHorizontal size={13} />
-          Filtre
+          Kriterier
           {activeFilterCount > 0 && (
             <span
               style={{
@@ -756,7 +771,6 @@ export function MakkereTab({ user, showToast }) {
             </span>
           )}
         </button>
-        )}
         <PillTabs
           tabs={[
             { id: 'all', label: 'Alle spillere' },
@@ -768,17 +782,26 @@ export function MakkereTab({ user, showToast }) {
           size="sm"
           style={{ width: 'auto', flex: '1 1 200px', maxWidth: '320px' }}
         />
-        {!makkerFilterOn && activeFilterCount > 0 && (
+        {activeFilterCount > 0 && (
           <button
             onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
             style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
           >
-            Nulstil filtre
+            Nulstil
+          </button>
+        )}
+        {!makkerFilterOn && (
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
+            style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}
+          >
+            Flere kriterier
           </button>
         )}
       </div>
 
-      {!makkerFilterOn && showFilters && (
+      {showFilters && (
         <div className="pm-filter-panel">
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
@@ -818,14 +841,21 @@ export function MakkereTab({ user, showToast }) {
       )}
 
 
-      {totalPages > 1 && (
+      {rankedSearch.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px', color: theme.textMid }}>
-          <span>{filtered.length} spillere · side {safePage + 1} af {totalPages}</span>
+          <span>
+            {rankedSearch.length} {rankedSearch.length === 1 ? 'spiller' : 'spillere'}
+            {totalPages > 1 ? ` · side ${safePage + 1} af ${totalPages}` : ''}
+            {' · tættest og bedst match først'}
+          </span>
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {paginated.map(p => {
+        {paginated.map((item) => {
+          const p = item.profile;
+          const quality = makkerMatchBadge(item.score);
+          const reason = matchReason(item.breakdown, p, user);
           return (
             <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: '14px 16px', boxShadow: theme.shadow, border: '1px solid ' + theme.border }}>
               <div onClick={() => setViewPlayer(p)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}>
@@ -859,56 +889,68 @@ export function MakkereTab({ user, showToast }) {
                   {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 11, paddingTop: 11, borderTop: '1px solid ' + theme.border }}>
-                <button
-                  onClick={() => toggleFavorite(p.id)}
-                  title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
-                  aria-label={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
-                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px', minHeight: 44, minWidth: 44 }}
-                >
-                  {favorites.has(String(p.id)) ? '★' : '☆'}
-                </button>
-                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
-                  Besked
-                </button>
-                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
-                  Invitér
-                </button>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginTop: 11, paddingTop: 11,
+                borderTop: '1px solid ' + theme.border,
+                gap: 8, flexWrap: 'wrap',
+              }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  background: quality.bg, color: quality.color,
+                  border: '1px solid ' + quality.border,
+                  borderRadius: '6px', padding: '3px 8px',
+                  fontSize: '11px', fontWeight: 700,
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
+                  {quality.label}
+                </span>
+                <span style={{ fontSize: 11.5, color: theme.textMid, flex: '1 1 140px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {reason}
+                </span>
+                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                  <button
+                    onClick={() => toggleFavorite(p.id)}
+                    title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
+                    aria-label={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
+                    style={{ ...btn(false), padding: '8px 11px', fontSize: '14px', minHeight: 44, minWidth: 44 }}
+                  >
+                    {favorites.has(String(p.id)) ? '★' : '☆'}
+                  </button>
+                  <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
+                    Besked
+                  </button>
+                  <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
+                    Invitér
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
-        {filtered.length === 0 && !loadError && (
+        {rankedSearch.length === 0 && !loadError && (
           <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              {makkerFilterOn ? 'Ingen spillere matcher dit makker-filter' : activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
+              {makkerFilterOn || activeFilterCount > 0 || search.trim()
+                ? 'Ingen spillere matcher dine kriterier'
+                : 'Ingen spillere at vise'}
             </div>
             <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
               {makkerFilterOn
-                ? 'Prøv at udvide dit makker-filter (fx region eller niveau-spænd).'
-                : activeFilterCount > 0
-                  ? 'Prøv at ændre filtre eller søg med et andet navn.'
-                  : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
+                ? 'Prøv at udvide niveau, spilledage eller spillestil. Spillere i andre regioner vises stadig — de ligger bare længere nede.'
+                : activeFilterCount > 0 || search.trim()
+                  ? 'Prøv at ændre kriterier eller søg med et andet navn.'
+                  : 'Der er endnu få spillere — prøv at slække på kriterierne.'}
             </div>
-            {(makkerFilterOn || activeFilterCount === 0) && (
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
-                style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
-              >
-                Justér makker-filter
-              </button>
-            )}
-            {activeFilterCount === 0 && !makkerFilterOn && (
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard/kampe?create=1')}
-                style={{ ...btn(false), marginTop: '10px', fontSize: '13px' }}
-              >
-                Opret kamp og del link
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
+              style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
+            >
+              Justér makker-kriterier
+            </button>
           </div>
         )}
       </div>

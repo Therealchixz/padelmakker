@@ -27,4 +27,6 @@ test('makkerSearchFilterCore wires extras into seekingProfileMatchesFilter', () 
   assert.match(coreSrc, /courtSideMatchesMakkerFilter/);
   assert.match(coreSrc, /subjectPassesMakkerLevelFilter/);
   assert.match(coreSrc, /levelRangeForMakkerPartnerPref/);
+  assert.match(coreSrc, /profileFitsMakkerSearchFrame/);
+  assert.match(coreSrc, /ignoreRegion/);
 });
