@@ -14,6 +14,21 @@ test('formatProfileLocationLine falls back to region without coords', () => {
   assert.equal(line, 'Midtjylland');
 });
 
+test('formatProfileLocationLine does not show km when the other player has no city coords', () => {
+  const viewer = { city: 'Nørresundby', latitude: 57.065, longitude: 9.934 };
+  const lone = { area: 'Region Nordjylland', city: null, latitude: null, longitude: null };
+  const line = formatProfileLocationLine(viewer, lone);
+  assert.equal(line, 'Nordjylland');
+  assert.equal(distanceBetweenProfiles(viewer, lone), null);
+});
+
+test('formatProfileLocationLine ignores 0,0 placeholders', () => {
+  const viewer = { city: 'Nørresundby', latitude: 57.065, longitude: 9.934 };
+  const other = { area: 'Region Nordjylland', latitude: 0, longitude: 0 };
+  const line = formatProfileLocationLine(viewer, other);
+  assert.equal(line, 'Nordjylland');
+});
+
 test('distanceBetweenProfiles returns null when coords missing', () => {
   assert.equal(distanceBetweenProfiles({ latitude: 1, longitude: 2 }, { city: 'X' }), null);
 });

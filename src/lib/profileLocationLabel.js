@@ -1,11 +1,8 @@
-import { haversineKm, formatApproxKm } from './geoDistance.js';
+import { haversineKm, formatApproxKm, parseGeoCoords } from './geoDistance.js';
 
 function profileCoords(profile) {
   if (!profile) return null;
-  const latitude = profile.latitude != null ? Number(profile.latitude) : NaN;
-  const longitude = profile.longitude != null ? Number(profile.longitude) : NaN;
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-  return { latitude, longitude };
+  return parseGeoCoords(profile.latitude, profile.longitude);
 }
 
 /** Afstand i km mellem to profiler (null hvis koordinater mangler). */

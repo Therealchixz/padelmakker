@@ -7,6 +7,7 @@ import {
   getMatchSuggestionsWithMeta,
   matchReason,
   rankMakkerSearchResults,
+  distanceKmBetweenProfiles,
 } from '../../src/lib/matchmakingUtils.js';
 
 const ACTIVE = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -386,5 +387,28 @@ test('matchReason mentions same region when areas match canonically', () => {
   const them = profile({ id: 'them', area: 'Region Nordjylland' });
   const scored = scoreCandidate(me, them);
   const reason = matchReason(scored.breakdown, them, me);
+  assert.ok(reason.includes('Samme region'), reason);
+});
+
+test('missing profile coords are not treated as 6400 km away', () => {
+  const me = profile({
+    id: 'me',
+    area: 'Nordjylland',
+    latitude: 57.065,
+    longitude: 9.934,
+  });
+  const lone = profile({
+    id: 'lone',
+    area: 'Region Nordjylland',
+    city: null,
+    latitude: null,
+    longitude: null,
+  });
+
+  assert.equal(distanceKmBetweenProfiles(me, lone), null);
+
+  const scored = scoreCandidate(me, lone);
+  const reason = matchReason(scored.breakdown, lone, me);
+  assert.equal(reason.includes('km væk'), false, reason);
   assert.ok(reason.includes('Samme region'), reason);
 });

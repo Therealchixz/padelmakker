@@ -10,7 +10,7 @@
 
 import { SEEK_MAKKER_TTL_DAYS } from './platformConstants.js';
 import { canonicalAppRegion } from './appRegions.js';
-import { haversineKm } from './geoDistance.js';
+import { haversineKm, parseGeoCoords } from './geoDistance.js';
 
 /** Kanonisk landsdel for matchmaking (legacy "Region X" → app-region). */
 export function profileMatchRegion(profile) {
@@ -242,12 +242,10 @@ function hasTimeOverlapSignal(myProfile, theirProfile) {
 
 /** Afstand i km mellem profiler, eller null hvis koordinater mangler. */
 export function distanceKmBetweenProfiles(a, b) {
-  const lat1 = toNumber(a?.latitude, NaN);
-  const lon1 = toNumber(a?.longitude, NaN);
-  const lat2 = toNumber(b?.latitude, NaN);
-  const lon2 = toNumber(b?.longitude, NaN);
-  if (![lat1, lon1, lat2, lon2].every(Number.isFinite)) return null;
-  return haversineKm(lat1, lon1, lat2, lon2);
+  const p1 = parseGeoCoords(a?.latitude, a?.longitude);
+  const p2 = parseGeoCoords(b?.latitude, b?.longitude);
+  if (!p1 || !p2) return null;
+  return haversineKm(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
 }
 
 function geoScore(myProfile, theirProfile) {

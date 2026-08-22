@@ -1,20 +1,31 @@
+/**
+ * Parse GPS-koordinater. `Number(null) === 0` i JS, så null/undefined
+ * må ikke behandles som Null Island (0, 0) — det er ~6400 km fra Danmark.
+ */
+export function parseGeoCoords(lat, lng) {
+  if (lat == null || lng == null || lat === '' || lng === '') return null;
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  /* (0, 0) i Atlanterhavet — typisk default/manglende data, ikke en rigtig by. */
+  if (Math.abs(latitude) < 0.01 && Math.abs(longitude) < 0.01) return null;
+  return { latitude, longitude };
+}
+
 /** Afstand mellem to koordinater (km) — Haversine. */
 export function haversineKm(lat1, lon1, lat2, lon2) {
-  if ([lat1, lon1, lat2, lon2].some((v) => v == null || v === '' || !Number.isFinite(Number(v)))) {
-    return null;
-  }
-  const a1 = Number(lat1);
-  const o1 = Number(lon1);
-  const a2 = Number(lat2);
-  const o2 = Number(lon2);
+  const a = parseGeoCoords(lat1, lon1);
+  const b = parseGeoCoords(lat2, lon2);
+  if (!a || !b) return null;
 
   const R = 6371;
-  const dLat = ((a2 - a1) * Math.PI) / 180;
-  const dLon = ((o2 - o1) * Math.PI) / 180;
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180;
   const x =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((a1 * Math.PI) / 180) *
-      Math.cos((a2 * Math.PI) / 180) *
+    Math.cos((a.latitude * Math.PI) / 180) *
+      Math.cos((b.latitude * Math.PI) / 180) *
       Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
