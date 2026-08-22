@@ -66,6 +66,16 @@ export async function notifyMakkerWatchersForProfile(subjectUserId) {
       null,
       opts,
     );
+    const subjectBody = makkerMatchToast(matches) || result.notify_body;
+    const firstMatchId = matches.find((m) => m?.id)?.id || null;
+    void sendPushNotificationsForUsers(
+      [subjectUserId],
+      'makker_suggestion',
+      result.match_title,
+      subjectBody,
+      null,
+      { entityType: 'profile', entityId: firstMatchId },
+    );
   }
 
   if (watcherIds.length > 0 && result.notify_title && result.notify_body) {

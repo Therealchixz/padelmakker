@@ -155,9 +155,10 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     channel: "opdagelse",
     level: "normal",
     sendPush: true,
-    silent: true,
-    urgency: "low",
+    silent: false,
+    urgency: "high",
     cooldownSeconds: 7200,
+    renotify: true,
   },
   /* Pulje-forslag kræver svar inden for en frist — derfor samme vægt som en invitation. */
   match_proposal: {
@@ -514,7 +515,7 @@ async function authorizeCrossUserPush({
     const callerOk = await callerCanAccessMatch(adminClient, callerId, normalizedMatchId);
     if (!callerOk) return false;
 
-    if (type === "seeking_player" || type === "match_invite") {
+    if (type === "seeking_player" || type === "match_invite" || type === "match_watch_match") {
       return true;
     }
 
@@ -609,6 +610,17 @@ async function authorizeCrossUserPush({
     const callerOk = callerIsAdmin || !!(callerTeam || callerLeague);
     const targetOk = !!(targetTeam || targetLeague);
     return callerOk && targetOk;
+  }
+
+  // Makker-match: du må pushe "jeg blev synlig" til andre. SQL har allerede
+  // skrevet in-app notifikationen med entity_id = din profil.
+  if (
+    type === "makker_suggestion" &&
+    normalizedEntityType === "profile" &&
+    normalizedEntityId &&
+    String(normalizedEntityId) === String(callerId)
+  ) {
+    return true;
   }
 
   return false;
@@ -970,7 +982,9 @@ Deno.serve(async (req: Request) => {
 
     const pushTag = normalizedMatchId
       ? `pm:${policy.channel}:${normalizedMatchId}`
-      : `pm:${policy.channel}:${policy.type}`;
+      : normalizedEntityId
+        ? `pm:${policy.channel}:${policy.type}:${normalizedEntityId}`
+        : `pm:${policy.channel}:${policy.type}`;
 
     const payload = JSON.stringify({
       title: effectiveTitle,

@@ -126,9 +126,10 @@ const TYPE_POLICIES = Object.freeze({
     channel: "opdagelse",
     level: "normal",
     sendPush: true,
-    silent: true,
-    urgency: "low",
+    silent: false,
+    urgency: "high",
     cooldownSeconds: 7200,
+    renotify: true,
   },
   /* Pulje-forslag kræver svar inden for en frist — derfor samme vægt som en invitation. */
   match_proposal: {

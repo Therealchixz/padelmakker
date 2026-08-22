@@ -63,4 +63,5 @@ test('to der begge søger makker får besked begge veje', () => {
   const client = readFileSync(join(root, 'src/lib/makkerWatchUtils.js'), 'utf8');
   assert.match(client, /makkerMatchToast/);
   assert.match(client, /match_recipient_ids/);
+  assert.match(client, /sendPushNotificationsForUsers\(\s*\[subjectUserId\]/s);
 });

@@ -34,6 +34,14 @@ test("chat notifications are grouped and throttled", () => {
   assert.equal(policy.silent, true);
 });
 
+test('makker suggestion push is audible so a match reaches the lock screen', () => {
+  const policy = resolveNotificationPushPolicy("makker_suggestion");
+  assert.equal(policy.sendPush, true);
+  assert.equal(policy.silent, false);
+  assert.equal(policy.urgency, "high");
+  assert.equal(policy.renotify, true);
+});
+
 test("unknown notification type falls back to safe defaults", () => {
   const policy = resolveNotificationPushPolicy("something_new");
   assert.equal(policy.level, "normal");

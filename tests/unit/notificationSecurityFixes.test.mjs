@@ -145,8 +145,11 @@ test('send-push edge function implements invite and admin legitimacy rules', () 
   assert.match(src, /result_error_reports/);
   assert.match(src, /user_reports/);
   assert.match(src, /seeking_player.*match_invite|match_invite.*seeking_player/s);
+  assert.match(src, /match_watch_match/);
+  assert.match(src, /makker_suggestion/);
   assert.match(src, /entityType.*entityId/s);
   assert.match(src, /callerCanAccessMatch/);
+  assert.match(src, /silent: false/);
 });
 
 test('migration drops duplicate notification RPC overloads', () => {
