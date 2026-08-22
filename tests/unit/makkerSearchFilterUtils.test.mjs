@@ -15,6 +15,14 @@ test('makker filter SQL adds prefs and notify_makker_watchers', () => {
   assert.match(sql, /entity_type = 'profile'/);
 });
 
+test('dispatch-push can send audible makker-match to lock screen without a user JWT', () => {
+  const src = readFileSync(join(root, 'supabase/functions/dispatch-push/index.ts'), 'utf8');
+  assert.match(src, /reminder_cron_secret/);
+  assert.match(src, /silent: false/);
+  assert.match(src, /urgency: "high"/);
+  assert.match(src, /makker_suggestion/);
+});
+
 test('makkerWatchUtils calls RPC and push type', () => {
   const client = readFileSync(join(root, 'src/lib/makkerWatchUtils.js'), 'utf8');
   assert.match(client, /notify_makker_watchers/);
