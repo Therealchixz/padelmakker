@@ -4,7 +4,7 @@
 
 import { supabase } from './supabase';
 import { notifyMakkerWatchersForProfile } from './makkerWatchUtils';
-import { isSeekingActiveProfile } from './makkerSearchFilterCore';
+import { isProfileMakkerFeedVisible } from './seekingFeedTtl';
 import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterConfigured,
@@ -59,8 +59,8 @@ export async function saveMakkerSearchPrefs(prefs, profile = {}) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id) throw new Error('Ikke logget ind');
 
-  const wasSeeking = isSeekingActiveProfile(profile) || profile?.seeking_match === true;
-  const willSeeking = patch.seeking_match === true;
+  const wasMakkerOn = isProfileMakkerFeedVisible(profile);
+  const willMakkerOn = isProfileMakkerFeedVisible({ ...profile, ...patch });
 
   const { error } = await supabase
     .from('profiles')
@@ -69,7 +69,7 @@ export async function saveMakkerSearchPrefs(prefs, profile = {}) {
 
   if (error) throw error;
 
-  if (willSeeking && !wasSeeking) {
+  if (willMakkerOn && !wasMakkerOn) {
     void notifyMakkerWatchersForProfile(user.id);
   }
 

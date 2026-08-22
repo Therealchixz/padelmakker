@@ -322,7 +322,7 @@ export function seekingChannelLabel(channel) {
 export function seekingChannelHint(channel) {
   return channel === 'kamp'
     ? '24 timer: besked om nye åbne kampe — uden at vælge tid'
-    : 'Synlig for andre der leder efter makker';
+    : 'Når en anden søger det samme, får I begge besked';
 }
 
 /**

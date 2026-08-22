@@ -16,8 +16,7 @@ import {
   resolveMakkerFilterRegion,
   buildProfilePatchFromMakkerSearchPrefs,
 } from '../lib/makkerSearchFilterUtils';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
+import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import {
   isProfileMatchFeedVisible,
   isProfileMakkerFeedVisible,
@@ -74,16 +73,19 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
     }
     setToggling(true);
     try {
-      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
+      const wasMakkerOn = isProfileMakkerFeedVisible(user);
       const nextPrefs = { ...prefs, feedVisible: nextVisible };
       const patch = isKamp
         ? buildProfilePatchFromMatchSearchPrefs(nextPrefs, user)
         : buildProfilePatchFromMakkerSearchPrefs(nextPrefs, user);
       await updateProfile(patch);
-      if (patch.seeking_match && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
+      if (!isKamp && nextVisible && !wasMakkerOn && user?.id) {
+        const res = await notifyMakkerWatchersForProfile(user.id);
+        const matchMsg = makkerMatchToast(res.matches);
+        showToast(matchMsg || 'Du vises nu som søger makker');
+      } else {
+        showToast(nextVisible ? `Du vises nu som søger ${isKamp ? 'kamp' : 'makker'}` : 'Synlighed slået fra');
       }
-      showToast(nextVisible ? `Du vises nu som søger ${isKamp ? 'kamp' : 'makker'}` : 'Synlighed slået fra');
     } catch (err) {
       console.warn('toggle seeking feed:', err?.message || err);
       showToast('Kunne ikke opdatere. Prøv igen.');

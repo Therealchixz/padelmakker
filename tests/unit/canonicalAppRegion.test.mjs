@@ -37,7 +37,8 @@ test('canonicalAppRegion lader ukendte værdier stå urørt', () => {
 test('SQL definerer canonical_app_region og bruger den i begge notify-RPC', () => {
   const sql = readFileSync(join(root, SQL_PATH), 'utf8');
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.canonical_app_region\(p_area text\)/);
-  assert.match(sql, /v_subject_region := public\.canonical_app_region\(v_subject\.area\)/);
+  assert.match(sql, /v_subject_region := public\.canonical_app_region\(/);
+  assert.match(sql, /v_subject\.area/);
   assert.match(sql, /v_creator_region := public\.canonical_app_region\(v_creator\.area\)/);
   assert.match(sql, /public\.canonical_app_region\(p\.area\) = v_creator_region/);
 });

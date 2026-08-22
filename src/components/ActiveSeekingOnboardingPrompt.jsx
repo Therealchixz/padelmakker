@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { btn } from '../lib/platformTheme';
 import { regionDisplayLabel } from '../lib/appRegions';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
+import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
+import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import {
   isCombinedSeekingEnabled,
   buildSeekingProfilePatch,
@@ -55,7 +55,7 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
     }
     setBusy(true);
     try {
-      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
+      const wasMakkerOn = isProfileMakkerFeedVisible(user);
       let patch = buildSeekingProfilePatch(user, 'makker', true);
       const kampPatch = buildSeekingProfilePatch(
         { ...user, ...patch },
@@ -64,10 +64,13 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
       );
       patch = { ...patch, ...kampPatch };
       await updateProfile(patch);
-      if (patch.seeking_match && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
+      if (!wasMakkerOn && user?.id) {
+        const res = await notifyMakkerWatchersForProfile(user.id);
+        const matchMsg = makkerMatchToast(res.matches);
+        showToast(matchMsg || 'Aktiv søgning er slået til for makker og kamp');
+      } else {
+        showToast('Aktiv søgning er slået til for makker og kamp');
       }
-      showToast('Aktiv søgning er slået til for makker og kamp');
     } catch (err) {
       console.warn('active seeking onboarding:', err?.message || err);
       showToast('Kunne ikke aktivere — prøv under Aktiv søgning');

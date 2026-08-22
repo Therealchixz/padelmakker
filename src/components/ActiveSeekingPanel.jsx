@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
+import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import {
   isSeekingUiActive,
   isSeekingTtlExpired,
@@ -177,20 +176,26 @@ export function ActiveSeekingPanel({
     async (ch, enabled, regionOverride) => {
       setBusyChannel(ch);
       try {
-        const wasSeeking = isSeekingActiveProfile(displayUser) || displayUser?.seeking_match === true;
+        const wasMakkerOn = isSeekingUiActive(displayUser, 'makker');
         const patch = buildSeekingProfilePatch(displayUser, ch, enabled, regionOverride);
         const nextUser = mergeProfilePatch(displayUser, patch);
         setLocalUser(nextUser);
         await updateProfile(patch);
-        if (enabled && ch === 'makker' && patch.seeking_match && !wasSeeking && displayUser?.id) {
-          void notifyMakkerWatchersForProfile(displayUser.id);
-        }
         const duration = seekingVisibleDurationLabel(ch);
-        showToast(
-          enabled
-            ? `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer i ${duration}`
-            : `${seekingChannelLabel(ch)} slået fra`,
-        );
+        if (enabled && ch === 'makker' && !wasMakkerOn && displayUser?.id) {
+          const res = await notifyMakkerWatchersForProfile(displayUser.id);
+          const matchMsg = makkerMatchToast(res.matches);
+          showToast(
+            matchMsg
+              || `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer i ${duration}`,
+          );
+        } else {
+          showToast(
+            enabled
+              ? `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer i ${duration}`
+              : `${seekingChannelLabel(ch)} slået fra`,
+          );
+        }
       } catch (err) {
         setLocalUser(null);
         console.warn('active seeking toggle:', err?.message || err);

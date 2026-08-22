@@ -28,6 +28,7 @@ test('søger-labels skelner mellem tidsspecifik hensigt og 24t-besked', () => {
   assert.match(activeSeeking, /Besked om kampe/);
   assert.match(activeSeeking, /Synlig som makker/);
   assert.match(activeSeeking, /seekingChannelHint/);
+  assert.match(activeSeeking, /får I begge besked/);
   assert.match(panel, /seekingChannelHint/);
 });
 

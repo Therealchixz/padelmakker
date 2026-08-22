@@ -26,8 +26,8 @@ import {
   availabilityMeansAllTimeSlots,
 } from '../lib/makkerFilterMatch';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
+import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
+import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
@@ -137,16 +137,19 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     }
     setSaving(true);
     try {
-      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
+      const wasMakkerOn = isProfileMakkerFeedVisible(user);
       const patch = buildProfilePatchFromMakkerSearchPrefs(
         { ...prefs, myLevel: profileLevel },
         user,
       );
       await updateProfile(patch);
-      if (patch.seeking_match && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
+      if (isProfileMakkerFeedVisible({ ...user, ...patch }) && !wasMakkerOn && user?.id) {
+        const res = await notifyMakkerWatchersForProfile(user.id);
+        const matchMsg = makkerMatchToast(res.matches);
+        showToast(matchMsg || 'Mit makker-filter er gemt');
+      } else {
+        showToast('Mit makker-filter er gemt');
       }
-      showToast('Mit makker-filter er gemt');
       navigate(returnTo);
     } catch (err) {
       console.warn('save makker filter:', err?.message || err);

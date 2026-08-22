@@ -20,8 +20,6 @@ import {
 } from '../lib/matchSearchFilterUtils';
 import { levelRangeForWindow } from '../lib/padelLevelUtils';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
@@ -90,15 +88,11 @@ export function MatchSearchFilterPage({ user, showToast }) {
     }
     setSaving(true);
     try {
-      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
       const patch = buildProfilePatchFromMatchSearchPrefs(
         { ...prefs, myLevel: profileLevel },
         user,
       );
       await updateProfile(patch);
-      if (patch.seeking_match && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
-      }
       showToast('Mit kamp-filter er gemt');
       navigate(returnTo);
     } catch (err) {

@@ -40,3 +40,14 @@ test('notification policy routes makker_suggestion to opdagelse', () => {
   const policy = readFileSync(join(root, 'src/lib/notificationPolicy.js'), 'utf8');
   assert.match(policy, /makker_suggestion[\s\S]*channel:\s*["']opdagelse["']/);
 });
+
+test('to der begge søger makker får besked begge veje', () => {
+  const sql = readFileSync(join(root, 'supabase/sql/seeking_makker_match.sql'), 'utf8');
+  assert.match(sql, /makker_feed_is_active/);
+  assert.match(sql, /I matcher som makkere/);
+  assert.match(sql, /v_matches/);
+  assert.match(sql, /p_subject_user_id, 'makker_suggestion'/);
+  const client = readFileSync(join(root, 'src/lib/makkerWatchUtils.js'), 'utf8');
+  assert.match(client, /makkerMatchToast/);
+  assert.match(client, /match_recipient_ids/);
+});
