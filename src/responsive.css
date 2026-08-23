@@ -1786,6 +1786,12 @@ button,
   z-index: 2;
 }
 
+.pm-push-controls--page {
+  flex-shrink: 0;
+  background: var(--pm-surface);
+  border-bottom: 1px solid var(--pm-border);
+}
+
 .pm-profile-header {
   display: flex;
   gap: 16px;

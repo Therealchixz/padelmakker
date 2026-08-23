@@ -18,6 +18,7 @@ import {
   loadDismissedIds,
   NOTIFICATIONS_SYNC_EVENT,
 } from '../lib/notificationDismissStorage';
+import { NotificationPushControls } from '../components/NotificationPushControls';
 
 function NotifIcon({ type }) {
   const iconStyle = { width: 18, height: 18, strokeWidth: 2.2, flexShrink: 0 };
@@ -301,6 +302,13 @@ export function NotifikationerPage({ onBack }) {
           {markingAll ? 'Markerer…' : 'Læs alle'}
         </button>
       </div>
+
+      <NotificationPushControls
+        userId={userId}
+        notificationPrefs={profile?.notification_prefs}
+        variant="page"
+        onAfterTest={() => void load()}
+      />
 
       <div className="pm-notifikationer-list" style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (

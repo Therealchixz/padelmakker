@@ -57,3 +57,11 @@ export function dismissIosInstallHint() {
 export function shouldShowIosInstallHint() {
   return isIosDevice() && !isInStandalone() && !isIosInstallHintDismissed();
 }
+
+/**
+ * På notifikationssiden vises hjemmeskærms-guiden altid, også hvis brugeren
+ * tidligere lukkede banneret. Ellers forsvinder både Aktiver og Slå fra.
+ */
+export function shouldExplainIosPushRequiresHomeScreen() {
+  return isIosDevice() && !isInStandalone();
+}

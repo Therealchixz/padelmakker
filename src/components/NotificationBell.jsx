@@ -6,15 +6,8 @@ import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
-import {
-  isPushSupported,
-  getPushPermission,
-  subscribeToPush,
-  unsubscribeFromPush,
-  isPushSubscribed,
-} from '../lib/pushNotifications';
-import { createNotification, invalidateNotificationPrefsCache } from '../lib/notifications';
-import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
+import { invalidateNotificationPrefsCache } from '../lib/notifications';
+import { NotificationPushControls } from './NotificationPushControls';
 import {
   mergeNotificationPrefToggle,
   mergeNotificationEmailToggle,
@@ -54,7 +47,6 @@ export function NotificationBell({ tourForceOpen = false }) {
   const realtimeRetryTimerRef = useRef(null);
   const loadSeqRef = useRef(0);
   const loadRef = useRef(() => {});
-  const pushMessageTimerRef = useRef(null);
   /** Unikt pr. mount — undgår Supabase-kanal-kollision ved dropdown remount. */
   const realtimeInstanceRef = useRef(
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -62,20 +54,9 @@ export function NotificationBell({ tourForceOpen = false }) {
       : `nb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
   );
 
-  // Push notification opt-in state
-  const [pushSupported, setPushSupported] = useState(() => isPushSupported());
-  const [pushSubscribed, setPushSubscribed] = useState(false);
-  const [pushLoading, setPushLoading] = useState(false);
-  const [pushTestLoading, setPushTestLoading] = useState(false);
-  const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
-  const [pushBlocked, setPushBlocked] = useState(() => {
-    try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
-  });
   const [notifPrefs, setNotifPrefs] = useState(() => normalizeNotificationPrefs(profile?.notification_prefs));
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [showPrefToggles, setShowPrefToggles] = useState(false);
-  // iOS: Web Push kræver en installeret PWA → vis "Føj til hjemmeskærm"-besked når relevant.
-  const [showIosInstallHint, setShowIosInstallHint] = useState(() => shouldShowIosInstallHint());
 
   useEffect(() => {
     setNotifPrefs(normalizeNotificationPrefs(profile?.notification_prefs));
@@ -268,13 +249,6 @@ export function NotificationBell({ tourForceOpen = false }) {
       try { supabase.removeChannel(channel); } catch { /* ignore */ }
     };
   }, [userId, realtimeVersion]);
-
-  // Tjek om push er understøttet og allerede aktiveret
-  useEffect(() => {
-    if (!isPushSupported()) return;
-    setPushSupported(true);
-    isPushSubscribed().then(setPushSubscribed);
-  }, [userId]);
 
   // Fallback refresh på mobil: fokus/synlighed/online + let polling mens siden er synlig.
   useEffect(() => {
@@ -487,95 +461,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   };
 
-  const showPushMessage = (msg) => {
-    if (pushMessageTimerRef.current) clearTimeout(pushMessageTimerRef.current);
-    setPushMessage(msg);
-    pushMessageTimerRef.current = setTimeout(() => {
-      setPushMessage(null);
-      pushMessageTimerRef.current = null;
-    }, 3000);
-  };
-
-  useEffect(() => () => {
-    if (pushMessageTimerRef.current) clearTimeout(pushMessageTimerRef.current);
-  }, []);
-
-  const handleEnablePush = async () => {
-    if (!userId || pushLoading) return;
-    setPushLoading(true);
-    try {
-      const result = await subscribeToPush(userId);
-      const subscribed = await isPushSubscribed();
-      setPushSubscribed(subscribed);
-      if (subscribed) {
-        showPushMessage('Push-beskeder aktiveret!');
-      } else if (result === 'denied') {
-        showPushMessage('Tilladelse afvist — tjek browserindstillinger');
-      } else if (result === 'blocked') {
-        try { localStorage.setItem('pm_push_blocked', '1'); } catch { /* ignore */ }
-        setPushBlocked(true);
-      } else if (result === 'timeout') {
-        showPushMessage('Timeout — prøv igen');
-      } else if (result === 'db_error') {
-        showPushMessage('Push aktiveret i browser, men kunne ikke gemmes — prøv igen');
-      } else {
-        showPushMessage('Kunne ikke aktivere — prøv igen');
-      }
-    } finally {
-      setPushLoading(false);
-    }
-  };
-
-  const handleDisablePush = async () => {
-    if (pushLoading) return;
-    setPushLoading(true);
-    try {
-      await unsubscribeFromPush();
-      setPushSubscribed(false);
-      showPushMessage('Push-beskeder slået fra');
-    } finally {
-      setPushLoading(false);
-    }
-  };
-
-  const handleSendPushTest = async () => {
-    if (!userId || pushTestLoading) return;
-    setPushTestLoading(true);
-    try {
-      const sentAt = new Date().toLocaleTimeString('da-DK', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      const notifyError = await createNotification(
-        userId,
-        'match_invite',
-        'Test-notifikation fra PadelMakker',
-        `Push virker. Test sendt kl. ${sentAt}.`,
-        null,
-        {
-          notificationPrefs: notifPrefs,
-          pushPolicy: {
-            channel: 'system',
-            level: 'critical',
-            silent: false,
-            urgency: 'high',
-            cooldownSeconds: 0,
-            aggregate: false,
-            renotify: true,
-          },
-        },
-      );
-      if (notifyError) {
-        showPushMessage('Test fejlede — prøv igen');
-        return;
-      }
-      showPushMessage('Test sendt - tjek popup nu');
-      void load();
-    } finally {
-      setPushTestLoading(false);
-    }
-  };
-
   const iconBtn = {
     background: "none",
     border: "none",
@@ -763,55 +648,12 @@ export function NotificationBell({ tourForceOpen = false }) {
             ))}
           </div>
 
-          {/* iOS: push virker kun i en installeret PWA — guide brugeren til hjemmeskærmen */}
-          {showIosInstallHint && (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: theme.warmBg + "40", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-              <span style={{ fontSize: "16px" }}>📲</span>
-              <span style={{ flex: 1, fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>
-                Vil du have notifikationer på iPhone? Tryk på <strong>Del</strong>-ikonet nederst og vælg <strong>“Føj til hjemmeskærm”</strong>. Åbn derefter PadelMakker fra hjemmeskærmen.
-              </span>
-              <button
-                type="button"
-                onClick={() => { dismissIosInstallHint(); setShowIosInstallHint(false); }}
-                style={{ background: "transparent", border: "none", color: theme.textLight, fontSize: "16px", lineHeight: 1, cursor: "pointer", padding: 0, fontFamily: font }}
-                aria-label="Luk"
-              >
-                ×
-              </button>
-            </div>
-          )}
-
-          {/* Push opt-in / opt-out banner */}
-          {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? theme.greenBg : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
-              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? theme.winText : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
-                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
-              </span>
-              {!pushMessage && (
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  {pushSubscribed && (
-                    <button
-                      type="button"
-                      onClick={handleSendPushTest}
-                      disabled={pushLoading || pushTestLoading}
-                      style={{ background: theme.surface, color: theme.textMid, border: "1px solid " + theme.border, borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
-                    >
-                      {pushTestLoading ? "..." : "Test"}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-                    disabled={pushLoading || pushTestLoading}
-                    style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : theme.onAccent, border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
-                  >
-                    {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <NotificationPushControls
+            userId={userId}
+            notificationPrefs={notifPrefs}
+            variant="dropdown"
+            onAfterTest={() => void load()}
+          />
 
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
             {displayNotifs.length === 0 ? (
