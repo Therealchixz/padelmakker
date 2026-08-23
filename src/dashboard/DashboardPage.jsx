@@ -1122,6 +1122,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tab]);
 
   useEffect(() => {
+    if (!user?.id || !isPushSupported()) return undefined;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return undefined;
+    subscribeToPush(user.id).catch(() => {});
+    return undefined;
+  }, [user?.id]);
+
+  useEffect(() => {
     if (tab === "admin") return;
     lastNonAdminTabRef.current = tab;
   }, [tab]);

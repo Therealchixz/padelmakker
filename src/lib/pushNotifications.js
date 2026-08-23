@@ -39,6 +39,10 @@ export async function subscribeToPush(userId) {
   });
 
   try {
+    // iOS PWA: SW skal være registreret og controlling før subscribe virker.
+    if (typeof navigator.serviceWorker.register === 'function') {
+      await navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
     const registration = await navigator.serviceWorker.ready;
 
     const permission = await Promise.race([

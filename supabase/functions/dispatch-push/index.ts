@@ -14,6 +14,19 @@ function jsonResponse(obj: unknown, status = 200) {
   });
 }
 
+function siteOrigin() {
+  return (Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
+}
+
+function navigateForType(type: string) {
+  const origin = siteOrigin();
+  if (type === "match_proposal" || type === "match_proposal_reminder") {
+    return `${origin}/dashboard/hjem`;
+  }
+  if (type === "makker_suggestion") return `${origin}/dashboard/makkere`;
+  return `${origin}/dashboard`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -98,7 +111,27 @@ Deno.serve(async (req: Request) => {
     /* ignore */
   }
 
+  const tag = `pm:${channel}:${type}:${entityId || "x"}:${Date.now()}`;
+  const origin = siteOrigin();
+  const notification: Record<string, unknown> = {
+    title,
+    lang: "da-DK",
+    dir: "ltr",
+    body,
+    navigate: navigateForType(type),
+    silent: false,
+    renotify: true,
+    tag,
+    icon: `${origin}/icon-192-v2.png`,
+  };
+  if (typeof unreadCount === "number" && unreadCount > 0) {
+    notification.app_badge = unreadCount;
+  }
+  // web_push: 8030 = Declarative Web Push. iOS viser låseskærmen selv hvis
+  // service workeren er død eller ITP har slettet den.
   const pushPayload = JSON.stringify({
+    web_push: 8030,
+    notification,
     title,
     body,
     matchId: null,
@@ -109,8 +142,7 @@ Deno.serve(async (req: Request) => {
     level,
     silent: false,
     renotify: true,
-    // Unikt tag hver gang — ellers sluger iOS den som en gammel, allerede set.
-    tag: `pm:${channel}:${type}:${entityId || "x"}:${Date.now()}`,
+    tag,
     unreadCount,
   });
 

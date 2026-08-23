@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v64-lock-screen';
+const VERSION = 'padelmakker-sw-v65-declarative-push';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -36,6 +36,15 @@ self.addEventListener('push', (event) => {
   } catch (err) {
     /* Bevar default-payload men log så vi kan se hvis serveren sender ugyldig JSON. */
     try { console.error('[sw] ugyldig push-payload:', err); } catch { /* ignore */ }
+  }
+
+  const declared = data.notification && typeof data.notification === 'object' ? data.notification : null;
+  if (declared) {
+    if (declared.title) data.title = declared.title;
+    if (declared.body) data.body = declared.body;
+    if (declared.tag) data.tag = declared.tag;
+    if (declared.silent != null) data.silent = declared.silent;
+    if (declared.renotify != null) data.renotify = declared.renotify;
   }
 
   const notificationTag = typeof data.tag === 'string' && data.tag.trim()

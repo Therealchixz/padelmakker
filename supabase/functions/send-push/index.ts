@@ -1011,7 +1011,34 @@ Deno.serve(async (req: Request) => {
         ? `pm:${policy.channel}:${policy.type}:${normalizedEntityId}`
         : `pm:${policy.channel}:${policy.type}`;
 
+    const siteOrigin = (Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
+    let navigate = `${siteOrigin}/dashboard`;
+    if (policy.type === "match_proposal" || policy.type === "match_proposal_reminder") {
+      navigate = `${siteOrigin}/dashboard/hjem`;
+    } else if (policy.type === "makker_suggestion") {
+      navigate = `${siteOrigin}/dashboard/makkere`;
+    } else if (normalizedEntityType === "americano" && normalizedEntityId) {
+      navigate = `${siteOrigin}/dashboard/kampe/americano/${encodeURIComponent(normalizedEntityId)}`;
+    } else if (normalizedMatchId) {
+      navigate = `${siteOrigin}/dashboard/kampe/2v2/${encodeURIComponent(normalizedMatchId)}`;
+    }
+    const notification: Record<string, unknown> = {
+      title: effectiveTitle,
+      lang: "da-DK",
+      dir: "ltr",
+      body: effectiveBody,
+      navigate,
+      silent: policy.silent,
+      renotify: policy.renotify,
+      tag: pushTag,
+      icon: `${siteOrigin}/icon-192-v2.png`,
+    };
+    if (typeof unreadCount === "number" && unreadCount > 0) {
+      notification.app_badge = unreadCount;
+    }
     const payload = JSON.stringify({
+      web_push: 8030,
+      notification,
       title: effectiveTitle,
       body: effectiveBody,
       matchId: normalizedMatchId,

@@ -284,6 +284,13 @@ test('send-push tillader kamp-forslag når kalderen selv er med i forslaget', ()
   assert.match(src, /normalizedEntityType === "match_proposal"/);
 });
 
+test('dispatch-push bruger Declarative Web Push så iOS kan vise låseskærm uden service worker', () => {
+  const src = readFileSync('supabase/functions/dispatch-push/index.ts', 'utf8');
+  assert.match(src, /web_push:\s*8030/);
+  assert.match(src, /navigateForType/);
+  assert.match(src, /dashboard\/hjem/);
+});
+
 test('når fire matcher, ringer SQL telefonen via dispatch-push — ikke kun klokken', () => {
   const helper = readFileSync('supabase/sql/dispatch_push_to_user.sql', 'utf8');
   const trigger = readFileSync('supabase/sql/dispatch_push_on_match_proposal.sql', 'utf8');
