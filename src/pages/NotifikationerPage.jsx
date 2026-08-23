@@ -10,7 +10,12 @@ import {
   kampeFocusFooterLabel,
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
-import { isProposalNotification } from '../lib/playIntentUtils';
+import {
+  buildProposalFocusPath,
+  isActionableProposalNotification,
+  isProposalNotification,
+  proposalIdFromNotification,
+} from '../lib/playIntentUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import {
   deleteNotificationsForUser,
@@ -238,7 +243,9 @@ export function NotifikationerPage({ onBack }) {
     if (n?.type === 'open_matches_weekly') {
       navigate('/dashboard/kampe'); return;
     }
-    // Forslagskortet med ja/nej-knapperne bor på Hjem.
+    if (isActionableProposalNotification(n?.type)) {
+      navigate(buildProposalFocusPath(proposalIdFromNotification(n))); return;
+    }
     if (isProposalNotification(n?.type)) {
       navigate('/dashboard/hjem'); return;
     }

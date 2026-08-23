@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v65-declarative-push';
+const VERSION = 'padelmakker-sw-v66-proposal-popup';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -107,11 +107,16 @@ self.addEventListener('notificationclick', (event) => {
   const matchId = d.matchId;
   const entityType = d.entityType;
   const entityId = d.entityId;
+  const type = d.type;
   let url = '/dashboard';
   if (entityType === 'americano' && entityId) {
     url = '/dashboard/kampe/americano/' + encodeURIComponent(String(entityId));
   } else if (entityType === 'league' && entityId) {
     url = '/dashboard/kampe/liga/' + encodeURIComponent(String(entityId));
+  } else if (entityType === 'match_proposal' || type === 'match_proposal' || type === 'match_proposal_reminder') {
+    url = entityId
+      ? '/dashboard/hjem?forslag=' + encodeURIComponent(String(entityId))
+      : '/dashboard/hjem?forslag=open';
   } else if (matchId) {
     url = '/dashboard/kampe/2v2/' + encodeURIComponent(String(matchId));
   }

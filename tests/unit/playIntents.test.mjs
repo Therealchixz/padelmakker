@@ -16,6 +16,11 @@ import {
   endSlotsAfter,
   formatSelectedDays,
   isProposalNotification,
+  isActionableProposalNotification,
+  proposalIdFromNotification,
+  buildProposalFocusPath,
+  parseProposalFocusId,
+  pickFocusedProposal,
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
@@ -288,7 +293,14 @@ test('dispatch-push bruger Declarative Web Push så iOS kan vise låseskærm ude
   const src = readFileSync('supabase/functions/dispatch-push/index.ts', 'utf8');
   assert.match(src, /web_push:\s*8030/);
   assert.match(src, /navigateForType/);
-  assert.match(src, /dashboard\/hjem/);
+  assert.match(src, /dashboard\/hjem\?forslag=/);
+});
+
+test('tryk på kamp-push åbner forslagspopuppen, ikke bare Hjem', () => {
+  const sw = readFileSync('public/sw.js', 'utf8');
+  const sendPush = readFileSync('supabase/functions/send-push/index.ts', 'utf8');
+  assert.match(sw, /hjem\?forslag=/);
+  assert.match(sendPush, /hjem\?forslag=/);
 });
 
 test('når fire matcher, ringer SQL telefonen via dispatch-push — ikke kun klokken', () => {
@@ -347,16 +359,37 @@ test('forslags-beskeder genkendes, men ikke bekræftelsen der peger på kampen',
   assert.equal(isProposalNotification(null), false);
 });
 
-test('et tryk på en forslags-besked fører til Hjem, hvor kortet står', () => {
+test('et tryk på en forslags-besked åbner ja/nej-popuppen på Hjem', () => {
   for (const file of ['src/components/NotificationBell.jsx', 'src/pages/NotifikationerPage.jsx']) {
     const src = readFileSync(file, 'utf8');
     assert.match(
       src,
-      /isProposalNotification\(n\?\.type\)/,
+      /isActionableProposalNotification\(n\?\.type\)/,
       `${file} navigerer ikke på forslags-beskeder`
     );
-    assert.match(src, /navigate\('\/dashboard\/hjem'\)/, `${file} peger ikke på Hjem`);
+    assert.match(src, /buildProposalFocusPath/, `${file} peger ikke på forslagspopuppen`);
     // Uden dette er beskeden ikke klikbar, og navigationen ovenfor er død kode.
     assert.match(src, /isProposalNotification\(n\.type\)/, `${file} markerer den ikke klikbar`);
   }
+  const panel = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
+  assert.match(panel, /parseProposalFocusId/);
+  assert.match(panel, /pickFocusedProposal/);
+  assert.match(panel, /ariaLabel="Bekræft jeres kamp"/);
+});
+
+test('forslags-deeplink åbner et konkret forslag, eller det første ventende', () => {
+  assert.equal(isActionableProposalNotification('match_proposal'), true);
+  assert.equal(isActionableProposalNotification('match_proposal_reminder'), true);
+  assert.equal(isActionableProposalNotification('match_proposal_declined'), false);
+  assert.equal(proposalIdFromNotification({ entity_id: 'abc' }), 'abc');
+  assert.equal(proposalIdFromNotification({ entityId: 'xyz' }), 'xyz');
+  assert.equal(proposalIdFromNotification({}), null);
+  assert.equal(buildProposalFocusPath('p-1'), '/dashboard/hjem?forslag=p-1');
+  assert.equal(buildProposalFocusPath(null), '/dashboard/hjem?forslag=open');
+  assert.equal(parseProposalFocusId('?forslag=p-1'), 'p-1');
+  assert.equal(parseProposalFocusId('?tab=x'), null);
+  const rows = [{ id: 'a' }, { id: 'b' }];
+  assert.equal(pickFocusedProposal(rows, 'b')?.id, 'b');
+  assert.equal(pickFocusedProposal(rows, 'open')?.id, 'a');
+  assert.equal(pickFocusedProposal(rows, 'missing'), null);
 });

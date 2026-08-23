@@ -23,7 +23,12 @@ import {
   kampeFocusFooterLabel,
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
-import { isProposalNotification } from '../lib/playIntentUtils';
+import {
+  buildProposalFocusPath,
+  isActionableProposalNotification,
+  isProposalNotification,
+  proposalIdFromNotification,
+} from '../lib/playIntentUtils';
 import {
   deleteNotificationsForUser,
   emitNotificationsSync,
@@ -383,8 +388,13 @@ export function NotificationBell({ tourForceOpen = false }) {
       navigate('/dashboard/kampe');
       return;
     }
-    // Forslagskortet med ja/nej-knapperne bor på Hjem — en påmindelse om at
-    // svare skal føre direkte derhen.
+    // Ja/nej-popuppen bor på Hjem — åbn den direkte fra beskeden.
+    if (isActionableProposalNotification(n?.type)) {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate(buildProposalFocusPath(proposalIdFromNotification(n)));
+      return;
+    }
     if (isProposalNotification(n?.type)) {
       await markNotifRead(n);
       setOpen(false);

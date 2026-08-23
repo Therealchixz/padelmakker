@@ -18,10 +18,12 @@ function siteOrigin() {
   return (Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
 }
 
-function navigateForType(type: string) {
+function navigateForType(type: string, entityId?: string | null) {
   const origin = siteOrigin();
   if (type === "match_proposal" || type === "match_proposal_reminder") {
-    return `${origin}/dashboard/hjem`;
+    return entityId
+      ? `${origin}/dashboard/hjem?forslag=${encodeURIComponent(entityId)}`
+      : `${origin}/dashboard/hjem?forslag=open`;
   }
   if (type === "makker_suggestion") return `${origin}/dashboard/makkere`;
   return `${origin}/dashboard`;
@@ -118,7 +120,7 @@ Deno.serve(async (req: Request) => {
     lang: "da-DK",
     dir: "ltr",
     body,
-    navigate: navigateForType(type),
+    navigate: navigateForType(type, entityId),
     silent: false,
     renotify: true,
     tag,

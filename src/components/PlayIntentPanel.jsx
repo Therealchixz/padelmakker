@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarClock, Check, Clock, X, Users } from 'lucide-react';
 import { theme, btn, font, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
@@ -21,6 +22,8 @@ import {
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
+  parseProposalFocusId,
+  pickFocusedProposal,
   respondToMatchProposal,
   shortTime,
   toggleSelectedDay,
@@ -39,7 +42,71 @@ const DEFAULT_END = '21:00';
  * øvrige tre og sender et forslag. Formålet er at fjerne organiseringsbyrden,
  * ikke at erstatte det at oprette en kamp manuelt.
  */
+function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
+  const deadline = deadlineInfo(proposal.expires_at, now);
+  const expired = Boolean(deadline?.expired);
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <Users size={15} color={expired ? theme.textLight : theme.accent} />
+        <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
+      </div>
+      <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 10 }}>
+        {dayLabel(proposal.play_date)} kl. {shortTime(proposal.start_time)}–{shortTime(proposal.end_time)}
+        {proposal.region ? ` · ${proposal.region}` : ''}
+      </div>
+      {deadline && (
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            marginBottom: 12,
+            padding: '3px 9px',
+            borderRadius: 999,
+            fontSize: 11.5,
+            fontWeight: 700,
+            color: deadline.urgent ? theme.red : theme.textMid,
+            background: 'transparent',
+            border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
+          }}
+        >
+          <Clock size={12} /> {deadline.label}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          disabled={busy || expired}
+          onClick={onAccept}
+          style={{
+            ...btn(true),
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            opacity: expired ? 0.5 : 1,
+          }}
+        >
+          <Check size={15} /> Jeg er med
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onDecline}
+          style={{ ...btn(false), flex: 1 }}
+        >
+          Kan ikke
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [days, setDays] = useState([DAY_CHOICES[0]]);
   const [start, setStart] = useState(DEFAULT_START);
@@ -50,8 +117,15 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [droppingId, setDroppingId] = useState(null);
   const [busyProposal, setBusyProposal] = useState(null);
   const [now, setNow] = useState(() => Date.now());
+  const [proposalsLoaded, setProposalsLoaded] = useState(false);
+  const skipMissingFocusToastRef = useRef(false);
 
   const userId = user?.id;
+  const focusId = parseProposalFocusId(location.search);
+  const focusedProposal = useMemo(
+    () => pickFocusedProposal(proposals, focusId),
+    [proposals, focusId],
+  );
 
   /* Fristen kan være helt nede på 30 minutter ved kort varsel, så nedtællingen
      skal opdatere sig selv frem for at fryse på det tidspunkt siden blev åbnet. */
@@ -68,7 +142,24 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     ]);
     setIntents(mine);
     setProposals(pending);
+    setProposalsLoaded(true);
   }, [userId]);
+
+  const clearProposalFocus = useCallback(() => {
+    if (!parseProposalFocusId(location.search)) return;
+    navigate('/dashboard/hjem', { replace: true });
+  }, [location.search, navigate]);
+
+  useEffect(() => {
+    if (!focusId || !proposalsLoaded) return;
+    if (focusedProposal) return;
+    if (skipMissingFocusToastRef.current) {
+      skipMissingFocusToastRef.current = false;
+      return;
+    }
+    showToast?.('Forslaget er ikke længere aktivt', 'info');
+    clearProposalFocus();
+  }, [focusId, proposalsLoaded, focusedProposal, showToast, clearProposalFocus]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -147,18 +238,25 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
       showToast?.(res.error, 'error');
       return;
     }
+    skipMissingFocusToastRef.current = true;
     if (res.status === 'confirmed') {
       showToast?.('Kampen er oprettet — aftal bane i chatten', 'success');
+      clearProposalFocus();
       onMatchCreated?.(res.matchId);
     } else if (res.status === 'pending') {
       showToast?.(`Du er med. Mangler svar fra ${res.awaiting}.`, 'success');
+      clearProposalFocus();
     } else if (res.status === 'declined') {
       showToast?.('Afvist — du står stadig klar i puljen', 'info');
+      clearProposalFocus();
     } else if (res.status === 'expired') {
       showToast?.('Forslaget er udløbet', 'info');
+      clearProposalFocus();
+    } else {
+      skipMissingFocusToastRef.current = false;
     }
     await reload();
-  }, [showToast, onMatchCreated, reload]);
+  }, [showToast, onMatchCreated, reload, clearProposalFocus]);
 
   const drop = useCallback(async (intentId) => {
     if (droppingId) return;
@@ -177,8 +275,8 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   return (
     <div style={{ margin: '0 18px 18px' }}>
       {proposals.map((p) => {
-        const deadline = deadlineInfo(p.expires_at, now);
-        const expired = Boolean(deadline?.expired);
+        if (focusedProposal && String(p.id) === String(focusedProposal.id)) return null;
+        const expired = Boolean(deadlineInfo(p.expires_at, now)?.expired);
         return (
           <div
             key={p.id}
@@ -190,62 +288,34 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
               background: 'var(--pm-surface-muted)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <Users size={15} color={expired ? theme.textLight : theme.accent} />
-              <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
-            </div>
-            <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 10 }}>
-              {dayLabel(p.play_date)} kl. {shortTime(p.start_time)}–{shortTime(p.end_time)}
-              {p.region ? ` · ${p.region}` : ''}
-            </div>
-            {deadline && (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  marginBottom: 12,
-                  padding: '3px 9px',
-                  borderRadius: 999,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: deadline.urgent ? theme.red : theme.textMid,
-                  background: 'transparent',
-                  border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
-                }}
-              >
-                <Clock size={12} /> {deadline.label}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                disabled={busyProposal === p.id || expired}
-                onClick={() => respond(p.id, true)}
-                style={{
-                  ...btn(true),
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  opacity: expired ? 0.5 : 1,
-                }}
-              >
-                <Check size={15} /> Jeg er med
-              </button>
-              <button
-                type="button"
-                disabled={busyProposal === p.id}
-                onClick={() => respond(p.id, false)}
-                style={{ ...btn(false), flex: 1 }}
-              >
-                Kan ikke
-              </button>
-            </div>
+            <ProposalConfirmCard
+              proposal={p}
+              now={now}
+              busy={busyProposal === p.id}
+              onAccept={() => respond(p.id, true)}
+              onDecline={() => respond(p.id, false)}
+            />
           </div>
         );
       })}
+
+      <AppModal
+        open={Boolean(focusedProposal)}
+        onClose={clearProposalFocus}
+        ariaLabel="Bekræft jeres kamp"
+        maxWidthPreset="sm"
+        showClose
+      >
+        <div className="pm-modal-body pm-modal-body--compact" style={{ fontFamily: font }}>
+          <ProposalConfirmCard
+            proposal={focusedProposal || {}}
+            now={now}
+            busy={busyProposal === focusedProposal?.id}
+            onAccept={() => focusedProposal && respond(focusedProposal.id, true)}
+            onDecline={() => focusedProposal && respond(focusedProposal.id, false)}
+          />
+        </div>
+      </AppModal>
 
       <div className={`pm-play-intent-block${intents.length ? ' pm-play-intent-block--active' : ''}`}>
         <button

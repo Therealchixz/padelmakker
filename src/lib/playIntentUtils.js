@@ -4,7 +4,7 @@
 
 /**
  * Notifikationer der handler om et pulje-forslag. De håndteres på Hjem, hvor
- * kortet med ja/nej-knapperne står — ikke i Kampe-fanen som øvrige kampbeskeder.
+ * ja/nej-popuppen åbner — ikke i Kampe-fanen som øvrige kampbeskeder.
  */
 export const PROPOSAL_NOTIF_TYPES = Object.freeze([
   'match_proposal',
@@ -12,8 +12,42 @@ export const PROPOSAL_NOTIF_TYPES = Object.freeze([
   'match_proposal_declined',
 ]);
 
+export const PROPOSAL_FOCUS_PARAM = 'forslag';
+export const PROPOSAL_FOCUS_OPEN = 'open';
+
 export function isProposalNotification(type) {
   return PROPOSAL_NOTIF_TYPES.includes(String(type || ''));
+}
+
+/** Forslag der stadig kan bekræftes — ikke "nogen afviste". */
+export function isActionableProposalNotification(type) {
+  const t = String(type || '');
+  return t === 'match_proposal' || t === 'match_proposal_reminder';
+}
+
+export function proposalIdFromNotification(n) {
+  const raw = n?.entity_id ?? n?.entityId ?? null;
+  const id = String(raw || '').trim();
+  return id || null;
+}
+
+export function buildProposalFocusPath(proposalId) {
+  const id = String(proposalId || '').trim();
+  if (!id) return `/dashboard/hjem?${PROPOSAL_FOCUS_PARAM}=${PROPOSAL_FOCUS_OPEN}`;
+  return `/dashboard/hjem?${PROPOSAL_FOCUS_PARAM}=${encodeURIComponent(id)}`;
+}
+
+export function parseProposalFocusId(search) {
+  const raw = new URLSearchParams(typeof search === 'string' ? search : '').get(PROPOSAL_FOCUS_PARAM);
+  if (raw == null || raw === '') return null;
+  return raw;
+}
+
+export function pickFocusedProposal(proposals, focusId) {
+  const list = Array.isArray(proposals) ? proposals : [];
+  if (!focusId) return null;
+  if (focusId === PROPOSAL_FOCUS_OPEN) return list[0] || null;
+  return list.find((p) => String(p?.id) === String(focusId)) || null;
 }
 
 /** Kampen kræver mindst 1½ time; hensigten kan godt være længere. */

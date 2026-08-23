@@ -37,6 +37,11 @@ export {
   deadlineInfo,
   uniqueOverlappingMatches,
   overlappingMatchToast,
+  isActionableProposalNotification,
+  proposalIdFromNotification,
+  buildProposalFocusPath,
+  parseProposalFocusId,
+  pickFocusedProposal,
 } from './playIntentUtils';
 
 /**
