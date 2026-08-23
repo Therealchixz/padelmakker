@@ -109,7 +109,8 @@ Deno.serve(async (req: Request) => {
     level,
     silent: false,
     renotify: true,
-    tag: entityId ? `pm:${channel}:${type}:${entityId}` : `pm:${channel}:${type}`,
+    // Unikt tag hver gang — ellers sluger iOS den som en gammel, allerede set.
+    tag: `pm:${channel}:${type}:${entityId || "x"}:${Date.now()}`,
     unreadCount,
   });
 

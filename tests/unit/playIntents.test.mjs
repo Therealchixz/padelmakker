@@ -284,6 +284,15 @@ test('send-push tillader kamp-forslag når kalderen selv er med i forslaget', ()
   assert.match(src, /normalizedEntityType === "match_proposal"/);
 });
 
+test('når fire matcher, ringer SQL telefonen via dispatch-push — ikke kun klokken', () => {
+  const helper = readFileSync('supabase/sql/dispatch_push_to_user.sql', 'utf8');
+  const trigger = readFileSync('supabase/sql/dispatch_push_on_match_proposal.sql', 'utf8');
+  assert.match(helper, /CREATE OR REPLACE FUNCTION public\.dispatch_push_to_user/);
+  assert.match(helper, /functions\/v1\/dispatch-push/);
+  assert.match(trigger, /notifications_dispatch_match_proposal/);
+  assert.match(trigger, /NEW\.type IN \('match_proposal', 'match_proposal_reminder'\)/);
+});
+
 const REMINDER_SQL = readFileSync('supabase/sql/match_proposal_reminders.sql', 'utf8');
 const REMINDER_FN = readFileSync('supabase/functions/send-reminders/index.ts', 'utf8');
 

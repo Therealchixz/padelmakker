@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v63-push-level-pref';
+const VERSION = 'padelmakker-sw-v64-lock-screen';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -53,6 +53,7 @@ self.addEventListener('push', (event) => {
         tag: notificationTag,
         renotify: shouldRenotify,
         silent: shouldBeSilent,
+        timestamp: Date.now(),
         data: { matchId: data.matchId, entityType: data.entityType, entityId: data.entityId, channel: data.channel, level: data.level },
       }),
 
