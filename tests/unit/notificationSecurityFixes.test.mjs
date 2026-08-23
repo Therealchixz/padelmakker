@@ -147,6 +147,8 @@ test('send-push edge function implements invite and admin legitimacy rules', () 
   assert.match(src, /seeking_player.*match_invite|match_invite.*seeking_player/s);
   assert.match(src, /match_watch_match/);
   assert.match(src, /makker_suggestion/);
+  assert.match(src, /match_proposal_members/);
+  assert.match(src, /type === "match_proposal"/);
   assert.match(src, /entityType.*entityId/s);
   assert.match(src, /callerCanAccessMatch/);
   assert.match(src, /silent: false/);

@@ -43,7 +43,7 @@ export {
  * Meld dig klar i et tidsrum. Returnerer også hvor mange andre der allerede
  * står klar, så brugeren får et konkret svar med det samme.
  */
-export async function createPlayIntent({ playDate, startTime, endTime, viewerId }) {
+export async function createPlayIntent({ playDate, startTime, endTime, viewerId: _viewerId }) {
   const { data, error } = await supabase.rpc('create_play_intent', {
     p_play_date: playDate,
     p_start_time: startTime,
@@ -55,10 +55,12 @@ export async function createPlayIntent({ playDate, startTime, endTime, viewerId 
 
   const proposal = data.proposal || {};
   if (proposal.formed) {
-    const others = (proposal.member_ids || []).filter((id) => id && id !== viewerId);
-    if (others.length) {
+    // Alle fire — også den der lige meldte sig. De tre andre er typisk
+    // slet ikke i appen, og send-push kræver at kalderen er medlem.
+    const members = (proposal.member_ids || []).filter(Boolean);
+    if (members.length) {
       void sendPushNotificationsForUsers(
-        others,
+        members,
         'match_proposal',
         'I er 4 — bekræft jeres kamp',
         `${dayLabel(proposal.play_date)} kl. ${proposal.start_time}-${proposal.end_time}`,

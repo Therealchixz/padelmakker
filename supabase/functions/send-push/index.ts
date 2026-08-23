@@ -147,9 +147,10 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     channel: "opdagelse",
     level: "normal",
     sendPush: true,
-    silent: true,
-    urgency: "low",
+    silent: false,
+    urgency: "high",
     cooldownSeconds: 7200,
+    renotify: true,
   },
   makker_suggestion: {
     channel: "opdagelse",
@@ -621,6 +622,30 @@ async function authorizeCrossUserPush({
     String(normalizedEntityId) === String(callerId)
   ) {
     return true;
+  }
+
+  // Pulje-forslag: den 4. der matcher, pusher til de tre andre. Begge skal
+  // være medlemmer af samme forslag — ellers 403, og telefonen forbliver stille.
+  if (
+    (type === "match_proposal" || type === "match_proposal_reminder") &&
+    normalizedEntityType === "match_proposal" &&
+    normalizedEntityId
+  ) {
+    const [{ data: callerMember }, { data: targetMember }] = await Promise.all([
+      adminClient
+        .from("match_proposal_members")
+        .select("id")
+        .eq("proposal_id", normalizedEntityId)
+        .eq("user_id", callerId)
+        .maybeSingle(),
+      adminClient
+        .from("match_proposal_members")
+        .select("id")
+        .eq("proposal_id", normalizedEntityId)
+        .eq("user_id", targetUserId)
+        .maybeSingle(),
+    ]);
+    return !!(callerMember && targetMember);
   }
 
   return false;

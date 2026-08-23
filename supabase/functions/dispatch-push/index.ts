@@ -64,6 +64,9 @@ Deno.serve(async (req: Request) => {
   if (!targetUserId || !title) {
     return jsonResponse({ error: "targetUserId and title are required" }, 400);
   }
+  const isProposal = type === "match_proposal" || type === "match_proposal_reminder";
+  const channel = isProposal ? "invitation" : "opdagelse";
+  const level = isProposal ? "critical" : "normal";
 
   const { data: subs, error: subsError } = await admin
     .from("push_subscriptions")
@@ -102,11 +105,11 @@ Deno.serve(async (req: Request) => {
     entityType,
     entityId,
     type,
-    channel: "opdagelse",
-    level: "normal",
+    channel,
+    level,
     silent: false,
     renotify: true,
-    tag: entityId ? `pm:opdagelse:${type}:${entityId}` : `pm:opdagelse:${type}`,
+    tag: entityId ? `pm:${channel}:${type}:${entityId}` : `pm:${channel}:${type}`,
     unreadCount,
   });
 

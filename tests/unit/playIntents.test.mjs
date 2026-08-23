@@ -269,6 +269,21 @@ test('notifikationspolitik dækker de nye forslags-typer', () => {
   }
 });
 
+test('når fire matcher, pusher klienten til alle medlemmer — ikke kun de tre andre', () => {
+  const src = readFileSync('src/lib/playIntents.js', 'utf8');
+  assert.match(src, /proposal\.member_ids/);
+  assert.match(src, /sendPushNotificationsForUsers/);
+  assert.match(src, /entityType:\s*'match_proposal'/);
+  assert.doesNotMatch(src, /id !== viewerId/);
+});
+
+test('send-push tillader kamp-forslag når kalderen selv er med i forslaget', () => {
+  const src = readFileSync('supabase/functions/send-push/index.ts', 'utf8');
+  assert.match(src, /type === "match_proposal"/);
+  assert.match(src, /match_proposal_members/);
+  assert.match(src, /normalizedEntityType === "match_proposal"/);
+});
+
 const REMINDER_SQL = readFileSync('supabase/sql/match_proposal_reminders.sql', 'utf8');
 const REMINDER_FN = readFileSync('supabase/functions/send-reminders/index.ts', 'utf8');
 

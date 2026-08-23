@@ -42,6 +42,20 @@ test('makker suggestion push is audible so a match reaches the lock screen', () 
   assert.equal(policy.renotify, true);
 });
 
+test('kamp-forslag og kamp-watch ringer på telefonen ligesom makker-match', () => {
+  const proposal = resolveNotificationPushPolicy("match_proposal");
+  assert.equal(proposal.sendPush, true);
+  assert.equal(proposal.silent, false);
+  assert.equal(proposal.urgency, "high");
+  assert.equal(proposal.level, "critical");
+
+  const watch = resolveNotificationPushPolicy("match_watch_match");
+  assert.equal(watch.sendPush, true);
+  assert.equal(watch.silent, false);
+  assert.equal(watch.urgency, "high");
+  assert.equal(watch.renotify, true);
+});
+
 test("unknown notification type falls back to safe defaults", () => {
   const policy = resolveNotificationPushPolicy("something_new");
   assert.equal(policy.level, "normal");
