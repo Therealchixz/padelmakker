@@ -5,17 +5,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { theme, font, btn } from '../lib/platformTheme';
 import {
-  buildKampeFocusPath,
   notificationKampeTarget,
   kampeFocusFooterLabel,
-  kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
-import {
-  buildProposalFocusPath,
-  isActionableProposalNotification,
-  isProposalNotification,
-  proposalIdFromNotification,
-} from '../lib/playIntentUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import {
   deleteNotificationsForUser,
@@ -24,6 +16,7 @@ import {
   NOTIFICATIONS_SYNC_EVENT,
 } from '../lib/notificationDismissStorage';
 import { NotificationPushControls } from '../components/NotificationPushControls';
+import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 
 function NotifIcon({ type }) {
   const iconStyle = { width: 18, height: 18, strokeWidth: 2.2, flexShrink: 0 };
@@ -229,35 +222,12 @@ export function NotifikationerPage({ onBack }) {
 
   const openNotif = async (n) => {
     if (!userId) return;
+    const target = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
+    // #region agent log
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'A',location:'NotifikationerPage.jsx:openNotif',message:'page click',data:{type:n?.type||null,kind:target?.kind||null,path:target?.path||null,hasEntity:Boolean(n?.entity_id),hasMatch:Boolean(n?.match_id)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     await markNotifRead(n);
-
-    if (n?.type === 'result_error_report' && profile?.role === 'admin') {
-      navigate('/dashboard/admin?adminSub=result_errors'); return;
-    }
-    if (n?.type === 'user_report' && profile?.role === 'admin') {
-      navigate('/dashboard/admin?adminSub=reports'); return;
-    }
-    if (n?.type === 'makker_suggestion' && n?.entity_id) {
-      navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`); return;
-    }
-    if (n?.type === 'open_matches_weekly') {
-      navigate('/dashboard/kampe'); return;
-    }
-    if (isActionableProposalNotification(n?.type)) {
-      navigate(buildProposalFocusPath(proposalIdFromNotification(n))); return;
-    }
-    if (isProposalNotification(n?.type)) {
-      navigate('/dashboard/hjem'); return;
-    }
-    const kampeTarget = notificationKampeTarget(n);
-    if (kampeTarget) {
-      navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
-        openChat: kampeFocusOpensChat(n.type),
-      }));
-      return;
-    }
-    if (n?.type === 'elo_change') { navigate('/dashboard/profil'); return; }
-    if (n?.type === 'result_submitted') { navigate('/dashboard/kampe'); return; }
+    if (target) navigate(target.path);
   };
 
   const matchLabel = (matchId) => {
@@ -345,14 +315,9 @@ export function NotifikationerPage({ onBack }) {
             ? (n.unreadCount > 0 ? 'Nye beskeder i kamp-chat' : 'Beskeder i kamp-chat')
             : n.title;
           const body = isMatchChatGroup ? matchLabel(n.match_id) : n.body;
+          const clickTarget = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
           const kampeTarget = notificationKampeTarget(n);
-          const isClickable = Boolean(kampeTarget)
-            || (n.type === 'result_error_report' && profile?.role === 'admin')
-            || (n.type === 'user_report' && profile?.role === 'admin')
-            || n.type === 'makker_suggestion'
-            || n.type === 'elo_change'
-            || n.type === 'result_submitted'
-            || isProposalNotification(n.type);
+          const isClickable = Boolean(clickTarget);
           const isResultPending = n.type === 'result_submitted';
           const canMarkReadOnly = !n.read && !isClickable && !isResultPending;
           return (
@@ -374,7 +339,11 @@ export function NotifikationerPage({ onBack }) {
                 )}
                 {isClickable && !isResultPending && (
                   <div style={{ fontSize: 10.5, color: theme.accent, marginTop: 6, fontWeight: 600 }}>
-                    {kampeTarget ? kampeFocusFooterLabel(kampeTarget.format, n.type) : 'Tryk for at åbne →'}
+                    {kampeTarget
+                      ? kampeFocusFooterLabel(kampeTarget.format, n.type)
+                      : clickTarget.kind === 'proposal-popup'
+                        ? 'Tryk for at bekræfte kampen →'
+                        : 'Tryk for at åbne →'}
                   </div>
                 )}
                 {canMarkReadOnly && (

@@ -320,6 +320,10 @@ const TYPE_POLICIES = Object.freeze({
   },
 });
 
+export function listNotificationPolicyTypes() {
+  return Object.freeze(Object.keys(TYPE_POLICIES));
+}
+
 function normalizeType(type) {
   return String(type || "").trim().toLowerCase();
 }

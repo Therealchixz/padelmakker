@@ -152,6 +152,9 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
 
   useEffect(() => {
     if (!focusId || !proposalsLoaded) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'G',location:'PlayIntentPanel.jsx:focus',message:'proposal focus',data:{focusId,pendingCount:proposals.length,found:Boolean(focusedProposal)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (focusedProposal) return;
     if (skipMissingFocusToastRef.current) {
       skipMissingFocusToastRef.current = false;
@@ -159,7 +162,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     }
     showToast?.('Forslaget er ikke længere aktivt', 'info');
     clearProposalFocus();
-  }, [focusId, proposalsLoaded, focusedProposal, showToast, clearProposalFocus]);
+  }, [focusId, proposalsLoaded, focusedProposal, showToast, clearProposalFocus, proposals.length]);
 
   useEffect(() => { void reload(); }, [reload]);
 

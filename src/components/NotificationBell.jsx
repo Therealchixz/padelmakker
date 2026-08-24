@@ -17,18 +17,11 @@ import {
   NOTIFICATION_EMAIL_CHANNELS,
   NOTIFICATION_PUSH_LEVELS,
 } from '../lib/notificationPreferences';
+import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import {
-  buildKampeFocusPath,
   notificationKampeTarget,
   kampeFocusFooterLabel,
-  kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
-import {
-  buildProposalFocusPath,
-  isActionableProposalNotification,
-  isProposalNotification,
-  proposalIdFromNotification,
-} from '../lib/playIntentUtils';
 import {
   deleteNotificationsForUser,
   emitNotificationsSync,
@@ -364,57 +357,14 @@ export function NotificationBell({ tourForceOpen = false }) {
 
   const openNotificationTarget = async (n) => {
     if (!userId) return;
-    if (n?.type === "result_error_report" && profile?.role === "admin") {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate("/dashboard/admin?adminSub=result_errors");
-      return;
-    }
-    if (n?.type === "user_report" && profile?.role === "admin") {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate("/dashboard/admin?adminSub=reports");
-      return;
-    }
-    if (n?.type === 'makker_suggestion' && n?.entity_id) {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`);
-      return;
-    }
-    if (n?.type === 'open_matches_weekly') {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate('/dashboard/kampe');
-      return;
-    }
-    // Ja/nej-popuppen bor på Hjem — åbn den direkte fra beskeden.
-    if (isActionableProposalNotification(n?.type)) {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate(buildProposalFocusPath(proposalIdFromNotification(n)));
-      return;
-    }
-    if (isProposalNotification(n?.type)) {
-      await markNotifRead(n);
-      setOpen(false);
-      navigate('/dashboard/hjem');
-      return;
-    }
-    const kampeTarget = notificationKampeTarget(n);
-    if (!kampeTarget) {
-      if (n?.type === 'elo_change') {
-        await markNotifRead(n);
-        setOpen(false);
-        navigate('/dashboard/profil');
-      }
-      return;
-    }
+    const target = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
+    // #region agent log
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'A',location:'NotificationBell.jsx:openNotificationTarget',message:'bell click',data:{type:n?.type||null,kind:target?.kind||null,path:target?.path||null,hasEntity:Boolean(n?.entity_id),hasMatch:Boolean(n?.match_id)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (!target) return;
     await markNotifRead(n);
     setOpen(false);
-    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
-      openChat: kampeFocusOpensChat(n.type),
-    }));
+    navigate(target.path);
   };
 
   const timeAgo = useCallback((dateStr) => {
@@ -672,21 +622,9 @@ export function NotificationBell({ tourForceOpen = false }) {
                 <div>Ingen notifikationer endnu</div>
               </div>
             ) : displayNotifs.map(n => {
-              const isAdminResultError =
-                n.type === "result_error_report" && profile?.role === "admin";
-              const isAdminUserReport =
-                n.type === "user_report" && profile?.role === "admin";
+              const clickTarget = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
               const kampeTarget = notificationKampeTarget(n);
-              const isEloProfile = n.type === 'elo_change' && !kampeTarget;
-              const isMakkerSuggestion = n.type === 'makker_suggestion' && Boolean(n.entity_id);
-              const isProposal = isProposalNotification(n.type);
-              const isClickable =
-                Boolean(kampeTarget)
-                || isAdminResultError
-                || isAdminUserReport
-                || isEloProfile
-                || isMakkerSuggestion
-                || isProposal;
+              const isClickable = Boolean(clickTarget);
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
@@ -722,15 +660,17 @@ export function NotificationBell({ tourForceOpen = false }) {
                     )}
                     {isClickable && (
                       <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>
-                        {isAdminResultError
+                        {clickTarget.kind === 'admin' && n.type === 'result_error_report'
                           ? "Tryk for at åbne Admin (PIN) → Fejl →"
-                          : isAdminUserReport
+                          : clickTarget.kind === 'admin'
                             ? "Tryk for at åbne Admin (PIN) → Anmeldelser →"
                             : kampeTarget
                             ? kampeFocusFooterLabel(kampeTarget.format, n.type)
-                            : isEloProfile
+                            : clickTarget.kind === 'profile'
                               ? "Tryk for at åbne din profil →"
-                              : "Tryk for at åbne →"}
+                              : clickTarget.kind === 'proposal-popup'
+                                ? "Tryk for at bekræfte kampen →"
+                                : "Tryk for at åbne →"}
                       </div>
                     )}
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>

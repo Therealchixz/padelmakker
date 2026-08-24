@@ -52,8 +52,19 @@ export function NotificationPushControls({
         : shouldShowIosInstallHint(),
     );
     try { setPermission(getPushPermission()); } catch { /* ignore */ }
-    if (!isPushSupported()) return;
-    isPushSubscribed().then(setPushSubscribed);
+    const supported = isPushSupported();
+    if (!supported) {
+      // #region agent log
+      fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'E',location:'NotificationPushControls.jsx:mount',message:'push unsupported',data:{variant,permission},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      return;
+    }
+    isPushSubscribed().then((subscribed) => {
+      setPushSubscribed(subscribed);
+      // #region agent log
+      fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'E',location:'NotificationPushControls.jsx:mount',message:'push status',data:{variant,subscribed,permission},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    });
   }, [userId, isPage]);
 
   const showPushMessage = (msg) => {

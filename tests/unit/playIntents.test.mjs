@@ -362,14 +362,7 @@ test('forslags-beskeder genkendes, men ikke bekræftelsen der peger på kampen',
 test('et tryk på en forslags-besked åbner ja/nej-popuppen på Hjem', () => {
   for (const file of ['src/components/NotificationBell.jsx', 'src/pages/NotifikationerPage.jsx']) {
     const src = readFileSync(file, 'utf8');
-    assert.match(
-      src,
-      /isActionableProposalNotification\(n\?\.type\)/,
-      `${file} navigerer ikke på forslags-beskeder`
-    );
-    assert.match(src, /buildProposalFocusPath/, `${file} peger ikke på forslagspopuppen`);
-    // Uden dette er beskeden ikke klikbar, og navigationen ovenfor er død kode.
-    assert.match(src, /isProposalNotification\(n\.type\)/, `${file} markerer den ikke klikbar`);
+    assert.match(src, /resolveNotificationClickTarget/, `${file} bruger ikke fælles klik-routing`);
   }
   const panel = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
   assert.match(panel, /parseProposalFocusId/);
