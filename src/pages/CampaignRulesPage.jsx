@@ -15,14 +15,14 @@ export function CampaignRulesPage() {
   return (
     <LegalPageLayout title="Første 200 — regler">
       <p style={{ marginTop: 0, color: theme.textMid, lineHeight: 1.65 }}>
-        De første 200 spillere med fuld profil deltager i lodtrækning om en padel-præmie. Kampagnen gælder både
+        De første 200 spillere med udfyldt profil og bekræftet e-mail og telefon deltager i lodtrækning om en padel-præmie. Kampagnen gælder både
         eksisterende og nye brugere — pladserne fordeles efter hvem der først opfylder kravene.
       </p>
 
       <Rule title="Hvem kan deltage?">
         <ul style={{ margin: 0, paddingLeft: '20px' }}>
-          <li>Du har bekræftet telefonnummer med SMS (eller er undtaget af admin).</li>
-          <li>Din profil er udfyldt: navn, fødselsår, spillestil og mindst én spilledag.</li>
+          <li>Du har bekræftet e-mail og telefonnummer med SMS (eller er undtaget af admin for SMS).</li>
+          <li>Din profil er udfyldt: navn, fødselsår og spillestil. Spilledag er ikke et krav.</li>
           <li>Du accepterer at deltage i lodtrækningen, når du er kvalificeret.</li>
         </ul>
       </Rule>

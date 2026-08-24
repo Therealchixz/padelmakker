@@ -152,7 +152,7 @@ export function GrowthCampaignBanner() {
           <Gift size={18} color={theme.textLight} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
           <div>
             <strong style={{ color: theme.text }}>Første 200</strong> — {spots} pladser taget.
-            Udfyld profil og bekræft telefon for at deltage.
+            Udfyld profil og bekræft e-mail og telefon for at deltage.
             {' '}
             <Link to="/kampagne/forste-200" style={{ color: theme.accent, fontWeight: 600, textDecoration: 'none' }}>
               Se regler

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Growth campaign: Første 200 (lodtrækning ved fuld profil + bekræftet telefon)
+-- Growth campaign: Første 200 (lodtrækning ved udfyldt profil + bekræftet mail og SMS)
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.growth_campaigns (
@@ -75,6 +75,7 @@ AS $$
 DECLARE
   v_profile public.profiles%ROWTYPE;
   v_phone_confirmed timestamptz;
+  v_email_confirmed timestamptz;
   v_exempt boolean;
 BEGIN
   IF p_user_id IS NULL THEN
@@ -86,9 +87,14 @@ BEGIN
     RETURN false;
   END IF;
 
-  SELECT u.phone_confirmed_at INTO v_phone_confirmed
+  SELECT u.phone_confirmed_at, u.email_confirmed_at
+    INTO v_phone_confirmed, v_email_confirmed
   FROM auth.users u
   WHERE u.id = p_user_id;
+
+  IF v_email_confirmed IS NULL THEN
+    RETURN false;
+  END IF;
 
   v_exempt := COALESCE(v_profile.phone_verification_exempt, false);
 
@@ -101,10 +107,6 @@ BEGIN
   END IF;
 
   IF COALESCE(trim(v_profile.play_style), '') IN ('', 'Ved ikke endnu') THEN
-    RETURN false;
-  END IF;
-
-  IF COALESCE(array_length(v_profile.availability, 1), 0) = 0 THEN
     RETURN false;
   END IF;
 
