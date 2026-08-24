@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarClock, Check, Clock, X, Users } from 'lucide-react';
 import { theme, btn, font, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
+import { AvatarCircle } from './AvatarCircle';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   PLAY_WINDOW_PRESETS,
   PLAY_ALL_DAY,
@@ -24,6 +26,7 @@ import {
   matchingPresetKey,
   parseProposalFocusId,
   pickFocusedProposal,
+  proposalMemberStatusLabel,
   respondToMatchProposal,
   shortTime,
   toggleSelectedDay,
@@ -45,16 +48,37 @@ const DEFAULT_END = '21:00';
 function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
   const deadline = deadlineInfo(proposal.expires_at, now);
   const expired = Boolean(deadline?.expired);
+  const members = Array.isArray(proposal.members) ? proposal.members : [];
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <Users size={15} color={expired ? theme.textLight : theme.accent} />
         <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
       </div>
-      <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 10 }}>
+      <div style={{ fontSize: 13, color: theme.textMid, marginBottom: members.length ? 12 : 10 }}>
         {dayLabel(proposal.play_date)} kl. {shortTime(proposal.start_time)}–{shortTime(proposal.end_time)}
         {proposal.region ? ` · ${proposal.region}` : ''}
       </div>
+      {members.length > 0 && (
+        <ul style={{ listStyle: 'none', margin: '0 0 12px', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {members.map((m) => {
+            const level = m.level != null && m.level !== '' ? formatPlaytomicLevel(m.level) : '';
+            return (
+              <li key={m.id || m.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AvatarCircle avatar={m.avatar} size={32} emojiSize="15px" alt={m.name || 'Spiller'} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: m.is_me ? 700 : 600, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.name || 'Spiller'}
+                  </div>
+                  <div style={{ fontSize: 11, color: theme.textLight }}>
+                    {[proposalMemberStatusLabel(m.response, m.is_me), level ? `Niveau ${level}` : null].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {deadline && (
         <div
           style={{
@@ -152,9 +176,6 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
 
   useEffect(() => {
     if (!focusId || !proposalsLoaded) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'G',location:'PlayIntentPanel.jsx:focus',message:'proposal focus',data:{focusId,pendingCount:proposals.length,found:Boolean(focusedProposal)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (focusedProposal) return;
     if (skipMissingFocusToastRef.current) {
       skipMissingFocusToastRef.current = false;

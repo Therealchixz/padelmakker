@@ -21,6 +21,8 @@ import {
   buildProposalFocusPath,
   parseProposalFocusId,
   pickFocusedProposal,
+  proposalMemberStatusLabel,
+  normalizePendingProposals,
   isValidPlayWindow,
   isoDateOffset,
   matchingPresetKey,
@@ -87,7 +89,8 @@ test('starttider slutter, når der ikke er 1½ time tilbage', () => {
 test('dayChoiceLabel siger I dag og I morgen i stedet for ugedagen', () => {
   assert.equal(dayChoiceLabel(isoDateOffset(0)), 'I dag');
   assert.equal(dayChoiceLabel(isoDateOffset(1)), 'I morgen');
-  assert.equal(dayChoiceLabel('2026-08-25'), 'Tir 25/8');
+  const later = isoDateOffset(3);
+  assert.equal(dayChoiceLabel(later), dayLabel(later));
 });
 
 test('toggleSelectedDay lader én vælge flere dage uden at tømme listen', () => {
@@ -372,12 +375,47 @@ test('et tryk på en forslags-besked åbner ja/nej-popuppen på Hjem', () => {
 
 test('forslags-medlemmer kan læses uden RLS-recursion', () => {
   const sql = readFileSync('supabase/sql/play_intent_pool.sql', 'utf8');
-  assert.match(sql, /USING \(user_id = \(SELECT auth\.uid\(\)\)\)/);
+  const policy = sql.match(/CREATE POLICY match_proposal_members_select_member[\s\S]*?;/)?.[0] || '';
+  assert.match(policy, /USING \(user_id = \(SELECT auth\.uid\(\)\)\)/);
   assert.doesNotMatch(
-    sql,
+    policy,
     /match_proposal_members mine/,
     'self-join i policy giver infinite recursion',
   );
+});
+
+test('ja/nej-kassen viser de fire spillere, ikke kun tidspunktet', () => {
+  assert.match(POOL_SQL, /CREATE OR REPLACE FUNCTION public\.list_pending_match_proposals\(\)/);
+  assert.match(POOL_SQL, /'name', COALESCE\(NULLIF\(btrim\(pr\.full_name\)/);
+  assert.match(POOL_SQL, /'is_me', m\.user_id = v_caller/);
+  const client = readFileSync('src/lib/playIntents.js', 'utf8');
+  assert.match(client, /list_pending_match_proposals/);
+  const panel = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
+  assert.match(panel, /proposal\.members/);
+  assert.match(panel, /AvatarCircle/);
+  assert.match(panel, /proposalMemberStatusLabel/);
+});
+
+test('normalizePendingProposals bevarer spillernavne og ignorerer udløbne', () => {
+  const now = Date.parse('2026-08-25T12:00:00Z');
+  const rows = normalizePendingProposals([
+    {
+      id: 'alive',
+      expires_at: '2026-08-25T22:00:00Z',
+      members: [{ name: 'Kevin Rastung', is_me: false }],
+    },
+    { id: 'dead', expires_at: '2026-08-25T10:00:00Z', members: [{ name: 'Gammel' }] },
+  ], now);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].members[0].name, 'Kevin Rastung');
+  assert.deepEqual(normalizePendingProposals('not-json'), []);
+  assert.deepEqual(normalizePendingProposals(null), []);
+});
+
+test('proposalMemberStatusLabel skelner dig fra de andre', () => {
+  assert.equal(proposalMemberStatusLabel('pending', true), 'Dig');
+  assert.equal(proposalMemberStatusLabel('accepted', false), 'Har sagt ja');
+  assert.equal(proposalMemberStatusLabel('pending', false), 'Afventer');
 });
 
 test('forslags-deeplink åbner et konkret forslag, eller det første ventende', () => {

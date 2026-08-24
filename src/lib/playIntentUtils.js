@@ -43,6 +43,31 @@ export function parseProposalFocusId(search) {
   return raw;
 }
 
+/** Statuslinje under navnet i ja/nej-kassen. */
+export function proposalMemberStatusLabel(response, isMe) {
+  if (isMe) return 'Dig';
+  if (response === 'accepted') return 'Har sagt ja';
+  return 'Afventer';
+}
+
+/**
+ * RPC'en returnerer jsonb (array). PostgREST kan også sende det som streng.
+ * Udløbne forslag filtreres her, så UI kun viser dem man stadig kan svare på.
+ */
+export function normalizePendingProposals(data, now = Date.now()) {
+  let rows = data;
+  if (typeof rows === 'string') {
+    try { rows = JSON.parse(rows); } catch { return []; }
+  }
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .filter((p) => p?.id && new Date(p.expires_at).getTime() > now)
+    .map((p) => ({
+      ...p,
+      members: Array.isArray(p.members) ? p.members : [],
+    }));
+}
+
 export function pickFocusedProposal(proposals, focusId) {
   const list = Array.isArray(proposals) ? proposals : [];
   if (!focusId) return null;

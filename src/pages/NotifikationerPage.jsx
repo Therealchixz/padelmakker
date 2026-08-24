@@ -223,9 +223,6 @@ export function NotifikationerPage({ onBack }) {
   const openNotif = async (n) => {
     if (!userId) return;
     const target = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
-    // #region agent log
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'sweep',hypothesisId:'A',location:'NotifikationerPage.jsx:openNotif',message:'page click',data:{type:n?.type||null,kind:target?.kind||null,path:target?.path||null,hasEntity:Boolean(n?.entity_id),hasMatch:Boolean(n?.match_id)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     await markNotifRead(n);
     if (target) navigate(target.path);
   };

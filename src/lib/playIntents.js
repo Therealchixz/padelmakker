@@ -8,7 +8,7 @@
 
 import { supabase } from './supabase';
 import { sendPushNotificationsForUsers } from './notifications';
-import { dayLabel, isoDateOffset } from './playIntentUtils';
+import { dayLabel, isoDateOffset, normalizePendingProposals } from './playIntentUtils';
 
 export {
   PLAY_TIME_BANDS,
@@ -42,6 +42,8 @@ export {
   buildProposalFocusPath,
   parseProposalFocusId,
   pickFocusedProposal,
+  proposalMemberStatusLabel,
+  normalizePendingProposals,
 } from './playIntentUtils';
 
 /**
@@ -133,26 +135,13 @@ export async function fetchMyPlayIntents(userId) {
   return data || [];
 }
 
-/** Forslag jeg mangler at svare på. */
+/** Forslag jeg mangler at svare på, med de øvrige spillere. */
 export async function fetchPendingProposals(userId) {
   if (!userId) return [];
-  const { data, error } = await supabase
-    .from('match_proposal_members')
-    .select('proposal_id, response, match_proposals!inner(id, play_date, start_time, end_time, region, status, expires_at)')
-    .eq('user_id', userId)
-    .eq('response', 'pending')
-    .eq('match_proposals.status', 'pending');
-
+  const { data, error } = await supabase.rpc('list_pending_match_proposals');
   if (error) {
     console.warn('fetchPendingProposals:', error.message);
-    // #region agent log
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'post-fix',hypothesisId:'G',location:'playIntents.js:fetchPendingProposals',message:'fetch error',data:{code:error.code||null,msg:String(error.message||'').slice(0,180)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     return [];
   }
-
-  return (data || [])
-    .map((row) => row.match_proposals)
-    .filter(Boolean)
-    .filter((p) => new Date(p.expires_at).getTime() > Date.now());
+  return normalizePendingProposals(data);
 }
