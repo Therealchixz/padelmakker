@@ -174,7 +174,8 @@ export function daysOverlap(watcherDays, subjectDays) {
 
 /**
  * Matcher en profil mod makker-filteret UDEN at kræve at de søger lige nu.
- * Bruges til notifikationer og "kun i min region".
+ * Bruges til notifikationer. Listen på Find makker rangerer alle spillere
+ * og skjuler ikke ud fra denne ramme.
  *
  * @param {{ ignoreRegion?: boolean }} [opts] ignoreRegion: behold spillere
  *   i andre regioner — afstand rangeres i UI i stedet for at skjule dem.
@@ -207,8 +208,8 @@ export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile
 }
 
 /**
- * Søgeramme til "Find makker"-listen: niveau, dage, stil, intention, side.
- * Region er IKKE et hard filter — fjerne spillere vises, men rangeres lavere.
+ * Tidligere søgeramme til listen. Beholdt til notifikationer og tests;
+ * Find makker skjuler ikke længere spillere med den.
  */
 export function profileFitsMakkerSearchFrame(subjectProfile, prefs, watcherProfile, watcherUserId) {
   return profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId, { ignoreRegion: true });

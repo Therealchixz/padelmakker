@@ -26,7 +26,6 @@ import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
-  profileFitsMakkerSearchFrame,
   describeMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
@@ -554,14 +553,15 @@ export function MakkereTab({ user, showToast }) {
     };
   }, [user?.id]);
 
-  // Søgeliste: alle spillere inden for rammen, rangeret efter afstand + match
+  // Søgeliste: alle spillere, rangeret efter afstand + match.
+  // «Synlig som makker» må ikke skjule nogen her — det styrer kun om *du*
+  // vises hos andre, plus notifikationer. Gemte kriterier rangerer, de skærer ikke.
   const rankedSearch = useMemo(() => {
     const q = search.trim().toLowerCase();
     const pool = players.filter((p) => {
       const n = (p.full_name || p.name || '').toLowerCase();
       const c = (p.city || '').toLowerCase();
       if (q && !n.includes(q) && !c.includes(q)) return false;
-      if (makkerFilterOn && !profileFitsMakkerSearchFrame(p, makkerFilterPrefs, user, user.id)) return false;
       if (filterArea !== 'all' && p.area !== filterArea) return false;
       if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
       if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
@@ -580,7 +580,7 @@ export function MakkereTab({ user, showToast }) {
       favoriteIds: favorites,
     });
   }, [
-    players, search, makkerFilterOn, makkerFilterPrefs, user, filterArea, filterElo,
+    players, search, user, filterArea, filterElo,
     filterStyle, filterIntent, filterCourtSide, filterSeeking, filterFav, favorites,
     displayElo, myElo, eloByUserId, gamesByUserId, inviteStatsByUserId,
     exposureCountByUserId, pastMatchesByUserId,
@@ -960,16 +960,14 @@ export function MakkereTab({ user, showToast }) {
           <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              {makkerFilterOn || activeFilterCount > 0 || search.trim()
+              {activeFilterCount > 0 || search.trim()
                 ? 'Ingen spillere matcher dine kriterier'
                 : 'Ingen spillere at vise'}
             </div>
             <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              {makkerFilterOn
-                ? 'Prøv at udvide niveau, spilledage eller spillestil. Spillere i andre regioner vises stadig — de ligger bare længere nede.'
-                : activeFilterCount > 0 || search.trim()
-                  ? 'Prøv at ændre kriterier eller søg med et andet navn.'
-                  : 'Der er endnu få spillere — prøv at slække på kriterierne.'}
+              {activeFilterCount > 0 || search.trim()
+                ? 'Prøv at ændre kriterier eller søg med et andet navn.'
+                : 'Der er endnu få spillere — prøv igen senere.'}
             </div>
             <button
               type="button"

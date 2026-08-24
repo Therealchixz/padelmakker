@@ -50,15 +50,15 @@ test('notification policy routes makker_suggestion to opdagelse', () => {
   assert.match(policy, /makker_suggestion[\s\S]*channel:\s*["']opdagelse["']/);
 });
 
-test('makkere-søg rangerer alle spillere og bruger ramme uden region-cut', () => {
+test('makkere-søg rangerer alle spillere og skjuler ikke pga. synlig-som-makker', () => {
   const core = readFileSync(join(root, 'src/lib/makkerSearchFilterCore.js'), 'utf8');
   const tab = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
   const mm = readFileSync(join(root, 'src/lib/matchmakingUtils.js'), 'utf8');
   assert.match(core, /profileFitsMakkerSearchFrame/);
   assert.match(mm, /export function rankMakkerSearchResults/);
   assert.match(tab, /rankMakkerSearchResults/);
-  assert.match(tab, /profileFitsMakkerSearchFrame/);
   assert.match(tab, /Søg makker/);
+  assert.doesNotMatch(tab, /profileFitsMakkerSearchFrame/);
   assert.doesNotMatch(tab, /profileMatchesMakkerFilter/);
 });
 
