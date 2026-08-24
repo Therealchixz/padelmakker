@@ -83,13 +83,11 @@ CREATE POLICY match_proposals_select_member ON public.match_proposals
   ));
 
 DROP POLICY IF EXISTS match_proposal_members_select_member ON public.match_proposal_members;
+-- Egne rækker direkte — en EXISTS på samme tabel udløser infinite recursion,
+-- og klienten får tom liste (popuppen siger «ikke længere aktivt»).
 CREATE POLICY match_proposal_members_select_member ON public.match_proposal_members
   FOR SELECT TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.match_proposal_members mine
-    WHERE mine.proposal_id = match_proposal_members.proposal_id
-      AND mine.user_id = (SELECT auth.uid())
-  ));
+  USING (user_id = (SELECT auth.uid()));
 
 -- Skrivning sker udelukkende gennem RPC'erne nedenfor.
 REVOKE INSERT, UPDATE, DELETE ON public.play_intents FROM authenticated;

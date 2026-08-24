@@ -145,6 +145,9 @@ export async function fetchPendingProposals(userId) {
 
   if (error) {
     console.warn('fetchPendingProposals:', error.message);
+    // #region agent log
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'post-fix',hypothesisId:'G',location:'playIntents.js:fetchPendingProposals',message:'fetch error',data:{code:error.code||null,msg:String(error.message||'').slice(0,180)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     return [];
   }
 

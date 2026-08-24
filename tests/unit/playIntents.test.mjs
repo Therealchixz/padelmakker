@@ -370,6 +370,16 @@ test('et tryk på en forslags-besked åbner ja/nej-popuppen på Hjem', () => {
   assert.match(panel, /ariaLabel="Bekræft jeres kamp"/);
 });
 
+test('forslags-medlemmer kan læses uden RLS-recursion', () => {
+  const sql = readFileSync('supabase/sql/play_intent_pool.sql', 'utf8');
+  assert.match(sql, /USING \(user_id = \(SELECT auth\.uid\(\)\)\)/);
+  assert.doesNotMatch(
+    sql,
+    /match_proposal_members mine/,
+    'self-join i policy giver infinite recursion',
+  );
+});
+
 test('forslags-deeplink åbner et konkret forslag, eller det første ventende', () => {
   assert.equal(isActionableProposalNotification('match_proposal'), true);
   assert.equal(isActionableProposalNotification('match_proposal_reminder'), true);
