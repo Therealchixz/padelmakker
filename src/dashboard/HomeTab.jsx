@@ -1187,6 +1187,7 @@ export function HomeTab({ user, setTab, showToast }) {
           user={user}
           showToast={showToast}
           onMatchCreated={() => setTab('kampe')}
+          onMessagePlayer={(pid) => setTab('beskeder', { search: `med=${encodeURIComponent(String(pid))}` })}
         />
       ) : null}
 

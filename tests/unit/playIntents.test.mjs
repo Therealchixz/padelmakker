@@ -396,7 +396,8 @@ test('ja/nej-kassen viser de fire spillere, ikke kun tidspunktet', () => {
   const panel = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
   assert.match(panel, /proposal\.members/);
   assert.match(panel, /AvatarCircle/);
-  assert.match(panel, /proposalMemberStatusLabel/);
+  assert.match(panel, /PlayerProfileModal/);
+  assert.match(panel, /Åbn profil for/);
   assert.match(panel, /Du er med — venter på de andre/);
   assert.match(panel, /iHaveAcceptedProposal/);
 });

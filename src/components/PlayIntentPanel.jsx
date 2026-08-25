@@ -4,6 +4,7 @@ import { CalendarClock, Check, Clock, X, Users } from 'lucide-react';
 import { theme, btn, font, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
 import { AvatarCircle } from './AvatarCircle';
+import { PlayerProfileModal } from '../dashboard/PlayerProfileModal';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   PLAY_WINDOW_PRESETS,
@@ -52,7 +53,7 @@ function proposalFirstName(name) {
   return t.split(/\s+/)[0];
 }
 
-function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
+function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlayerClick }) {
   const deadline = deadlineInfo(proposal.expires_at, now);
   const expired = Boolean(deadline?.expired);
   const members = Array.isArray(proposal.members) ? proposal.members : [];
@@ -96,9 +97,15 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
             const accepted = m.response === 'accepted';
             const level = m.level != null && m.level !== '' ? formatPlaytomicLevel(m.level) : '';
             const first = proposalFirstName(m.name);
+            const canOpen = Boolean(m.id && onPlayerClick);
+            const label = m.is_me ? `${first} (dig)` : first;
             return (
-              <div
+              <button
                 key={m.id || m.name}
+                type="button"
+                disabled={!canOpen}
+                onClick={() => canOpen && onPlayerClick(m)}
+                aria-label={canOpen ? `Åbn profil for ${m.name || first}` : undefined}
                 style={{
                   padding: 10,
                   borderRadius: 10,
@@ -108,9 +115,15 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
                   alignItems: 'center',
                   gap: 8,
                   minWidth: 0,
+                  fontFamily: 'inherit',
+                  textAlign: 'left',
+                  cursor: canOpen ? 'pointer' : 'default',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  color: 'inherit',
                 }}
               >
-                <AvatarCircle avatar={m.avatar} size={32} emojiSize="15px" alt={m.name || 'Spiller'} />
+                <AvatarCircle avatar={m.avatar} size={32} emojiSize="15px" alt="" clickable={canOpen} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
@@ -122,7 +135,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {m.is_me ? `${first} (dig)` : first}
+                    {label}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: accepted ? 'var(--pm-green)' : theme.textLight }}>
                     {accepted ? 'Ja' : 'Venter'}
@@ -131,9 +144,14 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
                     <div style={{ fontSize: 11, color: theme.textMid }}>Niveau {level}</div>
                   ) : null}
                 </div>
-              </div>
+              </button>
             );
           })}
+        </div>
+      )}
+      {members.length > 0 && onPlayerClick && (
+        <div style={{ fontSize: 11, color: theme.textLight, margin: '-4px 0 10px' }}>
+          Tryk på en spiller for at se profilen
         </div>
       )}
       {(deadline || (waiting && awaiting > 0)) && (
@@ -204,7 +222,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
   );
 }
 
-export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
+export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlayer }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -218,6 +236,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   const [busyProposal, setBusyProposal] = useState(null);
   const [now, setNow] = useState(() => Date.now());
   const [proposalsLoaded, setProposalsLoaded] = useState(false);
+  const [viewPlayer, setViewPlayer] = useState(null);
   const skipMissingFocusToastRef = useRef(false);
 
   const userId = user?.id;
@@ -380,6 +399,15 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
     await reload();
   }, [droppingId, showToast, reload]);
 
+  const openMemberProfile = useCallback((member) => {
+    if (!member?.id) return;
+    setViewPlayer({
+      id: member.id,
+      full_name: member.name,
+      avatar: member.avatar,
+    });
+  }, []);
+
   if (!userId) return null;
 
   return (
@@ -404,6 +432,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
               busy={busyProposal === p.id}
               onAccept={() => respond(p.id, true)}
               onDecline={() => respond(p.id, false)}
+              onPlayerClick={openMemberProfile}
             />
           </div>
         );
@@ -423,9 +452,26 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
             busy={busyProposal === focusedProposal?.id}
             onAccept={() => focusedProposal && respond(focusedProposal.id, true)}
             onDecline={() => focusedProposal && respond(focusedProposal.id, false)}
+            onPlayerClick={openMemberProfile}
           />
         </div>
       </AppModal>
+
+      {viewPlayer && (
+        <PlayerProfileModal
+          player={viewPlayer}
+          onClose={() => setViewPlayer(null)}
+          onMessage={
+            onMessagePlayer
+              ? () => {
+                  const pid = viewPlayer.id;
+                  setViewPlayer(null);
+                  onMessagePlayer(pid);
+                }
+              : undefined
+          }
+        />
+      )}
 
       <div className={`pm-play-intent-block${intents.length ? ' pm-play-intent-block--active' : ''}`}>
         <button
