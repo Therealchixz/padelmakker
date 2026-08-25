@@ -27,6 +27,8 @@ import {
   parseProposalFocusId,
   pickFocusedProposal,
   proposalMemberStatusLabel,
+  iHaveAcceptedProposal,
+  proposalAwaitingCount,
   respondToMatchProposal,
   shortTime,
   toggleSelectedDay,
@@ -49,15 +51,20 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
   const deadline = deadlineInfo(proposal.expires_at, now);
   const expired = Boolean(deadline?.expired);
   const members = Array.isArray(proposal.members) ? proposal.members : [];
+  const waiting = iHaveAcceptedProposal(proposal);
+  const awaiting = proposalAwaitingCount(proposal);
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <Users size={15} color={expired ? theme.textLight : theme.accent} />
-        <strong style={{ fontSize: 14, color: theme.text }}>I er 4 — bekræft jeres kamp</strong>
+        <strong style={{ fontSize: 14, color: theme.text }}>
+          {waiting ? 'Du er med — venter på de andre' : 'I er 4 — bekræft jeres kamp'}
+        </strong>
       </div>
       <div style={{ fontSize: 13, color: theme.textMid, marginBottom: members.length ? 12 : 10 }}>
         {dayLabel(proposal.play_date)} kl. {shortTime(proposal.start_time)}–{shortTime(proposal.end_time)}
         {proposal.region ? ` · ${proposal.region}` : ''}
+        {waiting && awaiting > 0 ? ` · mangler ${awaiting} svar` : ''}
       </div>
       {members.length > 0 && (
         <ul style={{ listStyle: 'none', margin: '0 0 12px', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -98,32 +105,43 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
           <Clock size={12} /> {deadline.label}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          type="button"
-          disabled={busy || expired}
-          onClick={onAccept}
-          style={{
-            ...btn(true),
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            opacity: expired ? 0.5 : 1,
-          }}
-        >
-          <Check size={15} /> Jeg er med
-        </button>
+      {waiting ? (
         <button
           type="button"
           disabled={busy}
           onClick={onDecline}
-          style={{ ...btn(false), flex: 1 }}
+          style={{ ...btn(false), width: '100%' }}
         >
-          Kan ikke
+          Kan alligevel ikke
         </button>
-      </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            disabled={busy || expired}
+            onClick={onAccept}
+            style={{
+              ...btn(true),
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              opacity: expired ? 0.5 : 1,
+            }}
+          >
+            <Check size={15} /> Jeg er med
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onDecline}
+            style={{ ...btn(false), flex: 1 }}
+          >
+            Kan ikke
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -186,6 +204,17 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
   }, [focusId, proposalsLoaded, focusedProposal, showToast, clearProposalFocus, proposals.length]);
 
   useEffect(() => { void reload(); }, [reload]);
+
+  const waitingOnOthers = useMemo(
+    () => proposals.some((p) => iHaveAcceptedProposal(p)),
+    [proposals],
+  );
+
+  useEffect(() => {
+    if (!waitingOnOthers || !userId) return undefined;
+    const id = setInterval(() => { void reload(); }, 20000);
+    return () => clearInterval(id);
+  }, [waitingOnOthers, userId, reload]);
 
   const presetKey = matchingPresetKey(start, end);
   const endOptions = endSlotsAfter(start);
@@ -262,22 +291,21 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated }) {
       showToast?.(res.error, 'error');
       return;
     }
-    skipMissingFocusToastRef.current = true;
     if (res.status === 'confirmed') {
+      skipMissingFocusToastRef.current = true;
       showToast?.('Kampen er oprettet — aftal bane i chatten', 'success');
       clearProposalFocus();
       onMatchCreated?.(res.matchId);
     } else if (res.status === 'pending') {
       showToast?.(`Du er med. Mangler svar fra ${res.awaiting}.`, 'success');
-      clearProposalFocus();
     } else if (res.status === 'declined') {
+      skipMissingFocusToastRef.current = true;
       showToast?.('Afvist — du står stadig klar i puljen', 'info');
       clearProposalFocus();
     } else if (res.status === 'expired') {
+      skipMissingFocusToastRef.current = true;
       showToast?.('Forslaget er udløbet', 'info');
       clearProposalFocus();
-    } else {
-      skipMissingFocusToastRef.current = false;
     }
     await reload();
   }, [showToast, onMatchCreated, reload, clearProposalFocus]);

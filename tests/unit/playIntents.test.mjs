@@ -21,6 +21,8 @@ import {
   buildProposalFocusPath,
   parseProposalFocusId,
   pickFocusedProposal,
+  iHaveAcceptedProposal,
+  proposalAwaitingCount,
   proposalMemberStatusLabel,
   normalizePendingProposals,
   isValidPlayWindow,
@@ -388,12 +390,15 @@ test('ja/nej-kassen viser de fire spillere, ikke kun tidspunktet', () => {
   assert.match(POOL_SQL, /CREATE OR REPLACE FUNCTION public\.list_pending_match_proposals\(\)/);
   assert.match(POOL_SQL, /'name', COALESCE\(NULLIF\(btrim\(pr\.full_name\)/);
   assert.match(POOL_SQL, /'is_me', m\.user_id = v_caller/);
+  assert.match(POOL_SQL, /mine.response IN \('pending', 'accepted'\)/);
   const client = readFileSync('src/lib/playIntents.js', 'utf8');
   assert.match(client, /list_pending_match_proposals/);
   const panel = readFileSync('src/components/PlayIntentPanel.jsx', 'utf8');
   assert.match(panel, /proposal\.members/);
   assert.match(panel, /AvatarCircle/);
   assert.match(panel, /proposalMemberStatusLabel/);
+  assert.match(panel, /Du er med — venter på de andre/);
+  assert.match(panel, /iHaveAcceptedProposal/);
 });
 
 test('normalizePendingProposals bevarer spillernavne og ignorerer udløbne', () => {
@@ -414,8 +419,19 @@ test('normalizePendingProposals bevarer spillernavne og ignorerer udløbne', () 
 
 test('proposalMemberStatusLabel skelner dig fra de andre', () => {
   assert.equal(proposalMemberStatusLabel('pending', true), 'Dig');
+  assert.equal(proposalMemberStatusLabel('accepted', true), 'Dig · har sagt ja');
   assert.equal(proposalMemberStatusLabel('accepted', false), 'Har sagt ja');
   assert.equal(proposalMemberStatusLabel('pending', false), 'Afventer');
+  assert.equal(iHaveAcceptedProposal({ members: [{ is_me: true, response: 'accepted' }] }), true);
+  assert.equal(iHaveAcceptedProposal({ members: [{ is_me: true, response: 'pending' }] }), false);
+  assert.equal(proposalAwaitingCount({
+    members: [
+      { is_me: true, response: 'accepted' },
+      { response: 'accepted' },
+      { response: 'pending' },
+      { response: 'pending' },
+    ],
+  }), 2);
 });
 
 test('forslags-deeplink åbner et konkret forslag, eller det første ventende', () => {

@@ -45,9 +45,25 @@ export function parseProposalFocusId(search) {
 
 /** Statuslinje under navnet i ja/nej-kassen. */
 export function proposalMemberStatusLabel(response, isMe) {
+  if (isMe && response === 'accepted') return 'Dig · har sagt ja';
   if (isMe) return 'Dig';
   if (response === 'accepted') return 'Har sagt ja';
   return 'Afventer';
+}
+
+export function myProposalResponse(proposal) {
+  const members = Array.isArray(proposal?.members) ? proposal.members : [];
+  const me = members.find((m) => m?.is_me);
+  return me?.response || null;
+}
+
+export function iHaveAcceptedProposal(proposal) {
+  return myProposalResponse(proposal) === 'accepted';
+}
+
+export function proposalAwaitingCount(proposal) {
+  const members = Array.isArray(proposal?.members) ? proposal.members : [];
+  return members.filter((m) => m?.response !== 'accepted').length;
 }
 
 /**

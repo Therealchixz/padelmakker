@@ -669,7 +669,8 @@ REVOKE ALL ON FUNCTION public.respond_to_match_proposal(uuid, boolean) FROM PUBL
 GRANT EXECUTE ON FUNCTION public.respond_to_match_proposal(uuid, boolean) TO authenticated;
 
 /**
- * Forslag den indloggede mangler at svare på, inkl. de tre andre spillere.
+ * Åbne forslag den indloggede er med i — både dem der mangler dit ja,
+ * og dem du allerede har bekræftet (så du kan se de andres svar).
  * SECURITY DEFINER så navne kan hentes uden at RLS på members rekursivt låser.
  */
 CREATE OR REPLACE FUNCTION public.list_pending_match_proposals()
@@ -716,7 +717,7 @@ BEGIN
         ON mine.proposal_id = p.id AND mine.user_id = v_caller
       WHERE p.status = 'pending'
         AND p.expires_at > now()
-        AND mine.response = 'pending'
+        AND mine.response IN ('pending', 'accepted')
       ORDER BY p.expires_at
     ) x
   ), '[]'::jsonb);

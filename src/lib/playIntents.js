@@ -43,6 +43,8 @@ export {
   parseProposalFocusId,
   pickFocusedProposal,
   proposalMemberStatusLabel,
+  iHaveAcceptedProposal,
+  proposalAwaitingCount,
   normalizePendingProposals,
 } from './playIntentUtils';
 
@@ -135,7 +137,7 @@ export async function fetchMyPlayIntents(userId) {
   return data || [];
 }
 
-/** Forslag jeg mangler at svare på, med de øvrige spillere. */
+/** Åbne forslag jeg er med i — også efter jeg har sagt ja, så status vises. */
 export async function fetchPendingProposals(userId) {
   if (!userId) return [];
   const { data, error } = await supabase.rpc('list_pending_match_proposals');
