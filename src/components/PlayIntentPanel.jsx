@@ -28,7 +28,6 @@ import {
   parseProposalFocusId,
   pickFocusedProposal,
   iHaveAcceptedProposal,
-  proposalAwaitingCount,
   respondToMatchProposal,
   shortTime,
   toggleSelectedDay,
@@ -58,7 +57,6 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
   const expired = Boolean(deadline?.expired);
   const members = Array.isArray(proposal.members) ? proposal.members : [];
   const waiting = iHaveAcceptedProposal(proposal);
-  const awaiting = proposalAwaitingCount(proposal);
   const acceptedCount = members.filter((m) => m?.response === 'accepted').length;
   return (
     <>
@@ -154,31 +152,23 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
           Tryk på en spiller for at se profilen
         </div>
       )}
-      {(deadline || (waiting && awaiting > 0)) && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-          {waiting && awaiting > 0 && (
-            <span style={{ fontSize: 12, color: theme.textLight }}>
-              Mangler {awaiting} svar
-            </span>
-          )}
-          {deadline && (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '3px 9px',
-                borderRadius: 999,
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: deadline.urgent ? theme.red : theme.textMid,
-                background: 'transparent',
-                border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
-              }}
-            >
-              <Clock size={12} /> {deadline.label}
-            </div>
-          )}
+      {deadline && (
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            marginBottom: 12,
+            padding: '3px 9px',
+            borderRadius: 999,
+            fontSize: 11.5,
+            fontWeight: 700,
+            color: deadline.urgent ? theme.red : theme.textMid,
+            background: 'transparent',
+            border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
+          }}
+        >
+          <Clock size={12} /> {deadline.label}
         </div>
       )}
       {waiting ? (
