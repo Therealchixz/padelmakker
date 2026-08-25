@@ -147,11 +147,6 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
           })}
         </div>
       )}
-      {members.length > 0 && onPlayerClick && (
-        <div style={{ fontSize: 11, color: theme.textLight, margin: '-4px 0 10px' }}>
-          Tryk på en spiller for at se profilen
-        </div>
-      )}
       {deadline && (
         <div
           style={{
