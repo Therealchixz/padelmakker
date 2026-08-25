@@ -262,8 +262,9 @@ function VariantC({ waiting }) {
                 {p.me ? `${p.first} (dig)` : p.first}
               </div>
               <div style={{ fontSize: 11, color: p.shownAccepted ? 'var(--pm-green)' : theme.textLight }}>
-                {p.shownAccepted ? 'Har sagt ja' : 'Afventer'}
+                {p.shownAccepted ? 'Ja' : 'Venter'}
               </div>
+              <div style={{ fontSize: 11, color: theme.textMid }}>Niveau {p.level}</div>
             </div>
           </div>
         ))}
@@ -329,7 +330,7 @@ function VariantD({ waiting }) {
 const VARIANTS = [
   { id: 'A', title: 'A · Liste', hint: 'Som nu — navne under hinanden', Component: VariantA },
   { id: 'B', title: 'B · Avatar-række', hint: 'Fire ansigter ved siden af hinanden', Component: VariantB },
-  { id: 'C', title: 'C · Fire fliser', hint: 'Nemmere at scanne på telefon', Component: VariantC },
+  { id: 'C', title: 'C · Fire fliser', hint: '2×2 med navn, ja/venter og niveau', Component: VariantC },
   { id: 'D', title: 'D · Kompakt', hint: 'Tid først, fylder mindst på Hjem', Component: VariantD },
 ];
 

@@ -26,7 +26,6 @@ import {
   matchingPresetKey,
   parseProposalFocusId,
   pickFocusedProposal,
-  proposalMemberStatusLabel,
   iHaveAcceptedProposal,
   proposalAwaitingCount,
   respondToMatchProposal,
@@ -47,62 +46,121 @@ const DEFAULT_END = '21:00';
  * øvrige tre og sender et forslag. Formålet er at fjerne organiseringsbyrden,
  * ikke at erstatte det at oprette en kamp manuelt.
  */
+function proposalFirstName(name) {
+  const t = String(name || '').trim();
+  if (!t) return 'Spiller';
+  return t.split(/\s+/)[0];
+}
+
 function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline }) {
   const deadline = deadlineInfo(proposal.expires_at, now);
   const expired = Boolean(deadline?.expired);
   const members = Array.isArray(proposal.members) ? proposal.members : [];
   const waiting = iHaveAcceptedProposal(proposal);
   const awaiting = proposalAwaitingCount(proposal);
+  const acceptedCount = members.filter((m) => m?.response === 'accepted').length;
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-        <Users size={15} color={expired ? theme.textLight : theme.accent} />
-        <strong style={{ fontSize: 14, color: theme.text }}>
-          {waiting ? 'Du er med — venter på de andre' : 'I er 4 — bekræft jeres kamp'}
-        </strong>
-      </div>
-      <div style={{ fontSize: 13, color: theme.textMid, marginBottom: members.length ? 12 : 10 }}>
-        {dayLabel(proposal.play_date)} kl. {shortTime(proposal.start_time)}–{shortTime(proposal.end_time)}
-        {proposal.region ? ` · ${proposal.region}` : ''}
-        {waiting && awaiting > 0 ? ` · mangler ${awaiting} svar` : ''}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: members.length ? 12 : 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <Users size={15} color={expired ? theme.textLight : theme.accent} />
+            <strong style={{ fontSize: 14, color: theme.text }}>
+              {waiting ? 'Du er med — venter på de andre' : 'I er 4 — bekræft jeres kamp'}
+            </strong>
+          </div>
+          <div style={{ fontSize: 13, color: theme.textMid }}>
+            {dayLabel(proposal.play_date)} kl. {shortTime(proposal.start_time)}–{shortTime(proposal.end_time)}
+            {proposal.region ? ` · ${proposal.region}` : ''}
+          </div>
+        </div>
+        {members.length > 0 && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: expired ? theme.textLight : theme.accent, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              {acceptedCount}/{members.length}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: theme.textLight, marginTop: 2 }}>har sagt ja</div>
+          </div>
+        )}
       </div>
       {members.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: '0 0 12px', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {members.map((m) => {
-            const level = m.level != null && m.level !== '' ? formatPlaytomicLevel(m.level) : '';
-            return (
-              <li key={m.id || m.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <AvatarCircle avatar={m.avatar} size={32} emojiSize="15px" alt={m.name || 'Spiller'} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: m.is_me ? 700 : 600, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {m.name || 'Spiller'}
-                  </div>
-                  <div style={{ fontSize: 11, color: theme.textLight }}>
-                    {[proposalMemberStatusLabel(m.response, m.is_me), level ? `Niveau ${level}` : null].filter(Boolean).join(' · ')}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {deadline && (
         <div
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            marginBottom: 12,
-            padding: '3px 9px',
-            borderRadius: 999,
-            fontSize: 11.5,
-            fontWeight: 700,
-            color: deadline.urgent ? theme.red : theme.textMid,
-            background: 'transparent',
-            border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8,
+            marginBottom: 10,
           }}
         >
-          <Clock size={12} /> {deadline.label}
+          {members.map((m) => {
+            const accepted = m.response === 'accepted';
+            const level = m.level != null && m.level !== '' ? formatPlaytomicLevel(m.level) : '';
+            const first = proposalFirstName(m.name);
+            return (
+              <div
+                key={m.id || m.name}
+                style={{
+                  padding: 10,
+                  borderRadius: 10,
+                  border: `1px solid ${accepted ? 'var(--pm-success-border)' : theme.border}`,
+                  background: accepted ? 'var(--pm-green-bg)' : 'var(--pm-surface)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <AvatarCircle avatar={m.avatar} size={32} emojiSize="15px" alt={m.name || 'Spiller'} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: theme.text,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {m.is_me ? `${first} (dig)` : first}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: accepted ? 'var(--pm-green)' : theme.textLight }}>
+                    {accepted ? 'Ja' : 'Venter'}
+                  </div>
+                  {level ? (
+                    <div style={{ fontSize: 11, color: theme.textMid }}>Niveau {level}</div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {(deadline || (waiting && awaiting > 0)) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+          {waiting && awaiting > 0 && (
+            <span style={{ fontSize: 12, color: theme.textLight }}>
+              Mangler {awaiting} svar
+            </span>
+          )}
+          {deadline && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '3px 9px',
+                borderRadius: 999,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: deadline.urgent ? theme.red : theme.textMid,
+                background: 'transparent',
+                border: `1px solid ${deadline.urgent ? theme.red : theme.border}`,
+              }}
+            >
+              <Clock size={12} /> {deadline.label}
+            </div>
+          )}
         </div>
       )}
       {waiting ? (
