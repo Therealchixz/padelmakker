@@ -48,16 +48,13 @@ test('sortPlayersByCourtSide har venstre først', () => {
   assert.equal(sorted[1].user_id, 'r');
 });
 
-test('kampdetalje viser og lader én vælge side', () => {
+test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   const view = readFileSync('src/components/kampe/MatchCourtView.jsx', 'utf8');
   assert.match(view, /courtSideLabel/);
-  assert.match(view, /Byt side/);
-  assert.match(view, /onClaimCourtSide/);
-  const sql = readFileSync('supabase/sql/match_player_court_side.sql', 'utf8');
-  assert.match(sql, /ADD COLUMN IF NOT EXISTS court_side/);
-  assert.match(sql, /set_match_player_court_side/);
-  const select = readFileSync('src/lib/profileQueries.js', 'utf8');
-  assert.match(select, /court_side/);
+  assert.match(view, /onSetCourtSide/);
+  assert.doesNotMatch(view, /pm-kd-side-row/);
+  assert.doesNotMatch(view, /Byt side/);
   const modal = readFileSync('src/dashboard/TeamSelectModal.jsx', 'utf8');
-  assert.match(modal, /Vælg hold og side/);
+  assert.match(modal, /Vælg hold/);
+  assert.doesNotMatch(modal, /Vælg hold og side/);
 });

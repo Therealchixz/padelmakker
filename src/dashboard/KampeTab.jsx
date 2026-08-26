@@ -3827,7 +3827,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {teamSelectMatch && (
         <TeamSelectModal
           matchPlayers={matchPlayers[teamSelectMatch] || []}
-          onSelect={(teamNum, courtSide) => joinMatchWithTeam(teamSelectMatch, teamNum, courtSide)}
+          onSelect={(teamNum) => joinMatchWithTeam(teamSelectMatch, teamNum)}
           onClose={() => setTeamSelectMatch(null)}
         />
       )}

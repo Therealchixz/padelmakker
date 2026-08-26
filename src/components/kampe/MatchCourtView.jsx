@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Plus, UserPlus } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { CreatorTag } from './CreatorTag';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
@@ -67,44 +67,74 @@ export function MatchCourtView({
       (status === 'open' || status === 'full') &&
       otherTeamPlayerCount < SLOTS_PER_TEAM &&
       !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + player.user_id);
+    const canChangeSide =
+      sidesEditable &&
+      Boolean(onSetCourtSide) &&
+      (isCreator || isAdmin || String(player.user_id) === String(currentUserId)) &&
+      busyId !== matchId + '-side';
 
     const delta = playerEloChange(player);
     const newElo = delta != null ? playerElo(player) + delta : null;
+    const sideText = courtSideLabel(side);
 
     return (
-      <div key={player.user_id || `t${teamNum}-${side}`} className="pm-kd-slot pm-kd-slot--court">
-        <button
-          type="button"
-          className="pm-kd-slot-main"
-          onClick={() => {
-            if (prof && onProfileClick) onProfileClick(prof);
-          }}
-          aria-label={`Åbn profil for ${player.user_name || 'spiller'}`}
-        >
-          <AvatarCircle
-            avatar={prof?.avatar || player.user_emoji || '🎾'}
-            size={43}
-            emojiSize="18px"
-          />
+      <div key={player.user_id || `t${teamNum}-${side}`} className="pm-kd-slot">
+        <div className="pm-kd-slot-main">
+          <button
+            type="button"
+            className="pm-kd-slot-avatar-btn"
+            onClick={() => {
+              if (prof && onProfileClick) onProfileClick(prof);
+            }}
+            aria-label={`Åbn profil for ${player.user_name || 'spiller'}`}
+          >
+            <AvatarCircle
+              avatar={prof?.avatar || player.user_emoji || '🎾'}
+              size={43}
+              emojiSize="18px"
+            />
+          </button>
           <div className="pm-kd-slot-copy">
-            <div className="pm-kd-slot-name">
+            <button
+              type="button"
+              className="pm-kd-slot-name"
+              onClick={() => {
+                if (prof && onProfileClick) onProfileClick(prof);
+              }}
+            >
               {player.user_name || 'Spiller'}
               {creatorId != null && String(player.user_id) === String(creatorId) ? <CreatorTag /> : null}
-            </div>
+            </button>
             <div className="pm-kd-slot-meta">
-              <span className="pm-kd-lvl-badge">
-                {showEloChanges && delta != null
-                  ? `ELO ${playerElo(player)}`
-                  : `ELO ${playerElo(player)}`}
-                {levelLabel ? ` · ${levelLabel}` : ''}
-              </span>
+              {showEloChanges && delta != null ? (
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
+                </span>
+              ) : (
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
+                </span>
+              )}
               {!showEloChanges && games > 0 ? (
                 <span className="pm-kd-slot-kampe">{games} kampe</span>
               ) : null}
             </div>
-            <div className="pm-kd-slot-side">{courtSideLabel(side)}</div>
+            {canChangeSide ? (
+              <button
+                type="button"
+                className="pm-kd-slot-side pm-kd-slot-side--btn"
+                onClick={() => onSetCourtSide(matchId, player.user_id, oppositeCourtSide(side))}
+                aria-label={`Skift til ${courtSideLabel(oppositeCourtSide(side)).toLowerCase()} side`}
+              >
+                {sideText}
+              </button>
+            ) : (
+              <div className="pm-kd-slot-side">{sideText}</div>
+            )}
           </div>
-        </button>
+        </div>
         {showEloChanges && newElo != null && delta != null ? (
           <div className="pm-kd-slot-elo-end">
             <span className="pm-kd-eyebrow">Ny ELO</span>
@@ -166,28 +196,24 @@ export function MatchCourtView({
       <button
         key={`empty-t${teamNum}-${side}`}
         type="button"
-        className={`pm-kd-slot pm-kd-slot--empty pm-kd-slot--court${clickable ? ' pm-kd-slot--clickable' : ''}`}
+        className={`pm-kd-slot pm-kd-slot--empty${clickable ? ' pm-kd-slot--clickable' : ''}`}
         onClick={clickable ? onClick : undefined}
         disabled={!clickable}
         aria-label={
           canClaimSide
             ? `Skift til ${courtSideLabel(side).toLowerCase()} side`
             : canSwitchTeam
-              ? `Skift til Hold ${teamNum}, ${courtSideLabel(side).toLowerCase()} side`
-              : `Ledig ${courtSideLabel(side).toLowerCase()} side på Hold ${teamNum}`
+              ? `Skift til Hold ${teamNum}`
+              : `Ledig plads på Hold ${teamNum}`
         }
       >
         <div className="pm-kd-ghost">
           {clickable ? <Plus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
         </div>
         <div>
-          <b>Ledig</b>
+          <b>Ledig plads</b>
           <span className="pm-kd-slot-side">{courtSideLabel(side)}</span>
-          {clickable ? (
-            <span className="pm-kd-empty-sub">{canClaimSide ? 'TAG DENNE SIDE' : 'SKIFT HIT'}</span>
-          ) : (
-            <span className="pm-kd-empty-sub">BLIV DEN NÆSTE!</span>
-          )}
+          <span className="pm-kd-empty-sub">{clickable ? 'SKIFT HIT' : 'BLIV DEN NÆSTE!'}</span>
         </div>
       </button>
     );
@@ -197,13 +223,6 @@ export function MatchCourtView({
     const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
     const teamAvg = teamNum === 1 ? teamStats?.t1Avg : teamStats?.t2Avg;
     const slots = teamSlotsBySide(players);
-    const bothFilled = slots.every((s) => s.player);
-    const canSwapSides =
-      sidesEditable &&
-      bothFilled &&
-      Boolean(onSetCourtSide) &&
-      (isCreator || isAdmin || myTeam === teamNum) &&
-      busyId !== matchId + '-side';
 
     return (
       <div key={`team-${teamNum}`}>
@@ -211,20 +230,9 @@ export function MatchCourtView({
           {headerLabel}
           {teamAvg != null ? ` · Gns. ${teamAvg}` : ''}
         </div>
-        <div className="pm-kd-side-row">
-          {slots.map(({ side, player }) =>
-            player ? renderPlayerSlot(player, teamNum, side) : renderEmptySlot(teamNum, side)
-          )}
-        </div>
-        {canSwapSides ? (
-          <button
-            type="button"
-            className="pm-kd-side-swap"
-            onClick={() => onSetCourtSide(matchId, slots[0].player.user_id, oppositeCourtSide(slots[0].side))}
-          >
-            <ArrowLeftRight size={14} aria-hidden /> Byt side
-          </button>
-        ) : null}
+        {slots.map(({ side, player }) =>
+          player ? renderPlayerSlot(player, teamNum, side) : renderEmptySlot(teamNum, side)
+        )}
       </div>
     );
   };
