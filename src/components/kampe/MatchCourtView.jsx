@@ -1,14 +1,13 @@
 import { Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
+import { CreatorTag } from './CreatorTag';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 import {
   getMatchCourtHeaderLabel,
-  getMatchCourtOutcomeClasses,
 } from '../../lib/matchCourtOutcomeClasses';
 import {
   courtSideLabel,
   oppositeCourtSide,
-  playerFirstName,
   teamSlotsBySide,
 } from '../../lib/matchPlayerCourtSide';
 
@@ -41,8 +40,6 @@ export function MatchCourtView({
   const left = Math.max(0, 4 - filledCount);
   const showEloChanges = status === 'completed';
   const outcomeCtx = { status, winnerTeam, joined, myTeam };
-  const t1Outcome = getMatchCourtOutcomeClasses(1, outcomeCtx);
-  const t2Outcome = getMatchCourtOutcomeClasses(2, outcomeCtx);
   const sidesEditable = !readOnly && (status === 'open' || status === 'full' || status === 'in_progress');
 
   const playerElo = (p) => teamStats?.playerEloByUserId?.[String(p.user_id)] ?? 1000;
@@ -54,6 +51,7 @@ export function MatchCourtView({
       prof?.level != null && prof.level !== ''
         ? formatPlaytomicLevel(prof.level)
         : null;
+    const games = Number(prof?.games_played) || 0;
     const otherTeam = teamNum === 1 ? 2 : 1;
     const canKick =
       !readOnly &&
@@ -76,15 +74,83 @@ export function MatchCourtView({
       busyId !== matchId + '-side';
 
     const delta = playerEloChange(player);
+    const newElo = delta != null ? playerElo(player) + delta : null;
     const sideText = courtSideLabel(side);
-    const isCreatorPlayer = creatorId != null && String(player.user_id) === String(creatorId);
 
     return (
-      <div className="pm-kd-court-slot">
+      <div key={player.user_id || `t${teamNum}-${side}`} className="pm-kd-slot">
+        <div className="pm-kd-slot-main">
+          <button
+            type="button"
+            className="pm-kd-slot-avatar-btn"
+            onClick={() => {
+              if (prof && onProfileClick) onProfileClick(prof);
+            }}
+            aria-label={`Åbn profil for ${player.user_name || 'spiller'}`}
+          >
+            <AvatarCircle
+              avatar={prof?.avatar || player.user_emoji || '🎾'}
+              size={43}
+              emojiSize="18px"
+            />
+          </button>
+          <div className="pm-kd-slot-copy">
+            <button
+              type="button"
+              className="pm-kd-slot-name"
+              onClick={() => {
+                if (prof && onProfileClick) onProfileClick(prof);
+              }}
+            >
+              {player.user_name || 'Spiller'}
+              {creatorId != null && String(player.user_id) === String(creatorId) ? <CreatorTag /> : null}
+            </button>
+            <div className="pm-kd-slot-meta">
+              {showEloChanges && delta != null ? (
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
+                </span>
+              ) : (
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
+                </span>
+              )}
+              {!showEloChanges && games > 0 ? (
+                <span className="pm-kd-slot-kampe">{games} kampe</span>
+              ) : null}
+            </div>
+            {canChangeSide ? (
+              <button
+                type="button"
+                className="pm-kd-slot-side pm-kd-slot-side--btn"
+                onClick={() => onSetCourtSide(matchId, player.user_id, oppositeCourtSide(side))}
+                aria-label={`Skift til ${courtSideLabel(oppositeCourtSide(side)).toLowerCase()} side`}
+              >
+                {sideText}
+              </button>
+            ) : (
+              <div className="pm-kd-slot-side">{sideText}</div>
+            )}
+          </div>
+        </div>
+        {showEloChanges && newElo != null && delta != null ? (
+          <div className="pm-kd-slot-elo-end">
+            <span className="pm-kd-eyebrow">Ny ELO</span>
+            <span className="pm-kd-slot-new-elo">
+              {newElo}
+              <small className={delta >= 0 ? 'pm-kd-delta--up' : 'pm-kd-delta--down'}>
+                ({delta >= 0 ? '+' : ''}
+                {delta})
+              </small>
+            </span>
+          </div>
+        ) : null}
         {canSwitchPlayer ? (
           <button
             type="button"
-            className="pm-kd-court-slot-action"
+            className="pm-kd-slot-action"
             onClick={() => onSwitchPlayerTeam(matchId, player.user_id, otherTeam)}
             aria-label={`Flyt ${player.user_name || 'spiller'} til Hold ${otherTeam}`}
           >
@@ -94,7 +160,7 @@ export function MatchCourtView({
         {canKick && onKickPlayer ? (
           <button
             type="button"
-            className="pm-kd-court-slot-action pm-kd-court-slot-action--danger"
+            className="pm-kd-slot-action pm-kd-slot-action--danger"
             onClick={() => onKickPlayer(matchId, player.user_id, player.user_name)}
             disabled={kickingBusy}
             aria-label={`Fjern ${player.user_name || 'spiller'} fra kampen`}
@@ -102,50 +168,6 @@ export function MatchCourtView({
             ×
           </button>
         ) : null}
-        <button
-          type="button"
-          className="pm-kd-court-slot-avatar-btn"
-          onClick={() => {
-            if (prof && onProfileClick) onProfileClick(prof);
-          }}
-          aria-label={`Åbn profil for ${player.user_name || 'spiller'}`}
-        >
-          <AvatarCircle
-            clickable={Boolean(prof && onProfileClick)}
-            avatar={prof?.avatar || player.user_emoji || '🎾'}
-            size={38}
-            emojiSize="16px"
-          />
-        </button>
-        <button
-          type="button"
-          className="pm-kd-court-slot-name"
-          onClick={() => {
-            if (prof && onProfileClick) onProfileClick(prof);
-          }}
-        >
-          {playerFirstName(player)}
-          {isCreatorPlayer ? <span className="pm-kd-court-slot-star" aria-label="Opretter">★</span> : null}
-        </button>
-        <span className="pm-kd-court-slot-meta">
-          {showEloChanges && delta != null
-            ? `ELO ${delta >= 0 ? '+' : ''}${delta}`
-            : levelLabel
-              ? `Niveau ${levelLabel}`
-              : `ELO ${playerElo(player)}`}
-        </span>
-        {canChangeSide ? (
-          <button
-            type="button"
-            className="pm-kd-court-slot-side pm-kd-court-slot-side--btn"
-            onClick={() => onSetCourtSide(matchId, player.user_id, oppositeCourtSide(side))}
-            aria-label={`Skift til ${courtSideLabel(oppositeCourtSide(side)).toLowerCase()} side`}
-          >
-            {sideText}
-          </button>
-        ) : (
-          <span className="pm-kd-court-slot-side">{sideText}</span>
-        )}
       </div>
     );
   };
@@ -170,71 +192,53 @@ export function MatchCourtView({
       else if (canSwitchTeam && onSwitchTeam) onSwitchTeam(matchId, teamNum, side);
     };
 
-    const inner = (
-      <>
-        <div className="pm-kd-court-ghost">
+    return (
+      <button
+        key={`empty-t${teamNum}-${side}`}
+        type="button"
+        className={`pm-kd-slot pm-kd-slot--empty${clickable ? ' pm-kd-slot--clickable' : ''}`}
+        onClick={clickable ? onClick : undefined}
+        disabled={!clickable}
+        aria-label={
+          canClaimSide
+            ? `Skift til ${courtSideLabel(side).toLowerCase()} side`
+            : canSwitchTeam
+              ? `Skift til Hold ${teamNum}`
+              : `Ledig plads på Hold ${teamNum}`
+        }
+      >
+        <div className="pm-kd-ghost">
           {clickable ? <Plus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
         </div>
-        <b>Ledig plads</b>
-        <span className="pm-kd-court-slot-side">{courtSideLabel(side)}</span>
-        <span className="pm-kd-court-empty-sub">{clickable ? 'SKIFT HIT' : 'ÅBEN'}</span>
-      </>
-    );
-
-    if (clickable) {
-      return (
-        <button
-          type="button"
-          className="pm-kd-court-slot pm-kd-court-slot--empty pm-kd-court-slot--clickable"
-          onClick={onClick}
-          aria-label={
-            canClaimSide
-              ? `Skift til ${courtSideLabel(side).toLowerCase()} side`
-              : `Skift til Hold ${teamNum}`
-          }
-        >
-          {inner}
-        </button>
-      );
-    }
-
-    return (
-      <div className="pm-kd-court-slot pm-kd-court-slot--empty" aria-label={`Ledig plads på Hold ${teamNum}`}>
-        {inner}
-      </div>
+        <div>
+          <b>Ledig plads</b>
+          <span className="pm-kd-slot-side">{courtSideLabel(side)}</span>
+          <span className="pm-kd-empty-sub">{clickable ? 'SKIFT HIT' : 'BLIV DEN NÆSTE!'}</span>
+        </div>
+      </button>
     );
   };
 
-  const renderHalf = (teamNum, players, outcome) => {
-    const slots = teamSlotsBySide(players);
-    return (
-      <div className={`pm-court-side pm-court-side--t${teamNum}${outcome.side}`}>
-        {slots.map(({ side, player }) => (
-          <div
-            key={`t${teamNum}-${side}`}
-            className={`pm-court-player-slot pm-court-player-slot--${side === 'left' ? 'top' : 'bottom'}`}
-          >
-            {player ? renderPlayerSlot(player, teamNum, side) : renderEmptySlot(teamNum, side)}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderTeamHeader = (teamNum, outcome) => {
+  const renderTeam = (teamNum, players) => {
+    const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
     const teamAvg = teamNum === 1 ? teamStats?.t1Avg : teamStats?.t2Avg;
+    const slots = teamSlotsBySide(players);
+
     return (
-      <div className={`pm-court-header-team pm-court-header-team--t${teamNum}${outcome.header}`}>
-        <span className="pm-court-header-label">
-          {getMatchCourtHeaderLabel(teamNum, outcomeCtx)}
-        </span>
-        {teamAvg != null ? <span className="pm-court-header-elo">Gns. {teamAvg}</span> : null}
+      <div key={`team-${teamNum}`}>
+        <div className="pm-kd-team-label">
+          {headerLabel}
+          {teamAvg != null ? ` · Gns. ${teamAvg}` : ''}
+        </div>
+        {slots.map(({ side, player }) =>
+          player ? renderPlayerSlot(player, teamNum, side) : renderEmptySlot(teamNum, side)
+        )}
       </div>
     );
   };
 
   return (
-    <div className="pm-court-wrap pm-kampe-v2-court-wrap">
+    <div className="pm-kampe-v2-court-wrap">
       <div className="pm-kd-section-h">
         <h3>{showEloChanges ? 'Deltagere' : `Holdene (${filledCount}/4)`}</h3>
         {left > 0 && status !== 'completed' && status !== 'in_progress' ? (
@@ -243,22 +247,8 @@ export function MatchCourtView({
           </span>
         ) : null}
       </div>
-      <div className="pm-court-header">
-        {renderTeamHeader(1, t1Outcome)}
-        {renderTeamHeader(2, t2Outcome)}
-      </div>
-      <div className="pm-court pm-court--detail">
-        <div className="pm-court-line pm-court-line--service-t1" />
-        <div className="pm-court-line pm-court-line--service-t2" />
-        <div className="pm-court-line pm-court-line--center-t1" />
-        <div className="pm-court-line pm-court-line--center-t2" />
-        <div className="pm-court-net" />
-        <span className="pm-court-vs">vs</span>
-        <div className="pm-court-grid">
-          {renderHalf(1, t1, t1Outcome)}
-          {renderHalf(2, t2, t2Outcome)}
-        </div>
-      </div>
+      {renderTeam(1, t1)}
+      {renderTeam(2, t2)}
     </div>
   );
 }

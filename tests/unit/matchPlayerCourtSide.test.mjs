@@ -62,20 +62,30 @@ test('freeMatchCourtSides er begge når holdet er tomt', () => {
   assert.deepEqual(freeMatchCourtSides([{ court_side: 'right' }, { court_side: 'left' }]), []);
 });
 
-test('kampdetalje viser holdene som banekort med venstre/højre', () => {
+test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   const view = readFileSync('src/components/kampe/MatchCourtView.jsx', 'utf8');
-  assert.match(view, /pm-court--detail/);
-  assert.match(view, /pm-kd-court-slot/);
+  assert.match(view, /pm-kd-slot/);
   assert.match(view, /courtSideLabel/);
   assert.match(view, /onSetCourtSide/);
-  assert.match(view, /onClaimCourtSide/);
   assert.doesNotMatch(view, /pm-kd-side-row/);
+  assert.doesNotMatch(view, /pm-court--detail/);
   assert.doesNotMatch(view, /Byt side/);
   const modal = readFileSync('src/dashboard/TeamSelectModal.jsx', 'utf8');
   assert.match(modal, /Vælg hold/);
   assert.match(modal, /Vælg side/);
   assert.match(modal, /teamPlayerNameWithSide/);
   assert.doesNotMatch(modal, /Vælg hold og side/);
+});
+
+test('kampdetalje bundkort har chat, del, kalender og afmeld', () => {
+  const tab = readFileSync('src/dashboard/KampeTab.jsx', 'utf8');
+  assert.match(tab, /MatchDetailActionCard/);
+  const card = readFileSync('src/components/kampe/MatchDetailActionCard.jsx', 'utf8');
+  assert.match(card, /Match chat/);
+  assert.match(card, /Du er tilmeldt/);
+  assert.match(card, /Del kamp/);
+  assert.match(card, /Tilføj kalender/);
+  assert.match(card, /Afmeld mig/);
 });
 
 test('tilmelding vælger ledig bane-side og fanger unique på (kamp, bruger)', () => {

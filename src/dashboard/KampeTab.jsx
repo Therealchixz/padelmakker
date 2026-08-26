@@ -25,6 +25,7 @@ import {
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import {
   courtSideErrorMessage,
@@ -61,7 +62,7 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -2670,181 +2671,115 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             </button>
           </div>
         ) : null}
-        {canUseMatchChat ? (
-          <>
-            <button
-              type="button"
-              onClick={() => { void toggleMatchChat(m.id); }}
-              className="pm-accordion-trigger"
-              style={{
-                ...btn(false),
-                marginBottom: chatOpen ? "8px" : 0,
-                padding: "8px 12px",
-                fontSize: "12px",
-                color: theme.textMid,
-                borderColor: theme.border,
-                background: theme.surfaceAlt,
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
-                <MessageCircle size={14} />
-                Match chat {(() => {
-                  const total = Math.max(matchChatTotalById[String(m.id)] || 0, chatMessages.length);
-                  return total > 0 ? `(${total})` : "";
-                })()}
-                {unreadChatCount > 0 ? (
-                  <span
-                    style={{
-                      background: theme.red,
-                      color: theme.onAccent,
-                      borderRadius: "999px",
-                      minWidth: "16px",
-                      height: "16px",
-                      padding: "0 5px",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {unreadChatCount > 9 ? "9+" : unreadChatCount}
-                  </span>
+        <MatchDetailActionCard
+          matchId={m.id}
+          currentUserId={user.id}
+          canUseMatchChat={canUseMatchChat}
+          chatOpen={chatOpen}
+          onToggleChat={() => { void toggleMatchChat(m.id); }}
+          unreadChatCount={unreadChatCount}
+          chatMessages={chatMessages}
+          chatPanel={chatOpen ? (
+            <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: 0 }}>
+              {!canWriteMatchChat && isAdmin ? (
+                <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
+                  Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
+                </div>
+              ) : null}
+              <div
+                className="pm-match-chat-list"
+                ref={(node) => {
+                  const key = String(m.id);
+                  if (node) {
+                    matchChatListRefs.current[key] = node;
+                  } else {
+                    delete matchChatListRefs.current[key];
+                  }
+                }}
+              >
+                {chatLoading ? (
+                  <div className="pm-match-chat-empty">Henter beskeder...</div>
                 ) : null}
-              </span>
-              {chatOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-
-            {chatOpen ? (
-              <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "4px" }}>
-                {!canWriteMatchChat && isAdmin ? (
-                  <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
-                    Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
-                  </div>
+                {!chatLoading && chatError ? (
+                  <div className="pm-match-chat-empty">{chatError}</div>
                 ) : null}
-                <div
-                  className="pm-match-chat-list"
-                  ref={(node) => {
-                    const key = String(m.id);
-                    if (node) {
-                      matchChatListRefs.current[key] = node;
-                    } else {
-                      delete matchChatListRefs.current[key];
+                {!chatLoading && !chatError && chatMessages.length === 0 ? (
+                  <div className="pm-match-chat-empty">Ingen beskeder endnu. Skriv den første besked til kampen.</div>
+                ) : null}
+                {!chatLoading && !chatError && chatMessages.map((msg) => {
+                  const mine = String(msg.sender_id) === String(user.id);
+                  const displayName = (msg.sender_name || "Spiller").trim();
+                  return (
+                    <div key={msg.id} className={`pm-match-chat-row ${mine ? "pm-match-chat-row--mine" : ""}`}>
+                      <div className={`pm-match-chat-bubble ${mine ? "pm-match-chat-bubble--mine" : ""}`}>
+                        <div className="pm-match-chat-meta">
+                          <span className="pm-match-chat-author">{mine ? "Dig" : displayName}</span>
+                          <span>{formatChatClock(msg.created_at)}</span>
+                        </div>
+                        <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="pm-match-chat-composer">
+                <input
+                  value={chatDraft}
+                  onChange={(e) => {
+                    const next = e.target.value.slice(0, 1000);
+                    setMatchChatDraftById((prev) => ({ ...prev, [m.id]: next }));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void submitMatchChat(m.id, canWriteMatchChat);
                     }
                   }}
+                  placeholder={canWriteMatchChat ? "Skriv til holdet..." : "Kun tilmeldte kan skrive"}
+                  className="pm-match-chat-input"
+                  maxLength={1000}
+                  disabled={!canWriteMatchChat || chatSending}
+                />
+                <button
+                  type="button"
+                  onClick={() => { void submitMatchChat(m.id, canWriteMatchChat); }}
+                  disabled={!canWriteMatchChat || chatSending || !chatDraft.trim()}
+                  style={{
+                    ...btn(true),
+                    justifyContent: "center",
+                    minWidth: "92px",
+                    padding: "8px 10px",
+                    fontSize: "12px",
+                    opacity: chatSending || !chatDraft.trim() ? 0.7 : 1,
+                  }}
                 >
-                  {chatLoading ? (
-                    <div className="pm-match-chat-empty">Henter beskeder...</div>
-                  ) : null}
-                  {!chatLoading && chatError ? (
-                    <div className="pm-match-chat-empty">{chatError}</div>
-                  ) : null}
-                  {!chatLoading && !chatError && chatMessages.length === 0 ? (
-                    <div className="pm-match-chat-empty">Ingen beskeder endnu. Skriv den første besked til kampen.</div>
-                  ) : null}
-                  {!chatLoading && !chatError && chatMessages.map((msg) => {
-                    const mine = String(msg.sender_id) === String(user.id);
-                    const displayName = (msg.sender_name || "Spiller").trim();
-                    return (
-                      <div key={msg.id} className={`pm-match-chat-row ${mine ? "pm-match-chat-row--mine" : ""}`}>
-                        <div className={`pm-match-chat-bubble ${mine ? "pm-match-chat-bubble--mine" : ""}`}>
-                          <div className="pm-match-chat-meta">
-                            <span className="pm-match-chat-author">{mine ? "Dig" : displayName}</span>
-                            <span>{formatChatClock(msg.created_at)}</span>
-                          </div>
-                          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="pm-match-chat-composer">
-                  <input
-                    value={chatDraft}
-                    onChange={(e) => {
-                      const next = e.target.value.slice(0, 1000);
-                      setMatchChatDraftById((prev) => ({ ...prev, [m.id]: next }));
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        void submitMatchChat(m.id, canWriteMatchChat);
-                      }
-                    }}
-                    placeholder={canWriteMatchChat ? "Skriv til holdet..." : "Kun tilmeldte kan skrive"}
-                    className="pm-match-chat-input"
-                    maxLength={1000}
-                    disabled={!canWriteMatchChat || chatSending}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { void submitMatchChat(m.id, canWriteMatchChat); }}
-                    disabled={!canWriteMatchChat || chatSending || !chatDraft.trim()}
-                    style={{
-                      ...btn(true),
-                      justifyContent: "center",
-                      minWidth: "92px",
-                      padding: "8px 10px",
-                      fontSize: "12px",
-                      opacity: chatSending || !chatDraft.trim() ? 0.7 : 1,
-                    }}
-                  >
-                    <SendHorizontal size={13} />
-                    {chatSending ? "Sender..." : "Send"}
-                  </button>
-                </div>
+                  <SendHorizontal size={13} />
+                  {chatSending ? "Sender..." : "Send"}
+                </button>
               </div>
-            ) : null}
-          </>
-        ) : null}
-
-        {hasSecondaryLinks ? (
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "8px 14px", padding: "2px 0", fontSize: "12px", color: theme.textMid }}>
-            {showShareLink ? (
-              <button
-                type="button"
-                onClick={() => void shareMatch(m)}
-                style={{ background: "none", border: "none", padding: 0, color: theme.accent, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(37,99,235,0.25)", display: "inline-flex", alignItems: "center", gap: "4px" }}
-              >
-                <Share2 size={12} /> Del kamp
-              </button>
-            ) : null}
-            {joined && status !== "completed" ? (
-              <span style={{ color: theme.green, fontWeight: 700 }}>✅ Du er tilmeldt</span>
-            ) : null}
-            {joined && status !== "completed" ? (
-              <button
-                type="button"
-                onClick={() => addMatchToCalendar(m)}
-                style={{ background: "none", border: "none", padding: 0, color: theme.textMid, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(0,0,0,0.2)", display: "inline-flex", alignItems: "center", gap: "4px" }}
-              >
-                <CalendarPlus size={12} /> Tilføj til kalender
-              </button>
-            ) : null}
-            {isCreator && status === "open" && mp.length === 3 ? (
-              <button
-                type="button"
-                onClick={() => toggleSeekingPlayer(m)}
-                disabled={busyId === m.id + "-seek"}
-                style={{ background: "none", border: "none", padding: 0, color: m.seeking_player ? theme.warm : theme.textMid, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: m.seeking_player ? "rgba(217,119,6,0.3)" : "rgba(0,0,0,0.2)", display: "inline-flex", alignItems: "center", gap: "4px" }}
-              >
-                <Zap size={12} />
-                {busyId === m.id + "-seek" ? "Sender..." : m.seeking_player ? "Stop råb" : "Råb op for spiller"}
-              </button>
-            ) : null}
-            {joined && (status === "open" || status === "full") ? (
-              <button
-                type="button"
-                onClick={() => leaveMatch(m.id)}
-                disabled={busy}
-                style={{ background: "none", border: "none", padding: 0, color: theme.red, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(220,38,38,0.3)", display: "inline-flex", alignItems: "center", gap: "4px" }}
-              >
-                <UserMinus size={12} /> {isCreator ? "Forlad / overdrag" : "Afmeld mig"}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+            </div>
+          ) : null}
+          joined={joined}
+          status={status}
+          showShare={showShareLink}
+          onShare={() => void shareMatch(m)}
+          onAddToCalendar={() => addMatchToCalendar(m)}
+          showLeave={joined && (status === "open" || status === "full")}
+          onLeave={() => leaveMatch(m.id)}
+          leaveLabel={isCreator ? "Forlad / overdrag" : "Afmeld mig"}
+          leaveBusy={busy}
+          extraAction={isCreator && status === "open" && mp.length === 3 ? (
+            <button
+              type="button"
+              className="pm-kd-action-extra"
+              onClick={() => toggleSeekingPlayer(m)}
+              disabled={busyId === m.id + "-seek"}
+            >
+              <Zap size={12} />
+              {busyId === m.id + "-seek" ? "Sender..." : m.seeking_player ? "Stop råb" : "Råb op for spiller"}
+            </button>
+          ) : null}
+        />
 
         {showToolsAccordion ? (
           <div style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "55", borderRadius: "10px", overflow: "hidden" }}>

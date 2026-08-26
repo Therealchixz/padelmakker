@@ -95,6 +95,21 @@ export async function sendMatchMessage({
   return data;
 }
 
+export async function fetchLastMatchMessage(matchId) {
+  if (!matchId) return null;
+  const { data, error } = await supabase
+    .from('match_messages')
+    .select('id, match_id, sender_id, sender_name, content, created_at')
+    .eq('match_id', matchId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+export { formatMatchChatPreview } from './matchChatPreview';
+
 export function subscribeToMatchMessages(matchId, onInsert) {
   if (!matchId || typeof onInsert !== 'function') return () => {};
 
