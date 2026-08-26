@@ -1,4 +1,4 @@
--- Race-safe open match join + leave. Kør via migration eller Supabase MCP.
+-- Valgfri p_court_side ved tilmelding, så spilleren kan vælge venstre/højre.
 
 DROP FUNCTION IF EXISTS public.join_open_match(uuid, integer, text, text, text);
 DROP FUNCTION IF EXISTS public.join_open_match(uuid, integer, text, text, text, text);
@@ -195,112 +195,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.leave_match(p_match_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-SET row_security = off
-AS $$
-DECLARE
-  v_caller uuid := auth.uid();
-  v_creator_id uuid;
-  v_status text;
-  v_remaining int;
-  v_new_creator uuid;
-  v_was_creator boolean;
-BEGIN
-  IF v_caller IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'not_authenticated');
-  END IF;
-
-  SELECT m.creator_id, lower(coalesce(m.status, 'open'))
-  INTO v_creator_id, v_status
-  FROM public.matches m
-  WHERE m.id = p_match_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
-  END IF;
-
-  IF v_status IN ('in_progress', 'completed') THEN
-    RETURN jsonb_build_object('success', false, 'error', 'match_locked');
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM public.match_players mp
-    WHERE mp.match_id = p_match_id AND mp.user_id = v_caller
-  ) THEN
-    RETURN jsonb_build_object('success', false, 'error', 'not_in_match');
-  END IF;
-
-  v_was_creator := (v_creator_id = v_caller);
-
-  DELETE FROM public.match_players
-  WHERE match_id = p_match_id AND user_id = v_caller;
-
-  SELECT COUNT(*) INTO v_remaining
-  FROM public.match_players
-  WHERE match_id = p_match_id;
-
-  IF v_remaining = 0 THEN
-    UPDATE public.matches
-    SET status = 'cancelled', current_players = 0, seeking_player = false
-    WHERE id = p_match_id;
-    RETURN jsonb_build_object('success', true, 'cancelled', true, 'remaining', 0);
-  END IF;
-
-  v_new_creator := v_creator_id;
-
-  IF v_was_creator THEN
-    SELECT mp.user_id
-    INTO v_new_creator
-    FROM public.match_players mp
-    WHERE mp.match_id = p_match_id
-    ORDER BY mp.user_id
-    LIMIT 1;
-
-    UPDATE public.matches
-    SET creator_id = v_new_creator,
-        status = 'open',
-        current_players = v_remaining,
-        seeking_player = false
-    WHERE id = p_match_id;
-
-    RETURN jsonb_build_object(
-      'success', true,
-      'cancelled', false,
-      'remaining', v_remaining,
-      'creator_transferred', true,
-      'new_creator_id', v_new_creator
-    );
-  END IF;
-
-  UPDATE public.matches
-  SET status = 'open', current_players = v_remaining
-  WHERE id = p_match_id;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'cancelled', false,
-    'remaining', v_remaining,
-    'creator_transferred', false
-  );
-END;
-$$;
-
 REVOKE ALL ON FUNCTION public.join_open_match(uuid, int, text, text, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.join_open_match(uuid, int, text, text, text, text) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.leave_match(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.leave_match(uuid) TO authenticated;
-
--- Bloker direkte klient-inserts — alle tilmeldinger via RPC.
-DROP POLICY IF EXISTS "Brugere kan tilmelde sig selv" ON public.match_players;
-DROP POLICY IF EXISTS match_players_insert_via_rpc_only ON public.match_players;
-CREATE POLICY match_players_insert_via_rpc_only
-  ON public.match_players
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (false);
+NOTIFY pgrst, 'reload schema';

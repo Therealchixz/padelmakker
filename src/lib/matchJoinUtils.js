@@ -6,6 +6,7 @@ export { mapJoinMatchError, mapLeaveMatchError, mapKickMatchError } from './matc
 export async function rpcJoinOpenMatch({
   matchId,
   team = null,
+  courtSide = null,
   userName,
   userEmail,
   userEmoji,
@@ -13,6 +14,7 @@ export async function rpcJoinOpenMatch({
   const { data, error } = await supabase.rpc('join_open_match', {
     p_match_id: matchId,
     p_team: team,
+    p_court_side: courtSide || null,
     p_user_name: userName || null,
     p_user_email: userEmail || null,
     p_user_emoji: userEmoji || '🎾',

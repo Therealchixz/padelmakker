@@ -17,6 +17,16 @@ export function oppositeCourtSide(side) {
   return normalizeMatchCourtSide(side) === 'right' ? 'left' : 'right';
 }
 
+/** Ledige venstre/højre-pladser på et hold (tomt hold → begge). */
+export function freeMatchCourtSides(players) {
+  const taken = new Set(
+    (Array.isArray(players) ? players : [])
+      .map((p) => normalizeMatchCourtSide(p?.court_side))
+      .filter(Boolean),
+  );
+  return MATCH_COURT_SIDES.filter((side) => !taken.has(side));
+}
+
 /**
  * To faste pladser pr. hold: venstre og højre.
  * Spillere uden gemt side fylder ledige pladser i tilmeldingsrækkefølge.

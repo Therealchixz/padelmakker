@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   courtSideLabel,
+  freeMatchCourtSides,
   normalizeMatchCourtSide,
   oppositeCourtSide,
   sortPlayersByCourtSide,
@@ -48,6 +49,12 @@ test('sortPlayersByCourtSide har venstre først', () => {
   assert.equal(sorted[1].user_id, 'r');
 });
 
+test('freeMatchCourtSides er begge når holdet er tomt', () => {
+  assert.deepEqual(freeMatchCourtSides([]), ['left', 'right']);
+  assert.deepEqual(freeMatchCourtSides([{ court_side: 'left' }]), ['right']);
+  assert.deepEqual(freeMatchCourtSides([{ court_side: 'right' }, { court_side: 'left' }]), []);
+});
+
 test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   const view = readFileSync('src/components/kampe/MatchCourtView.jsx', 'utf8');
   assert.match(view, /courtSideLabel/);
@@ -56,12 +63,15 @@ test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   assert.doesNotMatch(view, /Byt side/);
   const modal = readFileSync('src/dashboard/TeamSelectModal.jsx', 'utf8');
   assert.match(modal, /Vælg hold/);
+  assert.match(modal, /Vælg side/);
+  assert.match(modal, /freeMatchCourtSides/);
   assert.doesNotMatch(modal, /Vælg hold og side/);
 });
 
 test('tilmelding vælger ledig bane-side og fanger unique på (kamp, bruger)', () => {
   const join = readFileSync('supabase/sql/join_open_match_rpc.sql', 'utf8');
   assert.match(join, /match_players_free_court_side/);
+  assert.match(join, /p_court_side text DEFAULT NULL/);
   assert.match(join, /ON CONFLICT ON CONSTRAINT match_players_match_id_user_id_key DO NOTHING/);
   assert.match(join, /WHEN unique_violation THEN/);
   const fix = readFileSync('supabase/sql/match_player_court_side_join_fix.sql', 'utf8');

@@ -1183,11 +1183,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       const result = await rpcJoinOpenMatch({
         matchId,
         team: teamNum,
+        courtSide,
         userName: myDisplayName,
         userEmail: authUser?.email || user.email,
         userEmoji: user.avatar || "🎾",
       });
-      if (courtSide && !result?.already_joined) {
+      if (courtSide && !result?.already_joined && result?.court_side !== courtSide) {
         const { data: sideData, error: sideErr } = await supabase.rpc('set_match_player_court_side', {
           p_match_id: matchId,
           p_user_id: user.id,
@@ -3827,7 +3828,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {teamSelectMatch && (
         <TeamSelectModal
           matchPlayers={matchPlayers[teamSelectMatch] || []}
-          onSelect={(teamNum) => joinMatchWithTeam(teamSelectMatch, teamNum)}
+          onSelect={(teamNum, courtSide) => joinMatchWithTeam(teamSelectMatch, teamNum, courtSide)}
           onClose={() => setTeamSelectMatch(null)}
         />
       )}
