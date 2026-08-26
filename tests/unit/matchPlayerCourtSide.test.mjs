@@ -58,3 +58,14 @@ test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   assert.match(modal, /Vælg hold/);
   assert.doesNotMatch(modal, /Vælg hold og side/);
 });
+
+test('tilmelding vælger ledig bane-side og fanger unique på (kamp, bruger)', () => {
+  const join = readFileSync('supabase/sql/join_open_match_rpc.sql', 'utf8');
+  assert.match(join, /match_players_free_court_side/);
+  assert.match(join, /ON CONFLICT ON CONSTRAINT match_players_match_id_user_id_key DO NOTHING/);
+  assert.match(join, /WHEN unique_violation THEN/);
+  const fix = readFileSync('supabase/sql/match_player_court_side_join_fix.sql', 'utf8');
+  assert.match(fix, /DROP CONSTRAINT IF EXISTS match_players_unique_team_side/);
+  assert.match(fix, /WHERE court_side IS NOT NULL/);
+  assert.doesNotMatch(fix, /SET CONSTRAINTS match_players_unique_team_side DEFERRED/);
+});

@@ -22,7 +22,16 @@ const KICK_ERROR_MESSAGES = {
 };
 
 export function mapJoinMatchError(data, error) {
-  if (error) return error.message || 'Kunne ikke tilmelde kampen.';
+  if (error) {
+    const raw = String(error.message || '');
+    if (/unique_team_side|court_side/i.test(raw)) {
+      return 'Den side er optaget. Vælg det andet hold, eller opdater siden og prøv igen.';
+    }
+    if (/duplicate key|unique constraint|already exists/i.test(raw)) {
+      return 'Du er allerede tilmeldt. Opdater siden og prøv igen.';
+    }
+    return raw || 'Kunne ikke tilmelde kampen.';
+  }
   const code = data?.error;
   if (code && JOIN_ERROR_MESSAGES[code]) {
     if (code === 'team_full' && data?.team) {

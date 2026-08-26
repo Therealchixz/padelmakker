@@ -29,3 +29,18 @@ test('mapJoinMatchError maps server error codes to Danish messages', () => {
   assert.match(mapJoinMatchError({ success: false, error: 'match_closed' }), /godkendelse/);
   assert.match(mapJoinMatchError({ success: false, error: 'team_full', team: 1 }), /Hold 1/);
 });
+
+test('mapJoinMatchError maps unique-constraint transport errors', () => {
+  assert.match(
+    mapJoinMatchError(null, {
+      message: 'duplicate key value violates unique constraint "match_players_unique_team_side"',
+    }),
+    /side er optaget/,
+  );
+  assert.match(
+    mapJoinMatchError(null, {
+      message: 'duplicate key value violates unique constraint "match_players_match_id_user_id_key"',
+    }),
+    /allerede tilmeldt/,
+  );
+});

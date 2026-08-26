@@ -22,6 +22,8 @@ DECLARE
   v_total int;
   v_team int;
   v_name text;
+  v_pref text;
+  v_side text;
 BEGIN
   IF v_caller IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'not_authenticated');
@@ -100,16 +102,40 @@ BEGIN
     WHERE id = v_caller;
   END IF;
 
-  INSERT INTO public.match_players (match_id, user_id, user_name, user_email, user_emoji, team)
-  VALUES (
-    p_match_id,
-    v_caller,
-    coalesce(v_name, 'Spiller'),
-    nullif(btrim(coalesce(p_user_email, '')), ''),
-    coalesce(nullif(btrim(p_user_emoji), ''), '🎾'),
-    v_team
-  )
-  ON CONFLICT DO NOTHING;
+  SELECT CASE
+    WHEN lower(coalesce(p.court_side, '')) LIKE '%venstre%' THEN 'left'
+    WHEN lower(coalesce(p.court_side, '')) LIKE '%højre%'
+      OR lower(coalesce(p.court_side, '')) LIKE '%hojre%' THEN 'right'
+    ELSE NULL
+  END
+  INTO v_pref
+  FROM public.profiles p
+  WHERE p.id = v_caller;
+
+  v_side := public.match_players_free_court_side(p_match_id, v_team, NULL, v_pref);
+
+  BEGIN
+    INSERT INTO public.match_players (match_id, user_id, user_name, user_email, user_emoji, team, court_side)
+    VALUES (
+      p_match_id,
+      v_caller,
+      coalesce(v_name, 'Spiller'),
+      nullif(btrim(coalesce(p_user_email, '')), ''),
+      coalesce(nullif(btrim(p_user_emoji), ''), '🎾'),
+      v_team,
+      v_side
+    )
+    ON CONFLICT ON CONSTRAINT match_players_match_id_user_id_key DO NOTHING;
+  EXCEPTION
+    WHEN unique_violation THEN
+      IF EXISTS (
+        SELECT 1 FROM public.match_players mp
+        WHERE mp.match_id = p_match_id AND mp.user_id = v_caller
+      ) THEN
+        RETURN jsonb_build_object('success', true, 'already_joined', true, 'team', v_team);
+      END IF;
+      RETURN jsonb_build_object('success', false, 'error', 'insert_failed');
+  END;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.match_players mp
