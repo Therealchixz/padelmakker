@@ -1,17 +1,17 @@
-import { Plus, UserPlus } from 'lucide-react';
+import { ArrowLeftRight, Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { CreatorTag } from './CreatorTag';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 import {
   getMatchCourtHeaderLabel,
 } from '../../lib/matchCourtOutcomeClasses';
+import {
+  courtSideLabel,
+  oppositeCourtSide,
+  teamSlotsBySide,
+} from '../../lib/matchPlayerCourtSide';
 
 const SLOTS_PER_TEAM = 2;
-
-function teamSlots(players) {
-  const filled = (players || []).slice(0, SLOTS_PER_TEAM);
-  return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
-}
 
 export function MatchCourtView({
   teamStats,
@@ -30,6 +30,8 @@ export function MatchCourtView({
   onKickPlayer,
   onSwitchTeam,
   onSwitchPlayerTeam,
+  onClaimCourtSide,
+  onSetCourtSide,
   creatorId = null,
 }) {
   const t1 = teamStats?.t1 || [];
@@ -38,11 +40,12 @@ export function MatchCourtView({
   const left = Math.max(0, 4 - filledCount);
   const showEloChanges = status === 'completed';
   const outcomeCtx = { status, winnerTeam, joined, myTeam };
+  const sidesEditable = !readOnly && (status === 'open' || status === 'full' || status === 'in_progress');
 
   const playerElo = (p) => teamStats?.playerEloByUserId?.[String(p.user_id)] ?? 1000;
   const playerEloChange = (p) => teamStats?.playerEloChangeByUserId?.[String(p.user_id)];
 
-  const renderPlayerSlot = (player, teamNum) => {
+  const renderPlayerSlot = (player, teamNum, side) => {
     const prof = profilesById[String(player.user_id)];
     const levelLabel =
       prof?.level != null && prof.level !== ''
@@ -69,7 +72,7 @@ export function MatchCourtView({
     const newElo = delta != null ? playerElo(player) + delta : null;
 
     return (
-      <div key={player.user_id || `t${teamNum}-${player.user_name}`} className="pm-kd-slot">
+      <div key={player.user_id || `t${teamNum}-${side}`} className="pm-kd-slot pm-kd-slot--court">
         <button
           type="button"
           className="pm-kd-slot-main"
@@ -89,21 +92,17 @@ export function MatchCourtView({
               {creatorId != null && String(player.user_id) === String(creatorId) ? <CreatorTag /> : null}
             </div>
             <div className="pm-kd-slot-meta">
-              {showEloChanges && delta != null ? (
-                <span className="pm-kd-lvl-badge">
-                  ELO {playerElo(player)}
-                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
-                </span>
-              ) : (
-                <span className="pm-kd-lvl-badge">
-                  ELO {playerElo(player)}
-                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
-                </span>
-              )}
+              <span className="pm-kd-lvl-badge">
+                {showEloChanges && delta != null
+                  ? `ELO ${playerElo(player)}`
+                  : `ELO ${playerElo(player)}`}
+                {levelLabel ? ` · ${levelLabel}` : ''}
+              </span>
               {!showEloChanges && games > 0 ? (
                 <span className="pm-kd-slot-kampe">{games} kampe</span>
               ) : null}
             </div>
+            <div className="pm-kd-slot-side">{courtSideLabel(side)}</div>
           </div>
         </button>
         {showEloChanges && newElo != null && delta != null ? (
@@ -143,30 +142,52 @@ export function MatchCourtView({
     );
   };
 
-  const renderEmptySlot = (teamNum, slotIndex) => {
+  const renderEmptySlot = (teamNum, side) => {
     const otherTeam = teamNum === 1 ? 2 : 1;
-    const canSwitch =
-      !readOnly &&
+    const canSwitchTeam =
+      sidesEditable &&
       joined &&
       myTeam === otherTeam &&
       (status === 'open' || status === 'full') &&
       busyId !== matchId + '-switch';
+    const canClaimSide =
+      sidesEditable &&
+      joined &&
+      myTeam === teamNum &&
+      Boolean(onClaimCourtSide) &&
+      busyId !== matchId + '-side';
+    const clickable = canSwitchTeam || canClaimSide;
+    const onClick = () => {
+      if (canClaimSide) onClaimCourtSide(matchId, teamNum, side);
+      else if (canSwitchTeam && onSwitchTeam) onSwitchTeam(matchId, teamNum, side);
+    };
 
     return (
       <button
-        key={`empty-t${teamNum}-${slotIndex}`}
+        key={`empty-t${teamNum}-${side}`}
         type="button"
-        className={`pm-kd-slot pm-kd-slot--empty${canSwitch ? ' pm-kd-slot--clickable' : ''}`}
-        onClick={canSwitch && onSwitchTeam ? () => onSwitchTeam(matchId, teamNum) : undefined}
-        disabled={!canSwitch}
-        aria-label={canSwitch ? `Skift til Hold ${teamNum}` : `Ledig plads på Hold ${teamNum}`}
+        className={`pm-kd-slot pm-kd-slot--empty pm-kd-slot--court${clickable ? ' pm-kd-slot--clickable' : ''}`}
+        onClick={clickable ? onClick : undefined}
+        disabled={!clickable}
+        aria-label={
+          canClaimSide
+            ? `Skift til ${courtSideLabel(side).toLowerCase()} side`
+            : canSwitchTeam
+              ? `Skift til Hold ${teamNum}, ${courtSideLabel(side).toLowerCase()} side`
+              : `Ledig ${courtSideLabel(side).toLowerCase()} side på Hold ${teamNum}`
+        }
       >
         <div className="pm-kd-ghost">
-          {canSwitch ? <Plus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
+          {clickable ? <Plus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
         </div>
         <div>
-          <b>Ledig plads</b>
-          <span className="pm-kd-empty-sub">{canSwitch ? 'SKIFT HIT' : 'BLIV DEN NÆSTE!'}</span>
+          <b>Ledig</b>
+          <span className="pm-kd-slot-side">{courtSideLabel(side)}</span>
+          {clickable ? (
+            <span className="pm-kd-empty-sub">{canClaimSide ? 'TAG DENNE SIDE' : 'SKIFT HIT'}</span>
+          ) : (
+            <span className="pm-kd-empty-sub">BLIV DEN NÆSTE!</span>
+          )}
         </div>
       </button>
     );
@@ -175,7 +196,14 @@ export function MatchCourtView({
   const renderTeam = (teamNum, players) => {
     const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
     const teamAvg = teamNum === 1 ? teamStats?.t1Avg : teamStats?.t2Avg;
-    const slots = teamSlots(players);
+    const slots = teamSlotsBySide(players);
+    const bothFilled = slots.every((s) => s.player);
+    const canSwapSides =
+      sidesEditable &&
+      bothFilled &&
+      Boolean(onSetCourtSide) &&
+      (isCreator || isAdmin || myTeam === teamNum) &&
+      busyId !== matchId + '-side';
 
     return (
       <div key={`team-${teamNum}`}>
@@ -183,9 +211,20 @@ export function MatchCourtView({
           {headerLabel}
           {teamAvg != null ? ` · Gns. ${teamAvg}` : ''}
         </div>
-        {slots.map((player, idx) =>
-          player ? renderPlayerSlot(player, teamNum) : renderEmptySlot(teamNum, idx)
-        )}
+        <div className="pm-kd-side-row">
+          {slots.map(({ side, player }) =>
+            player ? renderPlayerSlot(player, teamNum, side) : renderEmptySlot(teamNum, side)
+          )}
+        </div>
+        {canSwapSides ? (
+          <button
+            type="button"
+            className="pm-kd-side-swap"
+            onClick={() => onSetCourtSide(matchId, slots[0].player.user_id, oppositeCourtSide(slots[0].side))}
+          >
+            <ArrowLeftRight size={14} aria-hidden /> Byt side
+          </button>
+        ) : null}
       </div>
     );
   };

@@ -26,6 +26,11 @@ import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPl
 import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
+import {
+  courtSideErrorMessage,
+  courtSideLabel,
+  sortPlayersByCourtSide,
+} from '../lib/matchPlayerCourtSide';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
@@ -102,8 +107,8 @@ function matchPlayerTeam(p) {
 
 function splitPlayersByTeam(players) {
   const list = players || [];
-  const t1 = list.filter((p) => matchPlayerTeam(p) === 1);
-  const t2 = list.filter((p) => matchPlayerTeam(p) === 2);
+  const t1 = sortPlayersByCourtSide(list.filter((p) => matchPlayerTeam(p) === 1));
+  const t2 = sortPlayersByCourtSide(list.filter((p) => matchPlayerTeam(p) === 2));
   const unassigned = list.filter((p) => {
     const team = matchPlayerTeam(p);
     return team !== 1 && team !== 2;
@@ -1165,7 +1170,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     setPadelCreateStep((s) => Math.min(3, s + 1));
   };
 
-  const joinMatchWithTeam = async (matchId, teamNum) => {
+  const joinMatchWithTeam = async (matchId, teamNum, courtSide = null) => {
     setTeamSelectMatch(null);
     setBusyId(matchId);
     const match = matches.find((m) => String(m.id) === String(matchId));
@@ -1182,6 +1187,15 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         userEmail: authUser?.email || user.email,
         userEmoji: user.avatar || "🎾",
       });
+      if (courtSide && !result?.already_joined) {
+        const { data: sideData, error: sideErr } = await supabase.rpc('set_match_player_court_side', {
+          p_match_id: matchId,
+          p_user_id: user.id,
+          p_side: courtSide,
+        });
+        if (sideErr) throw sideErr;
+        if (!sideData?.success) throw new Error(courtSideErrorMessage(sideData));
+      }
       const joinedTeam = result?.team ?? teamNum;
       const isFull = result?.is_full === true;
 
@@ -1225,13 +1239,17 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         );
       }
 
-      showToast(result?.already_joined ? "Du er allerede tilmeldt kampen." : `Du er tilmeldt Hold ${joinedTeam}! ⚔️`);
+      showToast(
+        result?.already_joined
+          ? "Du er allerede tilmeldt kampen."
+          : `Du er tilmeldt Hold ${joinedTeam}${courtSide ? ` · ${courtSideLabel(courtSide)}` : ''}! ⚔️`
+      );
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
-  const patchMatchPlayerTeamLocally = useCallback((matchId, targetUserId, newTeam) => {
+  const patchMatchPlayerTeamLocally = useCallback((matchId, targetUserId, newTeam, courtSide = undefined) => {
     const key = String(matchId);
     setMatchPlayers((prev) => {
       const rows = prev[key];
@@ -1239,8 +1257,30 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       return {
         ...prev,
         [key]: rows.map((p) => (
-          String(p.user_id) === String(targetUserId) ? { ...p, team: newTeam } : p
+          String(p.user_id) === String(targetUserId)
+            ? { ...p, team: newTeam, ...(courtSide ? { court_side: courtSide } : {}) }
+            : p
         )),
+      };
+    });
+  }, []);
+
+  const patchMatchPlayerCourtSideLocally = useCallback((matchId, targetUserId, newSide, swappedUserId = null) => {
+    const key = String(matchId);
+    setMatchPlayers((prev) => {
+      const rows = prev[key];
+      if (!rows?.length) return prev;
+      const target = rows.find((p) => String(p.user_id) === String(targetUserId));
+      const previous = target?.court_side;
+      return {
+        ...prev,
+        [key]: rows.map((p) => {
+          if (String(p.user_id) === String(targetUserId)) return { ...p, court_side: newSide };
+          if (swappedUserId && String(p.user_id) === String(swappedUserId)) {
+            return { ...p, court_side: previous === 'left' ? 'right' : previous === 'right' ? 'left' : previous };
+          }
+          return p;
+        }),
       };
     });
   }, []);
@@ -1258,15 +1298,68 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     return data;
   }, []);
 
-  const switchTeam = async (matchId, newTeam) => {
+  const applyMatchPlayerCourtSide = useCallback(async (matchId, targetUserId, side) => {
+    const { data, error } = await supabase.rpc('set_match_player_court_side', {
+      p_match_id: matchId,
+      p_user_id: targetUserId,
+      p_side: side,
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(courtSideErrorMessage(data));
+    return data;
+  }, []);
+
+  const switchTeam = async (matchId, newTeam, courtSide = null) => {
     const myCurrent = (matchPlayers[String(matchId)] || []).find((p) => String(p.user_id) === String(user.id));
-    if (myCurrent && matchPlayerTeam(myCurrent) === Number(newTeam)) return;
-    setBusyId(matchId + "-switch");
+    if (myCurrent && matchPlayerTeam(myCurrent) === Number(newTeam) && !courtSide) return;
+    setBusyId(matchId + (courtSide ? '-side' : '-switch'));
     try {
-      const data = await applyMatchPlayerTeam(matchId, user.id, newTeam);
-      if (!data?.unchanged) {
-        patchMatchPlayerTeamLocally(matchId, user.id, newTeam);
+      if (!myCurrent || matchPlayerTeam(myCurrent) !== Number(newTeam)) {
+        const data = await applyMatchPlayerTeam(matchId, user.id, newTeam);
+        if (!data?.unchanged) {
+          patchMatchPlayerTeamLocally(matchId, user.id, newTeam);
+        }
+      }
+      if (courtSide) {
+        const sideData = await applyMatchPlayerCourtSide(matchId, user.id, courtSide);
+        if (!sideData?.unchanged) {
+          patchMatchPlayerCourtSideLocally(matchId, user.id, courtSide, sideData?.swapped_user_id);
+        }
+        showToast(`Skiftet til Hold ${newTeam} · ${courtSideLabel(courtSide)}`);
+      } else {
         showToast(`Skiftet til Hold ${newTeam}! ⚔️`);
+      }
+      await loadData();
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
+    finally { setBusyId(null); }
+  };
+
+  const claimCourtSide = async (matchId, teamNum, side) => {
+    const myCurrent = (matchPlayers[String(matchId)] || []).find((p) => String(p.user_id) === String(user.id));
+    if (!myCurrent) return;
+    if (matchPlayerTeam(myCurrent) !== Number(teamNum)) {
+      await switchTeam(matchId, teamNum, side);
+      return;
+    }
+    setBusyId(matchId + '-side');
+    try {
+      const data = await applyMatchPlayerCourtSide(matchId, user.id, side);
+      if (!data?.unchanged) {
+        patchMatchPlayerCourtSideLocally(matchId, user.id, side, data?.swapped_user_id);
+        showToast(`${courtSideLabel(side)} side`);
+      }
+      await loadData();
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
+    finally { setBusyId(null); }
+  };
+
+  const setPlayerCourtSide = async (matchId, targetUserId, side) => {
+    setBusyId(matchId + '-side');
+    try {
+      const data = await applyMatchPlayerCourtSide(matchId, targetUserId, side);
+      if (!data?.unchanged) {
+        patchMatchPlayerCourtSideLocally(matchId, targetUserId, side, data?.swapped_user_id);
+        showToast('Placering opdateret');
       }
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
@@ -3166,6 +3259,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           currentUserId={user.id}
           onSwitchTeam={switchTeam}
           onSwitchPlayerTeam={switchPlayerTeam}
+          onClaimCourtSide={claimCourtSide}
+          onSetCourtSide={setPlayerCourtSide}
           onKickPlayer={kickPlayer}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
@@ -3732,7 +3827,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {teamSelectMatch && (
         <TeamSelectModal
           matchPlayers={matchPlayers[teamSelectMatch] || []}
-          onSelect={(teamNum) => joinMatchWithTeam(teamSelectMatch, teamNum)}
+          onSelect={(teamNum, courtSide) => joinMatchWithTeam(teamSelectMatch, teamNum, courtSide)}
           onClose={() => setTeamSelectMatch(null)}
         />
       )}

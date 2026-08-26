@@ -66,7 +66,7 @@ export const PROFILE_KAMPE_SELECT =
 
 /** match_players uden user_email (column privilege revoked). */
 export const MATCH_PLAYERS_SAFE_SELECT =
-  'id, match_id, user_id, user_name, user_emoji, joined_at, team';
+  'id, match_id, user_id, user_name, user_emoji, joined_at, team, court_side';
 
 /**
  * Alle aktive spillere til Find makker (ikke banned).

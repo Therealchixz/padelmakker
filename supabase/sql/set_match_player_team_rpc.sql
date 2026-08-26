@@ -76,7 +76,8 @@ BEGIN
   END IF;
 
   UPDATE public.match_players
-  SET team = p_team
+  SET team = p_team,
+      court_side = NULL
   WHERE match_id = p_match_id
     AND user_id = p_user_id;
 
@@ -90,7 +91,8 @@ BEGIN
 
   IF v_t1 > 2 OR v_t2 > 2 THEN
     UPDATE public.match_players
-    SET team = v_current_team
+    SET team = v_current_team,
+        court_side = NULL
     WHERE match_id = p_match_id
       AND user_id = p_user_id;
     RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);

@@ -272,6 +272,81 @@
   text-transform: uppercase;
 }
 
+.pm-kd-side-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pm-kd-slot--court {
+  margin: 0;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 10px 10px;
+  gap: 8px;
+}
+
+.pm-kd-slot--court .pm-kd-slot-main {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pm-kd-slot--court .pm-kd-slot-copy {
+  width: 100%;
+}
+
+.pm-kd-slot--court .pm-kd-slot-name {
+  justify-content: center;
+  font-size: 13px;
+}
+
+.pm-kd-slot--court .pm-kd-slot-meta {
+  justify-content: center;
+}
+
+.pm-kd-slot-side {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-navy);
+}
+
+.pm-kd-slot--empty .pm-kd-slot-side {
+  color: var(--pm-text-mid);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pm-kd-side-swap {
+  width: 100%;
+  margin: 0 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--pm-kd-card-border);
+  background: var(--pm-kd-inset);
+  color: var(--pm-accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pm-kd-slot--court .pm-kd-slot-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.pm-kd-slot--court .pm-kd-slot-action--danger {
+  top: 40px;
+}
+
 /* ── Spiller-slot (mockup .slot) ── */
 .pm-kd-slot {
   margin: 0 0 10px;

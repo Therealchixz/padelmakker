@@ -46,6 +46,8 @@ export function KampeMatchDetailSheet({
   currentUserId = null,
   onSwitchTeam,
   onSwitchPlayerTeam,
+  onClaimCourtSide,
+  onSetCourtSide,
   onKickPlayer,
   onProfileClick,
 }) {
@@ -159,6 +161,8 @@ export function KampeMatchDetailSheet({
         currentUserId={currentUserId}
         onSwitchTeam={onSwitchTeam}
         onSwitchPlayerTeam={onSwitchPlayerTeam}
+        onClaimCourtSide={onClaimCourtSide}
+        onSetCourtSide={onSetCourtSide}
         onKickPlayer={onKickPlayer}
         onProfileClick={onProfileClick}
         creatorId={match.creator_id}
