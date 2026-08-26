@@ -62,10 +62,13 @@ test('freeMatchCourtSides er begge når holdet er tomt', () => {
   assert.deepEqual(freeMatchCourtSides([{ court_side: 'right' }, { court_side: 'left' }]), []);
 });
 
-test('kampdetalje viser side uden at ændre slot-layoutet', () => {
+test('kampdetalje viser holdene som banekort med venstre/højre', () => {
   const view = readFileSync('src/components/kampe/MatchCourtView.jsx', 'utf8');
+  assert.match(view, /pm-court--detail/);
+  assert.match(view, /pm-kd-court-slot/);
   assert.match(view, /courtSideLabel/);
   assert.match(view, /onSetCourtSide/);
+  assert.match(view, /onClaimCourtSide/);
   assert.doesNotMatch(view, /pm-kd-side-row/);
   assert.doesNotMatch(view, /Byt side/);
   const modal = readFileSync('src/dashboard/TeamSelectModal.jsx', 'utf8');
