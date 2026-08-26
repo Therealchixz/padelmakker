@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { theme, btn } from '../lib/platformTheme';
 import { AppModal } from '../components/AppModal';
-import { courtSideLabel, freeMatchCourtSides } from '../lib/matchPlayerCourtSide';
+import { courtSideLabel, freeMatchCourtSides, teamPlayerNameWithSide } from '../lib/matchPlayerCourtSide';
 
 function teamRoster(matchPlayers, teamNum) {
   return (matchPlayers || []).filter((p) => Number(p.team) === teamNum);
 }
 
-function firstNames(players) {
-  return players.map((p) => (p.user_name || '?').split(' ')[0]).join(', ');
+function TeamPlayersHint({ players }) {
+  if (!players.length) return null;
+  return (
+    <div style={{ fontSize: '12px', fontWeight: 400, marginTop: '6px', lineHeight: 1.45 }}>
+      {players.map((p) => (
+        <div key={p.user_id || p.user_name}>{teamPlayerNameWithSide(p)}</div>
+      ))}
+    </div>
+  );
 }
 
 export function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
@@ -89,20 +96,12 @@ export function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
 
         <button type="button" onClick={() => pickTeam(1)} disabled={team1Full} style={teamBtnStyle(team1Full)}>
           Hold 1 ({team1.length}/2)
-          {team1.length > 0 && (
-            <div style={{ fontSize: '12px', fontWeight: 400, marginTop: '4px' }}>
-              {firstNames(team1)}
-            </div>
-          )}
+          <TeamPlayersHint players={team1} />
         </button>
 
         <button type="button" onClick={() => pickTeam(2)} disabled={team2Full} style={{ ...teamBtnStyle(team2Full), marginBottom: '16px' }}>
           Hold 2 ({team2.length}/2)
-          {team2.length > 0 && (
-            <div style={{ fontSize: '12px', fontWeight: 400, marginTop: '4px' }}>
-              {firstNames(team2)}
-            </div>
-          )}
+          <TeamPlayersHint players={team2} />
         </button>
 
         <button type="button" onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>

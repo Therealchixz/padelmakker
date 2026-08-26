@@ -13,6 +13,17 @@ export function courtSideLabel(side) {
   return normalizeMatchCourtSide(side) === 'right' ? 'Højre' : 'Venstre';
 }
 
+export function playerFirstName(player) {
+  return String(player?.user_name || '?').trim().split(/\s+/)[0] || '?';
+}
+
+/** "Mike · Venstre" — kun side hvis den er valgt. */
+export function teamPlayerNameWithSide(player) {
+  const name = playerFirstName(player);
+  const side = normalizeMatchCourtSide(player?.court_side);
+  return side ? `${name} · ${courtSideLabel(side)}` : name;
+}
+
 export function oppositeCourtSide(side) {
   return normalizeMatchCourtSide(side) === 'right' ? 'left' : 'right';
 }

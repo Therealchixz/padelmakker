@@ -8,6 +8,7 @@ import {
   normalizeMatchCourtSide,
   oppositeCourtSide,
   sortPlayersByCourtSide,
+  teamPlayerNameWithSide,
   teamSlotsBySide,
 } from '../../src/lib/matchPlayerCourtSide.js';
 
@@ -49,6 +50,12 @@ test('sortPlayersByCourtSide har venstre først', () => {
   assert.equal(sorted[1].user_id, 'r');
 });
 
+test('teamPlayerNameWithSide viser valgt side ved navnet', () => {
+  assert.equal(teamPlayerNameWithSide({ user_name: 'Mike Pedersen', court_side: 'left' }), 'Mike · Venstre');
+  assert.equal(teamPlayerNameWithSide({ user_name: 'Anna', court_side: 'højre' }), 'Anna · Højre');
+  assert.equal(teamPlayerNameWithSide({ user_name: 'Bo' }), 'Bo');
+});
+
 test('freeMatchCourtSides er begge når holdet er tomt', () => {
   assert.deepEqual(freeMatchCourtSides([]), ['left', 'right']);
   assert.deepEqual(freeMatchCourtSides([{ court_side: 'left' }]), ['right']);
@@ -64,7 +71,7 @@ test('kampdetalje viser side uden at ændre slot-layoutet', () => {
   const modal = readFileSync('src/dashboard/TeamSelectModal.jsx', 'utf8');
   assert.match(modal, /Vælg hold/);
   assert.match(modal, /Vælg side/);
-  assert.match(modal, /freeMatchCourtSides/);
+  assert.match(modal, /teamPlayerNameWithSide/);
   assert.doesNotMatch(modal, /Vælg hold og side/);
 });
 
