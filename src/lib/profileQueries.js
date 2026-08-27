@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { normalizeProfileRow } from './profileUtils';
 import { fetchRowsInChunks } from './supabaseChunkFetch';
+import { attachResolvedCityCoords } from './dawaPlaceSearch';
 
 /**
  * Alle profil-kolonner undtagen `email` (column privilege revoked for API).
@@ -78,7 +79,7 @@ export async function fetchMakkerePlayerProfiles() {
     .select(PROFILE_MAKKERE_SELECT)
     .eq('is_banned', false);
   if (error) throw error;
-  return (data || []).map((row) => normalizeProfileRow(row));
+  return attachResolvedCityCoords((data || []).map((row) => normalizeProfileRow(row)));
 }
 
 /**

@@ -24,6 +24,8 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.match(onboarding, /Dit område/);
   assert.match(makkereTab, /loadError/);
   assert.match(makkereTab, /formatProfileLocationLine/);
+  const queries = readFileSync(join(dir, '../../src/lib/profileQueries.js'), 'utf8');
+  assert.match(queries, /attachResolvedCityCoords/);
   assert.doesNotMatch(onboarding, /seeking_match/);
   assert.doesNotMatch(onboarding, /intent_now/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);

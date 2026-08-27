@@ -11,12 +11,14 @@ import {
 test('isValidCityPlace requires city and coordinates', () => {
   assert.equal(isValidCityPlace(null), false);
   assert.equal(isValidCityPlace({ city: 'Aarhus' }), false);
+  assert.equal(isValidCityPlace({ city: 'Aarhus', latitude: null, longitude: null }), false);
   assert.equal(isValidCityPlace({ city: 'Aarhus', latitude: 56.16, longitude: 10.2 }), true);
 });
 
 test('hasIncompleteCityProfile detects city text without coordinates', () => {
   assert.equal(hasIncompleteCityProfile(null), false);
   assert.equal(hasIncompleteCityProfile({ city: 'Aalborg' }), true);
+  assert.equal(hasIncompleteCityProfile({ city: 'Aarhus', latitude: null, longitude: null }), true);
   assert.equal(hasIncompleteCityProfile({ city: 'Aalborg', latitude: 57.05, longitude: 9.92 }), false);
 });
 
@@ -169,4 +171,37 @@ test('searchDawaPlaces uses postnumre only for digit queries (no stednavne noise
   assert.equal(stednavneCalled, false);
   assert.equal(places.length, 1);
   assert.equal(places[0].label, '9310 Vodskov');
+});
+
+test('attachResolvedCityCoords slår by op når lat/lng mangler', async () => {
+  const { attachResolvedCityCoords } = await import('../../src/lib/dawaPlaceSearch.js');
+  const fetchImpl = async (url) => {
+    if (String(url).includes('stednavne')) {
+      return { ok: true, json: async () => [] };
+    }
+    return {
+      ok: true,
+      json: async () => [{
+        tekst: '8000 Aarhus C',
+        postnummer: {
+          nr: '8000',
+          navn: 'Aarhus C',
+          visueltcenter_x: 10.2,
+          visueltcenter_y: 56.15,
+        },
+      }],
+    };
+  };
+
+  const [withCoords, filled, empty] = await attachResolvedCityCoords([
+    { id: '1', city: 'Nørresundby', latitude: 57.08, longitude: 9.93 },
+    { id: '2', city: 'Aarhus', latitude: null, longitude: null },
+    { id: '3', city: null, latitude: null, longitude: null },
+  ], { fetchImpl });
+
+  assert.equal(withCoords.latitude, 57.08);
+  assert.equal(filled.city, 'Aarhus');
+  assert.equal(filled.latitude, 56.15);
+  assert.equal(filled.longitude, 10.2);
+  assert.equal(empty.latitude, null);
 });

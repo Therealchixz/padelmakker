@@ -1,3 +1,5 @@
+import { parseGeoCoords } from './geoDistance.js';
+
 const STEDNAVNE_URL = 'https://api.dataforsyningen.dk/stednavne/autocomplete';
 const POSTNUMRE_URL = 'https://api.dataforsyningen.dk/postnumre/autocomplete';
 
@@ -117,7 +119,8 @@ export async function searchDawaPlaces(query, { limit = 8, fetchImpl = fetch } =
 export function isValidCityPlace(place) {
   if (!place || typeof place !== 'object') return false;
   const city = String(place.city || '').trim();
-  return city.length > 0 && Number.isFinite(Number(place.latitude)) && Number.isFinite(Number(place.longitude));
+  // Number(null) === 0 — må ikke tælle som gyldig placering.
+  return city.length > 0 && Boolean(parseGeoCoords(place.latitude, place.longitude));
 }
 
 /** Bynavn gemt uden koordinater — km kan ikke vises før DAWA-valg. */
@@ -211,4 +214,40 @@ export function cityPlaceFromProfile(profile) {
   const longitude = profile.longitude != null ? Number(profile.longitude) : NaN;
   if (!city || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
   return { id: `profile-${city}`, label: city, city, latitude, longitude, source: 'profile' };
+}
+
+/**
+ * Tilføj lat/lng på profiler der kun har bynavn, så Makkere kan vise ca. km.
+ * Skriver ikke til databasen — kun visning/matchmaking i klienten.
+ */
+export async function attachResolvedCityCoords(profiles, { fetchImpl = fetch } = {}) {
+  const list = Array.isArray(profiles) ? profiles : [];
+  const cache = new Map();
+  const out = [];
+  for (const profile of list) {
+    if (isValidCityPlace(profile)) {
+      out.push(profile);
+      continue;
+    }
+    const city = String(profile?.city || '').trim();
+    if (!city) {
+      out.push(profile);
+      continue;
+    }
+    const key = city.toLowerCase();
+    if (!cache.has(key)) {
+      try {
+        cache.set(key, await resolveCityPlaceFromName(city, { fetchImpl }));
+      } catch {
+        cache.set(key, null);
+      }
+    }
+    const place = cache.get(key);
+    if (place && Number.isFinite(place.latitude) && Number.isFinite(place.longitude)) {
+      out.push({ ...profile, latitude: place.latitude, longitude: place.longitude });
+    } else {
+      out.push(profile);
+    }
+  }
+  return out;
 }
