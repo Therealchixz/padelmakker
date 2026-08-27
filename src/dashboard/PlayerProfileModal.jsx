@@ -20,7 +20,7 @@ import { BeskedChatActions } from '../components/BeskedChatActions';
 import { fetchUsersIBlocked } from '../lib/userModeration';
 import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
 
-export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
+export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined, closeOnEscape = true }) {
   const open = !!player;
   const { profile: currentProfile } = useAuth();
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
@@ -192,17 +192,16 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose?.();
-      }
+      if (event.key !== 'Escape' || !closeOnEscape) return;
+      event.preventDefault();
+      onClose?.();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [onClose, open]);
+  }, [closeOnEscape, onClose, open]);
 
   const pRef = dataLoading ? (player || {}) : (profileRow || player || {});
   const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);

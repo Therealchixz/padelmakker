@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, Check } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { createNotification } from '../lib/notifications';
 import { theme } from '../lib/platformTheme';
 import { AppModal } from '../components/AppModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { fmtClock } from '../lib/matchDisplayUtils';
+import {
+  getCachedInviteMatchOptions,
+  loadInviteMatchOptions,
+} from '../lib/inviteMatchOptions';
 
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
 
@@ -66,47 +69,36 @@ function MatchRow({ item, selected, onSelect }) {
   );
 }
 
-export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, onInviteSent, onCreateMatch }) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function InviteToMatchModal({ open = true, invitee, currentUser, showToast, onClose, onInviteSent, onCreateMatch }) {
+  const cached = currentUser?.id ? getCachedInviteMatchOptions(currentUser.id) : null;
+  const [items, setItems] = useState(() => cached ?? []);
+  const [loading, setLoading] = useState(() => cached == null);
   const [selected, setSelected] = useState(null);
   const [sending, setSending] = useState(false);
 
-  const inviteeName = (invitee.full_name || invitee.name || 'Spilleren').split(' ')[0];
-  const senderName = currentUser.full_name || currentUser.name || 'En spiller';
+  const inviteeName = (invitee?.full_name || invitee?.name || 'Spilleren').split(' ')[0];
+  const senderName = currentUser?.full_name || currentUser?.name || 'En spiller';
 
   useEffect(() => {
-    async function load() {
-      const [matchRes, tourRes] = await Promise.all([
-        supabase
-          .from('matches')
-          .select('id, date, time, court_name, description, status')
-          .eq('creator_id', currentUser.id)
-          .in('status', ['open', 'full'])
-          .order('date', { ascending: true })
-          .limit(10),
-        supabase
-          .from('americano_tournaments')
-          .select('id, name, tournament_date, time_slot, description, status')
-          .eq('creator_id', currentUser.id)
-          .in('status', ['registration', 'in_progress'])
-          .order('tournament_date', { ascending: true })
-          .limit(10),
-      ]);
-      // Samme regel som chat-invitationer: kampe med passeret dato kan ikke inviteres til.
-      const today = new Date().toISOString().slice(0, 10);
-      setItems([
-        ...(matchRes.data || [])
-          .filter((m) => !m.date || m.date >= today)
-          .map((m) => ({ ...m, _type: 'match' })),
-        ...(tourRes.data || [])
-          .filter((t) => !t.tournament_date || t.tournament_date >= today)
-          .map((t) => ({ ...t, _type: 'americano' })),
-      ]);
-      setLoading(false);
-    }
-    void load();
-  }, [currentUser.id]);
+    if (!currentUser?.id) return undefined;
+    let cancelled = false;
+    void loadInviteMatchOptions(currentUser.id)
+      .then((next) => {
+        if (cancelled) return;
+        setItems(next);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelected(null);
+    setSending(false);
+  }, [open, invitee?.id]);
 
   const handleSend = async () => {
     if (!selected || sending) return;
@@ -148,8 +140,10 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
     }
   };
 
+  if (!open || !invitee || !currentUser) return null;
+
   return (
-    <AppModal open onClose={onClose} ariaLabel={`Inviter ${inviteeName}`} maxWidthPreset="sm" contentStyle={{ maxHeight: '80vh' }}>
+    <AppModal open onClose={onClose} ariaLabel={`Inviter ${inviteeName}`} maxWidthPreset="sm" zIndex={1200} contentStyle={{ maxHeight: '80vh' }}>
       <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
 
         {/* Player header */}
@@ -166,10 +160,21 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
         </div>
 
         {/* Match list */}
-        {loading ? (
-          <p style={{ color: theme.textLight, fontSize: 14, textAlign: 'center', padding: '20px 0' }}>
-            Henter dine kampe...
-          </p>
+        {loading && items.length === 0 ? (
+          <div aria-hidden style={{ marginBottom: 4 }}>
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                style={{
+                  height: 64,
+                  borderRadius: 14,
+                  marginBottom: 9,
+                  background: 'var(--pm-surface-muted)',
+                  border: '1px solid var(--pm-border)',
+                }}
+              />
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0 8px', color: theme.textMid, fontSize: 13 }}>
             Ingen kommende åbne kampe — kampe med passeret dato vises ikke. Opret en ny under &quot;Kampe&quot;.

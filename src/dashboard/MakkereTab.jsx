@@ -38,6 +38,7 @@ import {
   writeLocalFavoritesSet,
 } from '../lib/userFavorites';
 import { formatProfileLocationLine } from '../lib/profileLocationLabel.js';
+import { loadInviteMatchOptions } from '../lib/inviteMatchOptions';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
@@ -364,6 +365,11 @@ export function MakkereTab({ user, showToast }) {
   useEffect(() => {
     loadPlayers();
   }, [loadPlayers]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void loadInviteMatchOptions(user.id).catch(() => {});
+  }, [user?.id, viewPlayer?.id]);
 
   /* Hent kamp-historik mod alle andre spillere én gang ved load.
      Bruges af matchmakingen til at booste makker-kemi og fair modstander-match. */
@@ -1007,19 +1013,19 @@ export function MakkereTab({ user, showToast }) {
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
           onMessage={() => { setViewPlayer(null); navigate(`/dashboard/beskeder?med=${viewPlayer.id}`); }}
-          onInviteMatch={() => { const p = viewPlayer; setViewPlayer(null); setInviteTarget(p); }}
+          onInviteMatch={() => setInviteTarget(viewPlayer)}
+          closeOnEscape={!inviteTarget}
         />
       )}
-      {inviteTarget && (
-        <InviteToMatchModal
-          invitee={inviteTarget}
-          currentUser={user}
-          showToast={showToast}
-          onInviteSent={handleInviteSent}
-          onCreateMatch={() => { setInviteTarget(null); navigate('/dashboard/kampe?create=1'); }}
-          onClose={() => setInviteTarget(null)}
-        />
-      )}
+      <InviteToMatchModal
+        open={!!inviteTarget}
+        invitee={inviteTarget}
+        currentUser={user}
+        showToast={showToast}
+        onInviteSent={handleInviteSent}
+        onCreateMatch={() => { setInviteTarget(null); navigate('/dashboard/kampe?create=1'); }}
+        onClose={() => setInviteTarget(null)}
+      />
     </div>
   );
 }
