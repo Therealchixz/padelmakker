@@ -84,6 +84,83 @@ export function downloadIcs(filename, ics) {
   }
 }
 
+export function buildGoogleCalendarUrl({ title, start, end, location, description }) {
+  const dtEnd = end && end.isValid ? end : start.plus({ minutes: 90 });
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title || 'Padelkamp',
+    dates: `${fmtUtc(start)}/${fmtUtc(dtEnd)}`,
+    location: location || '',
+    details: description || '',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function isMobileCalendarClient() {
+  if (typeof navigator === 'undefined') return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+}
+
+function clickAnchor(href, { download, target } = {}) {
+  if (typeof document === 'undefined') return false;
+  const a = document.createElement('a');
+  a.href = href;
+  if (download) a.download = download;
+  if (target) {
+    a.target = target;
+    a.rel = 'noopener noreferrer';
+  }
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return true;
+}
+
+/**
+ * Åbn systemkalender / Google Kalender med eventet.
+ * iOS-PWA ignorerer data:-URL'er, så vi bruger share-sheet eller et rigtigt http-link.
+ * @returns {Promise<'shared'|'aborted'|'opened'|'download'|false>}
+ */
+export async function openCalendarInvite({
+  ics,
+  fileName,
+  title,
+  start,
+  end,
+  location,
+  description,
+}) {
+  const icsName = String(fileName || 'padelkamp.ics').endsWith('.ics')
+    ? String(fileName || 'padelkamp.ics')
+    : `${fileName}.ics`;
+  const googleUrl = buildGoogleCalendarUrl({ title, start, end, location, description });
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+
+  let file = null;
+  try {
+    file = new File([blob], icsName, { type: 'text/calendar' });
+  } catch {
+    file = null;
+  }
+
+  const nav = typeof navigator !== 'undefined' ? navigator : null;
+  if (file && typeof nav?.share === 'function' && nav.canShare?.({ files: [file] })) {
+    try {
+      await nav.share({ files: [file], title: title || 'Tilføj til kalender' });
+      return 'shared';
+    } catch (err) {
+      if (err?.name === 'AbortError') return 'aborted';
+    }
+  }
+
+  if (isMobileCalendarClient()) {
+    return clickAnchor(googleUrl, { target: '_blank' }) ? 'opened' : false;
+  }
+
+  return downloadIcs(icsName, ics) ? 'download' : false;
+}
+
 /** Læg en padelkamp i kalenderen. Returnerer false hvis dato/tid mangler. */
 export function addMatchToCalendar({ id, title, date, time, timeEnd, court, description }) {
   const start = copenhagenLocalDateTime(date, time);
@@ -97,7 +174,15 @@ export function addMatchToCalendar({ id, title, date, time, timeEnd, court, desc
     start,
     end,
   });
-  return downloadIcs(`padelkamp-${date}`, ics);
+  return openCalendarInvite({
+    ics,
+    fileName: `padelkamp-${date}`,
+    title: title || 'Padelkamp',
+    start,
+    end,
+    location: court || '',
+    description: description || '',
+  });
 }
 
 /** Læg en turnering (Americano/Mexicano/Liga) i kalenderen. */
@@ -113,5 +198,13 @@ export function addTournamentToCalendar({ id, name, date, time, location, durati
     start,
     end,
   });
-  return downloadIcs(`${(name || 'turnering').replace(/[^\w-]+/g, '-')}-${date}`, ics);
+  return openCalendarInvite({
+    ics,
+    fileName: `${(name || 'turnering').replace(/[^\w-]+/g, '-')}-${date}`,
+    title: name || 'Turnering',
+    start,
+    end,
+    location: location || '',
+    description: '',
+  });
 }

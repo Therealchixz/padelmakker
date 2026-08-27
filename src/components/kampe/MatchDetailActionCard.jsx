@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   CalendarPlus,
   Check,
@@ -7,19 +6,12 @@ import {
   Share2,
   UserMinus,
 } from 'lucide-react';
-import {
-  fetchLastMatchMessage,
-} from '../../lib/matchChatUtils';
-import { formatMatchChatPreview } from '../../lib/matchChatPreview';
 
 export function MatchDetailActionCard({
-  matchId,
-  currentUserId = null,
   canUseMatchChat = false,
   chatOpen = false,
   onToggleChat,
   unreadChatCount = 0,
-  chatMessages = [],
   chatPanel = null,
   joined = false,
   status = null,
@@ -32,33 +24,11 @@ export function MatchDetailActionCard({
   leaveBusy = false,
   extraAction = null,
 }) {
-  const [fetchedLast, setFetchedLast] = useState(null);
-  const liveLast = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
-  const liveLastId = liveLast?.id || null;
-  const previewMsg = liveLast || fetchedLast;
   const showJoinedBlock = joined && status !== 'completed';
   const showCalendar = showJoinedBlock && typeof onAddToCalendar === 'function';
   const showShareBtn = showJoinedBlock && showShare && typeof onShare === 'function';
   const hasCard =
     canUseMatchChat || showJoinedBlock || showLeave || extraAction;
-
-  useEffect(() => {
-    if (!canUseMatchChat || !matchId || liveLastId) {
-      if (liveLastId) setFetchedLast(null);
-      return undefined;
-    }
-    let cancelled = false;
-    fetchLastMatchMessage(matchId)
-      .then((msg) => {
-        if (!cancelled) setFetchedLast(msg);
-      })
-      .catch(() => {
-        if (!cancelled) setFetchedLast(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [canUseMatchChat, matchId, liveLastId]);
 
   if (!hasCard) return null;
 
@@ -71,13 +41,13 @@ export function MatchDetailActionCard({
             className="pm-kd-action-chat"
             onClick={() => onToggleChat?.()}
             aria-expanded={chatOpen}
+            aria-label="Match chat"
           >
             <span className="pm-kd-action-chat-ic" aria-hidden>
               <MessageCircle size={18} />
             </span>
             <span className="pm-kd-action-chat-copy">
               <b>Match chat</b>
-              <span>{formatMatchChatPreview(previewMsg, currentUserId)}</span>
             </span>
             {unreadChatCount > 0 ? (
               <span className="pm-kd-action-unread" aria-label={`${unreadChatCount} ulæste beskeder`} />

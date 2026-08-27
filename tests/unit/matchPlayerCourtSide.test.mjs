@@ -80,8 +80,12 @@ test('kampdetalje viser side uden at ændre slot-layoutet', () => {
 test('kampdetalje bundkort har chat, del, kalender og afmeld', () => {
   const tab = readFileSync('src/dashboard/KampeTab.jsx', 'utf8');
   assert.match(tab, /MatchDetailActionCard/);
+  assert.match(tab, /openCalendarInvite/);
+  assert.doesNotMatch(tab, /data:text\/calendar/);
   const card = readFileSync('src/components/kampe/MatchDetailActionCard.jsx', 'utf8');
   assert.match(card, /Match chat/);
+  assert.doesNotMatch(card, /formatMatchChatPreview/);
+  assert.doesNotMatch(card, /Ingen beskeder endnu/);
   assert.match(card, /Du er tilmeldt/);
   assert.match(card, /Del kamp/);
   assert.match(card, /Tilføj kalender/);

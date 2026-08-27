@@ -25,6 +25,7 @@ import {
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { openCalendarInvite } from '../lib/calendarExport';
 import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import {
@@ -1937,10 +1938,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
   };
 
-  const addMatchToCalendar = useCallback((match) => {
+  const addMatchToCalendar = useCallback(async (match) => {
     const windowRef = typeof window !== 'undefined' ? window : null;
-    const navigatorRef = typeof navigator !== 'undefined' ? navigator : null;
-    if (!windowRef || !navigatorRef) return;
+    if (!windowRef) return;
 
     const timing = calendarWindowForMatch(match);
     if (!timing) {
@@ -1973,37 +1973,30 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     });
 
     const fileName = `padelmakker-kamp-${String(match.id).replace(/[^a-zA-Z0-9_-]/g, '') || 'event'}.ics`;
-    const userAgent = String(navigatorRef.userAgent || '');
-    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-    const isAndroid = /Android/i.test(userAgent);
+    const result = await openCalendarInvite({
+      ics,
+      fileName,
+      title,
+      start: timing.start,
+      end: timing.end,
+      location: locationName,
+      description,
+    });
 
-    if (isIOS) {
-      const dataUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
-      windowRef.location.assign(dataUrl);
-      showToast('Kalender åbnet. Vælg "Tilføj" for at gemme kampen.');
+    if (result === 'aborted') return;
+    if (result === 'shared') {
+      showToast('Vælg Kalender for at gemme kampen.');
       return;
     }
-
-    if (isAndroid) {
-      const dates = `${toIcsUtc(timing.start)}/${toIcsUtc(timing.end)}`;
-      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${encodeURIComponent(dates)}&location=${encodeURIComponent(locationName)}&details=${encodeURIComponent(description)}`;
-      const popup = windowRef.open(googleUrl, '_blank', 'noopener,noreferrer');
-      if (!popup) windowRef.location.assign(googleUrl);
+    if (result === 'opened') {
       showToast('Kalender åbnet. Bekræft eventen for at gemme den.');
       return;
     }
-
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const url = windowRef.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    windowRef.setTimeout(() => windowRef.URL.revokeObjectURL(url), 0);
-    showToast('Kalenderfil hentet. Åbn filen for at tilføje kampen.');
+    if (result === 'download') {
+      showToast('Kalenderfil hentet. Åbn filen for at tilføje kampen.');
+      return;
+    }
+    showToast('Kunne ikke åbne kalenderen.', 'error');
   }, [matchPlayers, showToast]);
 
   const submitResult = async (matchId, result) => {
@@ -2672,13 +2665,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           </div>
         ) : null}
         <MatchDetailActionCard
-          matchId={m.id}
-          currentUserId={user.id}
           canUseMatchChat={canUseMatchChat}
           chatOpen={chatOpen}
           onToggleChat={() => { void toggleMatchChat(m.id); }}
           unreadChatCount={unreadChatCount}
-          chatMessages={chatMessages}
           chatPanel={chatOpen ? (
             <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: 0 }}>
               {!canWriteMatchChat && isAdmin ? (
