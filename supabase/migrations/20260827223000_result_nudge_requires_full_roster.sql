@@ -1,12 +1,5 @@
--- Påmindelse når et kampforslag nærmer sig svarfristen.
---
--- Et forslag dør, hvis bare én af de fire aldrig svarer. Den oprindelige besked
--- kan let drukne i en travl dag, så her gives der ét skub, mens der stadig er
--- tid til at nå det.
---
--- Påmindelsen hægtes på den eksisterende reminder-pipeline frem for en ny cron:
--- get_due_reminders() leverer rækkerne, send-reminders sender dem, og
--- reminder_log sikrer at hver spiller kun skubbes én gang pr. forslag.
+-- Resultat-påmindelse kun når kampen faktisk havde fire spillere.
+-- Åbne kampe uden fuldt hold er aldrig gået i gang.
 
 CREATE OR REPLACE FUNCTION public.get_due_reminders()
 RETURNS TABLE (
@@ -69,8 +62,6 @@ AS $$
     ) as k(kind, due)
     where k.due
   ),
-  -- Kun dem der endnu ikke har svaret. `start_at` bærer her svarfristen, så
-  -- send-reminders kan skrive klokkeslættet uden at kende til puljemodellen.
   proposal_deadlines as (
     select 'proposal_deadline'::text as kind,
            'match_proposal'::text as entity_type,
@@ -84,9 +75,7 @@ AS $$
     join match_proposal_members mem on mem.proposal_id = pr.id
     where pr.status = 'pending'
       and mem.response = 'pending'
-      -- Under 20 minutter når skubbet ikke frem i tide; cron kører hvert kvarter.
       and pr.expires_at between now() + interval '20 minutes' and now() + interval '3 hours'
-      -- Forslag med kort lunte er lige blevet varslet — undgå dobbeltbesked.
       and pr.created_at <= now() - interval '45 minutes'
   ),
   all_due as (

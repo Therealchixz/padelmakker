@@ -340,6 +340,14 @@ test('påmindelsen genbruger reminder_log, så ingen skubbes to gange', () => {
   assert.match(REMINDER_SQL, /from reminder_log rl/);
 });
 
+test('resultat-påmindelse kræver et fuldt hold, ikke en åben kamp uden spillere', () => {
+  assert.match(REMINDER_SQL, /result_nudges as/);
+  assert.match(
+    REMINDER_SQL,
+    /count\(\*\) from match_players mp where mp\.match_id = m\.id\) >= 4/,
+  );
+});
+
 test('påmindelsen sendes som invitation, ikke som stille kamp-besked', () => {
   assert.match(REMINDER_FN, /proposal_deadline"\s*\?\s*"invitation"/);
   assert.match(REMINDER_FN, /if \(row\.kind === "proposal_deadline"\) return "match_proposal_reminder";/);
