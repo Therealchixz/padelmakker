@@ -247,7 +247,7 @@ export function MakkereTab({ user, showToast }) {
   const [filterCourtSide, setFilterCourtSide] = useState('all');
   const [filterSeeking, setFilterSeeking] = useState(() => shouldShowSeekingFromUrl);
   const [filterFav, setFilterFav]     = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [players, setPlayers]         = useState([]);
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
