@@ -30,6 +30,13 @@ export function mapAuthErrorMessage(message, context = 'login') {
   if (m.includes('captcha') || m.includes('turnstile')) {
     return 'Bekræft venligst, at du ikke er en robot.';
   }
+  if (
+    (m.includes('already') && (m.includes('registered') || m.includes('exists') || m.includes('in use')))
+    || m.includes('email_exists')
+    || m.includes('user already registered')
+  ) {
+    return 'Den e-mail er allerede i brug på en anden konto.';
+  }
 
   const raw = String(message || '').trim();
   if (!raw || /^[a-z_]+$/i.test(raw) && raw.includes('_')) {

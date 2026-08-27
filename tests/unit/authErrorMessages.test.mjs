@@ -17,6 +17,13 @@ describe('mapAuthErrorMessage', () => {
     );
   });
 
+  it('maps email already registered', () => {
+    assert.equal(
+      mapAuthErrorMessage('A user with this email address has already been registered'),
+      'Den e-mail er allerede i brug på en anden konto.',
+    );
+  });
+
   it('uses forgot context fallback', () => {
     assert.equal(
       mapAuthErrorMessage('something_went_wrong', 'forgot'),

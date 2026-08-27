@@ -39,11 +39,11 @@ export function SignupEmailSentPage() {
 
   useEffect(() => {
     if (!email) {
-      navigate('/opret', { replace: true });
+      navigate(user ? '/profil/fuldfoer' : '/opret', { replace: true });
       return;
     }
     writePendingSignupEmail({ email, phone: phone || undefined });
-  }, [email, phone, navigate]);
+  }, [email, phone, navigate, user]);
 
   useEffect(() => {
     if (user?.email_confirmed_at) {
@@ -70,11 +70,19 @@ export function SignupEmailSentPage() {
     setResendErr('');
     setResendInfo('');
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-      });
-      if (error) throw error;
+      if (user?.id) {
+        const { error } = await supabase.auth.updateUser({ email });
+        if (error) {
+          const retry = await supabase.auth.resend({ type: 'email_change', email });
+          if (retry.error) throw error;
+        }
+      } else {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+        });
+        if (error) throw error;
+      }
       setResendAtMs(Date.now() + RESEND_COOLDOWN_MS);
       setNowMs(Date.now());
       setResendInfo('Ny bekræftelsesmail er sendt. Tjek indbakke og spam.');

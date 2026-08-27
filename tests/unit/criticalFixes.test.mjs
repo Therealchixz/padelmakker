@@ -20,6 +20,7 @@ test('shouldRequireEmailVerification blocks dashboard until email is confirmed',
     true,
   );
   assert.equal(shouldRequireEmailVerification({ email: '', email_confirmed_at: null }), false);
+  assert.equal(shouldRequireEmailVerification({ email: '', email_confirmed_at: null }, { pendingEmail: 'a@b.dk' }), true);
 });
 
 test('email gate runs before phone gate in routing', async () => {

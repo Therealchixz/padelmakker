@@ -8,6 +8,8 @@ import {
   shouldRequireEmailVerification,
   shouldRequirePhoneVerification,
 } from "./lib/phoneVerification";
+import { needsLoginCompletenessPage } from "./lib/profileCompleteness";
+import { readPendingSignupEmail } from "./lib/signupEmailPending";
 import { font, theme, btn } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
@@ -45,6 +47,7 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) 
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+const CompleteProfilePageLazy = lazy(() => import("./pages/CompleteProfilePage").then((m) => ({ default: m.CompleteProfilePage })));
 const CampaignRulesPageLazy = lazy(() => import("./pages/CampaignRulesPage").then((m) => ({ default: m.CampaignRulesPage })));
 const ProposalDesignPreviewPageLazy = lazy(() =>
   import("./pages/ProposalDesignPreviewPage").then((m) => ({ default: m.ProposalDesignPreviewPage }))
@@ -55,22 +58,32 @@ export default function PadelMakker() {
   const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile, phoneVerificationExempt);
   const onboardingComplete = hasProfile && canAccessDashboard(user, profile, { phoneExempt });
   const canUseApp = onboardingComplete;
-  const requiresEmailVerification = Boolean(user && shouldRequireEmailVerification(user));
-  const requiresPhoneVerification = canUseApp && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile, phoneVerificationExempt);
-  const defaultAuthedPath = requiresEmailVerification
-    ? "/opret/bekraeft-email"
-    : requiresPhoneVerification
-      ? "/opret/bekraeft-telefon"
-      : "/dashboard";
-  const emailConfirmState = requiresEmailVerification && user?.email
-    ? { email: String(user.email).trim() }
+  const pendingEmail = readPendingSignupEmail()?.email || "";
+  const requiresProfileCompleteness = Boolean(
+    user && canUseApp && needsLoginCompletenessPage(user, profile, { phoneExempt, pendingEmail }),
+  );
+  const requiresEmailVerification = Boolean(
+    user && !requiresProfileCompleteness && shouldRequireEmailVerification(user, { pendingEmail }),
+  );
+  const requiresPhoneVerification = canUseApp && !requiresProfileCompleteness && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile, phoneVerificationExempt);
+  const defaultAuthedPath = requiresProfileCompleteness
+    ? "/profil/fuldfoer"
+    : requiresEmailVerification
+      ? "/opret/bekraeft-email"
+      : requiresPhoneVerification
+        ? "/opret/bekraeft-telefon"
+        : "/dashboard";
+  const emailConfirmState = requiresEmailVerification && (user?.email || pendingEmail)
+    ? { email: String(user?.email || pendingEmail).trim() }
     : undefined;
   const dashboardGate = canUseApp
-    ? requiresEmailVerification
-      ? <Navigate to="/opret/bekraeft-email" replace state={emailConfirmState} />
-      : requiresPhoneVerification
-        ? <Navigate to="/opret/bekraeft-telefon" replace />
-        : null
+    ? requiresProfileCompleteness
+      ? <Navigate to="/profil/fuldfoer" replace />
+      : requiresEmailVerification
+        ? <Navigate to="/opret/bekraeft-email" replace state={emailConfirmState} />
+        : requiresPhoneVerification
+          ? <Navigate to="/opret/bekraeft-telefon" replace />
+          : null
     : null;
   const [toast, setToast] = useState(/** @type {{ message: string, type: 'success'|'error'|'info' } | null} */ (null));
   const [resetMode, setResetMode] = useState(false);
@@ -84,11 +97,11 @@ export default function PadelMakker() {
   }, [location.search]);
 
   useEffect(() => {
-    if (!canUseApp || requiresEmailVerification || requiresPhoneVerification) return;
+    if (!canUseApp || requiresProfileCompleteness || requiresEmailVerification || requiresPhoneVerification) return;
     const returnPath = consumeAuthReturnPath();
     if (!returnPath) return;
     navigate(mapAuthReturnToDashboardPath(returnPath), { replace: true });
-  }, [canUseApp, requiresEmailVerification, requiresPhoneVerification, navigate]);
+  }, [canUseApp, requiresProfileCompleteness, requiresEmailVerification, requiresPhoneVerification, navigate]);
   const showToast = useCallback((msg, type) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     const message = String(msg || '');
@@ -199,19 +212,35 @@ export default function PadelMakker() {
             <Route
               path="/opret/bekraeft-email"
               element={
-                requiresEmailVerification
-                  ? <SignupEmailSentPageLazy />
-                  : canUseApp
-                    ? <Navigate to={defaultAuthedPath} replace />
-                    : <SignupEmailSentPageLazy />
+                requiresProfileCompleteness
+                  ? <Navigate to="/profil/fuldfoer" replace />
+                  : requiresEmailVerification
+                    ? <SignupEmailSentPageLazy />
+                    : canUseApp
+                      ? <Navigate to={defaultAuthedPath} replace />
+                      : <SignupEmailSentPageLazy />
               }
             />
             <Route
               path="/opret/bekraeft-telefon"
               element={
                 canUseApp
-                  ? (requiresPhoneVerification ? <PhoneVerificationPageLazy /> : <Navigate to={defaultAuthedPath} replace />)
+                  ? (requiresProfileCompleteness
+                    ? <Navigate to="/profil/fuldfoer" replace />
+                    : requiresPhoneVerification
+                      ? <PhoneVerificationPageLazy />
+                      : <Navigate to={defaultAuthedPath} replace />)
                   : <PhoneVerificationPageLazy />
+              }
+            />
+            <Route
+              path="/profil/fuldfoer"
+              element={
+                canUseApp
+                  ? (requiresProfileCompleteness
+                    ? <CompleteProfilePageLazy />
+                    : <Navigate to={defaultAuthedPath} replace />)
+                  : <Navigate to="/login" replace />
               }
             />
             <Route path="/privatlivspolitik" element={<PrivacyPageLazy />} />

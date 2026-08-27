@@ -9,6 +9,7 @@ import { mapPhoneAuthErrorMessage } from '../lib/authErrorMessages'
 import { TurnstileWidget } from '../components/TurnstileWidget'
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
 import { writePendingSignupEmail } from '../lib/signupEmailPending'
+import { readPrefillPhone, clearPrefillPhone } from '../lib/profileCompleteness'
 import { tryAutoEnrollGrowthCampaign } from '../lib/growthCampaign'
 import { scrollToFieldById } from '../lib/formValidationScroll'
 
@@ -167,6 +168,10 @@ export function PhoneVerificationPage() {
     () => normalizePhoneToE164(location.state?.phone),
     [location.state?.phone]
   )
+  const prefillPhone = useMemo(
+    () => normalizePhoneToE164(location.state?.prefillPhone || readPrefillPhone()),
+    [location.state?.prefillPhone]
+  )
   const emailFromState = useMemo(
     () => String(location.state?.email || '').trim(),
     [location.state?.email]
@@ -185,6 +190,15 @@ export function PhoneVerificationPage() {
       return
     }
 
+    const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
+    if (shouldUseLegacyPhoneChangeFlow(user)) {
+      setMode('phone_change')
+      setPhoneInput((prev) => prev || prefillPhone || metaPhone || '')
+      setPendingPhone((prev) => prev || prefillPhone || metaPhone || '')
+      setPendingEmail(String(user?.email || '').trim())
+      return
+    }
+
     const stored = readPendingSignup()
     if (stored?.phone) {
       setMode('signup')
@@ -195,17 +209,8 @@ export function PhoneVerificationPage() {
       return
     }
 
-    const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
-    if (shouldUseLegacyPhoneChangeFlow(user)) {
-      setMode('phone_change')
-      setPhoneInput((prev) => prev || metaPhone || '')
-      setPendingPhone((prev) => prev || metaPhone || '')
-      setPendingEmail(String(user?.email || '').trim())
-      return
-    }
-
     setMode('signup')
-  }, [emailFromState, phoneFromState, user])
+  }, [emailFromState, phoneFromState, prefillPhone, user])
 
   useEffect(() => {
     if (resendAtMs <= Date.now()) return undefined
@@ -257,6 +262,7 @@ export function PhoneVerificationPage() {
       setResendAtMs(Date.now() + 60_000)
       setNowMs(Date.now())
       setInfo(`SMS-kode sendt til ${maskPhone(normalizedPhone)}.`)
+      clearPrefillPhone()
       if (turnstileEnabled) {
         setCaptchaToken('')
         setCaptchaResetNonce((n) => n + 1)
