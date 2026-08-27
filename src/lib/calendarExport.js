@@ -96,33 +96,23 @@ export function buildGoogleCalendarUrl({ title, start, end, location, descriptio
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function isMobileCalendarClient() {
+function isIosCalendarClient() {
   if (typeof navigator === 'undefined') return false;
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
 }
 
-function clickAnchor(href, { download, target } = {}) {
-  if (typeof document === 'undefined') return false;
-  const a = document.createElement('a');
-  a.href = href;
-  if (download) a.download = download;
-  if (target) {
-    a.target = target;
-    a.rel = 'noopener noreferrer';
-  }
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  return true;
+function isAndroidCalendarClient() {
+  if (typeof navigator === 'undefined') return false;
+  return /Android/i.test(navigator.userAgent || '');
 }
 
 /**
- * Åbn systemkalender / Google Kalender med eventet.
- * iOS-PWA ignorerer data:-URL'er, så vi bruger share-sheet eller et rigtigt http-link.
- * @returns {Promise<'shared'|'aborted'|'opened'|'download'|false>}
+ * Åbn kalenderen med eventet.
+ * iOS: data:text/calendar (Safari viser "Tilføj til Kalender") — ikke share-sheet.
+ * Android: Google Kalender-skabelon. Desktop: .ics-download.
+ * @returns {'opened-ios'|'opened'|'download'|false}
  */
-export async function openCalendarInvite({
+export function openCalendarInvite({
   ics,
   fileName,
   title,
@@ -131,31 +121,22 @@ export async function openCalendarInvite({
   location,
   description,
 }) {
+  if (typeof window === 'undefined') return false;
   const icsName = String(fileName || 'padelkamp.ics').endsWith('.ics')
     ? String(fileName || 'padelkamp.ics')
     : `${fileName}.ics`;
-  const googleUrl = buildGoogleCalendarUrl({ title, start, end, location, description });
-  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
 
-  let file = null;
-  try {
-    file = new File([blob], icsName, { type: 'text/calendar' });
-  } catch {
-    file = null;
+  if (isIosCalendarClient()) {
+    const dataUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+    window.location.assign(dataUrl);
+    return 'opened-ios';
   }
 
-  const nav = typeof navigator !== 'undefined' ? navigator : null;
-  if (file && typeof nav?.share === 'function' && nav.canShare?.({ files: [file] })) {
-    try {
-      await nav.share({ files: [file], title: title || 'Tilføj til kalender' });
-      return 'shared';
-    } catch (err) {
-      if (err?.name === 'AbortError') return 'aborted';
-    }
-  }
-
-  if (isMobileCalendarClient()) {
-    return clickAnchor(googleUrl, { target: '_blank' }) ? 'opened' : false;
+  if (isAndroidCalendarClient()) {
+    const googleUrl = buildGoogleCalendarUrl({ title, start, end, location, description });
+    const popup = window.open(googleUrl, '_blank', 'noopener,noreferrer');
+    if (!popup) window.location.assign(googleUrl);
+    return 'opened';
   }
 
   return downloadIcs(icsName, ics) ? 'download' : false;

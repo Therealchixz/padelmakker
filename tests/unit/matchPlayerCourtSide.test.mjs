@@ -81,7 +81,9 @@ test('kampdetalje bundkort har chat, del, kalender og afmeld', () => {
   const tab = readFileSync('src/dashboard/KampeTab.jsx', 'utf8');
   assert.match(tab, /MatchDetailActionCard/);
   assert.match(tab, /openCalendarInvite/);
-  assert.doesNotMatch(tab, /data:text\/calendar/);
+  const calendar = readFileSync('src/lib/calendarExport.js', 'utf8');
+  assert.match(calendar, /data:text\/calendar/);
+  assert.doesNotMatch(calendar, /navigator\.share/);
   const card = readFileSync('src/components/kampe/MatchDetailActionCard.jsx', 'utf8');
   assert.match(card, /Match chat/);
   assert.doesNotMatch(card, /formatMatchChatPreview/);

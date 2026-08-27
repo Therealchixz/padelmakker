@@ -1983,9 +1983,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       description,
     });
 
-    if (result === 'aborted') return;
-    if (result === 'shared') {
-      showToast('Vælg Kalender for at gemme kampen.');
+    if (result === 'opened-ios') {
+      showToast('Kalender åbnet. Vælg "Tilføj" for at gemme kampen.');
       return;
     }
     if (result === 'opened') {
