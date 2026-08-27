@@ -93,6 +93,11 @@ test('kampdetalje bundkort har chat, del, kalender og afmeld', () => {
   assert.match(card, /Del kamp/);
   assert.match(card, /Tilføj kalender/);
   assert.match(card, /Afmeld mig/);
+  const css = readFileSync('src/styles/kampdetalje.css', 'utf8');
+  assert.match(css, /\.pm-kd-action-leave \{[\s\S]*?padding: 10px 16px;/);
+  const layout = readFileSync('src/responsive.css', 'utf8');
+  assert.match(layout, /dash-main har allerede safe-area/);
+  assert.match(layout, /\.pm-kampe-v2-detail-page \.pm-kampe-v2-detail-scroll[\s\S]*?padding-bottom: 8px;/);
 });
 
 test('tilmelding vælger ledig bane-side og fanger unique på (kamp, bruger)', () => {

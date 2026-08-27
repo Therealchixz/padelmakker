@@ -8150,7 +8150,7 @@ button,
 }
 
 .pm-kampe-v2-court-wrap {
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 }
 
 .pm-kampe-v2-detail-sheet .pm-court-wrap {
@@ -8192,7 +8192,7 @@ button,
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-top: 8px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
 
 /* Pinned primær-handling i bunden af kamp-detaljen (tommelfinger-rækkevidde på mobil) */
@@ -8213,7 +8213,7 @@ button,
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 120px);
-  margin-bottom: 8px;
+  margin-bottom: 0;
   box-sizing: border-box;
 }
 
@@ -8221,7 +8221,7 @@ button,
   /* Horisontal indrykning styres af detail-siden (inkl. safe-area) */
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
 }
 
 .pm-kampe-v2-detail-page .pm-kampe-v2-create-head {
@@ -8246,6 +8246,8 @@ button,
   min-height: 0;
   padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
+  /* dash-main har allerede safe-area — undgå dobbelt luft under bundkortet */
+  padding-bottom: 8px;
   box-sizing: border-box;
 }
 
@@ -8261,7 +8263,7 @@ button,
   .pm-dash-main.pm-dash-main--kampe-detail {
     padding-top: max(clamp(20px, 5vw, 28px), calc(env(safe-area-inset-top) + 12px));
     /* Ingen plads til bundnavigation — den er skjult på detail-sider */
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   .pm-kampe-v2-detail-page {
@@ -8394,7 +8396,7 @@ button,
 }
 
 .pm-kampe-v2-detail-manage {
-  margin-top: 8px;
+  margin-top: 4px;
   padding-top: 0;
   border-top: none;
 }
