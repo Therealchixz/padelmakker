@@ -48,6 +48,7 @@ import {
   PROCESSED_UNREAD_MESSAGE_IDS,
   setMessageThreadCache,
 } from '../lib/chatCacheUtils';
+import { cachedDmMessages, getCachedChatPartner } from '../lib/playerChat';
 import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
 
 const CHAT_WINDOW_SIZE = 80;
@@ -58,19 +59,28 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
 
   const initWithUser = new URLSearchParams(location.search).get('med');
   const initWithTeam = new URLSearchParams(location.search).get('hold');
+  const locationPartner = location.state?.chatPartner;
+  const seededPartner = (
+    locationPartner && initWithUser && String(locationPartner.id) === String(initWithUser)
+      ? locationPartner
+      : getCachedChatPartner(initWithUser)
+  ) || null;
+  const seededMessages = cachedDmMessages(user?.id, initWithUser);
 
   const [conversations, setConversations] = useState([]);
   const [teamConversations, setTeamConversations] = useState([]);
-  const [profiles, setProfiles] = useState({});
+  const [profiles, setProfiles] = useState(() => (
+    seededPartner?.id ? { [seededPartner.id]: seededPartner } : {}
+  ));
   const [selectedId, setSelectedId] = useState(initWithTeam ? null : (initWithUser || null));
   const [selectedTeamId, setSelectedTeamId] = useState(initWithTeam || null);
   const [teamMeta, setTeamMeta] = useState(null);
   const [teamMessages, setTeamMessages] = useState([]);
-  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamLoading, setTeamLoading] = useState(() => Boolean(initWithTeam));
   const [teamLoadError, setTeamLoadError] = useState(null);
   const [teamSending, setTeamSending] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
-  const [partnerProfile, setPartnerProfile] = useState(null);
+  const [partnerProfile, setPartnerProfile] = useState(() => seededPartner);
   const [otherTyping, setOtherTyping] = useState(false);
   const [actionSheet, setActionSheet] = useState(null);
   const [pickerLoading, setPickerLoading] = useState(false);
@@ -79,12 +89,12 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [timeDraft, setTimeDraft] = useState({ date: '', time: '18:00' });
   const [joiningInviteId, setJoiningInviteId] = useState(null);
   const [acceptingTimeId, setAcceptingTimeId] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => seededMessages || []);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingConvos, setLoadingConvos] = useState(true);
   const [convoLoadError, setConvoLoadError] = useState(null);
-  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [loadingMsgs, setLoadingMsgs] = useState(() => Boolean(initWithUser) && !seededMessages);
   const [messageLoadError, setMessageLoadError] = useState(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeQuery, setComposeQuery] = useState('');
@@ -313,8 +323,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     const loadPartnerId = selectedId;
 
     if (!isCacheFresh) {
-      setLoadingMsgs(true);
-      setMessageLoadError(null);
+      if (!hasCachedThread) {
+        setLoadingMsgs(true);
+        setMessageLoadError(null);
+      }
       fetchMessages(user.id, loadPartnerId)
         .then(msgs => {
           if (cancelled || loadPartnerId !== selectedId) return;
@@ -416,7 +428,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       supabase.removeChannel(updateChannelOutgoing);
       typingUnsub();
       setOtherTyping(false);
-      setPartnerProfile(null);
     };
   }, [clearConversationUnread, scheduleMarkRead, selectedId, showToast, upsertConversationFromMessage, user?.id]);
 
@@ -773,6 +784,16 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   };
 
   const openConversation = (otherId) => {
+    const cached = cachedDmMessages(user?.id, otherId);
+    if (cached) {
+      setMessages(cached);
+      setLoadingMsgs(false);
+    } else {
+      setMessages([]);
+      setLoadingMsgs(true);
+    }
+    const known = profiles[otherId] || getCachedChatPartner(otherId);
+    if (known) setPartnerProfile(known);
     setSelectedId(otherId);
     setSelectedTeamId(null);
     setTeamMeta(null);
@@ -876,7 +897,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   }, [conversations, loadingConvos, profiles, user?.id]);
 
   const getName = (id) => {
-    const p = profiles[id];
+    const fromPartner = partnerProfile && String(partnerProfile.id) === String(id) ? partnerProfile : null;
+    const p = fromPartner || profiles[id];
     return p?.full_name || p?.name || 'Spiller';
   };
 

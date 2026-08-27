@@ -22,6 +22,7 @@ import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCo
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
 import { addMatchToCalendar } from '../lib/calendarExport';
+import { playerChatSearch, playerChatState } from '../lib/playerChat';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -1187,7 +1188,10 @@ export function HomeTab({ user, setTab, showToast }) {
           user={user}
           showToast={showToast}
           onMatchCreated={() => setTab('kampe')}
-          onMessagePlayer={(pid) => setTab('beskeder', { search: `med=${encodeURIComponent(String(pid))}` })}
+          onMessagePlayer={(playerOrId) => {
+            const player = playerOrId && typeof playerOrId === 'object' ? playerOrId : { id: playerOrId };
+            setTab('beskeder', { search: playerChatSearch(player.id), state: playerChatState(player) });
+          }}
         />
       ) : null}
 
@@ -1707,7 +1711,10 @@ export function HomeTab({ user, setTab, showToast }) {
                   seekingChannel: row.seekingChannel === 'makker' ? 'makker' : row.seekingChannel === 'kamp' ? 'kamp' : undefined,
                 };
                 const openSeekingPlayer = () => setViewPlayer(player);
-                const writeToPlayer = () => setTab("beskeder", { search: `med=${encodeURIComponent(String(row.userId))}` });
+                const writeToPlayer = () => setTab('beskeder', {
+                  search: playerChatSearch(row.userId),
+                  state: playerChatState({ id: row.userId, name: row.name }),
+                });
                 const isMakker = row.seekingChannel === 'makker';
                 const seekTone = isMakker ? theme.green : theme.blue;
                 const seekBg = isMakker ? theme.greenBg : theme.blueBg;
@@ -2108,7 +2115,10 @@ export function HomeTab({ user, setTab, showToast }) {
         <PlayerProfileModal
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
-          onMessage={() => { const pid = viewPlayer.id; setViewPlayer(null); setTab("beskeder", { search: `med=${encodeURIComponent(String(pid))}` }); }}
+          onMessage={() => {
+            const p = viewPlayer;
+            setTab('beskeder', { search: playerChatSearch(p.id), state: playerChatState(p) });
+          }}
         />
       )}
 

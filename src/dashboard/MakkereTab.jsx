@@ -39,6 +39,7 @@ import {
 } from '../lib/userFavorites';
 import { formatProfileLocationLine } from '../lib/profileLocationLabel.js';
 import { loadInviteMatchOptions } from '../lib/inviteMatchOptions';
+import { openPlayerChat, prefetchBeskedTabChunk } from '../lib/playerChat';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
@@ -368,6 +369,7 @@ export function MakkereTab({ user, showToast }) {
 
   useEffect(() => {
     if (!user?.id) return;
+    prefetchBeskedTabChunk();
     void loadInviteMatchOptions(user.id).catch(() => {});
   }, [user?.id, viewPlayer?.id]);
 
@@ -714,7 +716,7 @@ export function MakkereTab({ user, showToast }) {
                 displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
-                onMessage={(p) => navigate(`/dashboard/beskeder?med=${p.id}`)}
+                onMessage={(p) => openPlayerChat(navigate, p)}
                 onDismiss={dismissSuggestion}
               />
             ))}
@@ -951,7 +953,7 @@ export function MakkereTab({ user, showToast }) {
                   >
                     {favorites.has(String(p.id)) ? '★' : '☆'}
                   </button>
-                  <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
+                  <button onClick={() => openPlayerChat(navigate, p)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
                     Besked
                   </button>
                   <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
@@ -1012,7 +1014,7 @@ export function MakkereTab({ user, showToast }) {
         <PlayerProfileModal
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
-          onMessage={() => { setViewPlayer(null); navigate(`/dashboard/beskeder?med=${viewPlayer.id}`); }}
+          onMessage={() => openPlayerChat(navigate, viewPlayer)}
           onInviteMatch={() => setInviteTarget(viewPlayer)}
           closeOnEscape={!inviteTarget}
         />

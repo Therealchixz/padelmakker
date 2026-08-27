@@ -449,9 +449,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
           onMessage={
             onMessagePlayer
               ? () => {
-                  const pid = viewPlayer.id;
-                  setViewPlayer(null);
-                  onMessagePlayer(pid);
+                  onMessagePlayer(viewPlayer);
                 }
               : undefined
           }

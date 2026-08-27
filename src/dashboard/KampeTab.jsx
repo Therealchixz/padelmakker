@@ -28,6 +28,7 @@ import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscrib
 import { openCalendarInvite } from '../lib/calendarExport';
 import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
+import { openPlayerChat } from '../lib/playerChat';
 import {
   courtSideErrorMessage,
   courtSideLabel,
@@ -3808,9 +3809,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
           onMessage={() => {
-            const pid = viewPlayer.id;
-            setViewPlayer(null);
-            navigate(`/dashboard/beskeder?med=${encodeURIComponent(String(pid))}`);
+            openPlayerChat(navigate, viewPlayer);
           }}
         />
       )}

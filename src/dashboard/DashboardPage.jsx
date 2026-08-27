@@ -755,7 +755,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const setTab = useCallback((tabId, opts = {}) => {
     const raw = opts.search != null ? String(opts.search) : "";
     const q = raw ? (raw.startsWith("?") ? raw : `?${raw}`) : "";
-    navigate(`/dashboard/${tabId}${q}`);
+    navigate(`/dashboard/${tabId}${q}`, opts.state != null ? { state: opts.state } : undefined);
   }, [navigate]);
 
   useEffect(() => {

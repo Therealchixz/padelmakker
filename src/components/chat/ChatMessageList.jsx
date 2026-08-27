@@ -59,7 +59,7 @@ export function ChatMessageList({
       className={`pm-chat-v2-message-list${className ? ` ${className}` : ''}`}
       onScroll={onScroll}
     >
-      {loading && <div className="pm-chat-v2-message-status">Indlæser beskeder…</div>}
+      {loading && messages.length === 0 && <div className="pm-chat-v2-message-status">Indlæser beskeder…</div>}
       {!loading && error && <div className="pm-chat-v2-message-status">{error}</div>}
       {!loading && !error && messages.length === 0 && !typingVisible && (
         <div className="pm-chat-v2-message-empty">{emptyText}</div>

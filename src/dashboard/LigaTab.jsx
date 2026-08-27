@@ -10,6 +10,7 @@ import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { openPlayerChat } from '../lib/playerChat';
 import { LigaListCard } from './LigaListCard';
 import { LigaDetailSheet } from './LigaDetailSheet';
 import { LigaScheduleSheet } from './LigaScheduleSheet';
@@ -929,7 +930,7 @@ export function LigaTab({
         <PlayerProfileModal
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
-          onMessage={() => { setViewPlayer(null); navigate('/dashboard/beskeder?med=' + viewPlayer.id); }}
+          onMessage={() => openPlayerChat(navigate, viewPlayer)}
         />
       )}
 

@@ -19,6 +19,11 @@ import { useAuth } from '../lib/AuthContext';
 import { BeskedChatActions } from '../components/BeskedChatActions';
 import { fetchUsersIBlocked } from '../lib/userModeration';
 import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
+import {
+  prefetchBeskedTabChunk,
+  prefetchDmThread,
+  rememberChatPartner,
+} from '../lib/playerChat';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined, closeOnEscape = true }) {
   const open = !!player;
@@ -186,6 +191,15 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   useEffect(() => {
     void loadProfileData();
   }, [loadProfileData]);
+
+  const canOpenChat = typeof onMessage === 'function';
+  useEffect(() => {
+    if (!open || !canOpenChat || !player?.id || !currentProfile?.id) return undefined;
+    rememberChatPartner(player);
+    prefetchBeskedTabChunk();
+    void prefetchDmThread(currentProfile.id, player.id).catch(() => {});
+    return undefined;
+  }, [open, canOpenChat, player, currentProfile?.id]);
 
   useEffect(() => {
     if (!open || typeof document === 'undefined') return undefined;
