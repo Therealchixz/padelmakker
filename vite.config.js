@@ -3,6 +3,31 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import { handleCalendarIcs } from './padelmakker-server/routes/calendarIcs.js'
+
+function isCalendarIcsPath(urlPath) {
+  return urlPath === '/api/calendar' || urlPath === '/api/calendar.ics' || urlPath === '/kamp.ics'
+}
+
+function calendarIcsDevPlugin() {
+  const middleware = (req, res, next) => {
+    const urlPath = String(req.url || '').split('?')[0]
+    if (!isCalendarIcsPath(urlPath)) {
+      next()
+      return
+    }
+    handleCalendarIcs(req, res)
+  }
+  return {
+    name: 'calendar-ics-dev',
+    configureServer(server) {
+      server.middlewares.use(middleware)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware)
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
@@ -29,7 +54,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins,
+    plugins: [...plugins, calendarIcsDevPlugin()],
     build: {
       sourcemap: sentryEnabled ? 'hidden' : false,
       rollupOptions: {

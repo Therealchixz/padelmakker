@@ -80,6 +80,10 @@
   ],
   "rewrites": [
     {
+      "source": "/kamp.ics",
+      "destination": "/api/calendar"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

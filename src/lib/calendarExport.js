@@ -106,9 +106,29 @@ function isAndroidCalendarClient() {
   return /Android/i.test(navigator.userAgent || '');
 }
 
+/** HTTPS .ics som iOS kan åbne med "Tilføj" (data:-URL'er ignoreres i PWA/iOS 17+). */
+export function buildCalendarIcsUrl({ uid, title, start, end, location, description, url } = {}) {
+  if (!start || !start.isValid) return '';
+  const dtEnd = end && end.isValid ? end : start.plus({ minutes: 90 });
+  const params = new URLSearchParams();
+  params.set('uid', String(uid || `pm-${start.toMillis()}@padelmakker.dk`).slice(0, 160));
+  params.set('title', String(title || 'Padelkamp').slice(0, 160));
+  params.set('start', fmtUtc(start));
+  params.set('end', fmtUtc(dtEnd));
+  if (location) params.set('location', String(location).slice(0, 200));
+  if (description) params.set('description', String(description).slice(0, 900));
+  if (url) params.set('page', String(url).slice(0, 400));
+  return `/kamp.ics?${params.toString()}`;
+}
+
+function openIosCalendarUrl(icsUrl) {
+  // Skjulte <a>-klik ignorerer iOS. Samme-vindue https://…/.ics lader Safari vise Tilføj.
+  window.location.assign(icsUrl);
+}
+
 /**
  * Åbn kalenderen med eventet.
- * iOS: data:text/calendar (Safari viser "Tilføj til Kalender") — ikke share-sheet.
+ * iOS: rigtig https://…/kamp.ics (Safari viser "Tilføj til Kalender").
  * Android: Google Kalender-skabelon. Desktop: .ics-download.
  * @returns {'opened-ios'|'opened'|'download'|false}
  */
@@ -120,6 +140,8 @@ export function openCalendarInvite({
   end,
   location,
   description,
+  uid,
+  url,
 }) {
   if (typeof window === 'undefined') return false;
   const icsName = String(fileName || 'padelkamp.ics').endsWith('.ics')
@@ -127,8 +149,9 @@ export function openCalendarInvite({
     : `${fileName}.ics`;
 
   if (isIosCalendarClient()) {
-    const dataUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
-    window.location.assign(dataUrl);
+    const icsUrl = buildCalendarIcsUrl({ uid, title, start, end, location, description, url });
+    if (!icsUrl) return false;
+    openIosCalendarUrl(icsUrl);
     return 'opened-ios';
   }
 
@@ -163,6 +186,7 @@ export function addMatchToCalendar({ id, title, date, time, timeEnd, court, desc
     end,
     location: court || '',
     description: description || '',
+    uid: `pm-match-${id || start.toMillis()}@padelmakker`,
   });
 }
 
@@ -187,5 +211,6 @@ export function addTournamentToCalendar({ id, name, date, time, location, durati
     end,
     location: location || '',
     description: '',
+    uid: `pm-tournament-${id || start.toMillis()}@padelmakker`,
   });
 }

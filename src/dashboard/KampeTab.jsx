@@ -1981,6 +1981,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       end: timing.end,
       location: locationName,
       description,
+      uid,
+      url: matchUrl,
     });
 
     if (result === 'opened-ios') {

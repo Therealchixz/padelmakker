@@ -9,11 +9,15 @@ import { handleHalbookingOpenPadel } from '../padelmakker-server/routes/halbooki
 import { handleBookliSlots } from '../padelmakker-server/routes/bookliSlots.js';
 import { handleMatchiSlots } from '../padelmakker-server/routes/matchiSlots.js';
 import { handlePlaytomicSlots } from '../padelmakker-server/routes/playtomicSlots.js';
+import { handleCalendarIcs } from '../padelmakker-server/routes/calendarIcs.js';
 
 export default async function handler(req, res) {
   const slug = typeof req.query?.slug === 'string' ? req.query.slug : '';
 
   switch (slug) {
+    case 'calendar':
+    case 'calendar.ics':
+      return handleCalendarIcs(req, res);
     case 'halbooking-slots':
       return handleHalbookingSlots(req, res);
     case 'halbooking-skansen-padel':
