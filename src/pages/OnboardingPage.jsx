@@ -25,7 +25,7 @@ import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES } from '.
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
-import { validateFirstLastName, canAccessDashboard, isValidProfileRegion } from '../lib/profileUtils';
+import { validateFirstLastName, canAccessDashboard, isValidProfileRegion, toPersonNameCase } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 import { mapAuthErrorMessage } from '../lib/authErrorMessages';
@@ -372,7 +372,7 @@ export function OnboardingPage() {
         scrollOnboardingValidationError("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
-      const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
+      const displayName = toPersonNameCase(`${form.first_name.trim()} ${form.last_name.trim()}`);
       if (!isValidProfileRegion(form.area)) {
         setErr("Vælg din region.");
         scrollOnboardingValidationError("Vælg din region.");
@@ -531,6 +531,7 @@ export function OnboardingPage() {
             autoComplete="given-name"
             value={form.first_name}
             onChange={e => set("first_name", e.target.value)}
+            onBlur={() => set("first_name", toPersonNameCase(form.first_name))}
             placeholder="Fornavn"
             style={{ ...obInput, flex: 1, minWidth: 0 }}
           />
@@ -540,6 +541,7 @@ export function OnboardingPage() {
             autoComplete="family-name"
             value={form.last_name}
             onChange={e => set("last_name", e.target.value)}
+            onBlur={() => set("last_name", toPersonNameCase(form.last_name))}
             placeholder="Efternavn"
             style={{ ...obInput, flex: 1, minWidth: 0 }}
           />

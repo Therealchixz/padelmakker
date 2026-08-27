@@ -1,4 +1,4 @@
-import { normalizeProfileRow, canonicalRegionForForm } from './profileUtils.js';
+import { normalizeProfileRow, canonicalRegionForForm, toPersonNameCase } from './profileUtils.js';
 import { DEFAULT_REGION } from './platformConstants.js';
 import { PROFILE_SAFE_SELECT } from './profileQueries.js';
 import { shouldCreateProfileOnFetchStatus } from './profileBootstrapPolicy.js';
@@ -49,6 +49,10 @@ export async function createProfileForNewUser(supabase, userRow, select = PROFIL
   if (!userRow?.id) return null;
   const meta = userRow.user_metadata || {};
   const email = userRow.email || '';
+  const displayName =
+    toPersonNameCase(meta.full_name || meta.name) ||
+    (email ? email.split('@')[0] : '') ||
+    'Spiller';
   const regionFromMeta =
     canonicalRegionForForm(meta.region || meta.area || '') || DEFAULT_REGION;
   const { data: row, error } = await supabase
@@ -57,8 +61,8 @@ export async function createProfileForNewUser(supabase, userRow, select = PROFIL
       {
         id: userRow.id,
         email: email || '',
-        name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
-        full_name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
+        name: displayName,
+        full_name: displayName,
         level: meta.level || 5,
         play_style: meta.play_style || 'Ved ikke endnu',
         area: regionFromMeta,

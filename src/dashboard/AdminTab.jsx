@@ -24,7 +24,7 @@ import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { AdminUserEditModal } from './AdminUserEditModal';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
-import { normalizeProfileRow } from '../lib/profileUtils';
+import { normalizeProfileRow, toPersonNameCase } from '../lib/profileUtils';
 import {
   PROFILE_SAFE_SELECT,
   MATCH_PLAYERS_SAFE_SELECT,
@@ -1101,8 +1101,8 @@ export function AdminTab({ initialSubTab = null }) {
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
-          full_name: editingUser.full_name,
-          name: editingUser.full_name,
+          full_name: toPersonNameCase(editingUser.full_name) || editingUser.full_name,
+          name: toPersonNameCase(editingUser.full_name) || editingUser.full_name,
           level: Number(editingUser.level),
           play_style: editingUser.play_style,
           area: editingUser.area,

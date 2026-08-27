@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { signInWithOAuthProvider } from './authOAuth'
-import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionForForm } from './profileUtils'
+import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionForForm, toPersonNameCase } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 import { isSeekingActiveProfile } from './seekingFeedTtl'
@@ -42,7 +42,7 @@ async function syncProfileNameFromAuthIfNeeded(p, userRow) {
   if (!p?.id || !userRow) return p
   const dbName = String(p.full_name || p.name || '').trim()
   if (dbName && !isGenericProfileName(dbName)) return p
-  const newName = safeNameFromAuthUser(userRow)
+  const newName = toPersonNameCase(safeNameFromAuthUser(userRow) || '')
   if (!newName) return p
   const { data, error } = await supabase
     .from('profiles')
@@ -434,8 +434,11 @@ export function AuthProvider({ children }) {
     if (error) throw error
     if (data.user) {
       const displayName =
-        (metadata.full_name && String(metadata.full_name).trim()) ||
-        (metadata.name && String(metadata.name).trim()) ||
+        toPersonNameCase(
+          (metadata.full_name && String(metadata.full_name).trim()) ||
+          (metadata.name && String(metadata.name).trim()) ||
+          '',
+        ) ||
         email.trim().split('@')[0] ||
         'Spiller'
       const region =
@@ -496,8 +499,11 @@ export function AuthProvider({ children }) {
 
     if (data.user) {
       const displayName =
-        (metadata.full_name && String(metadata.full_name).trim()) ||
-        (metadata.name && String(metadata.name).trim()) ||
+        toPersonNameCase(
+          (metadata.full_name && String(metadata.full_name).trim()) ||
+          (metadata.name && String(metadata.name).trim()) ||
+          '',
+        ) ||
         normalizedEmail.split('@')[0] ||
         'Spiller'
       const region =
@@ -574,7 +580,14 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!user) throw new Error('Not authenticated')
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id).select(PROFILE_SAFE_SELECT).single()
+    const next = { ...updates }
+    if ('full_name' in next && next.full_name != null) {
+      next.full_name = toPersonNameCase(next.full_name) || next.full_name
+    }
+    if ('name' in next && next.name != null) {
+      next.name = toPersonNameCase(next.name) || next.name
+    }
+    const { data, error } = await supabase.from('profiles').update(next).eq('id', user.id).select(PROFILE_SAFE_SELECT).single()
     if (error) throw error
     const row = normalizeProfileRow(data)
     setProfile(row)
@@ -608,8 +621,8 @@ export function AuthProvider({ children }) {
       meta.play_style = updates.play_style
       metaChanged = true
     }
-    if ('full_name' in updates && updates.full_name != null) {
-      meta.full_name = updates.full_name
+    if ('full_name' in next && next.full_name != null) {
+      meta.full_name = next.full_name
       metaChanged = true
     }
     if ('avatar' in updates && updates.avatar != null) {

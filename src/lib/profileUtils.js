@@ -1,8 +1,10 @@
 import { DEFAULT_REGION } from "./platformConstants"
 import { canonicalAppRegion, isValidAppRegion } from "./appRegions.js"
+import { toPersonNameCase } from "./personNameCase.js"
 
 export const canonicalRegionForForm = canonicalAppRegion
 export const isValidProfileRegion = isValidAppRegion
+export { toPersonNameCase }
 
 /** Beregn præcis alder ud fra fødselsår, evt. måned og dag */
 export function calcAge(birth_year, birth_month, birth_day) {
@@ -97,7 +99,7 @@ export function normalizeStringArrayField(value) {
 export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
   if (meta == null || typeof meta !== "object") return null
   if (meta.onboarding_completed !== true || meta.onboarding_applied_to_profile === true) return null
-  const displayName = String(meta.full_name || meta.name || "").trim()
+  const displayName = toPersonNameCase(String(meta.full_name || meta.name || "").trim())
   if (!displayName) return null
 
   const metaAvail = normalizeStringArrayField(meta.availability)
@@ -167,8 +169,11 @@ export function normalizeProfileRow(p) {
         ? p.region
         : ""
   const region = rawRegion ? canonicalRegionForForm(rawRegion) : ""
+  const displayName = toPersonNameCase(p.full_name || p.name || "")
   return {
     ...p,
+    full_name:      displayName || (p.full_name != null ? String(p.full_name) : p.full_name),
+    name:           displayName || (p.name != null ? String(p.name) : p.name),
     area:           region,
     city:           p.city != null ? String(p.city).trim() : null,
     availability:   normalizeStringArrayField(p.availability),

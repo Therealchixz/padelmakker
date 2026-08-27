@@ -1,5 +1,7 @@
 /** Venstre/højre på 2v2-banen — gemmes på match_players.court_side. */
 
+import { toPersonNameCase } from './personNameCase.js';
+
 export const MATCH_COURT_SIDES = Object.freeze(['left', 'right']);
 
 export function normalizeMatchCourtSide(raw) {
@@ -14,7 +16,8 @@ export function courtSideLabel(side) {
 }
 
 export function playerFirstName(player) {
-  return String(player?.user_name || '?').trim().split(/\s+/)[0] || '?';
+  const full = toPersonNameCase(player?.user_name || '');
+  return full.split(/\s+/)[0] || '?';
 }
 
 /** "Mike · Venstre" — kun side hvis den er valgt. */

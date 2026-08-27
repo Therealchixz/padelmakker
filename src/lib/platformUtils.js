@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { normalizeStringArrayField } from './profileUtils';
+import { toPersonNameCase } from './personNameCase.js';
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 export function availabilityTags(profileLike) {
@@ -25,9 +26,9 @@ export function resolveDisplayName(profileRow, authUser) {
     return t === 'ny spiller' || t === 'ny';
   };
   const fromProfile = profileRow?.full_name || profileRow?.name;
-  if (fromProfile && !bad(fromProfile)) return String(fromProfile).trim();
+  if (fromProfile && !bad(fromProfile)) return toPersonNameCase(fromProfile) || String(fromProfile).trim();
   const meta = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name;
-  if (meta && !bad(meta)) return String(meta).trim();
+  if (meta && !bad(meta)) return toPersonNameCase(meta) || String(meta).trim();
   return authUser?.email?.split('@')[0] || 'Spiller';
 }
 

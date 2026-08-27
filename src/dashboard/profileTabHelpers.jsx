@@ -1,4 +1,4 @@
-import { normalizeStringArrayField, canonicalRegionForForm } from '../lib/profileUtils';
+import { normalizeStringArrayField, canonicalRegionForForm, toPersonNameCase } from '../lib/profileUtils';
 import { profilePlaytomicLevel } from '../lib/padelLevelUtils';
 
 export function splitDisplayNameToFirstLast(full) {
@@ -11,9 +11,9 @@ export function splitDisplayNameToFirstLast(full) {
 export function profileFormState(p) {
   const { first_name, last_name } = splitDisplayNameToFirstLast(p.full_name || p.name || "");
   return {
-    first_name,
-    last_name,
-    full_name: p.full_name || p.name || "",
+    first_name: toPersonNameCase(first_name),
+    last_name: toPersonNameCase(last_name),
+    full_name: toPersonNameCase(p.full_name || p.name || "") || p.full_name || p.name || "",
     area: canonicalRegionForForm(p.area || p.region || ''),
     city: p.city != null ? String(p.city).trim() : '',
     latitude: p.latitude != null ? Number(p.latitude) : null,

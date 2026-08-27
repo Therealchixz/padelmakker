@@ -51,7 +51,7 @@ test('sortPlayersByCourtSide har venstre først', () => {
 });
 
 test('teamPlayerNameWithSide viser valgt side ved navnet', () => {
-  assert.equal(teamPlayerNameWithSide({ user_name: 'Mike Pedersen', court_side: 'left' }), 'Mike · Venstre');
+  assert.equal(teamPlayerNameWithSide({ user_name: 'KENNETH SOERENSEN', court_side: 'left' }), 'Kenneth · Venstre');
   assert.equal(teamPlayerNameWithSide({ user_name: 'Anna', court_side: 'højre' }), 'Anna · Højre');
   assert.equal(teamPlayerNameWithSide({ user_name: 'Bo' }), 'Bo');
 });

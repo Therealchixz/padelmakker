@@ -2,6 +2,7 @@ import { Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { CreatorTag } from './CreatorTag';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
+import { toPersonNameCase } from '../../lib/profileUtils';
 import {
   getMatchCourtHeaderLabel,
 } from '../../lib/matchCourtOutcomeClasses';
@@ -102,7 +103,7 @@ export function MatchCourtView({
                 if (prof && onProfileClick) onProfileClick(prof);
               }}
             >
-              {player.user_name || 'Spiller'}
+              {toPersonNameCase(player.user_name) || 'Spiller'}
               {creatorId != null && String(player.user_id) === String(creatorId) ? <CreatorTag /> : null}
             </button>
             <div className="pm-kd-slot-meta">
