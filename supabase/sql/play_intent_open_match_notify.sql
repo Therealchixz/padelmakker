@@ -146,6 +146,14 @@ BEGIN
       AND public.play_intent_overlaps_match_time(
         i.start_time, i.end_time, v_match.time, v_match.time_end
       )
+      -- Dagens hensigt er udløbet, når klokken er passeret sluttid.
+      AND (
+        i.play_date > (timezone('Europe/Copenhagen', now()))::date
+        OR (
+          i.play_date = (timezone('Europe/Copenhagen', now()))::date
+          AND i.end_time > (timezone('Europe/Copenhagen', now()))::time
+        )
+      )
       AND (
         v_creator_region = ''
         OR i.region = v_creator_region

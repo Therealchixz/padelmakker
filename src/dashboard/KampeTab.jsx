@@ -366,6 +366,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const [matchChatTotalById, setMatchChatTotalById] = useState({});
   const [matchUnreadById, setMatchUnreadById] = useState({});
   const matchUnreadByIdRef = useRef({});
+  const hasMatchListRef = useRef(false);
   useEffect(() => {
     matchUnreadByIdRef.current = matchUnreadById;
   }, [matchUnreadById]);
@@ -418,7 +419,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const loadData = useCallback(async () => {
     const reqId = ++loadDataReqIdRef.current;
     const isStale = () => reqId !== loadDataReqIdRef.current;
-    setLoadingMatches(true);
+    if (!hasMatchListRef.current) setLoadingMatches(true);
     setLoadError("");
     try {
       const uid = user.id;
@@ -581,6 +582,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     } finally {
       if (reqId === loadDataReqIdRef.current) {
         setLoadingMatches(false);
+        hasMatchListRef.current = true;
       }
     }
   }, [user.id, showToast]);
@@ -1436,7 +1438,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (!isCreator && match?.creator_id && !leaveResult?.cancelled) {
         const leaveNotifyErr = await createNotification(
           match.creator_id,
-          'match_cancelled',
+          'match_join',
           'Spiller afmeldt ❌',
           `${myDisplayName} er afmeldt kampen.`,
           matchId,
@@ -1521,7 +1523,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (!data?.success) throw new Error(data?.error || "Ukendt fejl");
 
       const teamNum = data.team;
-      const approveErr = await createNotification(reqUserId, "match_invite", "Anmodning godkendt! 🎾",
+      const approveErr = await createNotification(reqUserId, "match_join", "Anmodning godkendt! 🎾",
         `${myDisplayName} har godkendt din tilmeldingsanmodning. Du er sat på Hold ${teamNum}.`, matchId);
       if (approveErr) console.warn("approve join notify:", approveErr.message || approveErr);
 
@@ -1539,7 +1541,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         .update({ status: "rejected" }).eq("id", requestId);
       if (error) throw error;
 
-      const rejectErr = await createNotification(reqUserId, "match_invite", "Anmodning afvist",
+      const rejectErr = await createNotification(reqUserId, "match_join", "Anmodning afvist",
         `Din anmodning om at deltage i kampen er desværre ikke godkendt.`, matchId);
       if (rejectErr) console.warn("reject join notify:", rejectErr.message || rejectErr);
 
@@ -3223,7 +3225,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       {kampeFormat === "liga" ? null : (
       <>
-      {kampeFormat === "padel" && loadingMatches && !detailMatchId && (
+      {kampeFormat === "padel" && loadingMatches && matches.length === 0 && !detailMatchId && (
         <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
           <div className="pm-spinner pm-state-spinner" />
           <div className="pm-state-title">Indlæser kampe…</div>
@@ -3276,7 +3278,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         </Suspense>
       )}
 
-      {kampeFormat === "padel" && !detailMatchId && !loadingMatches && !loadError && (
+      {kampeFormat === "padel" && !detailMatchId && !loadError && (!loadingMatches || matches.length > 0) && (
       <>
       {showCreate ? (
         <div

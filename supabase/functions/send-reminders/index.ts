@@ -137,6 +137,17 @@ Deno.serve(async (req: Request) => {
     /* no body → live run */
   }
 
+  // Ghost open matches that never started should not get "kamp om 1 time"
+  // or clutter Kampe after the slot has passed.
+  const { error: expireErr } = await admin.rpc("expire_unstarted_matches");
+  if (expireErr) {
+    console.warn("expire_unstarted_matches failed:", expireErr.message);
+  }
+  const { error: abandonedErr } = await admin.rpc("expire_abandoned_in_progress_matches");
+  if (abandonedErr) {
+    console.warn("expire_abandoned_in_progress_matches failed:", abandonedErr.message);
+  }
+
   const { data: due, error: dueErr } = await admin.rpc("get_due_reminders");
   if (dueErr) {
     console.error("get_due_reminders failed:", dueErr.message);

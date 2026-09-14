@@ -82,6 +82,21 @@ export async function fetchMakkerePlayerProfiles() {
   return attachResolvedCityCoords((data || []).map((row) => normalizeProfileRow(row)));
 }
 
+/** Én spiller til makker-deeplink (?profile=), også når listen endnu ikke er hentet. */
+export async function fetchMakkerePlayerProfileById(userId) {
+  const id = String(userId || '').trim();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(PROFILE_MAKKERE_SELECT)
+    .eq('id', id)
+    .eq('is_banned', false)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return attachResolvedCityCoords([normalizeProfileRow(data)])[0] || null;
+}
+
 /**
  * Profiler for specifikke bruger-id'er (chunked).
  * @param {string[]} userIds

@@ -103,7 +103,7 @@ async function fetchHomeUpcomingItems(userId) {
   for (const r of (mRes.data || [])) {
     const m = r.matches;
     if (!m) continue;
-    const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Bekræftet';
+    const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Åben';
     const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
     const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
     const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
@@ -263,7 +263,7 @@ export function HomeTab({ user, setTab, showToast }) {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Ukendt fejl");
       const myName = resolveDisplayName(user, user);
-      await createNotification(it.reqUserId, "match_invite", "Anmodning godkendt! 🎾",
+      await createNotification(it.reqUserId, "match_join", "Anmodning godkendt! 🎾",
         `${myName} har godkendt din tilmeldingsanmodning.`, it.matchId).catch(() => {});
       setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
     } catch (e) {
@@ -280,7 +280,7 @@ export function HomeTab({ user, setTab, showToast }) {
       const { error } = await supabase.from("match_join_requests")
         .update({ status: "rejected" }).eq("id", it.reqId);
       if (error) throw error;
-      await createNotification(it.reqUserId, "match_invite", "Anmodning afvist",
+      await createNotification(it.reqUserId, "match_join", "Anmodning afvist",
         "Din anmodning om at deltage i kampen er desværre ikke godkendt.", it.matchId).catch(() => {});
       setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
     } catch (e) {

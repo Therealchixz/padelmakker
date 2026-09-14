@@ -39,6 +39,19 @@ test('makkere tab supports seeking deep link from URL', async () => {
   assert.match(makkereTab, /ref=\{seekingResultsRef\}/)
 })
 
+test('makkere profile deep link fetches the player if they are not in the list yet', async () => {
+  const makkereTab = await readFile(MAKKERE_TAB_URL, 'utf8')
+  const queries = await readFile(new URL('../../src/lib/profileQueries.js', import.meta.url), 'utf8')
+  assert.match(makkereTab, /fetchMakkerePlayerProfileById/)
+  assert.match(queries, /export async function fetchMakkerePlayerProfileById/)
+})
+
+test('home upcoming open matches are labelled Åben, not Bekræftet', async () => {
+  const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+  assert.match(homeTab, /m\.status === 'full' \? 'Fuld' : 'Åben'/)
+  assert.doesNotMatch(homeTab, /'Bekræftet'/)
+})
+
 // Den blå ELO-hero ("player-card") blev bevidst fjernet fra Hjem for at matche
 // mockup'en. Denne vagt sikrer at den ikke sniger sig tilbage – hverken som JSX
 // eller som CSS – så Hjem beholder den kompakte hilsen-topbar.
