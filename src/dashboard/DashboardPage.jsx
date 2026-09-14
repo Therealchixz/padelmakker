@@ -1715,7 +1715,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
 
-      {welcomeOpen && (
+      {welcomeOpen && isValidCityPlace(user) && (
         <WelcomeScreen
           name={displayName}
           levelText={user?.level != null ? formatPlaytomicLevel(user.level) : null}

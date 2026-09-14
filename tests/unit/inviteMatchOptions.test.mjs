@@ -23,8 +23,8 @@ test('invite fra profil lukker ikke profilen og prefetch kampene', () => {
   assert.match(tab, /onInviteMatch=\{\(\) => setInviteTarget\(viewPlayer\)\}/);
   assert.doesNotMatch(tab, /setViewPlayer\(null\);\s*setInviteTarget/);
   assert.match(tab, /loadInviteMatchOptions\(user\.id\)/);
-  assert.match(tab, /open=\{\!\!inviteTarget\}/);
-  assert.match(tab, /closeOnEscape=\{\!inviteTarget\}/);
+  assert.match(tab, /open=\{!!inviteTarget\}/);
+  assert.match(tab, /closeOnEscape=\{!inviteTarget\}/);
   const modal = readFileSync('src/dashboard/InviteToMatchModal.jsx', 'utf8');
   assert.match(modal, /zIndex=\{1200\}/);
   assert.doesNotMatch(modal, /Henter dine kampe/);

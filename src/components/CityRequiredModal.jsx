@@ -70,7 +70,7 @@ export function CityRequiredModal({ open, user, onSaved, showToast }) {
       closeOnEscape={false}
       ariaLabel={incomplete ? 'Bekræft din by' : 'Tilføj din by'}
       maxWidthPreset="sm"
-      zIndex={1200}
+      zIndex={1400}
       footer={(
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
           {incomplete ? (

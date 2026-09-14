@@ -37,6 +37,9 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
   assert.match(dash, /CityRequiredModal/);
   assert.match(dash, /!isValidCityPlace\(user\)/);
+  assert.match(dash, /welcomeOpen && isValidCityPlace\(user\)/);
+  const cityModal = readFileSync(join(dir, '../../src/components/CityRequiredModal.jsx'), 'utf8');
+  assert.match(cityModal, /zIndex=\{1400\}/);
   const platform = readFileSync(join(dir, '../../src/padelmakker-platform.jsx'), 'utf8');
   assert.match(platform, /\/profil\/fuldfoer/);
 });

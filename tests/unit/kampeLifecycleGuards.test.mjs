@@ -23,6 +23,7 @@ test('lifecycle hardening SQL blocks mid-event deletes and double results', () =
   assert.match(sql, /t\.status = 'registration'/);
   assert.match(sql, /guard_americano_participant_insert/);
   assert.match(sql, /tournament_full/);
+  assert.match(sql, /v_date < \(timezone\('Europe\/Copenhagen', now\(\)\)\)::date/);
   assert.match(sql, /uq_americano_matches_round_court/);
   assert.match(sql, /lower\(coalesce\(l\.status/);
 });

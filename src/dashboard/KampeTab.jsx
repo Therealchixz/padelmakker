@@ -862,13 +862,71 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
               void refreshJoinRequestsForMatchRef.current(matchId);
             }
           }
+          if (
+            type === "match_join" ||
+            type === "match_full" ||
+            type === "match_cancelled" ||
+            type === "match_invite"
+          ) {
+            void loadData();
+          }
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadUnreadMatchChatNotifs, loadMatchUnreadCounts, user?.id]);
+  }, [loadData, loadUnreadMatchChatNotifs, loadMatchUnreadCounts, user?.id]);
+
+  /* Live liste: join, godkendelse og status skal ramme Kampe uden manuel genindlæs. */
+  const [kampeRealtimeVersion, setKampeRealtimeVersion] = useState(0);
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let cancelled = false;
+    let debounceTimer = null;
+    let retryTimer = null;
+    const scheduleRefetch = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (!cancelled && document.visibilityState !== "hidden") void loadData();
+      }, 1500);
+    };
+    const channel = supabase
+      .channel(`kampe-list-${user.id}-${kampeRealtimeVersion}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_players" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_join_requests" }, scheduleRefetch)
+      .subscribe((status) => {
+        if (cancelled) return;
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          if (retryTimer) clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => {
+            if (!cancelled) setKampeRealtimeVersion((v) => v + 1);
+          }, 1500);
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (retryTimer) clearTimeout(retryTimer);
+      try { supabase.removeChannel(channel); } catch { /* ignore */ }
+    };
+  }, [user?.id, loadData, kampeRealtimeVersion]);
+
+  useEffect(() => {
+    let lastFetch = 0;
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastFetch < 30000) return;
+      lastFetch = now;
+      void loadData();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [loadData]);
 
   const markMatchChatNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
