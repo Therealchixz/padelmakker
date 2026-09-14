@@ -342,10 +342,32 @@ test('påmindelsen genbruger reminder_log, så ingen skubbes to gange', () => {
 
 test('resultat-påmindelse kræver et fuldt hold, ikke en åben kamp uden spillere', () => {
   assert.match(REMINDER_SQL, /result_nudges as/);
+  assert.match(REMINDER_SQL, /m\.player_count >= 4/);
+  assert.match(REMINDER_SQL, /m\.started_at is not null/);
+});
+
+test('kamp-påmindelser 24t/1t kræver fire spillere', () => {
+  assert.match(REMINDER_SQL, /match_reminders as/);
+  assert.match(REMINDER_SQL, /and m\.player_count >= 4/);
+});
+
+test('americano-påmindelse kræver et fuldt felt, ikke åben tilmelding', () => {
+  assert.match(REMINDER_SQL, /am_reminders as/);
+  assert.match(REMINDER_SQL, /am\.participant_count >= coalesce\(am\.player_slots, 4\)/);
+});
+
+test('forslags-påmindelse kræver fire medlemmer', () => {
   assert.match(
     REMINDER_SQL,
-    /count\(\*\) from match_players mp where mp\.match_id = m\.id\) >= 4/,
+    /count\(\*\) from match_proposal_members mem_all where mem_all\.proposal_id = pr\.id\) >= 4/,
   );
+});
+
+test('u-startede kampe efter sluttid udløber, så de ikke ligger i Kampe', () => {
+  assert.match(REMINDER_SQL, /expire_unstarted_matches/);
+  assert.match(REMINDER_SQL, /mt\.status IN \('open', 'full'\)/);
+  assert.match(REMINDER_SQL, /mt\.started_at IS NULL/);
+  assert.match(REMINDER_FN, /expire_unstarted_matches/);
 });
 
 test('påmindelsen sendes som invitation, ikke som stille kamp-besked', () => {
