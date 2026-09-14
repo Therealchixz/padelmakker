@@ -851,8 +851,8 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.expire_stale_play_intents() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.expire_stale_play_intents() TO authenticated;
+REVOKE ALL ON FUNCTION public.expire_stale_play_intents() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.expire_stale_play_intents() TO authenticated, service_role;
 
 -- Ren SQL uden HTTP, så den planlægges direkte — samme mønster som
 -- 'auto-confirm-expired-results'.

@@ -21,7 +21,7 @@ import { buildMexicanoStartRoundRows, isMexicanoFormat } from '../../lib/mexican
 import { buildAmericanoRoundRobinMatchRows } from '../../lib/americanoRoundRobinSchedule'
 import { orderParticipantsForSchedule } from '../../lib/americanoParticipantOrder'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
-import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
+import { formatMatchDateDa, formatTimeSlotDa, copenhagenTodayYmd } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
 import { btn, theme } from '../../lib/platformTheme'
 import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
@@ -439,12 +439,14 @@ export function AmericanoTab({
         setListMeta(EMPTY_AMERICANO_LIST_META)
         return
       }
+      const todayCph = copenhagenTodayYmd()
       const [cd, regRes, playRes, doneRes, myRes] = await Promise.all([
         fetchCourtsCached(),
         supabase
           .from('americano_tournaments')
           .select('*')
           .eq('status', 'registration')
+          .gte('tournament_date', todayCph)
           .order('tournament_date', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(AMERICANO_OPEN_LIMIT),
@@ -815,10 +817,12 @@ export function AmericanoTab({
     [loading, profileId, rows, filterTournamentRow],
   )
 
-  const openAmericanos = useMemo(
-    () => filteredRows.filter((t) => t.status === 'registration'),
-    [filteredRows],
-  )
+  const openAmericanos = useMemo(() => {
+    const todayCph = copenhagenTodayYmd()
+    return filteredRows.filter(
+      (t) => t.status === 'registration' && String(t.tournament_date || '') >= todayCph,
+    )
+  }, [filteredRows])
   const playingAmericanosFiltered = useMemo(
     () => filteredRows.filter((t) => t.status === 'playing'),
     [filteredRows],
@@ -932,6 +936,10 @@ export function AmericanoTab({
   const joinTournament = async (tournament: AmericanoTournament) => {
     const tournamentId = tournament.id
     const maxSlots = tournament.player_slots
+    if (String(tournament.tournament_date || '') < copenhagenTodayYmd()) {
+      showToast('Tilmeldingen er lukket.')
+      return
+    }
     setBusyId(tournamentId)
     try {
       const { count, error: cErr } = await supabase

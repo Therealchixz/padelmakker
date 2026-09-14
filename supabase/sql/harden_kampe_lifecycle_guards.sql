@@ -78,10 +78,11 @@ AS $$
 DECLARE
   v_status text;
   v_slots integer;
+  v_date date;
   v_count integer;
 BEGIN
-  SELECT t.status, t.player_slots
-    INTO v_status, v_slots
+  SELECT t.status, t.player_slots, t.tournament_date
+    INTO v_status, v_slots, v_date
   FROM public.americano_tournaments t
   WHERE t.id = NEW.tournament_id
   FOR UPDATE;
@@ -90,7 +91,8 @@ BEGIN
     RAISE EXCEPTION 'tournament_not_found';
   END IF;
 
-  IF lower(coalesce(v_status, '')) <> 'registration' THEN
+  IF lower(coalesce(v_status, '')) <> 'registration'
+     OR v_date < (timezone('Europe/Copenhagen', now()))::date THEN
     RAISE EXCEPTION 'tournament_not_open';
   END IF;
 

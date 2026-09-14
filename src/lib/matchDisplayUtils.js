@@ -88,6 +88,11 @@ export function matchTimeLabel(m) {
   return a || '—';
 }
 
+/** Kalenderdato i København som YYYY-MM-DD (til filtrering af kommende events). */
+export function copenhagenTodayYmd(now = new Date()) {
+  return now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+}
+
 export function timeToMinutes(hhmm) {
   const s = fmtClock(hhmm);
   const [h, min] = s.split(':').map((x) => parseInt(x, 10));

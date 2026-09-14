@@ -28,3 +28,25 @@ test('reactivation tæller kun åbne kampe der stadig ligger i fremtiden', () =>
   assert.match(reactivation, /m\.time_end ~ '\^\\d\{1,2\}:\\d\{2\}'/);
   assert.match(reactivation, /\) >= now\(\)/);
 });
+
+test('Kampe genindlæser listen live og når appen kommer i forgrunden', () => {
+  assert.match(kampe, /kampe-list-\$\{user\.id\}/);
+  assert.match(kampe, /table: "match_players"/);
+  assert.match(kampe, /table: "match_join_requests"/);
+  assert.match(kampe, /type === "match_join"/);
+  assert.match(kampe, /visibilitychange", onVis/);
+});
+
+test('åbne Americano/Mexicano skjuler passerede datoer', () => {
+  const tab = readFileSync('src/features/americano/AmericanoTab.tsx', 'utf8');
+  const display = readFileSync('src/lib/matchDisplayUtils.js', 'utf8');
+  assert.match(display, /export function copenhagenTodayYmd/);
+  assert.match(tab, /copenhagenTodayYmd/);
+  assert.match(tab, /\.gte\('tournament_date', todayCph\)/);
+  assert.match(tab, /t\.status === 'registration' && String\(t\.tournament_date \|\| ''\) >= todayCph/);
+});
+
+test('expire_stale_play_intents kan ikke kaldes af anon', () => {
+  const pool = readFileSync('supabase/sql/play_intent_pool.sql', 'utf8');
+  assert.match(pool, /REVOKE ALL ON FUNCTION public\.expire_stale_play_intents\(\) FROM PUBLIC, anon;/);
+});

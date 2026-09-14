@@ -1715,8 +1715,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
 
-      {welcomeOpen && (
-        <WelcomeScreen
+      {welcomeOpen && isValidCityPlace(user) && (
+        <WelcomeScreen>
           name={displayName}
           levelText={user?.level != null ? formatPlaytomicLevel(user.level) : null}
           onFindPartner={() => { dismissWelcome(); setTab('makkere'); }}
