@@ -1716,7 +1716,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       />
 
       {welcomeOpen && isValidCityPlace(user) && (
-        <WelcomeScreen>
+        <WelcomeScreen
           name={displayName}
           levelText={user?.level != null ? formatPlaytomicLevel(user.level) : null}
           onFindPartner={() => { dismissWelcome(); setTab('makkere'); }}
