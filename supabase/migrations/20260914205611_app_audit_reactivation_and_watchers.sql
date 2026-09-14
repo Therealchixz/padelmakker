@@ -1,47 +1,3 @@
--- Sovende brugere (0 kampe): ugentlig push når der er åbne kampe nær byen.
--- Edge function: send-reactivation (cron ugentlig).
-
-create extension if not exists pg_net;
-
--- Haversine-afstand (km) — genbruges til geo-match i nudges.
-create or replace function public.haversine_km(
-  lat1 double precision,
-  lon1 double precision,
-  lat2 double precision,
-  lon2 double precision
-)
-returns double precision
-language sql
-immutable
-parallel safe
-as $$
-  select case
-    when lat1 is null or lon1 is null or lat2 is null or lon2 is null then null
-    else 6371.0 * 2 * asin(sqrt(
-      power(sin(radians(lat2 - lat1) / 2), 2) +
-      cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lon2 - lon1) / 2), 2)
-    ))
-  end;
-$$;
-
-revoke all on function public.haversine_km(double precision, double precision, double precision, double precision)
-  from public, anon, authenticated;
-
--- Dedup: max én reactivation-push pr. bruger pr. uge.
-create table if not exists public.reactivation_log (
-  user_id     uuid not null references public.profiles(id) on delete cascade,
-  kind        text not null default 'open_matches_weekly',
-  week_start  date not null,
-  sent_at     timestamptz not null default now(),
-  primary key (user_id, kind, week_start)
-);
-
-alter table public.reactivation_log enable row level security;
-
-comment on table public.reactivation_log is
-  'Dedup-log for ugentlige genaktiverings-push til sovende profiler (0 kampe).';
-
--- Returnerer brugere der skal have ugentlig "åbne kampe nær [by]"-nudge.
 create or replace function public.get_due_reactivation_nudges()
 returns table (
   user_id uuid,
@@ -159,29 +115,3 @@ as $$
 $$;
 
 revoke all on function public.get_due_reactivation_nudges() from public, anon, authenticated;
-
--- Daglig kørsel kl. 07:00 UTC (ca. 08/09 dansk tid).
-do $$
-begin
-  if exists (select 1 from cron.job where jobname = 'send-reactivation-weekly') then
-    perform cron.unschedule('send-reactivation-weekly');
-  end if;
-  if exists (select 1 from cron.job where jobname = 'send-reactivation-daily') then
-    perform cron.unschedule('send-reactivation-daily');
-  end if;
-  perform cron.schedule(
-    'send-reactivation-daily',
-    '0 7 * * *',
-    $cmd$
-      select net.http_post(
-        url := 'https://hzmrsqrerkoftcppfklu.supabase.co/functions/v1/send-reactivation',
-        headers := jsonb_build_object(
-          'Content-Type','application/json',
-          'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bXJzcXJlcmtvZnRjcHBma2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEwNTIsImV4cCI6MjA5MDc0NzA1Mn0.ApMY3hPJ5SdlXWgUeZ5odDWt5Z0PYnQqihSJbQ6gqgM',
-          'x-cron-secret', (select value from public.app_config where key='reminder_cron_secret')
-        ),
-        body := '{}'::jsonb
-      );
-    $cmd$
-  );
-end$$;

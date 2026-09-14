@@ -143,6 +143,10 @@ Deno.serve(async (req: Request) => {
   if (expireErr) {
     console.warn("expire_unstarted_matches failed:", expireErr.message);
   }
+  const { error: abandonedErr } = await admin.rpc("expire_abandoned_in_progress_matches");
+  if (abandonedErr) {
+    console.warn("expire_abandoned_in_progress_matches failed:", abandonedErr.message);
+  }
 
   const { data: due, error: dueErr } = await admin.rpc("get_due_reminders");
   if (dueErr) {

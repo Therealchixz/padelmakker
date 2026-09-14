@@ -314,7 +314,8 @@ test('når fire matcher, ringer SQL telefonen via dispatch-push — ikke kun klo
   assert.match(helper, /CREATE OR REPLACE FUNCTION public\.dispatch_push_to_user/);
   assert.match(helper, /functions\/v1\/dispatch-push/);
   assert.match(trigger, /notifications_dispatch_match_proposal/);
-  assert.match(trigger, /NEW\.type IN \('match_proposal', 'match_proposal_reminder'\)/);
+  assert.match(trigger, /NEW\.type = 'match_proposal'/);
+  assert.doesNotMatch(trigger, /match_proposal_reminder/);
 });
 
 const REMINDER_SQL = readFileSync('supabase/sql/match_proposal_reminders.sql', 'utf8');
@@ -368,6 +369,12 @@ test('u-startede kampe efter sluttid udløber, så de ikke ligger i Kampe', () =
   assert.match(REMINDER_SQL, /mt\.status IN \('open', 'full'\)/);
   assert.match(REMINDER_SQL, /mt\.started_at IS NULL/);
   assert.match(REMINDER_FN, /expire_unstarted_matches/);
+});
+
+test('startede kampe uden resultat udløber, så de ikke ligger I gang evigt', () => {
+  assert.match(REMINDER_SQL, /expire_abandoned_in_progress_matches/);
+  assert.match(REMINDER_SQL, /mt\.status = 'in_progress'/);
+  assert.match(REMINDER_FN, /expire_abandoned_in_progress_matches/);
 });
 
 test('påmindelsen sendes som invitation, ikke som stille kamp-besked', () => {

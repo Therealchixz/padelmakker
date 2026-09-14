@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
+import { fetchMakkerePlayerProfiles, fetchMakkerePlayerProfileById } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, makkerMatchBadge } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, intentDisplayLabel, COURT_SIDES } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
@@ -289,9 +289,19 @@ export function MakkereTab({ user, showToast }) {
 
   useEffect(() => {
     const pid = new URLSearchParams(location.search).get('profile');
-    if (!pid || players.length === 0) return;
+    if (!pid) return undefined;
     const p = players.find((row) => String(row.id) === String(pid));
-    if (p) setViewPlayer(p);
+    if (p) {
+      setViewPlayer(p);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchMakkerePlayerProfileById(pid)
+      .then((row) => {
+        if (!cancelled && row) setViewPlayer(row);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [location.search, players]);
 
   useEffect(() => {

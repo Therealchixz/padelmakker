@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const kampe = readFileSync('src/dashboard/KampeTab.jsx', 'utf8');
+const watch = readFileSync('supabase/sql/play_intent_open_match_notify.sql', 'utf8');
+const reactivation = readFileSync('supabase/sql/reactivation_nudges.sql', 'utf8');
+
+test('Kampe beholder listen under genindlæsning i stedet for at flikke', () => {
+  assert.match(kampe, /hasMatchListRef/);
+  assert.match(kampe, /loadingMatches && matches\.length === 0/);
+  assert.match(kampe, /!loadingMatches \|\| matches\.length > 0/);
+});
+
+test('afmelding og anmodnings-svar er ikke kamp-aflyst eller invitation', () => {
+  assert.match(kampe, /'match_join',\s*\n\s*'Spiller afmeldt/);
+  assert.match(kampe, /createNotification\(reqUserId, "match_join", "Anmodning godkendt/);
+  assert.match(kampe, /createNotification\(reqUserId, "match_join", "Anmodning afvist"/);
+  assert.doesNotMatch(kampe, /createNotification\(\s*match\.creator_id,\s*'match_cancelled',\s*'Spiller afmeldt/);
+});
+
+test('play-intent discovery ignorerer hensigter der allerede er udløbet i dag', () => {
+  assert.match(watch, /Dagens hensigt er udløbet/);
+  assert.match(watch, /i\.end_time > \(timezone\('Europe\/Copenhagen', now\(\)\)\)::time/);
+});
+
+test('reactivation tæller kun åbne kampe der stadig ligger i fremtiden', () => {
+  assert.match(reactivation, /m\.time_end ~ '\^\\d\{1,2\}:\\d\{2\}'/);
+  assert.match(reactivation, /\) >= now\(\)/);
+});

@@ -192,8 +192,11 @@ test('send-push tillader makker- og kamp-push på tværs af brugere', () => {
 
 test('SQL ringer telefonen på kamp-forslag når ingen sidder i appen', () => {
   const trigger = read('supabase/sql/dispatch_push_on_match_proposal.sql');
+  const reminders = read('supabase/functions/send-reminders/index.ts');
   assert.match(trigger, /notifications_dispatch_match_proposal/);
-  assert.match(trigger, /match_proposal_reminder/);
+  assert.match(trigger, /NEW\.type = 'match_proposal'/);
+  assert.doesNotMatch(trigger, /match_proposal_reminder/);
+  assert.match(reminders, /match_proposal_reminder/);
   assert.match(trigger, /dispatch_push_to_user/);
 });
 
