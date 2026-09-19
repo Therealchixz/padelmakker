@@ -64,9 +64,25 @@ The app uses `signInWithOAuth` with PKCE; no extra env vars beyond `VITE_SUPABAS
 **Når du tilføjer eller ændrer produktions-SQL** (`supabase/sql/` eller RPC/schema):
 
 1. **Kør det med det samme** via Supabase MCP `apply_migration` på project `hzmrsqrerkoftcppfklu` (ikke vent på brugeren).
-2. **Tilføj en migrationsfil**: `npm run db:migration:new <snake_name>` og kopier SQL ind i `supabase/migrations/<timestamp>_<name>.sql`.
-3. **Verificer** med MCP `list_migrations` eller en kort `execute_sql`-smoke-test.
-4. **Commit + push** begge (`supabase/sql/` + `supabase/migrations/`).
+2. **Slå den registrerede version op** — `apply_migration` sætter sit *eget* tidsstempel:
+   `select version, name from supabase_migrations.schema_migrations order by version desc limit 1;`
+3. **Tilføj migrationsfilen med præcis den version**: `supabase/migrations/<version>_<name>.sql`.
+   Brug **ikke** `npm run db:migration:new` efter et MCP-kald — det sætter et nyt tidsstempel, og så matcher fil og database aldrig.
+4. **Verificer** at intet er i drift begge veje:
+   `select count(*) from supabase_migrations.schema_migrations;` skal matche `ls supabase/migrations/*.sql | wc -l`.
+5. **Commit + push** begge (`supabase/sql/` + `supabase/migrations/`).
+
+> **Hvorfor det er vigtigt.** `supabase db push` afviser at køre, hvis databasen kender en version
+> der ikke har en lokal fil — og en lokal fil uden en registreret version bliver *anvendt på
+> produktion* ved næste push. Begge dele opstår, når SQL køres via MCP og filen bagefter navngives
+> med et nyt tidsstempel. Det brækkede `apply-supabase-migrations.yml` fra 27. august til
+> 19. september uden at nogen opdagede det, fordi workflowet fejler tavst i baggrunden.
+> Ryddet op i 20260918234636-serien; se `scripts/check-migration-drift.mjs`.
+
+**Rækkefølge når en migration fjerner adgang** (fx `REVOKE` på en kolonne): deploy frontend
+**først**, så den ikke længere beder om feltet, og kør migrationen bagefter. Omvendt rækkefølge
+får hver forespørgsel til at fejle med `permission denied for column`, mens den gamle app stadig
+kører hos brugerne.
 
 Ved merge til `main` kører GitHub Actions automatisk:
 

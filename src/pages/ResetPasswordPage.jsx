@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { scrollToFieldById } from '../lib/formValidationScroll';
+import { checkPasswordBreached, BREACHED_PASSWORD_MESSAGE } from '../lib/passwordBreachCheck';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { KeyRound } from 'lucide-react';
 
@@ -24,6 +25,13 @@ export function ResetPasswordPage({ onDone }) {
     }
     setSubmitting(true); setErr("");
     try {
+      // Kun de første fem tegn af kodeordets tjeksum sendes; fejler åbent.
+      const breach = await checkPasswordBreached(password);
+      if (breach.breached) {
+        setErr(BREACHED_PASSWORD_MESSAGE);
+        scrollToFieldById('reset-password');
+        return;
+      }
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       onDone();
