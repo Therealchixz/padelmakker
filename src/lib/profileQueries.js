@@ -28,9 +28,11 @@ export const PROFILE_SAFE_SELECT = [
   'best_streak',
   'current_streak',
   'created_at',
+  // birth_month/birth_day er ikke laengere laesbare for almindelige brugere
+  // (kolonne-rettighed fjernet). Alderen regnes ud af birth_year alene og kan
+  // derfor vaere ét år forkert indtil fødselsdagen. Admins faar den fulde dato
+  // via admin_profiles_with_email.
   'birth_year',
-  'birth_month',
-  'birth_day',
   'court_side',
   'americano_wins',
   'americano_losses',
@@ -59,11 +61,11 @@ export const PROFILE_SAFE_SELECT = [
 
 /** Kolonner til Find makker — undgår select('*') på hele profiles. */
 export const PROFILE_MAKKERE_SELECT =
-  'id, full_name, name, avatar, area, city, latitude, longitude, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, seeking_match_at, match_watch_enabled, match_search_prefs, makker_search_prefs, available_days, birth_year, birth_month, birth_day, bio, is_banned, last_active_at';
+  'id, full_name, name, avatar, area, city, latitude, longitude, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, seeking_match_at, match_watch_enabled, match_search_prefs, makker_search_prefs, available_days, birth_year, bio, is_banned, last_active_at';
 
 /** Kolonner til kampe-kort og profil-modal fra Kampe. */
 export const PROFILE_KAMPE_SELECT =
-  'id, full_name, name, avatar, area, city, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, match_watch_enabled, birth_year, birth_month, birth_day, bio, is_banned, last_active_at';
+  'id, full_name, name, avatar, area, city, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, match_watch_enabled, birth_year, bio, is_banned, last_active_at';
 
 /** match_players uden user_email (column privilege revoked). */
 export const MATCH_PLAYERS_SAFE_SELECT =
