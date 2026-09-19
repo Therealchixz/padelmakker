@@ -93,6 +93,6 @@ test.describe('Logged-in dashboard flows', () => {
     await expect(page.getByRole('heading', { name: 'Min profil' })).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: /^Rediger$/i }).first().click()
     await expect(page.locator('[data-tour="blocked-users-section"]')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByText('Blokerede spillere')).toBeVisible()
+    await expect(page.getByText('Blokerede spillere', { exact: true })).toBeVisible()
   })
 })
