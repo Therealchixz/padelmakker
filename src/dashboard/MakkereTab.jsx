@@ -149,7 +149,7 @@ function writeDismissedSugg(userId, set) {
 
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss }) {
+function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor, displayGamesFor }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p, viewer);
   const quality = makkerMatchBadge(score);
@@ -185,7 +185,7 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
               {p.full_name || p.name}
             </span>
             <span style={tag(theme.accentBg, theme.accent)}>
-              ELO {Math.round(Number(p.elo_rating) || 1000)}
+              ELO {Math.round(Number(displayEloFor ? displayEloFor(p) : p.elo_rating) || 1000)}
             </span>
             {p.level != null && p.level !== '' ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
@@ -195,7 +195,10 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
             <MapPin size={10} />
             {[
               formatProfileLocationLine(viewer, p),
-              p.games_played ? `${p.games_played} kampe` : null,
+              (() => {
+                const n = displayGamesFor ? displayGamesFor(p) : (p.games_played || 0);
+                return n ? `${n} kampe` : null;
+              })(),
             ].filter(Boolean).join(' · ')}
           </div>
         </div>
@@ -724,6 +727,7 @@ export function MakkereTab({ user, showToast }) {
                 suggestion={s}
                 viewer={user}
                 displayEloFor={displayElo}
+                displayGamesFor={displayGames}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
                 onMessage={(p) => openPlayerChat(navigate, p)}
@@ -913,7 +917,7 @@ export function MakkereTab({ user, showToast }) {
                   <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px' }}>{p.full_name || p.name}</span>
                     <span style={tag(theme.accentBg, theme.accent)}>
-                      ELO {Math.round(Number(p.elo_rating) || 1000)}
+                      ELO {Math.round(Number(displayElo(p)) || 1000)}
                     </span>
                     {p.level != null && p.level !== '' ? (
                       <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
