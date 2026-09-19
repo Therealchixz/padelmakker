@@ -24,15 +24,6 @@ import { WelcomeScreen } from '../components/WelcomeScreen';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 import { CityRequiredModal } from '../components/CityRequiredModal';
 import { isValidCityPlace } from '../lib/dawaPlaceSearch';
-import {
-  KAMPE_NOTIFICATION_TYPES,
-  KAMPE_ENTITY_NOTIFICATION_TYPES,
-} from '../lib/kampeNotificationTypes';
-import {
-  countRelevantKampeUnreadNotifications,
-  countUnreadEntityNotifications,
-} from '../lib/kampeNotificationBadges';
-import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
 import {
   adminAttentionFocusSubTab,
@@ -538,93 +529,28 @@ function useUnreadNotificationsCount(userId) {
 
 function useUnreadKampeNotificationsCount(userId) {
   const createController = useCallback((api) => {
-    let shouldRefreshIds = true;
-    let myRelatedMatchIds = [];
-    let myRelatedEntityIds = [];
-    let statusByMatchId = {};
-    const RELEVANT_TYPES = KAMPE_NOTIFICATION_TYPES;
-
-    const loadRelatedIds = async () => {
-      try {
-        const [createdRes, playerRes, americanoRes, leagueTeamRes, leagueCreatedRes] = await Promise.all([
-          supabase.from("matches").select("id").eq("creator_id", api.userId),
-          supabase.from("match_players").select("match_id").eq("user_id", api.userId),
-          supabase.from("americano_participants").select("tournament_id").eq("user_id", api.userId),
-          supabase.from("league_teams").select("league_id").or(`player1_id.eq.${api.userId},player2_id.eq.${api.userId}`),
-          supabase.from("leagues").select("id").eq("created_by", api.userId),
-        ]);
-        const matchSet = new Set([
-          ...(createdRes.data || []).map((m) => String(m.id)),
-          ...(playerRes.data || []).map((p) => String(p.match_id)),
-        ]);
-        myRelatedMatchIds = [...matchSet];
-        const entitySet = new Set([
-          ...(americanoRes.data || []).map((p) => String(p.tournament_id)),
-          ...(leagueTeamRes.data || []).map((t) => String(t.league_id)),
-          ...(leagueCreatedRes.data || []).map((l) => String(l.id)),
-        ]);
-        myRelatedEntityIds = [...entitySet];
-        const matchRows = myRelatedMatchIds.length > 0
-          ? await fetchRowsInChunks(supabase, "matches", "id", myRelatedMatchIds, "id,status")
-          : [];
-        statusByMatchId = Object.fromEntries(
-          (matchRows || []).map((match) => [String(match.id), (match.status ?? "open").toString().toLowerCase()])
-        );
-      } catch (e) {
-        console.warn("kampe notif badge ids:", e);
-        myRelatedMatchIds = [];
-        myRelatedEntityIds = [];
-        statusByMatchId = {};
-      } finally {
-        shouldRefreshIds = false;
-      }
-    };
-
+    // Tællingen lå tidligere her i klienten: fem opslag for at finde brugerens
+    // kampe, ligaer og turneringer, et chunked opslag for kampstatus og to
+    // opslag i notifications — hvert 10. sekund. Den samme logik ligger nu i
+    // RPC'en kampe_unread_badge_count og koster ét kald.
     const loadCount = async () => {
       try {
-        let total = 0;
-        if (myRelatedMatchIds.length > 0) {
-          const { data, error } = await supabase
-            .from("notifications")
-            .select("id,type,match_id,entity_id,read")
-            .eq("user_id", api.userId)
-            .eq("read", false)
-            .in("type", RELEVANT_TYPES)
-            .in("match_id", myRelatedMatchIds)
-            .limit(500);
-          if (error) throw error;
-          total += countRelevantKampeUnreadNotifications(data, statusByMatchId);
-        }
-        if (myRelatedEntityIds.length > 0) {
-          const { data: entityRows, error: eErr } = await supabase
-            .from("notifications")
-            .select("id,type,entity_id,read")
-            .eq("user_id", api.userId)
-            .eq("read", false)
-            .in("type", [...KAMPE_ENTITY_NOTIFICATION_TYPES])
-            .in("entity_id", myRelatedEntityIds)
-            .limit(500);
-          if (eErr) throw eErr;
-          total += countUnreadEntityNotifications(entityRows, myRelatedEntityIds);
-        }
-        api.setCountSafe(total);
+        const { data, error } = await supabase.rpc("kampe_unread_badge_count");
+        if (error) throw error;
+        api.setCountSafe(Number(data) || 0);
       } catch (e) {
         console.warn("kampe notif badge refetch:", e);
       }
     };
 
     return {
-      refetch: async () => {
-        if (shouldRefreshIds) await loadRelatedIds();
-        await loadCount();
-      },
+      refetch: loadCount,
       subscriptions: [
         {
           name: "kampe-notif-badge-notifs-" + api.userId,
           table: "notifications",
           filter: "user_id=eq." + api.userId,
           onEvent: ({ api: runtime }) => {
-            shouldRefreshIds = true;
             runtime.scheduleRefetch({ delay: 120 });
           },
         },
@@ -633,7 +559,6 @@ function useUnreadKampeNotificationsCount(userId) {
           table: "matches",
           filter: "creator_id=eq." + api.userId,
           onEvent: ({ api: runtime }) => {
-            shouldRefreshIds = true;
             runtime.scheduleRefetch({ delay: 120 });
           },
         },
@@ -642,27 +567,24 @@ function useUnreadKampeNotificationsCount(userId) {
           table: "match_players",
           filter: "user_id=eq." + api.userId,
           onEvent: ({ api: runtime }) => {
-            shouldRefreshIds = true;
             runtime.scheduleRefetch({ delay: 120 });
           },
         },
       ],
-      intervalMs: 10000,
+      // Realtime dækker de faktiske hændelser; intervallet er kun et sikkerhedsnet.
+      intervalMs: BADGE_POLL_VISIBLE_MS,
       onInterval: (runtime) => {
         if (!runtime.isPageVisible()) return;
-        shouldRefreshIds = true;
         runtime.scheduleRefetch({ delay: 50 });
       },
       listenVisibility: true,
       onVisibility: (runtime) => {
         if (!runtime.isPageVisible()) return;
-        shouldRefreshIds = true;
         runtime.scheduleRefetch({ delay: 80 });
       },
       windowEvents: ["focus", "pageshow", "online", "pm-notifications-sync"],
       onWindowEvent: (runtime) => {
         if (!runtime.isPageVisible()) return;
-        shouldRefreshIds = true;
         runtime.scheduleRefetch({ delay: 80 });
       },
     };
