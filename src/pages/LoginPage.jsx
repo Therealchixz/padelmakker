@@ -87,8 +87,10 @@ export function LoginPage() {
           <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
             <div className="pm-auth-success-card">
-              <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Mail sendt!</p>
-              <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Tjek din indbakke på <strong>{email}</strong> og følg linket for at nulstille din adgangskode.</p>
+              <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Tjek din mail</p>
+              {/* Neutral ordlyd: resetPasswordForEmail fejler ikke for ukendte adresser, sa
+                  "Mail sendt!" pastod noget der ikke altid var sandt. */}
+              <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Hvis der findes en konto med <strong>{email}</strong>, har vi sendt et link til at nulstille adgangskoden. Husk at kigge i spam.</p>
             </div>
           ) : (
             <form
