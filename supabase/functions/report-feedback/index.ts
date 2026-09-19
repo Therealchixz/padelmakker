@@ -16,7 +16,6 @@ const defaultAllowedOrigins = [
 ];
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const localRateLimitFallback = new Map<string, { windowStart: number; hits: number }>();
 
 const feedbackCategoryLabels: Record<string, string> = {
   "bug": "Bug",
@@ -69,17 +68,6 @@ function readClientIp(req: Request) {
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return String(xff).split(",")[0].trim();
   return "unknown";
-}
-
-function consumeLocalRateLimit(key: string, windowStart: number, maxHits: number) {
-  const prev = localRateLimitFallback.get(key);
-  if (!prev || prev.windowStart !== windowStart) {
-    localRateLimitFallback.set(key, { windowStart, hits: 1 });
-    return true;
-  }
-  const nextHits = prev.hits + 1;
-  localRateLimitFallback.set(key, { windowStart, hits: nextHits });
-  return nextHits <= maxHits;
 }
 
 function allowedOrigins() {
