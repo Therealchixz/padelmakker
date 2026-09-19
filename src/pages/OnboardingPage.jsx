@@ -28,6 +28,7 @@ import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName, canAccessDashboard, isValidProfileRegion, toPersonNameCase } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
+import { checkPasswordBreached, BREACHED_PASSWORD_MESSAGE } from '../lib/passwordBreachCheck';
 import { mapAuthErrorMessage } from '../lib/authErrorMessages';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import {
@@ -447,6 +448,13 @@ export function OnboardingPage() {
       if (form.password !== form.password_confirm) {
         setErr("Adgangskoderne er ikke ens — tjek begge felter.");
         scrollOnboardingValidationError("Adgangskoderne er ikke ens — tjek begge felter.");
+        return;
+      }
+      // Kun de første fem tegn af kodeordets tjeksum sendes; fejler åbent.
+      const breach = await checkPasswordBreached(form.password);
+      if (breach.breached) {
+        setErr(BREACHED_PASSWORD_MESSAGE);
+        scrollOnboardingValidationError(BREACHED_PASSWORD_MESSAGE);
         return;
       }
       if (!isValidSignupEmail(form.email)) {
