@@ -289,7 +289,6 @@ type AmericanoEloRpcData = {
 export function AmericanoResultsPanel({
   tournament,
   currentUserId,
-  isAdmin = false,
   onSaved,
   showToast,
   onProfileStatsRefresh,

@@ -36,7 +36,7 @@ export function getMatchCourtOutcomeClasses(teamNum, {
   };
 }
 
-export function getMatchCourtHeaderLabel(teamNum, { winnerTeam = null, joined = false, myTeam = null } = {}) {
+export function getMatchCourtHeaderLabel(teamNum, { winnerTeam = null } = {}) {
   const base = `Hold ${teamNum}`;
   if (!winnerTeam || winnerTeam !== teamNum) return base;
   return `🏆 ${base}`;

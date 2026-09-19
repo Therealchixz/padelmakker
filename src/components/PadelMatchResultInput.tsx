@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Info } from "lucide-react";
+
 import { scrollFormFieldIntoView, scrollToFieldById } from "../lib/formValidationScroll";
 
 /* ═══════════════════════════════════════════════════════════════════════════

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
+import { theme, btn, inputStyle, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
   groupBanerVenuesByRegion,

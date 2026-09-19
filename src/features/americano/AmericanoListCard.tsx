@@ -72,7 +72,6 @@ export function AmericanoListCard({
   liveRound = null,
   roundProgress = null,
   myEloChange = null,
-  playedDurationMinutes = null,
   onClick,
 }: Props) {
   const { maxPlayers, totalRounds: metaTotalRounds } = getAmericanoTournamentMeta(tournament)

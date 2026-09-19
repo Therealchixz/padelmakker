@@ -175,7 +175,7 @@ function ListsPreview() {
     price_per_person: 50, payment_method: 'mobilepay',
     level_min: 2.0, level_max: 4.0, player_slots: 8, points_per_match: 16,
   };
-  const amParts = [1, 2, 3, 4, 1].map((n, i) => ({
+  const amParts = [1, 2, 3, 4, 1].map((n) => ({
     user_id: String(n), display_name: profilesById[n].name, avatar: profilesById[n].avatar,
   }));
   const league = (status) => ({

@@ -88,8 +88,8 @@ export function resolveEntityDirectionsQuery({ courtName = '', booked = null } =
   return `${name}, Denmark`;
 }
 
-/** @param {object} match @param {Record<string, object>} [profilesById] */
-export function resolveMatchDirectionsQuery(match, profilesById = {}) {
+/** @param {object} match @param {Record<string, object>} [_profilesById] reserveret, bruges ikke */
+export function resolveMatchDirectionsQuery(match, _profilesById = {}) {
   const { booked } = parseMatchLevelRange(match?.level_range);
   return resolveEntityDirectionsQuery({
     courtName: match?.court_name,

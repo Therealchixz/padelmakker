@@ -1,4 +1,4 @@
-import { theme, btn } from '../lib/platformTheme';
+import { theme } from '../lib/platformTheme';
 
 const DangerIcon = () => (
   <svg style={{ width: 24, height: 24 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

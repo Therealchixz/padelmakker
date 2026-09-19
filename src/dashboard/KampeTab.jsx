@@ -64,9 +64,9 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
+import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, CalendarDays, CalendarPlus, Share2, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
-import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
+
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { absoluteUrl } from '../lib/siteMeta';
 import { buildPublicMatchPath } from '../lib/publicShareRoutes';
@@ -3651,7 +3651,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
               </>
             );
           })()}
-
 
           <div className="pm-form-submit pm-form-submit-actions" style={{ marginTop: 16 }}>
             {padelCreateStep > 1 ? (

@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles, fetchMakkerePlayerProfileById } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, makkerMatchBadge } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, intentDisplayLabel, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, COURT_SIDES } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
-import { calcAge } from '../lib/profileUtils';
+
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
@@ -149,7 +149,7 @@ function writeDismissedSugg(userId, set) {
 
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor }) {
+function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p, viewer);
   const quality = makkerMatchBadge(score);
@@ -884,7 +884,6 @@ export function MakkereTab({ user, showToast }) {
           </div>
         </div>
       )}
-
 
       {rankedSearch.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px', color: theme.textMid }}>

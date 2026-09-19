@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { font, theme, btn, heading } from '../lib/platformTheme';
+import { font, theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
 import { ChevronDown } from 'lucide-react';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';

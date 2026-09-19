@@ -14,7 +14,7 @@ import {
   ligaMatchSystemLabel,
 } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
-import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
+import { LigaDivisionStandings } from './LigaDetailSheet';
 import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
 import { CreatorTag } from '../components/kampe/CreatorTag';
 
@@ -538,9 +538,7 @@ function ActiveDetail({
   onTeamProfile,
   reportingMatch,
   setReportingMatch,
-  scoreText,
   setScoreText,
-  selectedWinnerId,
   setSelectedWinnerId,
   confirmPending,
   setConfirmPending,
