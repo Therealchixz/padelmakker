@@ -9,7 +9,7 @@ import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X, Trendi
 import { AvatarCircle } from '../components/AvatarCircle';
 import { NotificationBell } from '../components/NotificationBell';
 import { AppModal } from '../components/AppModal';
-import { PageSectionTitle } from '../components/PageSectionTitle';
+
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
@@ -18,7 +18,7 @@ import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
 import { regionDisplayLabel } from '../lib/appRegions';
 import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
-import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
+import { TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
 import { addMatchToCalendar } from '../lib/calendarExport';

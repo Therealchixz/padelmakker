@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, ChevronRight } from 'lucide-react';
 import {
   dismissAdminUserReportNotificationsIfQueueEmpty,
   fetchAdminSubTabBadges,

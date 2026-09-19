@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
+import { theme, btn, inputStyle, font } from '../lib/platformTheme';
 import { Trophy, Plus, Check, Copy, ArrowRight } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { PillTabs } from '../components/PillTabs';
@@ -1193,7 +1193,6 @@ export function LigaTab({
               </div>
             </>
           )}
-
 
           {/* Navigation */}
           <div style={{ display: 'flex', gap: 10, padding: '0 18px' }}>

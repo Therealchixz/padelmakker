@@ -8,7 +8,6 @@ import { CHAT_MESSAGE_TYPES, QUICK_REACTIONS } from '../../lib/chatMessageUtils'
 export function ChatBubble({
   message,
   groupedWithNext = false,
-  groupedWithPrev = false,
   showAvatar = false,
   showReadReceipt = false,
   avatarId,

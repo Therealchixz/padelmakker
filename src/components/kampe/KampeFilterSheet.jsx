@@ -6,7 +6,7 @@ import {
   defaultKampeListFilter,
 } from '../../lib/kampeListFilterCore';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
-import { theme } from '../../lib/platformTheme';
+
 import { COURT_FACILITY_CATALOG } from '../../lib/courtFacilities.jsx';
 
 function FilterToggle({ checked, onChange, label }) {

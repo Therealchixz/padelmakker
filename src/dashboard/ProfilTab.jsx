@@ -14,7 +14,7 @@ import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory,
 import { useAmericanoPartnerOpponentStats } from '../lib/americanoRelationStats';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
+import { Settings, Swords, Trophy, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';

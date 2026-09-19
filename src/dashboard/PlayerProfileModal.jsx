@@ -5,7 +5,7 @@ import { theme, btn, tag } from '../lib/platformTheme';
 import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
-import { MapPin, MessageCircle, X } from 'lucide-react';
+import { MessageCircle, X } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
 import { DAYS_OF_WEEK } from '../lib/platformConstants';

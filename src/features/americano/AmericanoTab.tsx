@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, CalendarPlus, ArrowRight, MapPin } from 'lucide-react'
+import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, ArrowRight, MapPin } from 'lucide-react'
 import { EmptyStateIcon } from '../../components/EmptyStateIcon'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
