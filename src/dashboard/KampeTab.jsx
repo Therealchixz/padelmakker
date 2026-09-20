@@ -3115,7 +3115,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     kampeFormat === "padel"
     || kampeFormat === "americano"
     || (kampeFormat === "liga" && isAdmin);
-  const handleToolbarCreate = !loadingMatches && !showCreatePanel && canCreateInFormat
+  // Maa IKKE afhaenge af loadingMatches: knappen forsvandt helt under
+  // indlaesningen og poppede ind bagefter. At oprette en kamp kraever ikke at
+  // listen er hentet - guiden er uafhaengig af den.
+  const handleToolbarCreate = !showCreatePanel && canCreateInFormat
     ? () => {
         if (kampeFormat === "padel") setShowCreate(true);
         else if (kampeFormat === "americano") setShowAmericanoCreate(true);
@@ -3320,7 +3323,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       {kampeFormat === "liga" ? null : (
       <>
-      {kampeFormat === "padel" && loadingMatches && matches.length === 0 && !detailMatchId && (
+      {kampeFormat === "padel" && loadingMatches && matches.length === 0 && !detailMatchId && !showCreate && (
         <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
           <div className="pm-spinner pm-state-spinner" />
           <div className="pm-state-title">Indlæser kampe…</div>
@@ -3373,7 +3376,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         </Suspense>
       )}
 
-      {kampeFormat === "padel" && !detailMatchId && !loadError && (!loadingMatches || matches.length > 0) && (
+      {kampeFormat === "padel" && !detailMatchId && !loadError && (!loadingMatches || matches.length > 0 || showCreate) && (
       <>
       {showCreate ? (
         <div
