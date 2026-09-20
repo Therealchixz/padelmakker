@@ -92,3 +92,50 @@ test('extractTables kaster ikke på tom eller irrelevant SQL', async () => {
     assert.equal(altered.size, 0);
   }
 });
+
+// ---- Citerede navne: formatet Supabases `db dump` bruger ----
+//
+// `supabase db dump` citerer ALT: CREATE TABLE IF NOT EXISTS "public"."profiles".
+// Den første udgave af parseren forventede public.profiles uden anførselstegn og
+// fangede derfor "public" som tabelnavnet — 42 tabeller blev til ét navn, og
+// 152 funktioner til nul. Fejlen var tavs: INDEX.md så bare uændret ud.
+
+test('extractTables forstår "public"."navn" med anførselstegn', async () => {
+  const { extractTables } = await import('../../scripts/sql-index.mjs');
+  const { created, altered } = extractTables(`
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+  "id" "uuid" NOT NULL
+);
+ALTER TABLE ONLY "public"."matches" ADD COLUMN "x" "text";
+`);
+  assert.ok(created.has('profiles'), 'skal fange profiles, ikke public');
+  assert.ok(!created.has('public'), '"public" er skemaet, ikke et tabelnavn');
+  assert.ok(altered.has('matches'));
+  assert.ok(!altered.has('public'));
+});
+
+test('extractFunctions forstår "public"."navn"( med anførselstegn', async () => {
+  const { extractFunctions } = await import('../../scripts/sql-index.mjs');
+  const fns = extractFunctions(
+    'CREATE OR REPLACE FUNCTION "public"."_growth_user_qualified"("p_user_id" "uuid") RETURNS boolean\n' +
+    '    LANGUAGE "plpgsql"\n' +
+    '    AS $$ BEGIN RETURN true; END; $$;',
+  );
+  assert.equal(fns.length, 1);
+  assert.equal(fns[0].name, '_growth_user_qualified');
+  assert.match(fns[0].body, /RETURN true/);
+});
+
+test('begge skrivemåder giver samme navn', async () => {
+  const { extractTables, extractFunctions } = await import('../../scripts/sql-index.mjs');
+  for (const variant of ['public.foo', '"public"."foo"', 'foo', '"foo"']) {
+    const { created } = extractTables(`CREATE TABLE ${variant} (id int);`);
+    assert.ok(created.has('foo'), `tabel: ${variant}`);
+    assert.ok(!created.has('public'), `tabel må ikke blive "public": ${variant}`);
+  }
+  for (const variant of ['public.bar', '"public"."bar"', 'bar']) {
+    const fns = extractFunctions(`CREATE FUNCTION ${variant}() RETURNS void AS $$ BEGIN END; $$;`);
+    assert.equal(fns.length, 1, `funktion: ${variant}`);
+    assert.equal(fns[0].name, 'bar', `funktion: ${variant}`);
+  }
+});
