@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { Check, Pencil, ClipboardEdit } from 'lucide-react'
+import { Pencil, ClipboardEdit } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { AvatarCircle } from '../../components/AvatarCircle'
@@ -31,60 +31,6 @@ const c = {
   onAccent: 'var(--pm-on-accent)',
 }
 
-function initialsFromName(name: string): string {
-  const p = name.trim().split(/\s+/).filter(Boolean)
-  if (p.length >= 2) return (p[0][0] + p[1][0]).toUpperCase()
-  if (p.length === 1 && p[0].length >= 2) return p[0].slice(0, 2).toUpperCase()
-  return (p[0]?.[0] || '?').toUpperCase()
-}
-
-function DualAvatar({ a, b }: { a: string; b: string }) {
-  const ia = initialsFromName(a)
-  const ib = initialsFromName(b)
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, width: 44 }}>
-      <div
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          background: c.avatarBg,
-          color: c.avatarText,
-          fontSize: 11,
-          fontWeight: 700,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px solid var(--pm-surface)',
-          zIndex: 2,
-          fontFamily: font,
-        }}
-      >
-        {ia}
-      </div>
-      <div
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          background: c.avatarBg,
-          color: c.avatarText,
-          fontSize: 11,
-          fontWeight: 700,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginLeft: -14,
-          border: '2px solid var(--pm-surface)',
-          zIndex: 1,
-          fontFamily: font,
-        }}
-      >
-        {ib}
-      </div>
-    </div>
-  )
-}
 type Props = {
   tournament: AmericanoTournament
   /** Opretteren af turneringen — kan låse op og rette gemte resultater */

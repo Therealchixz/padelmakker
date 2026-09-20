@@ -4,7 +4,6 @@ import { theme } from '../lib/platformTheme';
 
 const h2 = { fontSize: '17px', fontWeight: 700, color: theme.text, margin: '24px 0 12px' };
 const p = { color: theme.textMid };
-const li = { marginBottom: '8px' };
 
 const tourVideoEnabled = Boolean(String(import.meta.env.VITE_LANDING_TOUR_VIDEO_ID || '').trim());
 

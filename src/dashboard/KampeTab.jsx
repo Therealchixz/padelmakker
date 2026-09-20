@@ -1467,7 +1467,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       return;
     }
 
-    const mp = matchPlayers[matchId] || [];
     const isCreator = String(match.creator_id) === String(user.id);
     const soonNotice = (() => {
       if (!match.date || !match.time) return '';
@@ -2434,6 +2433,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       unreadChatCount: joinedMatchIds.has(String(m.id))
         ? (matchChatUnreadById[String(m.id)] || 0)
         : 0,
+      totalChatCount: matchChatTotalById[String(m.id)] || 0,
       unreadMatchCount: matchUnreadById[String(m.id)] || 0,
     });
     return { mp, teamStats, mr, matchPrefs, status, isInProgress, winnerTeam, cardState };
@@ -2456,6 +2456,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     matchChatSendingById,
     matchChatErrorById,
     matchChatUnreadById,
+    matchChatTotalById,
     matchUnreadById,
   ]);
 
@@ -2677,6 +2678,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       chatSending,
       chatError,
       unreadChatCount,
+      totalChatCount,
       adminActionsOpen,
       isPlayerInMatch,
     } = bundle.cardState;
@@ -2758,6 +2760,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           chatOpen={chatOpen}
           onToggleChat={() => { void toggleMatchChat(m.id); }}
           unreadChatCount={unreadChatCount}
+          totalChatCount={totalChatCount}
           chatPanel={chatOpen ? (
             <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: 0 }}>
               {!canWriteMatchChat && isAdmin ? (

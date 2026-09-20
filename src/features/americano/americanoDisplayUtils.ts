@@ -1,8 +1,5 @@
 import type { AmericanoTournament } from './types'
-import {
-  computeAmericanoPlayedDurationMinutes,
-  formatAmericanoDurationLabel,
-} from '../../lib/americanoPlayedDuration.js'
+import { formatAmericanoDurationLabel } from '../../lib/americanoPlayedDuration.js'
 
 export {
   computeAmericanoPlayedDurationMinutes,

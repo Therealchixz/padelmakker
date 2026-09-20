@@ -44,7 +44,6 @@ import {
   KAMPE_FORMAT_LIGA,
 } from '../lib/kampeDetailRoutes';
 
-const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
 function leagueIdsForListPaint(lgList, view, myTeamMap, focusId) {
   const ids = new Set();

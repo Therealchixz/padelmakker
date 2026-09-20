@@ -86,17 +86,6 @@ function normalizeIntent(value) {
   return v;
 }
 
-function courtSideScore(mySide, theirSide) {
-  const mine = normalizeCourtSide(mySide);
-  const theirs = normalizeCourtSide(theirSide);
-  if (!mine || !theirs) return 0.5;
-  if (mine === 'begge' || theirs === 'begge') return 0.6;
-  const complementary =
-    (mine === 'venstre' && theirs === 'hojre') ||
-    (mine === 'hojre' && theirs === 'venstre');
-  return complementary ? 1.0 : 0.35;
-}
-
 function intentCompatScore(myIntent, theirIntent) {
   const mine = intentCompatKey(normalizeIntent(myIntent));
   const theirs = intentCompatKey(normalizeIntent(theirIntent));

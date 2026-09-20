@@ -399,7 +399,6 @@ export function AmericanoTab({
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
   const [creatorAreasByUserId, setCreatorAreasByUserId] = useState<Record<string, string>>({})
-  const [creatorProfilesByUserId, setCreatorProfilesByUserId] = useState<Record<string, object>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{
     userId: string
     name: string
@@ -513,14 +512,12 @@ export function AmericanoTab({
       const creatorIds = [...new Set(tournamentList.map((t) => t.creator_id).filter(Boolean))]
       if (creatorIds.length > 0) {
         const creatorProfiles = await fetchProfilesByIdMap(creatorIds.map(String))
-        setCreatorProfilesByUserId(creatorProfiles)
         const areaMap: Record<string, string> = {}
         for (const [id, profile] of Object.entries(creatorProfiles)) {
           areaMap[id] = String((profile as { area?: string | null }).area || '')
         }
         setCreatorAreasByUserId(areaMap)
       } else {
-        setCreatorProfilesByUserId({})
         setCreatorAreasByUserId({})
       }
 
@@ -631,7 +628,6 @@ export function AmericanoTab({
         if (tRow.creator_id) {
           const creatorProfiles = await fetchProfilesByIdMap([String(tRow.creator_id)])
           if (cancelled) return
-          setCreatorProfilesByUserId((prev) => ({ ...prev, ...creatorProfiles }))
           const creator = creatorProfiles[String(tRow.creator_id)] as { area?: string | null } | undefined
           if (creator) {
             setCreatorAreasByUserId((prev) => ({

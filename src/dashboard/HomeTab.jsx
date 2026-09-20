@@ -158,22 +158,12 @@ async function fetchHomeUpcomingItems(userId) {
   return items.slice(0, 5);
 }
 
-export function HomeTab({ user, setTab, showToast }) {
+export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
 
-  // Dato-badge (dag + måned) til kort.
-  const dayMonBadge = (ymd) => {
-    if (!ymd) return { top: "–", bottom: "" };
-    const d = new Date(`${ymd}T00:00:00`);
-    if (Number.isNaN(d.getTime())) return { top: "–", bottom: "" };
-    return {
-      top: d.toLocaleDateString("da-DK", { day: "numeric" }).replace(".", ""),
-      bottom: d.toLocaleDateString("da-DK", { month: "short" }).replace(".", ""),
-    };
-  };
   // Kort dato til undertekst, fx "9. jun".
   const shortDate = (ymd) => {
     if (!ymd) return "";
@@ -882,40 +872,6 @@ export function HomeTab({ user, setTab, showToast }) {
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   });
-  // Sekundær (afvis) knap til invitationer — outline, jf. mockup. Let løft via blød skygge + hvid inderkant.
-  const inviteSecondaryBtnStyle = {
-    ...btn(false),
-    boxSizing: "border-box",
-    justifyContent: "center",
-    whiteSpace: "nowrap",
-    padding: "8px 12px",
-    fontSize: "13px",
-    fontWeight: 700,
-    height: "auto",
-    borderRadius: "10px",
-    border: "1px solid " + theme.border,
-    color: theme.textMid,
-    background: theme.surface,
-    boxShadow: "0 1px 2px rgba(16,24,40,0.06)",
-    flexShrink: 0,
-  };
-  // Primær (accepter) knap til invitationer — fyldt grøn med dybde, auto-bredde så parret passer.
-  const invitePrimaryBtnStyle = {
-    ...btn(false),
-    boxSizing: "border-box",
-    justifyContent: "center",
-    whiteSpace: "nowrap",
-    padding: "8px 14px",
-    fontSize: "13px",
-    fontWeight: 700,
-    height: "auto",
-    borderRadius: "10px",
-    border: "1px solid rgba(0,0,0,0.05)",
-    color: "var(--pm-on-accent)",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + theme.green,
-    boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
-    flexShrink: 0,
-  };
 
   const activityBodyStyle = {
     flex: 1,
@@ -1173,7 +1129,7 @@ export function HomeTab({ user, setTab, showToast }) {
           <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
         </div>
-        <div className="pm-home-bell"><NotificationBell /></div>
+        <div className="pm-home-bell"><NotificationBell tourForceOpen={tourForceNotificationOpen} /></div>
       </div>
 
       <GrowthCampaignBanner />
