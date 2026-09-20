@@ -81,20 +81,22 @@ The app uses `signInWithOAuth` with PKCE; no extra env vars beyond `VITE_SUPABAS
 > gældende migration og den arkivfil der er identisk med den. Slå op dér frem for
 > at læse filer i `supabase/sql/` på må og få.
 >
-> **Historikken er ufuldstændig** (se INDEX.md): 49 funktioner kører i produktion
-> uden nogen migration, og 6 kernetabeller — `matches`, `match_players`,
-> `profiles`, `messages`, `courts`, `americano_tournaments` — ændres af
-> migrations uden nogensinde at blive oprettet af en. De blev lavet i hånden før
-> historikken begyndte.
+> **Historikken er lagt sammen (20. sep. 2026).**
+> `supabase/migrations/` rummer nu én fil:
+> `00000000000000_baseline_schema.sql`, dumpet direkte fra produktionen. De 150
+> gamle filer ligger i [`supabase/migrations_archive/`](supabase/migrations_archive/README.md)
+> — bevaret til opslag, køres aldrig igen.
 >
-> Konsekvensen er bevist, ikke formodet: Supabase' preview-branch på PR #365
-> fejlede med `relation "matches" does not exist` på den anden migration.
-> **Produktionen er ikke berørt** — den har tabellerne, og `db push` tilføjer kun
-> nye migrations — men et nyt miljø (staging, gendannelse) kan ikke bygges fra
-> historikken, og preview-branches fejler.
+> **Hvorfor:** historikken kunne ikke afspilles. 23 af 42 tabeller blev lavet i
+> hånden før april 2026, så en frisk database fejlede på migration nummer to.
+> Og selv med skemaet på plads pegede historikken et andet sted hen end
+> virkeligheden — `admin_adjust_elo` returnerer `integer` i produktion, men to
+> migrations erklærer `void`. En gendannelse der *ser* vellykket ud men giver et
+> forkert resultat er farligere end ingen.
 >
-> Rør de usporede objekter varsomt: ændrer du et af dem, så lav en migration, så
-> det ikke forbliver usporet.
+> Med baseline som eneste opskrift bliver en frisk database identisk med
+> produktionen **per konstruktion**. Regenerér den med workflowen
+> `dump-schema-baseline.yml`; nye ændringer bliver almindelige migrations oven på.
 
 > **Hvorfor det er vigtigt.** `supabase db push` afviser at køre, hvis databasen kender en version
 > der ikke har en lokal fil — og en lokal fil uden en registreret version bliver *anvendt på

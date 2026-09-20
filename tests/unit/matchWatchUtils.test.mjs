@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 test('match watch RPC and client helper exist', () => {
-  const sql = readFileSync(join(root, 'supabase/migrations/20260522120000_match_watch_discovery.sql'), 'utf8');
+  const sql = readFileSync(join(root, 'supabase/migrations_archive/20260522120000_match_watch_discovery.sql'), 'utf8');
   assert.match(sql, /match_watch_enabled/);
   assert.match(sql, /notify_match_watchers/);
   assert.match(sql, /discovery_notifications_today_count/);

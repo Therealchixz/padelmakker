@@ -13,6 +13,9 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDir = join(root, 'supabase', 'migrations');
 const sqlDir = join(root, 'supabase', 'sql');
+const archiveDir = join(root, 'supabase', 'migrations_archive');
+const BASELINE_NAME = '00000000000000_baseline_schema.sql';
+const BASELINE_PATH = join(migrationsDir, BASELINE_NAME);
 
 const STUB_RE =
   /history sync stub|already applied on production|applied on prod via dashboard/i;
@@ -95,23 +98,58 @@ for (const f of files) {
   const text = readFileSync(join(migrationsDir, f), 'utf8');
   if (text.length < MIN_BYTES && STUB_RE.test(text)) stubs.push(f);
   else if (text.length < MIN_BYTES) thin.push(f);
-
-  if (BACKFILLED_VERSIONS.has(v) && STUB_RE.test(text)) {
-    fail(`backfilled version still stub: ${f}`);
-  }
 }
 
 if (stubs.length) fail(`${stubs.length} stub(s): ${stubs.join(', ')}`);
-else ok(`${files.length} migration files, no empty stubs`);
+else ok(`${files.length} migration file(s), no empty stubs`);
 
 if (thin.length) {
   console.warn('WARN: very short migrations (may be intentional):', thin.join(', '));
 }
 
-for (const v of BACKFILLED_VERSIONS) {
-  if (!versions.has(v)) fail(`missing backfilled migration version ${v}`);
+// ---- Efter sammenlaegningen ------------------------------------------------
+// De 150 historiske migrations kunne ikke afspilles fra bunden: halvdelen af
+// skemaet blev lavet i haanden foer historikken begyndte, og de filer der FANDTES
+// beskrev aeldre udgaver end produktionen. Afspilning endte derfor et andet sted
+// end virkeligheden - fx admin_adjust_elo som "void" hvor produktionen har
+// "integer". En gendannelse der ser vellykket ud men giver et forkert resultat er
+// farligere end ingen.
+//
+// Nu er BASELINE den eneste opskrift: den er dumpet fra produktionen, saa en frisk
+// database bliver identisk per konstruktion. Historikken er flyttet til
+// migrations_archive/ og bevaret i git.
+
+if (!existsSync(BASELINE_PATH)) {
+  fail(`missing baseline migration ${BASELINE_NAME}`);
+} else {
+  const baseline = readFileSync(BASELINE_PATH, 'utf8');
+  if (baseline.length < 50_000) {
+    fail(`baseline ser afkortet ud (${baseline.length} tegn) - regenerer med dump-schema-baseline.yml`);
+  } else {
+    ok(`baseline til stede (${Math.round(baseline.length / 1024)} KB)`);
+  }
+  // Kernetabellerne er dem hvis fravaer braekkede gendannelsen tidligere.
+  for (const t of ['profiles', 'matches', 'match_players', 'match_results', 'messages', 'courts']) {
+    if (!new RegExp(`CREATE TABLE[^;]*?"?${t}"?\\s*\\(`, 'i').test(baseline)) {
+      fail(`baseline mangler CREATE TABLE for ${t}`);
+    }
+  }
 }
-ok(`all ${BACKFILLED_VERSIONS.size} backfilled versions present`);
+
+if (files.length !== 1) {
+  fail(`forventede praecis 1 migration (baseline), fandt ${files.length}: ${files.join(', ')}`);
+}
+
+// Historikken skal vaere bevaret, ikke slettet.
+if (!existsSync(archiveDir)) {
+  fail('missing supabase/migrations_archive/ - historikken skal bevares');
+} else {
+  const arkiv = readdirSync(archiveDir).filter((f) => f.endsWith('.sql'));
+  const arkivVersioner = new Set(arkiv.map((f) => f.slice(0, 14)));
+  const mangler = [...BACKFILLED_VERSIONS].filter((v) => !arkivVersioner.has(v));
+  if (mangler.length) fail(`arkivet mangler ${mangler.length} version(er): ${mangler.slice(0, 5).join(', ')}`);
+  else ok(`${arkiv.length} arkiverede migrations, alle ${BACKFILLED_VERSIONS.size} backfilled versioner bevaret`);
+}
 
 const recoveredDir = join(sqlDir, 'recovered');
 if (!existsSync(recoveredDir)) fail('missing supabase/sql/recovered/');
