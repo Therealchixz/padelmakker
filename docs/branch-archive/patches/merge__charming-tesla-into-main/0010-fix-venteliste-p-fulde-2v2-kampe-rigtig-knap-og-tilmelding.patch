@@ -1,0 +1,548 @@
+From a5de1fe975ec1422164d7801353aa25a590d8220 Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Mon, 6 Jul 2026 16:58:36 +0200
+Subject: [PATCH] =?UTF-8?q?Fix=20venteliste=20p=C3=A5=20fulde=202v2-kampe:?=
+ =?UTF-8?q?=20rigtig=20knap=20og=20tilmelding?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Venteliste var kun tekst i et kort uden handling; nu kan man skrive sig på via knappen og i kampdetaljer.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/components/kampe/KampeMatchListCard.jsx | 182 ++++++++++----------
+ src/dashboard/KampeTab.jsx                  |  93 ++++++++--
+ src/responsive.css                          |  81 ++++++++-
+ 3 files changed, 247 insertions(+), 109 deletions(-)
+
+diff --git a/src/components/kampe/KampeMatchListCard.jsx b/src/components/kampe/KampeMatchListCard.jsx
+index bdee6e5..434655f 100644
+--- a/src/components/kampe/KampeMatchListCard.jsx
++++ b/src/components/kampe/KampeMatchListCard.jsx
+@@ -17,13 +17,11 @@ function badgeToneClass(tone) {
+ 
+ const SLOTS_PER_TEAM = 2;
+ 
+-/** Always two slots per hold so listen visuelt 2 vs 2, ikke én lang række. */
+ function teamDisplaySlots(players) {
+   const filled = (players || []).slice(0, SLOTS_PER_TEAM);
+   return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
+ }
+ 
+-/** Fordel spillere på tværs af hold hvis DB har >2 på ét hold (ældre data). */
+ function balanceTeamsForListDisplay(t1, t2) {
+   const team1 = t1 || [];
+   const team2 = t2 || [];
+@@ -45,9 +43,12 @@ export function KampeMatchListCard({
+   isFull,
+   isClosed = false,
+   joined,
++  myRequest = null,
+   myEloChange = null,
+   unreadCount = 0,
++  ctaBusy = false,
+   onClick,
++  onCtaClick,
+ }) {
+   const venue =
+     matchPrefs?.booked === false && !String(match.court_name || '').trim()
+@@ -72,113 +73,104 @@ export function KampeMatchListCard({
+     !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
+   const t1Slots = teamDisplaySlots(t1);
+   const t2Slots = teamDisplaySlots(t2);
+-  const renderTeamSlot = (player, teamNum, slotIndex) => {
+-    if (!player) {
+-      return (
+-        <span
+-          key={`t${teamNum}-empty-${slotIndex}`}
+-          className="pm-kampe-v2-list-avatar-slot pm-kampe-v2-list-avatar-slot--empty"
+-          aria-hidden
+-        />
+-      );
+-    }
+-    return (
+-      <AvatarCircle
+-        key={player.user_id || `t${teamNum}-${slotIndex}`}
+-        avatar={profilesById[String(player.user_id)]?.avatar || player.user_emoji || '🎾'}
+-        size={28}
+-        emojiSize="12px"
+-        style={{ zIndex: slotIndex + 1 }}
+-      />
+-    );
+-  };
++  const showWaitlist = isFull && !joined && !isClosed && status !== 'completed' && status !== 'in_progress';
++  const onWaitlist = myRequest?.status === 'pending';
++  const ctaLabel = joined
++    ? 'Se kamp'
++    : showWaitlist
++      ? (onWaitlist ? 'På venteliste' : 'Venteliste')
++      : 'Tilmeld';
+ 
+   return (
+-    <button
+-      type="button"
++    <div
+       className={`pm-kampe-v2-list-card${dull ? ' pm-kampe-v2-list-card--dull' : ''}${unreadCount ? ' pm-kampe-v2-list-card--unread' : ''}`}
+-      onClick={onClick}
+-      aria-label={`Åbn kamp: ${venue}`}
+     >
+-      <div className="pm-kampe-v2-list-card-top">
+-        {badgeDay != null ? (
+-          <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
+-            <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
+-            <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
+-          </div>
+-        ) : null}
+-        <div className="pm-kampe-v2-list-card-main">
+-          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
+-            {venue}
++      <button
++        type="button"
++        className="pm-kampe-v2-list-card-hit"
++        onClick={onClick}
++        aria-label={`Åbn kamp: ${venue}`}
++      >
++        <div className="pm-kampe-v2-list-card-top">
++          {badgeDay != null ? (
++            <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
++              <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
++              <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
++            </div>
++          ) : null}
++          <div className="pm-kampe-v2-list-card-main">
++            <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
++              {venue}
++            </div>
++            <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
++              Kl. {timeLabel}
++              {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
++            </div>
+           </div>
+-          <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
+-            Kl. {timeLabel}
+-            {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
++          <div className="pm-kampe-v2-list-badges">
++            <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
++              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
++              {statusBadge.label}
++            </span>
++            {unreadCount > 0 ? (
++              <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
++            ) : null}
+           </div>
+         </div>
+-        <div className="pm-kampe-v2-list-badges">
+-          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+-            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+-            {statusBadge.label}
+-          </span>
+-          {unreadCount > 0 ? (
+-            <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
+-          ) : null}
+-        </div>
+-      </div>
++      </button>
+ 
+       <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
+-        <div className="pm-kampe-v2-list-participants">
+-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
+-            <div style={{ display: 'flex' }}>
+-              {[...t1Slots, ...t2Slots].map((p, i) => p ? (
+-                <AvatarCircle
+-                  key={p.user_id || `slot-${i}`}
+-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+-                  size={27}
+-                  emojiSize="10px"
+-                  style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
+-                />
+-              ) : (
+-                <span
+-                  key={`empty-${i}`}
+-                  style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
+-                  aria-hidden
+-                />
+-              ))}
++        <button
++          type="button"
++          className="pm-kampe-v2-list-card-bottom-open"
++          onClick={onClick}
++          aria-label={`Åbn kamp: ${venue}`}
++        >
++          <div className="pm-kampe-v2-list-participants">
++            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
++              <div style={{ display: 'flex' }}>
++                {[...t1Slots, ...t2Slots].map((p, i) => p ? (
++                  <AvatarCircle
++                    key={p.user_id || `slot-${i}`}
++                    avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
++                    size={27}
++                    emojiSize="10px"
++                    style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
++                  />
++                ) : (
++                  <span
++                    key={`empty-${i}`}
++                    style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
++                    aria-hidden
++                  />
++                ))}
++              </div>
++              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
++                {filledCount}/{maxPlayers} spillere
++              </span>
+             </div>
+-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
+-              {filledCount}/{maxPlayers} spillere
+-            </span>
+           </div>
+-        </div>
++          {showMyEloDelta ? (
++            <span
++              className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
++            >
++              {eloDelta >= 0 ? '+' : ''}
++              {eloDelta} ELO
++            </span>
++          ) : null}
++        </button>
+         {!isCompleted ? (
+-          <span
+-            className="pm-kampe-v2-list-cta"
+-            style={{
+-              flexShrink: 0,
+-              padding: '9px 16px',
+-              borderRadius: 10,
+-              fontSize: 12.5,
+-              fontWeight: 700,
+-              fontFamily: 'inherit',
+-              ...(isFull && !joined
+-                ? { background: 'var(--pm-surface, #fff)', color: 'var(--pm-navy, #16377E)', border: '1.5px solid var(--pm-border, #E2E8F0)' }
+-                : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
+-            }}
+-          >
+-            {joined ? 'Se kamp' : isFull ? 'Venteliste' : 'Tilmeld'}
+-          </span>
+-        ) : null}
+-        {showMyEloDelta ? (
+-          <span
+-            className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
++          <button
++            type="button"
++            className={`pm-kampe-v2-list-cta${showWaitlist ? ' pm-kampe-v2-list-cta--ghost' : ''}`}
++            onClick={() => onCtaClick?.()}
++            disabled={ctaBusy}
++            aria-label={ctaLabel}
+           >
+-            {eloDelta >= 0 ? '+' : ''}
+-            {eloDelta} ELO
+-          </span>
++            {ctaBusy && !onWaitlist ? 'Sender...' : ctaLabel}
++          </button>
+         ) : null}
+       </div>
+-    </button>
++    </div>
+   );
+ }
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index 21bcc50..9c5245f 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -1084,6 +1084,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+ 
+   const requestJoin = async (matchId) => {
+     setBusyId(matchId + '-req');
++    const match = matches.find((m) => String(m.id) === String(matchId));
++    const isClosed = (match?.match_type || 'open') === 'closed';
+     try {
+       const { error } = await supabase.from("match_join_requests").insert({
+         match_id: matchId,
+@@ -1093,18 +1095,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+         status: "pending",
+       });
+       if (error) throw error;
+-      // Notify creator via dedikeret RPC (kræver IKKE at ansøger er i match_players)
+       const { error: nErr } = await supabase.rpc("notify_creator_join_request", {
+         p_match_id: matchId,
+-        p_title: "Ny tilmeldingsanmodning 🔒",
+-        p_body: `${myDisplayName} anmoder om at deltage i din lukkede kamp.`,
++        p_title: isClosed ? "Ny tilmeldingsanmodning 🔒" : "Ny på ventelisten",
++        p_body: isClosed
++          ? `${myDisplayName} anmoder om at deltage i din lukkede kamp.`
++          : `${myDisplayName} vil på ventelisten til din fulde kamp.`,
+       });
+       if (nErr) console.warn("notify_creator_join_request:", nErr.message || nErr);
+-      showToast("Anmodning sendt! Venter på godkendelse 🔒");
++      showToast(isClosed ? "Anmodning sendt! Venter på godkendelse 🔒" : "Du er skrevet på ventelisten!");
+       await loadData();
+     } catch (e) {
+       if (e.code === "23505") {
+-        showToast("Du har allerede anmodet om at deltage i denne kamp.");
++        showToast(isClosed
++          ? "Du har allerede anmodet om at deltage i denne kamp."
++          : "Du står allerede på ventelisten.");
+       } else {
+         showToast("Fejl: " + (e.message || "Prøv igen"));
+       }
+@@ -1112,6 +1117,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     finally { setBusyId(null); }
+   };
+ 
++  const cancelJoinRequest = async (matchId, requestId) => {
++    setBusyId(matchId + '-cancel-req');
++    try {
++      const { error } = await supabase.from("match_join_requests")
++        .delete()
++        .eq("id", requestId)
++        .eq("user_id", user.id);
++      if (error) throw error;
++      showToast("Du er fjernet fra ventelisten.");
++      await loadData();
++    } catch (e) {
++      showToast("Fejl: " + (e.message || "Prøv igen"));
++    } finally { setBusyId(null); }
++  };
++
+   const approveJoinRequest = async (matchId, requestId, reqUserId, reqUserName, reqUserEmoji) => {
+     setBusyId(matchId + '-approve-' + requestId);
+     try {
+@@ -2018,7 +2038,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       busy,
+     } = cardState;
+ 
+-    if (!isClosed && status === "open" && left > 0 && !joined) {
++    if (!isClosed && left > 0 && !joined) {
+       return {
+         label: "Tilmeld mig",
+         onClick: () => {
+@@ -2050,6 +2070,33 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+         };
+       }
+     }
++    if (!isClosed && (status === "open" || status === "full") && isFull && !joined && !isCreator) {
++      if (!myRequest) {
++        return {
++          label: busyId === m.id + "-req" ? "Sender..." : "Skriv på venteliste",
++          onClick: () => void requestJoin(m.id),
++          disabled: busyId === m.id + "-req",
++        };
++      }
++      if (myRequest.status === "pending") {
++        return {
++          label: busyId === m.id + "-cancel-req" ? "Fjerner..." : "Forlad venteliste",
++          onClick: () => void cancelJoinRequest(m.id, myRequest.id),
++          disabled: busyId === m.id + "-cancel-req",
++          variant: "secondary",
++        };
++      }
++      if (myRequest.status === "approved") {
++        return {
++          label: "Vælg hold og tilmeld",
++          onClick: () => {
++            setDetailMatchId(null);
++            setTeamSelectMatch(m.id);
++          },
++          disabled: busy,
++        };
++      }
++    }
+     if (isCreator && (status === "open" || status === "full")) {
+       return {
+         label: isFull ? "Start kamp" : "Venter på spillere (2 mod 2)",
+@@ -2084,10 +2131,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       }
+     }
+     return null;
+-  }, [busyId, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
++  }, [busyId, cancelJoinRequest, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
+ 
+   const renderJoinRequestsPanel = (m, bundle) => {
+-    const { isCreator, pendingRequests } = bundle.cardState;
++    const { isCreator, pendingRequests, isClosed, left } = bundle.cardState;
+     const key = String(m.id);
+     const loading = joinRequestsLoadingMatchId === key;
+ 
+@@ -2103,11 +2150,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+ 
+     if (pendingRequests.length === 0) return null;
+ 
++    const canApproveNow = isClosed || left > 0;
++
+     return (
+       <div className="pm-kampe-v2-join-requests">
+         <div className="pm-kampe-v2-join-requests-title">
+-          🔒 Tilmeldingsanmodninger ({pendingRequests.length})
++          {isClosed ? `🔒 Tilmeldingsanmodninger (${pendingRequests.length})` : `Venteliste (${pendingRequests.length})`}
+         </div>
++        {!canApproveNow ? (
++          <p className="pm-kampe-v2-join-requests-hint">
++            Kampen er fuld — godkend spillere når en plads bliver ledig.
++          </p>
++        ) : null}
+         <div className="pm-kampe-v2-join-requests-list">
+           {pendingRequests.map((req) => (
+             <div key={req.id} className="pm-kampe-v2-join-request-row">
+@@ -2124,8 +2178,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+                 <button
+                   type="button"
+                   onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
+-                  disabled={busyId === m.id + "-approve-" + req.id}
++                  disabled={!canApproveNow || busyId === m.id + "-approve-" + req.id}
+                   className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--approve"
++                  title={!canApproveNow ? "Vent til en plads bliver ledig" : undefined}
+                 >
+                   {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
+                 </button>
+@@ -2523,14 +2578,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+           isFull={cardState.isFull}
+           isClosed={cardState.isClosed}
+           joined={cardState.joined}
++          myRequest={cardState.myRequest}
+           myEloChange={myEloChange}
+           unreadCount={cardState.attentionCount}
++          ctaBusy={busyId === m.id + '-req'}
+           onClick={() => {
+             if (matchUnreadByIdRef.current[matchKey]) {
+               void markMatchNotifsRead(m.id);
+             }
+             setDetailMatchId(m.id);
+           }}
++          onCtaClick={() => {
++            if (cardState.joined) {
++              setDetailMatchId(m.id);
++              return;
++            }
++            if (cardState.isFull && !cardState.isClosed) {
++              if (cardState.myRequest?.status === 'pending') {
++                setDetailMatchId(m.id);
++                return;
++              }
++              void requestJoin(m.id);
++              return;
++            }
++            setTeamSelectMatch(m.id);
++          }}
+         />
+       </div>
+     );
+@@ -2541,6 +2613,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     myUidStr,
+     observeMatchCard,
+     profilesById,
++    requestJoin,
+   ]);
+ 
+   const toolbarFormatTabs = [
+diff --git a/src/responsive.css b/src/responsive.css
+index 8cca245..60efd37 100644
+--- a/src/responsive.css
++++ b/src/responsive.css
+@@ -7075,11 +7075,77 @@ button,
+   border: 1px solid var(--pm-border);
+   border-radius: 14px;
+   background: var(--pm-surface);
+-  padding: 12px 14px;
+-  cursor: pointer;
++  padding: 0;
++  cursor: default;
+   font-family: inherit;
+   box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+   transition: border-color 140ms ease, box-shadow 140ms ease;
++  overflow: hidden;
++}
++
++.pm-kampe-v2-list-card-hit {
++  display: flex;
++  flex-direction: column;
++  width: 100%;
++  border: none;
++  background: transparent;
++  padding: 12px 14px 0;
++  cursor: pointer;
++  text-align: left;
++  font-family: inherit;
++}
++
++.pm-kampe-v2-list-card-hit:focus-visible,
++.pm-kampe-v2-list-card-bottom-open:focus-visible,
++.pm-kampe-v2-list-cta:focus-visible {
++  outline: 2px solid var(--pm-navy);
++  outline-offset: -2px;
++}
++
++.pm-kampe-v2-list-card-bottom-open {
++  flex: 1;
++  min-width: 0;
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 10px;
++  border: none;
++  background: transparent;
++  padding: 0;
++  margin: 0;
++  cursor: pointer;
++  text-align: left;
++  font-family: inherit;
++}
++
++.pm-kampe-v2-list-card-cta-row {
++  padding: 0 14px 12px;
++  display: flex;
++  justify-content: flex-end;
++}
++
++.pm-kampe-v2-list-cta {
++  flex-shrink: 0;
++  padding: 9px 16px;
++  border-radius: 10px;
++  font-size: 12.5px;
++  font-weight: 700;
++  font-family: inherit;
++  border: none;
++  background: var(--pm-navy, #16377E);
++  color: #fff;
++  cursor: pointer;
++}
++
++.pm-kampe-v2-list-cta--ghost {
++  background: var(--pm-surface, #fff);
++  color: var(--pm-navy, #16377E);
++  border: 1.5px solid var(--pm-border, #E2E8F0);
++}
++
++.pm-kampe-v2-list-cta:disabled {
++  opacity: 0.65;
++  cursor: default;
+ }
+ 
+ .pm-kampe-v2-list-card--unread {
+@@ -7255,8 +7321,8 @@ button,
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px;
+-  margin-top: 12px;
+-  padding-top: 12px;
++  margin-top: 0;
++  padding: 12px 14px;
+   border-top: 1px solid var(--pm-border, #E2E8F0);
+ }
+ 
+@@ -7699,6 +7765,13 @@ button,
+   margin-bottom: 8px;
+ }
+ 
++.pm-kampe-v2-join-requests-hint {
++  margin: 0 0 10px;
++  font-size: 12px;
++  color: var(--pm-text-light);
++  line-height: 1.45;
++}
++
+ .pm-kampe-v2-join-requests-list {
+   display: flex;
+   flex-direction: column;
+-- 
+2.43.0
+

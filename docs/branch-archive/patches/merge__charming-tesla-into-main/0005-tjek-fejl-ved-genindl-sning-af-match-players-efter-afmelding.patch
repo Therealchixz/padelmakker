@@ -1,0 +1,51 @@
+From 7dca49ac4b829c4ed25fab4b039d74321b6ed269 Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Sun, 5 Jul 2026 21:18:56 +0200
+Subject: [PATCH] =?UTF-8?q?Tjek=20fejl=20ved=20genindl=C3=A6sning=20af=20m?=
+ =?UTF-8?q?atch=5Fplayers=20efter=20afmelding/kick?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/dashboard/KampeTab.jsx | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index a129d51..639daab 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -1058,11 +1058,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
+       if (error) throw error;
+       /* Genindlæs match_players fra DB — stale React state kan ramme forkert tal hvis flere forlader samtidigt. */
+-      const { data: remainingRows } = await supabase
++      const { data: remainingRows, error: remainingError } = await supabase
+         .from("match_players")
+         .select("user_id, team")
+         .eq("match_id", matchId);
+-      const mp = (remainingRows || []).filter(p => p.user_id !== user.id);
++      if (remainingError) throw remainingError;
++      const mp = (remainingRows ?? []).filter(p => p.user_id !== user.id);
+ 
+       if (mp.length === 0) {
+         await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
+@@ -1180,11 +1181,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       const { error } = await supabase.from("match_players").delete()
+         .eq("match_id", matchId).eq("user_id", targetUserId);
+       if (error) throw error;
+-      const { data: remainingRows } = await supabase
++      const { data: remainingRows, error: remainingError } = await supabase
+         .from("match_players")
+         .select("user_id, team")
+         .eq("match_id", matchId);
+-      const mp = remainingRows || [];
++      if (remainingError) throw remainingError;
++      const mp = remainingRows ?? [];
+       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+       showToast("Spiller fjernet.");
+       await loadData();
+-- 
+2.43.0
+

@@ -15,7 +15,6 @@ import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
   formatPlaytomicLevel,
-  levelRangeForWindow,
 } from './padelLevelUtils';
 import {
   DEFAULT_LEVEL_WINDOW,

@@ -1,0 +1,298 @@
+From db1e4fcac86ed95f64fd1a9847ed194cd68db2e9 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 15 Apr 2026 10:20:11 +0000
+Subject: [PATCH] Fix all critical frontend code + add leave/kick RPCs
+
+Frontend changes:
+- KampeTab: joinMatchWithTeam now uses join_match RPC (atomic,
+  server-side capacity check + status update)
+- KampeTab: leaveMatch now uses leave_match RPC (atomic,
+  handles creator handoff server-side)
+- KampeTab: kickPlayer now uses kick_player_from_match RPC
+- KampeTab: confirmResult guards against double-click with busyId check
+- HomeTab: fetchFeed now checks for DB errors instead of destructuring
+  blindly, preventing crash on network failure
+
+SQL additions:
+- leave_match RPC: atomic leave with creator handoff
+- kick_player_from_match RPC: atomic kick with creator/admin check
+
+https://claude.ai/code/session_01UJHkwU6DtKxG9A2TXhpVSB
+---
+ SECURITY_AUDIT.md                          | 10 +--
+ src/dashboard/HomeTab.jsx                  | 15 ++--
+ src/dashboard/KampeTab.jsx                 | 66 +++++++---------
+ supabase/sql/critical_fixes_2026_04_15.sql | 87 ++++++++++++++++++++++
+ 4 files changed, 129 insertions(+), 49 deletions(-)
+
+diff --git a/SECURITY_AUDIT.md b/SECURITY_AUDIT.md
+index 6027041..897e71a 100644
+--- a/SECURITY_AUDIT.md
++++ b/SECURITY_AUDIT.md
+@@ -279,12 +279,12 @@ import { LEVELS, PLAY_STYLES, REGIONS, levelStringFromNum } from '../lib/platfor
+ 
+ | # | Type | Sværhedsgrad | Status |
+ |---|------|-------------|--------|
+-| 1 | `v_wins` aldrig tildelt → games_won = 0 | KRITISK | Kræver SQL-fix |
+-| 2 | matches UPDATE policy mismatch | KRITISK | Kræver policy-fix eller RPC |
+-| 3 | Race condition ved match-join | KRITISK | Kræver DB-trigger |
++| 1 | `v_wins` aldrig tildelt → games_won = 0 | KRITISK | FIXET (SQL + data-reparation) |
++| 2 | matches UPDATE policy mismatch | KRITISK | FIXET (join/leave/kick RPCs) |
++| 3 | Race condition ved match-join | KRITISK | FIXET (trigger + RPC med FOR UPDATE) |
+ | 4 | FK delete-regler = NO ACTION | MEDIUM | Overvej ON DELETE SET NULL/CASCADE |
+ | 5 | match_results mangler UNIQUE on match_id | MEDIUM | Tilføj index |
+-| 6 | Inkonsekvent fejlhåndtering i frontend | MEDIUM | Refactor DB-kald |
++| 6 | Inkonsekvent fejlhåndtering i frontend | MEDIUM | FIXET (HomeTab.jsx) |
+ | 7 | notifications mangler INSERT policy | LAV | By design (RPCs) |
+ | 8 | protect_elo_fields vs SECURITY DEFINER | MEDIUM | Test + evt. bypass-mekanisme |
+-| 9 | Duplikeret import i AdminTab | LAV | Fjern duplikat |
++| 9 | Duplikeret import i AdminTab | LAV | FIXET |
+diff --git a/src/dashboard/HomeTab.jsx b/src/dashboard/HomeTab.jsx
+index 96baa95..7f116d6 100644
+--- a/src/dashboard/HomeTab.jsx
++++ b/src/dashboard/HomeTab.jsx
+@@ -28,7 +28,7 @@ export function HomeTab({ user, setTab }) {
+ 
+   const fetchFeed = useCallback(async () => {
+     // ELO history feed
+-    const { data: eloDataFull } = await supabase
++    const { data: eloDataFull, error: eloErr } = await supabase
+       .from('elo_history')
+       .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
+       .neq('change', 0)
+@@ -36,20 +36,23 @@ export function HomeTab({ user, setTab }) {
+       .neq('result', 'adjustment')
+       .order('created_at', { ascending: false, nullsFirst: false })
+       .limit(40);
+-    
++    if (eloErr) { console.warn('Feed: elo_history fejl:', eloErr.message); setFeed([]); return; }
++
+     // Safety: ignore the +0 entries entirely as they are noise
+     const eloData = (eloDataFull || []).filter(r => Number(r.change) !== 0);
+-    
++
+     // Fetch match details for entries with match_id
+     const matchIds = [...new Set(eloData.filter(r => r.match_id).map(r => r.match_id))];
+     let matchMap = {};
+     if (matchIds.length > 0) {
+-      const [{ data: mRes }, { data: mDetails }] = await Promise.all([
++      const [resResults, resDetails] = await Promise.all([
+         supabase.from('match_results').select('*').in('match_id', matchIds),
+         supabase.from('matches').select('id, court_name, description').in('id', matchIds)
+       ]);
+-      (mRes || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
+-      (mDetails || []).forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
++      const mRes = resResults.data || [];
++      const mDetails = resDetails.data || [];
++      mRes.forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
++      mDetails.forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
+     }
+ 
+     // Grouping logic
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index 655e8d5..c8d5675 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -313,21 +313,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     setTeamSelectMatch(null);
+     setBusyId(matchId);
+     try {
+-      const { error } = await supabase.from("match_players").insert({
+-        match_id: matchId, user_id: user.id, user_name: myDisplayName,
+-        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: teamNum,
++      // Atomisk join via RPC — håndterer kapacitetstjek og status-opdatering server-side
++      const { data: rpcResult, error: rpcErr } = await supabase.rpc("join_match", {
++        p_match_id: matchId,
++        p_team: teamNum,
++        p_user_name: myDisplayName,
++        p_user_email: authUser?.email || user.email || null,
++        p_user_emoji: user.avatar || "🎾",
+       });
+-      if (error) throw error;
+-
+-      // Check if match is now full (4 players, 2 per team)
+-      const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
+-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
+-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+-      if (t1 >= 2 && t2 >= 2) {
+-        await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
+-      } else {
+-        await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
+-      }
++      if (rpcErr) throw rpcErr;
++      if (rpcResult?.error) throw new Error(rpcResult.error);
+ 
+       /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
+       {
+@@ -338,13 +333,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+         });
+         if (nErr) {
+           console.warn("notify_match_creator_on_join:", nErr.message || nErr);
+-          showToast(
+-            "Tilmelding gemt, men notifikation fejlede. Kør opdateret create_notification_rpc.sql (notify_match_creator_on_join) i Supabase."
+-          );
+         }
+       }
+       // Notify all players if match is now full
+-      if (t1 >= 2 && t2 >= 2) {
++      if (rpcResult?.status === "full") {
++        const mp = matchPlayers[matchId] || [];
+         mp.filter(p => p.user_id !== user.id).forEach(p => {
+           createNotification(p.user_id, "match_full", "Kampen er fuld! 🎾", "Alle 4 pladser er fyldt — kampen er klar til at starte.", matchId);
+         });
+@@ -367,21 +360,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+ 
+     setBusyId(matchId);
+     try {
+-      const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
+-      if (error) throw error;
+-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
+-      const isCreator = match && String(match.creator_id) === String(user.id);
+-
+-      if (mp.length === 0) {
+-        await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
+-        showToast("Kampen er slettet (ingen spillere tilbage).");
+-      } else if (isCreator) {
+-        await supabase.from("matches").update({ creator_id: mp[0].user_id, status: "open", current_players: mp.length }).eq("id", matchId);
+-        showToast("Du er afmeldt. Kampen er givet videre.");
+-      } else {
+-        await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+-        showToast("Du er afmeldt.");
+-      }
++      // Atomisk leave via RPC — håndterer status-opdatering og creator-overdragelse server-side
++      const { data: rpcResult, error: rpcErr } = await supabase.rpc("leave_match", {
++        p_match_id: matchId,
++      });
++      if (rpcErr) throw rpcErr;
++      if (rpcResult?.error) throw new Error(rpcResult.error);
++
++      const msg = rpcResult?.message || "Du er afmeldt.";
++      showToast(msg);
+       await loadData();
+     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+     finally { setBusyId(null); }
+@@ -394,11 +381,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+ 
+     setBusyId(matchId + '-kick-' + targetUserId);
+     try {
+-      const { error } = await supabase.from("match_players").delete()
+-        .eq("match_id", matchId).eq("user_id", targetUserId);
+-      if (error) throw error;
+-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
+-      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
++      // Atomisk kick via RPC — håndterer status-opdatering server-side
++      const { data: rpcResult, error: rpcErr } = await supabase.rpc("kick_player_from_match", {
++        p_match_id: matchId,
++        p_target_user_id: targetUserId,
++      });
++      if (rpcErr) throw rpcErr;
++      if (rpcResult?.error) throw new Error(rpcResult.error);
+       showToast("Spiller fjernet.");
+       await loadData();
+     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+@@ -514,6 +503,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+   };
+ 
+   const confirmResult = async (matchId) => {
++    if (busyId) return; // Forhindre dobbelt-klik
+     setBusyId(matchId);
+     try {
+       const mr = matchResults[matchId];
+diff --git a/supabase/sql/critical_fixes_2026_04_15.sql b/supabase/sql/critical_fixes_2026_04_15.sql
+index f721e0f..e96bbe5 100644
+--- a/supabase/sql/critical_fixes_2026_04_15.sql
++++ b/supabase/sql/critical_fixes_2026_04_15.sql
+@@ -151,3 +151,90 @@ BEGIN
+   );
+ END;
+ $$;
++
++
++-- ============================================================================
++-- FIX #4: RPC til atomisk match-leave
++-- Håndterer status-opdatering + creator-overdragelse server-side.
++-- ============================================================================
++
++CREATE OR REPLACE FUNCTION leave_match(p_match_id uuid)
++RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE
++  v_uid uuid;
++  v_status text;
++  v_creator uuid;
++  v_remaining int;
++  v_next_creator uuid;
++BEGIN
++  v_uid := auth.uid();
++  IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
++
++  -- Lås match-rækken
++  SELECT status, creator_id INTO v_status, v_creator
++  FROM matches WHERE id = p_match_id FOR UPDATE;
++
++  IF v_status IN ('in_progress', 'completed') THEN
++    RETURN jsonb_build_object('error', 'Du kan ikke afmelde dig en kamp, der er i gang eller afsluttet.');
++  END IF;
++
++  -- Tjek at brugeren er tilmeldt
++  IF NOT EXISTS (SELECT 1 FROM match_players WHERE match_id = p_match_id AND user_id = v_uid) THEN
++    RETURN jsonb_build_object('error', 'Du er ikke tilmeldt denne kamp.');
++  END IF;
++
++  -- Fjern spilleren
++  DELETE FROM match_players WHERE match_id = p_match_id AND user_id = v_uid;
++
++  -- Tæl tilbageværende
++  SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
++
++  IF v_remaining = 0 THEN
++    UPDATE matches SET status = 'cancelled', current_players = 0 WHERE id = p_match_id;
++    RETURN jsonb_build_object('success', true, 'message', 'Kampen er slettet (ingen spillere tilbage).');
++  END IF;
++
++  IF v_creator = v_uid THEN
++    -- Overdrag creator til næste spiller
++    SELECT user_id INTO v_next_creator FROM match_players WHERE match_id = p_match_id ORDER BY joined_at ASC LIMIT 1;
++    UPDATE matches SET creator_id = v_next_creator, status = 'open', current_players = v_remaining WHERE id = p_match_id;
++    RETURN jsonb_build_object('success', true, 'message', 'Du er afmeldt. Kampen er givet videre.');
++  END IF;
++
++  UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
++  RETURN jsonb_build_object('success', true, 'message', 'Du er afmeldt.');
++END;
++$$;
++
++
++-- ============================================================================
++-- FIX #5: RPC til atomisk kick-player
++-- Opretter eller admin kan fjerne en spiller server-side.
++-- ============================================================================
++
++CREATE OR REPLACE FUNCTION kick_player_from_match(p_match_id uuid, p_target_user_id uuid)
++RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE
++  v_uid uuid;
++  v_creator uuid;
++  v_remaining int;
++BEGIN
++  v_uid := auth.uid();
++  IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
++
++  -- Tjek adgang: kun creator eller admin
++  SELECT creator_id INTO v_creator FROM matches WHERE id = p_match_id;
++  IF v_creator IS DISTINCT FROM v_uid AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('error', 'Kun opretteren eller admin kan fjerne spillere.');
++  END IF;
++
++  -- Fjern spilleren
++  DELETE FROM match_players WHERE match_id = p_match_id AND user_id = p_target_user_id;
++
++  -- Opdatér status
++  SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
++  UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
++
++  RETURN jsonb_build_object('success', true, 'remaining', v_remaining);
++END;
++$$;
+-- 
+2.43.0
+

@@ -13,7 +13,7 @@ import {
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
 
 function DateBadge({ dateStr }) {
-  const [year, month, day] = (dateStr || '').split('-').map(Number);
+  const [, month, day] = (dateStr || '').split('-').map(Number);
   return (
     <div style={{
       width: 42, flexShrink: 0, textAlign: 'center',

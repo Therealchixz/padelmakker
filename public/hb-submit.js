@@ -3,7 +3,7 @@
   if (!form) return;
   try {
     form.submit();
-  } catch (e) {
+  } catch {
     /* CSP eller browser blokerer — brug knappen "Fortsæt til booking" */
   }
 })();

@@ -1,0 +1,36 @@
+From e5d8ce0baa985c1717c57447deda8d6299183ee8 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 14 Sep 2026 21:17:54 +0000
+Subject: [PATCH] Assert Min profil in logged-in e2e; Overblik is no longer on
+ the page.
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ tests/e2e/logged-in.spec.ts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/e2e/logged-in.spec.ts b/tests/e2e/logged-in.spec.ts
+index 0a5a4c9..85d959a 100644
+--- a/tests/e2e/logged-in.spec.ts
++++ b/tests/e2e/logged-in.spec.ts
+@@ -63,7 +63,7 @@ test.describe('Logged-in dashboard flows', () => {
+       await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
+     }).toPass({ timeout: 20_000 })
+     await page.locator('[data-tour="account-menu-profile-btn"]').click()
+-    await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
++    await expect(page.getByRole('heading', { name: 'Min profil' })).toBeVisible({ timeout: 20_000 })
+   })
+ 
+   test('kan åbne Baner og se søgning/regioner', async ({ page }) => {
+@@ -90,7 +90,7 @@ test.describe('Logged-in dashboard flows', () => {
+       await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
+     }).toPass({ timeout: 20_000 })
+     await page.locator('[data-tour="account-menu-profile-btn"]').click()
+-    await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
++    await expect(page.getByRole('heading', { name: 'Min profil' })).toBeVisible({ timeout: 20_000 })
+     await page.getByRole('button', { name: /^Rediger$/i }).first().click()
+     await expect(page.locator('[data-tour="blocked-users-section"]')).toBeVisible({ timeout: 15_000 })
+     await expect(page.getByText('Blokerede spillere')).toBeVisible()
+-- 
+2.43.0
+

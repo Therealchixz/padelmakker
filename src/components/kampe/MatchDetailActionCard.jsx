@@ -12,6 +12,7 @@ export function MatchDetailActionCard({
   chatOpen = false,
   onToggleChat,
   unreadChatCount = 0,
+  totalChatCount = 0,
   chatPanel = null,
   joined = false,
   status = null,
@@ -47,7 +48,7 @@ export function MatchDetailActionCard({
               <MessageCircle size={18} />
             </span>
             <span className="pm-kd-action-chat-copy">
-              <b>Match chat</b>
+              <b>Match chat{totalChatCount > 0 ? ` (${totalChatCount})` : ''}</b>
             </span>
             {unreadChatCount > 0 ? (
               <span className="pm-kd-action-unread" aria-label={`${unreadChatCount} ulæste beskeder`} />

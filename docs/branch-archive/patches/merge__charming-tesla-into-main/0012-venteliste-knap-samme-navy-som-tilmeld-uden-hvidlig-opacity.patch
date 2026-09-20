@@ -1,0 +1,44 @@
+From d752f0c381bf42ae6ba5c3bc38edc20eb9c7fc52 Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Mon, 6 Jul 2026 17:11:46 +0200
+Subject: [PATCH] Venteliste-knap: samme navy som Tilmeld uden hvidlig opacity
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dæmpning på fulde kampe rammer ikke længere CTA-knappen.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/responsive.css | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/responsive.css b/src/responsive.css
+index 0929174..b7ef2a8 100644
+--- a/src/responsive.css
++++ b/src/responsive.css
+@@ -7132,9 +7132,10 @@ button,
+   font-weight: 700;
+   font-family: inherit;
+   border: none;
+-  background: var(--pm-navy, #16377E);
++  background: var(--pm-navy);
+   color: #fff;
+   cursor: pointer;
++  box-shadow: 0 2px 6px rgba(22, 55, 126, 0.22);
+ }
+ 
+ .pm-kampe-v2-list-cta--on-waitlist {
+@@ -7153,7 +7154,8 @@ button,
+   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pm-danger) 35%, transparent);
+ }
+ 
+-.pm-kampe-v2-list-card--dull {
++.pm-kampe-v2-list-card--dull .pm-kampe-v2-list-card-hit,
++.pm-kampe-v2-list-card--dull .pm-kampe-v2-list-card-bottom-open {
+   opacity: 0.72;
+ }
+ 
+-- 
+2.43.0
+

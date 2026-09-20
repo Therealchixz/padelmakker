@@ -1,0 +1,68 @@
+From 63f7d599b043de76fbe4e808b379688bbe5e9fb3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 15 Apr 2026 19:13:13 +0000
+Subject: [PATCH] =?UTF-8?q?Fix=20admin=20cannot=20delete=20matches=20?=
+ =?UTF-8?q?=E2=80=94=20add=20is=5Fadmin()=20to=20DELETE=20policies?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+matches, match_results, and notifications DELETE policies only allowed
+the creator/submitter/owner. Admin was blocked from deleting matches.
+Added OR is_admin() to all three DELETE policies.
+
+https://claude.ai/code/session_01UJHkwU6DtKxG9A2TXhpVSB
+---
+ supabase/sql/critical_fixes_2026_04_15.sql | 39 ++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/supabase/sql/critical_fixes_2026_04_15.sql b/supabase/sql/critical_fixes_2026_04_15.sql
+index 11ca5d9..b135abf 100644
+--- a/supabase/sql/critical_fixes_2026_04_15.sql
++++ b/supabase/sql/critical_fixes_2026_04_15.sql
+@@ -549,3 +549,42 @@ BEGIN
+   END LOOP;
+ END;
+ $$;
++
++
++-- ============================================================================
++-- FIX #8: Admin kan ikke slette kampe — DELETE policies mangler is_admin()
++-- matches, match_results og notifications DELETE policies opdateres.
++-- ============================================================================
++
++-- matches: kun creator kunne slette — tilføj admin
++DROP POLICY IF EXISTS "Opretteren kan slette sin kamp" ON matches;
++DROP POLICY IF EXISTS matches_delete_by_creator_or_admin ON matches;
++
++CREATE POLICY matches_delete_by_creator_or_admin ON matches
++  FOR DELETE TO authenticated
++  USING (
++    creator_id = auth.uid()
++    OR public.is_admin()
++  );
++
++-- match_results: kun submitter kunne slette — tilføj admin
++DROP POLICY IF EXISTS "Indsenderen kan slette afviste resultater" ON match_results;
++DROP POLICY IF EXISTS match_results_delete_by_submitter_or_admin ON match_results;
++
++CREATE POLICY match_results_delete_by_submitter_or_admin ON match_results
++  FOR DELETE TO authenticated
++  USING (
++    auth.uid() = submitted_by
++    OR public.is_admin()
++  );
++
++-- notifications: kun ejer kunne slette — tilføj admin
++DROP POLICY IF EXISTS notifications_delete_own ON notifications;
++DROP POLICY IF EXISTS notifications_delete_own_or_admin ON notifications;
++
++CREATE POLICY notifications_delete_own_or_admin ON notifications
++  FOR DELETE TO authenticated
++  USING (
++    auth.uid() = user_id
++    OR public.is_admin()
++  );
+-- 
+2.43.0
+

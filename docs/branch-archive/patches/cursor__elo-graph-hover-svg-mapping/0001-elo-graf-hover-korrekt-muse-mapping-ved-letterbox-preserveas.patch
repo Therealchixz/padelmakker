@@ -1,0 +1,58 @@
+From cd38dc248b8554f562f355506ab761cf9ca45ad8 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 6 Apr 2026 20:11:38 +0000
+Subject: [PATCH] ELO-graf hover: korrekt muse-mapping ved letterbox
+ (preserveAspectRatio)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bruger SVG getScreenCTM() til at konvertere clientX til viewBox-koordinater,
+så første/sidste punkt matcher visuelt kant af kurven. Klemmer x til
+chart-intervallet så endepunkter vælges når musen er i yderkanterne.
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ src/padelmakker-platform.jsx | 23 ++++++++++++++++++++---
+ 1 file changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/src/padelmakker-platform.jsx b/src/padelmakker-platform.jsx
+index 9fb76be..7380bd7 100644
+--- a/src/padelmakker-platform.jsx
++++ b/src/padelmakker-platform.jsx
+@@ -1840,12 +1840,29 @@ function EloGraph({ data }) {
+     return { x, y, val: values[i], date: d.date };
+   });
+ 
+-  const pickNearestIndex = (clientX) => {
++  /** Map screen X to SVG user space (viewBox coords). Default "meet" scaling centers the graph, so rect-width ≠ viewBox width — getScreenCTM fixes that. */
++  const clientXToSvgX = (clientX) => {
+     const el = svgRef.current;
+-    if (!el || points.length === 0) return 0;
++    if (!el) return 0;
++    const pt = el.createSVGPoint();
++    pt.x = clientX;
++    pt.y = 0;
++    const ctm = el.getScreenCTM();
++    if (ctm) {
++      const inv = ctm.inverse();
++      return pt.matrixTransform(inv).x;
++    }
+     const rect = el.getBoundingClientRect();
+     if (rect.width <= 0) return 0;
+-    const svgX = ((clientX - rect.left) / rect.width) * W;
++    return ((clientX - rect.left) / rect.width) * W;
++  };
++
++  const pickNearestIndex = (clientX) => {
++    if (points.length === 0) return 0;
++    let svgX = clientXToSvgX(clientX);
++    const xMin = points[0].x;
++    const xMax = points[points.length - 1].x;
++    svgX = Math.max(xMin, Math.min(xMax, svgX));
+     let best = 0;
+     let bestDist = Infinity;
+     points.forEach((p, i) => {
+-- 
+2.43.0
+

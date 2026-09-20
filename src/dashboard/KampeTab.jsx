@@ -1467,7 +1467,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       return;
     }
 
-    const mp = matchPlayers[matchId] || [];
     const isCreator = String(match.creator_id) === String(user.id);
     const soonNotice = (() => {
       if (!match.date || !match.time) return '';
@@ -2365,7 +2364,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       counts.total += count;
     }
     return counts;
-  }, [getStatus, matchChatUnreadById, matchUnreadById, matches]);
+  }, [getStatus, matchChatUnreadById, matchUnreadById, matches, joinRequests, user.id]);
 
   const searchPlaceholder = kampeFormat === "liga"
     ? "Søg liga..."
@@ -2383,11 +2382,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
     setSearchQuery("");
   };
-  const onListFilterChange = (nextFilter) => {
+  const onListFilterChange = useCallback((nextFilter) => {
     const normalized = normalizeKampeListFilter(nextFilter);
     setKampeListFilter(normalized);
     mergeKampeSessionPrefs(user.id, { listFilter: normalized });
-  };
+  }, [user.id]);
   const onViewTabChange = (nextView) => {
     setViewTab(nextView);
     mergeKampeSessionPrefs(user.id, { view: nextView });
@@ -2434,6 +2433,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       unreadChatCount: joinedMatchIds.has(String(m.id))
         ? (matchChatUnreadById[String(m.id)] || 0)
         : 0,
+      totalChatCount: matchChatTotalById[String(m.id)] || 0,
       unreadMatchCount: matchUnreadById[String(m.id)] || 0,
     });
     return { mp, teamStats, mr, matchPrefs, status, isInProgress, winnerTeam, cardState };
@@ -2456,6 +2456,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     matchChatSendingById,
     matchChatErrorById,
     matchChatUnreadById,
+    matchChatTotalById,
     matchUnreadById,
   ]);
 
@@ -2547,7 +2548,14 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
     }
     return null;
-  }, [busyId, cancelJoinRequest, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
+  // Listen er komplet, men denne useCallback memoiserer reelt ikke: requestJoin,
+  // cancelJoinRequest og startMatch er almindelige funktioner, der genskabes hver
+  // rendering. ESLint foreslaar at pakke dem i useCallback - det ville ikke hjaelpe,
+  // for de afhaenger alle af `matches`, som skifter ved hver indlaesning. Til
+  // gengaeld ville en overset afhaengighed give praecis den slags forAeldede
+  // vaerdier som rettelsen ovenfor (adminCanAct) fjernede. Hoerer til opdelingen
+  // af denne fil, ikke til en lap her.
+  }, [busyId, cancelJoinRequest, adminCanAct, loadData, requestJoin, startMatch, user.id]);
 
   const renderJoinRequestsPanel = (m, bundle) => {
     const { isCreator, pendingRequests, isClosed, left } = bundle.cardState;
@@ -2677,6 +2685,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       chatSending,
       chatError,
       unreadChatCount,
+      totalChatCount,
       adminActionsOpen,
       isPlayerInMatch,
     } = bundle.cardState;
@@ -2758,6 +2767,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           chatOpen={chatOpen}
           onToggleChat={() => { void toggleMatchChat(m.id); }}
           unreadChatCount={unreadChatCount}
+          totalChatCount={totalChatCount}
           chatPanel={chatOpen ? (
             <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: 0 }}>
               {!canWriteMatchChat && isAdmin ? (
@@ -3028,8 +3038,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     markMatchNotifsRead,
     myUidStr,
     observeMatchCard,
+    open2v2Detail,
     profilesById,
-    requestJoin,
   ]);
 
   const toolbarFormatTabs = [
@@ -3090,7 +3100,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
     }
     return chips;
-  }, [kampeScope, kampeFormat, user, kampeListFilter]);
+  }, [kampeFormat, user, kampeListFilter, myElo, onListFilterChange]);
   const showCreatePanel =
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||

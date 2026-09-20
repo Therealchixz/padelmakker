@@ -1,0 +1,51 @@
+From abe609eee9424f703250e8781f90395bbfa305c5 Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Mon, 6 Jul 2026 17:08:31 +0200
+Subject: [PATCH] =?UTF-8?q?Venteliste-knap:=20navy=20n=C3=A5r=20ledig,=20g?=
+ =?UTF-8?q?r=C3=B8n=20kant=20n=C3=A5r=20man=20st=C3=A5r=20p=C3=A5=20listen?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Gør det tydeligere om man kan skrive sig på eller allerede er på ventelisten.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/components/kampe/KampeMatchListCard.jsx | 2 +-
+ src/responsive.css                          | 5 +++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/components/kampe/KampeMatchListCard.jsx b/src/components/kampe/KampeMatchListCard.jsx
+index 434655f..cc39d4f 100644
+--- a/src/components/kampe/KampeMatchListCard.jsx
++++ b/src/components/kampe/KampeMatchListCard.jsx
+@@ -162,7 +162,7 @@ export function KampeMatchListCard({
+         {!isCompleted ? (
+           <button
+             type="button"
+-            className={`pm-kampe-v2-list-cta${showWaitlist ? ' pm-kampe-v2-list-cta--ghost' : ''}`}
++            className={`pm-kampe-v2-list-cta${showWaitlist && onWaitlist ? ' pm-kampe-v2-list-cta--on-waitlist' : ''}`}
+             onClick={() => onCtaClick?.()}
+             disabled={ctaBusy}
+             aria-label={ctaLabel}
+diff --git a/src/responsive.css b/src/responsive.css
+index 60efd37..0929174 100644
+--- a/src/responsive.css
++++ b/src/responsive.css
+@@ -7137,10 +7137,11 @@ button,
+   cursor: pointer;
+ }
+ 
+-.pm-kampe-v2-list-cta--ghost {
++.pm-kampe-v2-list-cta--on-waitlist {
+   background: var(--pm-surface, #fff);
+   color: var(--pm-navy, #16377E);
+-  border: 1.5px solid var(--pm-border, #E2E8F0);
++  border: 1.5px solid var(--pm-green, #059669);
++  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-green, #059669) 12%, transparent);
+ }
+ 
+ .pm-kampe-v2-list-cta:disabled {
+-- 
+2.43.0
+

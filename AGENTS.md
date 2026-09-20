@@ -23,6 +23,19 @@ npm run build
 ### Linting & type-checking
 
 - **ESLint** (flat config: `eslint.config.js`): `npm run lint` — includes `eslint-plugin-react` and `eslint-plugin-react-hooks`. JavaScript and TypeScript under the repo are linted; `dist/` and `node_modules/` are ignored.
+
+  **Advarsler er en spærre, ikke en anbefaling.** `npm run lint` kører med
+  `--max-warnings 4` og fejler ved den femte. Tallet er ikke vilkårligt: det er
+  præcis de fire advarsler der står tilbage med vilje i `KampeTab.jsx`
+  (requestJoin, cancelJoinRequest, startMatch og buildMatchPrimaryAction —
+  begrundelsen står ved hook'en). **Hæv aldrig tallet for at få CI grøn.**
+  Enten hører din nye advarsel til en reel fejl, eller også fortjener den en
+  forklaring i koden og en `eslint-disable-next-line` med begrundelse.
+
+  Grunden til spærren: `eslint .` afslutter med kode 0 uanset hvor mange
+  advarsler der er. Repoet nåede 37 — heriblandt fem reelle fejl, der havde
+  været live i over en måned — mens CI var grøn hver eneste gang. Værktøjet
+  fandt dem; ingen hørte efter. Tallet skal ned mod 0 når `KampeTab` deles op.
 - **TypeScript**: `tsconfig.json` has `checkJs: false` and `noEmit: true`; use `npm run typecheck` (`tsc --noEmit`) for `.ts`/`.tsx` only.
 
 Prettier is not configured.

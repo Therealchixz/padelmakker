@@ -1,0 +1,29 @@
+From 37c457f5adc02ced13a771a83991447b1d9fd3ad Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 6 Apr 2026 20:23:03 +0000
+Subject: [PATCH] =?UTF-8?q?AGENTS:=20dokument=C3=A9r=20workflow=20med=20ny?=
+ =?UTF-8?q?=20branch=20og=20ny=20PR=20pr.=20=C3=A6ndring?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ AGENTS.md | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 3f41661..e881b99 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -43,3 +43,7 @@ Without these, the app loads the UI with placeholder Supabase credentials and da
+ - `src/lib/AuthContext.jsx` — Authentication context provider
+ - `src/api/base44Client.js` — CRUD entity helpers for Supabase tables
+ - `src/components/PadelMatchResultInput.tsx` — Match result input component (TypeScript)
++
++### Git: ny kode → ny PR
++
++Ved hver ny kodeændring: **ny branch fra opdateret `main`**, commit, push til `origin`, og **opret en ny pull request** mod `main`. Genbrug ikke en branch/PR der allerede er merged (GitHub tillader ikke at pushe til den samme merge igen). Hvis push fejler lokalt: `git pull origin main`, ny branch, og flyt ændringerne dertil (eller bed agenten om en ny PR).
+-- 
+2.43.0
+

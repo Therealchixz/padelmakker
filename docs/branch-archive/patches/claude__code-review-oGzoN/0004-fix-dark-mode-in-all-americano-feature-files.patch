@@ -1,0 +1,735 @@
+From 94fe724afd031714d2cbe808a87e6eae38538752 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 19 Apr 2026 09:25:01 +0000
+Subject: [PATCH] Fix dark mode in all Americano feature files
+
+Replace all hardcoded hex colors with CSS variable tokens via pmTheme
+so all Americano UI adapts to light/dark mode automatically.
+
+https://claude.ai/code/session_0119sgLyD77UgPeF8KqKiTCM
+---
+ .../americano/AmericanoCompletedSummary.tsx   | 33 +++----
+ .../americano/AmericanoResultsPanel.tsx       | 43 ++++-----
+ src/features/americano/AmericanoTab.tsx       | 91 ++++++++++---------
+ .../CreateAmericanoTournamentForm.tsx         | 33 +++----
+ .../americano/americanoOutcomeColors.ts       | 24 ++---
+ 5 files changed, 114 insertions(+), 110 deletions(-)
+
+diff --git a/src/features/americano/AmericanoCompletedSummary.tsx b/src/features/americano/AmericanoCompletedSummary.tsx
+index eb4027e..d5f6057 100644
+--- a/src/features/americano/AmericanoCompletedSummary.tsx
++++ b/src/features/americano/AmericanoCompletedSummary.tsx
+@@ -1,6 +1,7 @@
+ import { useEffect, useState } from 'react'
+ import { ChevronDown } from 'lucide-react'
+ import { supabase } from '../../lib/supabase'
++import { theme as pmTheme } from '../../lib/platformTheme'
+ import type { AmericanoMatchRow, AmericanoTournament } from './types'
+ import {
+   americanoOutcomeColors,
+@@ -108,9 +109,9 @@ export function AmericanoCompletedSummary({
+     <div
+       style={{
+         marginTop: 12,
+-        background: '#F8FAFC',
++        background: pmTheme.surfaceAlt,
+         borderRadius: 8,
+-        border: '1px solid #E2E8F0',
++        border: `1px solid ${pmTheme.border}`,
+         overflow: 'hidden',
+         fontFamily: font,
+       }}
+@@ -133,8 +134,8 @@ export function AmericanoCompletedSummary({
+         }}
+       >
+         <div>
+-          <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120' }}>Resultater og stilling</div>
+-          <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
++          <div style={{ fontSize: 12, fontWeight: 700, color: pmTheme.text }}>Resultater og stilling</div>
++          <div style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 2 }}>
+             {matches === undefined
+               ? 'Tryk for at se samlet stilling og alle kampresultater'
+               : `Samlet point + alle kampe (${sortedMatches.length} ${sortedMatches.length === 1 ? 'kamp' : 'kampe'})`}
+@@ -142,7 +143,7 @@ export function AmericanoCompletedSummary({
+         </div>
+         <ChevronDown
+           size={18}
+-          color="#64748B"
++          color={pmTheme.textLight}
+           strokeWidth={2}
+           style={{
+             flexShrink: 0,
+@@ -154,27 +155,27 @@ export function AmericanoCompletedSummary({
+       </button>
+ 
+       {open && (
+-        <div style={{ padding: '0 12px 14px', borderTop: '1px solid #E2E8F0' }}>
++        <div style={{ padding: '0 12px 14px', borderTop: `1px solid ${pmTheme.border}` }}>
+           {loading && (
+-            <div style={{ fontSize: 12, color: '#64748B', paddingTop: 12 }}>Henter resultater…</div>
++            <div style={{ fontSize: 12, color: pmTheme.textLight, paddingTop: 12 }}>Henter resultater…</div>
+           )}
+           {fetchErr && !loading && (
+-            <div style={{ fontSize: 12, color: '#B45309', paddingTop: 12 }}>{fetchErr}</div>
++            <div style={{ fontSize: 12, color: pmTheme.warm, paddingTop: 12 }}>{fetchErr}</div>
+           )}
+           {!loading && matches !== undefined && (
+             <>
+-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 12, marginBottom: 8 }}>
++              <div style={{ fontSize: 11, fontWeight: 700, color: pmTheme.textLight, marginTop: 12, marginBottom: 8 }}>
+                 Samlet stilling (alle kampoint)
+               </div>
+               {leaderboard.length === 0 ? (
+-                <div style={{ fontSize: 12, color: '#94A3B8' }}>Ingen deltagere.</div>
++                <div style={{ fontSize: 12, color: pmTheme.textLight }}>Ingen deltagere.</div>
+               ) : (
+                 <ol
+                   style={{
+                     margin: 0,
+                     paddingLeft: 18,
+                     fontSize: 13,
+-                    color: '#334155',
++                    color: pmTheme.textMid,
+                     lineHeight: 1.65,
+                   }}
+                 >
+@@ -183,24 +184,24 @@ export function AmericanoCompletedSummary({
+                     const isMe = pu && String(pu.user_id) === String(currentUserId)
+                     return (
+                       <li key={row.id}>
+-                        <span style={{ color: '#0F172A', fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
++                        <span style={{ color: pmTheme.text, fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
+                         {isMe ? (
+-                          <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
++                          <span style={{ color: pmTheme.accent, fontWeight: 600 }}> (dig)</span>
+                         ) : null}
+                         {' — '}
+-                        <strong style={{ color: '#0F172A' }}>{row.points}</strong> point
++                        <strong style={{ color: pmTheme.text }}>{row.points}</strong> point
+                       </li>
+                     )
+                   })}
+                 </ol>
+               )}
+ 
+-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 16, marginBottom: 8 }}>
++              <div style={{ fontSize: 11, fontWeight: 700, color: pmTheme.textLight, marginTop: 16, marginBottom: 8 }}>
+                 Kamp for kamp (format {P} point)
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                 {sortedMatches.length === 0 ? (
+-                  <div style={{ fontSize: 12, color: '#94A3B8' }}>Ingen kampe i turneringen.</div>
++                  <div style={{ fontSize: 12, color: pmTheme.textLight }}>Ingen kampe i turneringen.</div>
+                 ) : (
+                   sortedMatches.map((m, i) => {
+                     const a = m.team_a_score
+diff --git a/src/features/americano/AmericanoResultsPanel.tsx b/src/features/americano/AmericanoResultsPanel.tsx
+index 045ac75..9af2201 100644
+--- a/src/features/americano/AmericanoResultsPanel.tsx
++++ b/src/features/americano/AmericanoResultsPanel.tsx
+@@ -1,6 +1,7 @@
+ import { useCallback, useEffect, useState, useRef } from 'react'
+ import { Check, Pencil } from 'lucide-react'
+ import { supabase } from '../../lib/supabase'
++import { theme as pmTheme } from '../../lib/platformTheme'
+ import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
+ import {
+   americanoOutcomeColors,
+@@ -12,13 +13,13 @@ import {
+ const font = "'Inter', sans-serif"
+ 
+ const c = {
+-  line: '#E8ECF1',
+-  muted: '#94A3B8',
+-  text: '#0F172A',
+-  softBg: '#F8FAFC',
+-  avatarBg: '#E2E8F0',
+-  avatarText: '#64748B',
+-  accent: '#2563EB',
++  line: pmTheme.border,
++  muted: pmTheme.textLight,
++  text: pmTheme.text,
++  softBg: pmTheme.surfaceAlt,
++  avatarBg: pmTheme.border,
++  avatarText: pmTheme.textLight,
++  accent: pmTheme.accent,
+ } as const
+ 
+ function initialsFromName(name: string): string {
+@@ -454,7 +455,7 @@ export function AmericanoResultsPanel({
+   const leaderboard = buildLeaderboard(participants, matches, scores, P)
+ 
+   if (loading) {
+-    return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
++    return <div style={{ fontSize: 12, color: pmTheme.textLight, marginTop: 12 }}>Henter kampe…</div>
+   }
+ 
+   return (
+@@ -465,12 +466,12 @@ export function AmericanoResultsPanel({
+       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
+         {isCreator ? (
+           <>
+-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
++            <strong style={{ color: pmTheme.textMid }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+             <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
+           </>
+         ) : (
+           <>
+-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
++            <strong style={{ color: pmTheme.textMid }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
+             <strong>opretteren</strong> kan indtaste og rette resultater.
+           </>
+         )}
+@@ -486,7 +487,7 @@ export function AmericanoResultsPanel({
+         }}
+       >
+         <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
+-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: '#334155' }}>
++        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: pmTheme.textMid }}>
+           {leaderboard.map((row) => (
+             <li key={row.id}>
+               <span style={{ color: c.text }}>{row.name}</span>{' '}
+@@ -542,8 +543,8 @@ export function AmericanoResultsPanel({
+                 marginBottom: 14,
+                 padding: isActiveRound ? '14px 14px 6px' : '12px 12px 4px',
+                 borderRadius: 10,
+-                background: isActiveRound ? '#FFFBEB' : matchPal.bg,
+-                border: isActiveRound ? `2px solid #F59E0B` : `1px solid ${matchPal.border}`,
++                background: isActiveRound ? pmTheme.warmBg : matchPal.bg,
++                border: isActiveRound ? `2px solid ${pmTheme.warm}` : `1px solid ${matchPal.border}`,
+                 boxShadow: isActiveRound ? '0 4px 14px rgba(245, 158, 11, 0.15)' : 'none',
+                 opacity: containerOpacity,
+                 transition: 'opacity 0.2s',
+@@ -551,8 +552,8 @@ export function AmericanoResultsPanel({
+             >
+               {isActiveRound && (
+                 <div style={{
+-                  background: onCourt ? '#10B981' : '#E2E8F0',
+-                  color: onCourt ? '#fff' : '#475569',
++                  background: onCourt ? pmTheme.green : pmTheme.border,
++                  color: onCourt ? '#fff' : pmTheme.textMid,
+                   padding: '6px 12px',
+                   borderRadius: '6px 6px 0 0',
+                   margin: '-14px -14px 10px -14px',
+@@ -611,7 +612,7 @@ export function AmericanoResultsPanel({
+                         height: 40,
+                         borderRadius: '50%',
+                         border: `2px solid ${c.accent}`,
+-                        background: '#fff',
++                        background: pmTheme.surface,
+                         display: 'flex',
+                         alignItems: 'center',
+                         justifyContent: 'center',
+@@ -666,7 +667,7 @@ export function AmericanoResultsPanel({
+                           textAlign: 'center',
+                           fontFamily: font,
+                           color: c.accent,
+-                          background: '#F0F7FF',
++                          background: pmTheme.blueBg,
+                           outline: 'none',
+                         }}
+                       />
+@@ -709,7 +710,7 @@ export function AmericanoResultsPanel({
+                           textAlign: 'center',
+                           fontFamily: font,
+                           color: c.accent,
+-                          background: '#F0F7FF',
++                          background: pmTheme.blueBg,
+                           outline: 'none',
+                         }}
+                       />
+@@ -733,9 +734,9 @@ export function AmericanoResultsPanel({
+             fontWeight: 600,
+             padding: '8px 14px',
+             borderRadius: 8,
+-            border: '1px solid #D5DDE8',
+-            background: '#fff',
+-            color: '#3E4C63',
++            border: `1px solid ${pmTheme.border}`,
++            background: pmTheme.surface,
++            color: pmTheme.textMid,
+             cursor: saving ? 'wait' : 'pointer',
+           }}
+         >
+diff --git a/src/features/americano/AmericanoTab.tsx b/src/features/americano/AmericanoTab.tsx
+index 458c84c..ce956fb 100644
+--- a/src/features/americano/AmericanoTab.tsx
++++ b/src/features/americano/AmericanoTab.tsx
+@@ -1,6 +1,7 @@
+ import { useCallback, useEffect, useState } from 'react'
+ import { ChevronDown, Trash2 } from 'lucide-react'
+ import { supabase } from '../../lib/supabase'
++import { theme as pmTheme } from '../../lib/platformTheme'
+ import { useAuth } from '../../lib/AuthContext'
+ import { Court } from '../../api/base44Client'
+ import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
+@@ -17,7 +18,7 @@ import { PlayerStatsModal } from '../../components/PlayerStatsModal'
+ const font = "'Inter', sans-serif"
+ 
+ /** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
+-function AvatarInCircle({ av, size = 36, fontSize = 18, bg = '#E2E8F0' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
++function AvatarInCircle({ av, size = 36, fontSize = 18, bg = pmTheme.border }: { av: string; size?: number; fontSize?: number; bg?: string }) {
+   return (
+     <div
+       style={{
+@@ -446,7 +447,7 @@ export function AmericanoTab({
+ 
+   if (loading) {
+     return (
+-      <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
++      <div style={{ textAlign: 'center', padding: 40, color: pmTheme.textLight, fontSize: 14, fontFamily: font }}>
+         Indlæser Americano…
+       </div>
+     )
+@@ -454,7 +455,7 @@ export function AmericanoTab({
+ 
+   if (!profileId) {
+     return (
+-      <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
++      <div style={{ textAlign: 'center', padding: 40, color: pmTheme.textLight, fontSize: 14, fontFamily: font }}>
+         Du skal være logget ind for at bruge Americano.
+       </div>
+     )
+@@ -502,9 +503,9 @@ export function AmericanoTab({
+       fontWeight: 600,
+       padding: '7px 14px',
+       borderRadius: 8,
+-      border: active ? 'none' : '1px solid #D5DDE8',
+-      background: active ? '#1D4ED8' : '#fff',
+-      color: active ? '#fff' : '#3E4C63',
++      border: active ? 'none' : '1px solid ' + pmTheme.border,
++      background: active ? pmTheme.accent : pmTheme.surface,
++      color: active ? '#fff' : pmTheme.textMid,
+       cursor: 'pointer',
+     }) as const
+ 
+@@ -534,7 +535,7 @@ export function AmericanoTab({
+               padding: '10px 18px',
+               borderRadius: 10,
+               border: 'none',
+-              background: '#1D4ED8',
++              background: pmTheme.accent,
+               color: '#fff',
+               cursor: 'pointer',
+             }}
+@@ -560,7 +561,7 @@ export function AmericanoTab({
+         </div>
+       )}
+ 
+-      <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 16, lineHeight: 1.5 }}>
++      <p style={{ fontSize: 13, color: pmTheme.textMid, marginBottom: 16, lineHeight: 1.5 }}>
+         <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard — turnering og stilling for sig selv).
+         Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
+         <strong>slutstilling</strong> der summerer til formatet (fx 10–6 eller 8–8 ved 16 point) — hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
+@@ -587,11 +588,11 @@ export function AmericanoTab({
+       </div>
+ 
+       {rows.length === 0 ? (
+-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
++        <div style={{ textAlign: 'center', padding: '40px 20px', color: pmTheme.textLight, fontSize: 14 }}>
+           Ingen Americano-turneringer endnu.
+         </div>
+       ) : visibleRows.length === 0 ? (
+-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
++        <div style={{ textAlign: 'center', padding: '40px 20px', color: pmTheme.textLight, fontSize: 14 }}>
+           {americanoView === 'open' && 'Ingen åbne Americano-turneringer.'}
+           {americanoView === 'playing' && 'Ingen Americano i gang.'}
+           {americanoView === 'completed' && 'Ingen afsluttede Americano endnu.'}
+@@ -608,22 +609,22 @@ export function AmericanoTab({
+             <div
+               key={t.id}
+               style={{
+-                background: '#fff',
++                background: pmTheme.surface,
+                 borderRadius: 12,
+                 padding: 18,
+-                border: '1px solid #D5DDE8',
++                border: `1px solid ${pmTheme.border}`,
+                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+               }}
+             >
+               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
+-              <div style={{ fontSize: 12, color: '#3E4C63' }}>
++              <div style={{ fontSize: 12, color: pmTheme.textMid }}>
+                 {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)} · {t.player_slots}{' '}
+                 spillere · {t.points_per_match} point
+                 {Number(t.opponent_passes) === 2 ? ' · lang (2× runder)' : ''} ·{' '}
+                 <span style={{ textTransform: 'capitalize' }}>{t.status}</span>
+               </div>
+               {t.description && (
+-                <div style={{ fontSize: 12, color: '#8494A7', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
++                <div style={{ fontSize: 12, color: pmTheme.textLight, marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
+               )}
+               {(() => {
+                 const parts = participantsByTournament[t.id] || []
+@@ -643,9 +644,9 @@ export function AmericanoTab({
+                     style={{
+                       marginTop: 12,
+                       padding: playingCollapsed && !listOpen ? '8px 12px' : '10px 12px',
+-                      background: '#F8FAFC',
++                      background: pmTheme.surfaceAlt,
+                       borderRadius: 8,
+-                      border: '1px solid #E2E8F0',
++                      border: `1px solid ${pmTheme.border}`,
+                     }}
+                   >
+                     {playingCollapsed ? (
+@@ -669,12 +670,12 @@ export function AmericanoTab({
+                           textAlign: 'left',
+                         }}
+                       >
+-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#0B1120' }}>
++                        <span style={{ fontSize: 12, fontWeight: 700, color: pmTheme.text }}>
+                           Deltagere ({parts.length}/{maxSlots})
+                         </span>
+                         <ChevronDown
+                           size={18}
+-                          color="#64748B"
++                          color={pmTheme.textLight}
+                           strokeWidth={2}
+                           style={{
+                             flexShrink: 0,
+@@ -685,7 +686,7 @@ export function AmericanoTab({
+                         />
+                       </button>
+                     ) : (
+-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120', marginBottom: 8 }}>
++                      <div style={{ fontSize: 12, fontWeight: 700, color: pmTheme.text, marginBottom: 8 }}>
+                         Deltagere ({parts.length}/{maxSlots})
+                       </div>
+                     )}
+@@ -694,7 +695,7 @@ export function AmericanoTab({
+                         <div
+                           style={{
+                             fontSize: 12,
+-                            color: '#8494A7',
++                            color: pmTheme.textLight,
+                             marginTop: playingCollapsed ? 10 : 0,
+                           }}
+                         >
+@@ -727,8 +728,8 @@ export function AmericanoTab({
+                                   gap: 10,
+                                   padding: '8px 10px',
+                                   borderRadius: 8,
+-                                  border: '1px solid #E2E8F0',
+-                                  background: '#fff',
++                                  border: `1px solid ${pmTheme.border}`,
++                                  background: pmTheme.surface,
+                                   cursor: 'pointer',
+                                   textAlign: 'left',
+                                   fontFamily: font,
+@@ -741,14 +742,14 @@ export function AmericanoTab({
+                                   style={{
+                                     fontSize: 13,
+                                     fontWeight: 600,
+-                                    color: '#0F172A',
++                                    color: pmTheme.text,
+                                     flex: 1,
+                                     minWidth: 0,
+                                   }}
+                                 >
+                                   {label}
+                                   {isMe ? (
+-                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
++                                    <span style={{ color: pmTheme.accent, fontWeight: 600 }}> (dig)</span>
+                                   ) : null}
+                                 </span>
+                               </button>
+@@ -785,8 +786,8 @@ export function AmericanoTab({
+                                     gap: 10,
+                                     padding: '8px 10px',
+                                     borderRadius: 8,
+-                                    border: '1px solid #E2E8F0',
+-                                    background: '#fff',
++                                    border: `1px solid ${pmTheme.border}`,
++                                    background: pmTheme.surface,
+                                     cursor: 'pointer',
+                                     textAlign: 'left',
+                                     fontFamily: font,
+@@ -799,14 +800,14 @@ export function AmericanoTab({
+                                     style={{
+                                       fontSize: 13,
+                                       fontWeight: 600,
+-                                      color: '#0F172A',
++                                      color: pmTheme.text,
+                                       flex: 1,
+                                       minWidth: 0,
+                                     }}
+                                   >
+                                     {label}
+                                     {isMe ? (
+-                                      <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
++                                      <span style={{ color: pmTheme.accent, fontWeight: 600 }}> (dig)</span>
+                                     ) : null}
+                                   </span>
+                                 </button>
+@@ -820,9 +821,9 @@ export function AmericanoTab({
+                                       flexShrink: 0,
+                                       padding: '6px 8px',
+                                       borderRadius: 8,
+-                                      border: '1px solid #FCA5A5',
+-                                      background: '#FEF2F2',
+-                                      color: '#DC2626',
++                                      border: `1px solid ${pmTheme.redBg}`,
++                                      background: pmTheme.redBg,
++                                      color: pmTheme.red,
+                                       cursor: kickBusy ? 'wait' : 'pointer',
+                                       display: 'flex',
+                                       alignItems: 'center',
+@@ -842,7 +843,7 @@ export function AmericanoTab({
+                             margin: playingCollapsed ? '10px 0 0' : 0,
+                             paddingLeft: 18,
+                             fontSize: 12,
+-                            color: '#3E4C63',
++                            color: pmTheme.textMid,
+                             lineHeight: 1.65,
+                           }}
+                         >
+@@ -850,7 +851,7 @@ export function AmericanoTab({
+                             <li key={p.id}>
+                               {p.display_name}
+                               {String(p.user_id) === String(profileId) ? (
+-                                <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
++                                <span style={{ color: pmTheme.accent, fontWeight: 600 }}> (dig)</span>
+                               ) : null}
+                             </li>
+                           ))}
+@@ -872,7 +873,7 @@ export function AmericanoTab({
+                       padding: '8px 14px',
+                       borderRadius: 8,
+                       border: 'none',
+-                      background: '#1D4ED8',
++                      background: pmTheme.accent,
+                       color: '#fff',
+                       cursor: busyId === t.id ? 'wait' : 'pointer',
+                     }}
+@@ -891,9 +892,9 @@ export function AmericanoTab({
+                       fontWeight: 600,
+                       padding: '8px 14px',
+                       borderRadius: 8,
+-                      border: '1px solid #D5DDE8',
+-                      background: '#fff',
+-                      color: '#3E4C63',
++                      border: `1px solid ${pmTheme.border}`,
++                      background: pmTheme.surface,
++                      color: pmTheme.textMid,
+                       cursor: busyId === t.id ? 'wait' : 'pointer',
+                     }}
+                   >
+@@ -901,13 +902,13 @@ export function AmericanoTab({
+                   </button>
+                 )}
+                 {t.status === 'registration' && joined && (
+-                  <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
++                  <span style={{ fontSize: 12, color: pmTheme.accent, fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
+                 )}
+               </div>
+               {(isCreator || isAdmin) && t.status === 'registration' && (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                   {!tournamentFull && (
+-                    <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
++                    <div style={{ fontSize: 12, color: pmTheme.warm, fontWeight: 600 }}>
+                       Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
+                     </div>
+                   )}
+@@ -928,8 +929,8 @@ export function AmericanoTab({
+                       padding: '8px 14px',
+                       borderRadius: 8,
+                       border: 'none',
+-                      background: tournamentFull ? '#D97706' : '#E5E7EB',
+-                      color: tournamentFull ? '#fff' : '#9CA3AF',
++                      background: tournamentFull ? pmTheme.warm : pmTheme.surfaceAlt,
++                      color: tournamentFull ? '#fff' : pmTheme.textLight,
+                       cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
+                     }}
+                   >
+@@ -947,7 +948,7 @@ export function AmericanoTab({
+                         padding: '8px 14px',
+                         borderRadius: 8,
+                         border: 'none',
+-                        background: '#D97706',
++                        background: pmTheme.warm,
+                         color: '#fff',
+                         cursor: busyId === t.id ? 'wait' : 'pointer',
+                       }}
+@@ -966,9 +967,9 @@ export function AmericanoTab({
+                       fontWeight: 600,
+                       padding: '8px 14px',
+                       borderRadius: 8,
+-                      border: '1px solid #FCA5A5',
+-                      background: '#fff',
+-                      color: '#B91C1C',
++                      border: `1px solid ${pmTheme.redBg}`,
++                      background: pmTheme.surface,
++                      color: pmTheme.red,
+                       cursor: busyId === t.id ? 'wait' : 'pointer',
+                       display: 'inline-flex',
+                       alignItems: 'center',
+diff --git a/src/features/americano/CreateAmericanoTournamentForm.tsx b/src/features/americano/CreateAmericanoTournamentForm.tsx
+index 31e20bd..5ce9596 100644
+--- a/src/features/americano/CreateAmericanoTournamentForm.tsx
++++ b/src/features/americano/CreateAmericanoTournamentForm.tsx
+@@ -15,6 +15,7 @@ for (let h = 6; h <= 23; h++) {
+   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
+ }
+ import { supabase } from '../../lib/supabase'
++import { theme as pmTheme } from '../../lib/platformTheme'
+ import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
+ import {
+   getMatchVenueOptions,
+@@ -127,20 +128,20 @@ export function CreateAmericanoTournamentForm({
+     <form
+       onSubmit={handleSubmit}
+       style={{
+-        background: '#fff',
++        background: pmTheme.surface,
+         borderRadius: 12,
+         padding: 'clamp(16px, 3vw, 22px)',
+-        border: '1px solid #D5DDE8',
++        border: `1px solid ${pmTheme.border}`,
+         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+         maxWidth: 520,
+       }}
+     >
+       <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret Americano</h3>
+-      <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 18, lineHeight: 1.5 }}>
++      <p style={{ fontSize: 13, color: pmTheme.textMid, marginBottom: 18, lineHeight: 1.5 }}>
+         Individuel turnering med skiftende makkere. <strong>Ingen ELO</strong> — kun separat Americano V/T på profilen (som i Padelboard-lignende apps). Du tilmeldes automatisk som første spiller.
+       </p>
+ 
+-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#0B1120' }}>
++      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: pmTheme.text }}>
+         Turneringsnavn
+       </label>
+       <input
+@@ -172,7 +173,7 @@ export function CreateAmericanoTournamentForm({
+             </option>
+           ))}
+         </select>
+-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6, lineHeight: 1.45 }}>
++        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6, lineHeight: 1.45 }}>
+           Samme steder som under fanen Baner. Matcher automatisk til baner i databasen når navnet stemmer overens.
+         </p>
+       </div>
+@@ -190,7 +191,7 @@ export function CreateAmericanoTournamentForm({
+             </option>
+           ))}
+         </select>
+-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
++        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
+           Én bane: fire på banen, resten sidder over (5: én over, 6: to over, 7: tre over). Start når præcis dette antal har tilmeldt sig.
+         </p>
+       </div>
+@@ -205,7 +206,7 @@ export function CreateAmericanoTournamentForm({
+           <option value={1}>Normal — én gennemgang af alle runder</option>
+           <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
+         </select>
+-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
++        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
+           Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny turnering.
+         </p>
+       </div>
+@@ -223,7 +224,7 @@ export function CreateAmericanoTournamentForm({
+             </option>
+           ))}
+         </select>
+-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
++        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
+           Efter hver kamp skal de to hold tilsammen give formatet (fx 10+6 eller 8+8 ved 16). Du kan skrive kun ét hold — app’en udfylder resten.
+         </p>
+       </div>
+@@ -240,7 +241,7 @@ export function CreateAmericanoTournamentForm({
+       </div>
+ 
+       {error && (
+-        <p style={{ color: '#DC2626', fontSize: 13, marginTop: 12 }}>{error}</p>
++        <p style={{ color: pmTheme.red, fontSize: 13, marginTop: 12 }}>{error}</p>
+       )}
+ 
+       <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+@@ -254,7 +255,7 @@ export function CreateAmericanoTournamentForm({
+             padding: '10px 20px',
+             borderRadius: 10,
+             border: 'none',
+-            background: '#1D4ED8',
++            background: pmTheme.accent,
+             color: '#fff',
+             cursor: submitting ? 'wait' : 'pointer',
+             opacity: 1,
+@@ -272,9 +273,9 @@ export function CreateAmericanoTournamentForm({
+               fontWeight: 600,
+               padding: '10px 20px',
+               borderRadius: 10,
+-              border: '1px solid #D5DDE8',
+-              background: '#fff',
+-              color: '#3E4C63',
++              border: `1px solid ${pmTheme.border}`,
++              background: pmTheme.surface,
++              color: pmTheme.textMid,
+               cursor: 'pointer',
+             }}
+           >
+@@ -291,7 +292,7 @@ const labelSmall: React.CSSProperties = {
+   fontSize: 12,
+   fontWeight: 600,
+   marginBottom: 6,
+-  color: '#0B1120',
++  color: pmTheme.text,
+ }
+ 
+ const inputStyle: React.CSSProperties = {
+@@ -301,8 +302,8 @@ const inputStyle: React.CSSProperties = {
+   height: 42,
+   lineHeight: '20px',
+   borderRadius: 8,
+-  border: '1px solid #D5DDE8',
++  border: `1px solid ${pmTheme.border}`,
+   fontSize: 14,
+   fontFamily: "'Inter', sans-serif",
+-  background: '#fff',
++  background: pmTheme.surface,
+ }
+diff --git a/src/features/americano/americanoOutcomeColors.ts b/src/features/americano/americanoOutcomeColors.ts
+index e7468b3..86b452f 100644
+--- a/src/features/americano/americanoOutcomeColors.ts
++++ b/src/features/americano/americanoOutcomeColors.ts
+@@ -1,24 +1,24 @@
+ /** Fælles farver: sejr (grøn), uafgjort (lys grå), tab (rød) — Americano + profil */
+ export const americanoOutcomeColors = {
+   win: {
+-    bg: '#DCFCE7',
+-    border: '#86EFAC',
+-    text: '#166534',
++    bg: 'var(--pm-green-bg)',
++    border: 'var(--pm-green)',
++    text: 'var(--pm-green)',
+   },
+   tie: {
+-    bg: '#F1F5F9',
+-    border: '#E2E8F0',
+-    text: '#475569',
++    bg: 'var(--pm-surface-alt)',
++    border: 'var(--pm-border)',
++    text: 'var(--pm-text-mid)',
+   },
+   loss: {
+-    bg: '#FEE2E2',
+-    border: '#FECACA',
+-    text: '#991B1B',
++    bg: 'var(--pm-red-bg)',
++    border: 'var(--pm-red)',
++    text: 'var(--pm-red)',
+   },
+   neutral: {
+-    bg: '#FFFFFF',
+-    border: '#E8ECF1',
+-    text: '#0F172A',
++    bg: 'var(--pm-surface)',
++    border: 'var(--pm-border)',
++    text: 'var(--pm-text)',
+   },
+ } as const
+ 
+-- 
+2.43.0
+

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
@@ -267,6 +267,10 @@ export function ProfilTab({ user, showToast, setTab }) {
         label: user.city,
       } : null);
     }
+    // Felterne opregnes frem for hele `user`: isValidCityPlace laeser praecis
+    // city/latitude/longitude, og hele objektet ville nulstille feltet hver gang
+    // profilen genindlaeses af andre grunde.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.city, user?.latitude, user?.longitude, editing]);
 
   useEffect(() => {
@@ -361,7 +365,6 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
   const [overviewMode, setOverviewMode] = useState("2v2");
-  const [activeProfileSection, setActiveProfileSection] = useState("overview");
   const [americanoEloHistoryRows, setAmericanoEloHistoryRows] = useState([]);
   const [americanoEloHistoryLoading, setAmericanoEloHistoryLoading] = useState(true);
   const [ligaLoading, setLigaLoading] = useState(true);
@@ -377,10 +380,6 @@ export function ProfilTab({ user, showToast, setTab }) {
     americano: null,
     liga: null,
   });
-  const overviewRef = useRef(null);
-  const performanceRef = useRef(null);
-  const relationsRef = useRef(null);
-  const actionsRef = useRef(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   useEffect(() => {
@@ -762,33 +761,6 @@ export function ProfilTab({ user, showToast, setTab }) {
         ? "Datakilde: Liga-hold og rapporterede ligakampe"
         : "Datakilde: 2v2 kamphistorik";
   const activeOverviewUpdatedAt = formatUpdatedAtDa(overviewLastUpdated[overviewMode]);
-  const jumpToSection = (ref) => {
-    if (!ref?.current) return;
-    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const profileSectionTabs = useMemo(() => {
-    const tabs = [{ id: "overview", label: "Overblik" }];
-    if (showPerformanceSection) tabs.push({ id: "performance", label: "Performance" });
-    if (showRelationsSection) tabs.push({ id: "relations", label: "Relationer" });
-    tabs.push({ id: "actions", label: "Handlinger" });
-    return tabs;
-  }, [showPerformanceSection, showRelationsSection]);
-
-  const profileSectionValue = profileSectionTabs.some((t) => t.id === activeProfileSection)
-    ? activeProfileSection
-    : "overview";
-
-  const handleProfileSectionChange = (id) => {
-    setActiveProfileSection(id);
-    const refs = {
-      overview: overviewRef,
-      performance: performanceRef,
-      relations: relationsRef,
-      actions: actionsRef,
-    };
-    jumpToSection(refs[id]);
-  };
 
   return (
     <div>
@@ -800,7 +772,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
         <div className="pm-profile-top">
         {/* Profile card – centered pf-head layout matching mockup */}
-        <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>
+        <div className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>
           {/* Edit button floating in top-right corner */}
           <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }}>
             <button
@@ -1026,7 +998,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {showPerformanceSection ? (
         <>
-        <div ref={performanceRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Performance · {activeModeLabel}
         </div>
         {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
@@ -1115,7 +1087,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         ) : null}
 
         {showRelationsSection && (
-          <div ref={relationsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
+          <div style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
             Relationer · {activeModeLabel}
           </div>
         )}
@@ -1399,7 +1371,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
         )}
 
-        <div ref={actionsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Handlinger · {activeModeLabel}
         </div>
         {/* Quick links — matcher valgt format i Overblik */}

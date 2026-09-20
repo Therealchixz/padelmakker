@@ -217,7 +217,12 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     };
   }, [closeOnEscape, onClose, open]);
 
-  const pRef = dataLoading ? (player || {}) : (profileRow || player || {});
+  // `|| {}` laver et nyt objekt hver rendering; uden useMemo faar alt der
+  // afhaenger af pRef ny identitet hver gang.
+  const pRef = useMemo(
+    () => (dataLoading ? (player || {}) : (profileRow || player || {})),
+    [dataLoading, player, profileRow],
+  );
   const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);
   const elo = dataLoading ? null : (histStatsModal?.elo ?? eloOf(pRef));
   const games = dataLoading ? null : (histStatsModal?.games ?? (pRef.games_played || 0));

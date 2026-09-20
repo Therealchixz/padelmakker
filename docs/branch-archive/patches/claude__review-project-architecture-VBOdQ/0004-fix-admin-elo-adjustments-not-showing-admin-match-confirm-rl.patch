@@ -1,0 +1,206 @@
+From f10832a6582a21b60f6c6b54ee85338a022dafa7 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 15 Apr 2026 19:01:52 +0000
+Subject: [PATCH] Fix admin ELO adjustments not showing + admin match confirm
+ RLS
+
+Problem A: Admin ELO changes were invisible on profile/ranking/find-makker
+because filterRatedEloHistoryRows excluded adjustment rows (match_id=null).
+Split into filterRatedMatchRows (games/wins) and filterRatedEloHistoryRows
+(ELO calc incl. adjustments). Updated all consumers accordingly.
+
+Problem B: Admin could not confirm match results due to missing is_admin()
+in match_results UPDATE RLS policy. Added SQL fix with admin access.
+
+Also: admin_adjust_elo now records old_rating/new_rating on adjustment rows,
+and existing adjustment rows without old_rating are repaired.
+
+https://claude.ai/code/session_01UJHkwU6DtKxG9A2TXhpVSB
+---
+ src/dashboard/ProfilTab.jsx                |  6 +-
+ src/lib/eloHistoryUtils.js                 | 38 +++++++++----
+ supabase/sql/critical_fixes_2026_04_15.sql | 66 +++++++++++++++++++++-
+ 3 files changed, 95 insertions(+), 15 deletions(-)
+
+diff --git a/src/dashboard/ProfilTab.jsx b/src/dashboard/ProfilTab.jsx
+index 96396b1..d39da54 100644
+--- a/src/dashboard/ProfilTab.jsx
++++ b/src/dashboard/ProfilTab.jsx
+@@ -210,8 +210,10 @@ export function ProfilTab({ user, showToast, setTab }) {
+             const key = h.date?.slice(0, 7);
+             if (!key) return;
+             if (!monthStats[key]) monthStats[key] = { wins: 0, games: 0, change: 0 };
+-            monthStats[key].games++;
+-            if (h.result === "win") monthStats[key].wins++;
++            if (h.result !== 'adjustment') {
++              monthStats[key].games++;
++              if (h.result === "win") monthStats[key].wins++;
++            }
+             monthStats[key].change += (h.change || 0);
+           });
+           const months = Object.entries(monthStats);
+diff --git a/src/lib/eloHistoryUtils.js b/src/lib/eloHistoryUtils.js
+index e966497..af115e7 100644
+--- a/src/lib/eloHistoryUtils.js
++++ b/src/lib/eloHistoryUtils.js
+@@ -2,11 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
+ import { supabase } from './supabase';
+ import { normalizeProfileRow } from './profileUtils';
+ 
+-/** Samme filter som ELO-graf / streak (kun rigtige kampe med rating). */
+-export function filterRatedEloHistoryRows(rows) {
++/** Kun rigtige kampe med rating (til graf, streak, kamp-tæl). */
++export function filterRatedMatchRows(rows) {
+   return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
+ }
+ 
++/** Alle rækker der påvirker ELO: rigtige kampe + admin-justeringer. */
++export function filterRatedEloHistoryRows(rows) {
++  return (rows || []).filter(
++    (h) =>
++      (h.old_rating != null && h.match_id != null) ||
++      (h.result === 'adjustment' && h.change != null)
++  );
++}
++
+ /** Stabil kronologi: samme dato → match_id → id (undgår at "seneste" række bliver forkert). */
+ export function eloHistoryTimeMs(h) {
+   const t = h?.date != null ? new Date(h.date).getTime() : NaN;
+@@ -36,7 +45,9 @@ export function sortEloHistoryChronological(rows) {
+  */
+ export function currentEloFromSortedHistory(sorted) {
+   if (!sorted.length) return 1000;
+-  const base = Math.round(Number(sorted[0].old_rating) || 1000);
++  // Find det første entry med old_rating som fundament (spring justeringer uden old_rating over)
++  const firstWithRating = sorted.find((h) => h.old_rating != null && Number.isFinite(Number(h.old_rating)));
++  const base = firstWithRating ? Math.round(Number(firstWithRating.old_rating)) : 1000;
+   let sumCh = 0;
+   for (const row of sorted) {
+     const ch = row.change;
+@@ -57,13 +68,14 @@ export function currentEloFromSortedHistory(sorted) {
+ 
+ /** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
+ export function statsFromEloHistoryRows(rows) {
+-  const list = filterRatedEloHistoryRows(rows);
+-  if (!list.length) return null;
+-  const sorted = sortEloHistoryChronological(list);
+-  const elo = currentEloFromSortedHistory(sorted);
+-  const games = sorted.length;
++  const allElo = filterRatedEloHistoryRows(rows);
++  const matchOnly = filterRatedMatchRows(rows);
++  if (!allElo.length && !matchOnly.length) return null;
++  const sorted = sortEloHistoryChronological(allElo);
++  const elo = sorted.length ? currentEloFromSortedHistory(sorted) : 1000;
++  const games = matchOnly.length;
+   let wins = 0;
+-  for (const h of sorted) {
++  for (const h of matchOnly) {
+     if (h.result === 'win') wins++;
+   }
+   return { elo, games, wins };
+@@ -72,7 +84,8 @@ export function statsFromEloHistoryRows(rows) {
+ /** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
+ export function winStreaksFromEloHistory(raw) {
+   if (!raw?.length) return { currentStreak: 0, bestStreak: 0 };
+-  const sorted = sortEloHistoryChronological(raw);
++  // Kun rigtige kampe tæller i streaks — spring admin-justeringer over
++  const sorted = sortEloHistoryChronological(raw).filter((h) => h.result !== 'adjustment');
+   let bestStreak = 0;
+   for (let start = 0; start < sorted.length; start++) {
+     let s = 0;
+@@ -258,7 +271,10 @@ export function useProfileEloBundle(userId, syncKey) {
+ export function allTimeStatsMapFromEloHistory(eloHistory) {
+   const byUser = {};
+   for (const h of eloHistory || []) {
+-    if (h.old_rating == null || h.match_id == null) continue;
++    // Inkludér rigtige kampe (med old_rating + match_id) OG admin-justeringer (result='adjustment' med change)
++    const isMatch = h.old_rating != null && h.match_id != null;
++    const isAdjustment = h.result === 'adjustment' && h.change != null;
++    if (!isMatch && !isAdjustment) continue;
+     const uid = h.user_id;
+     if (uid == null) continue;
+     const key = String(uid);
+diff --git a/supabase/sql/critical_fixes_2026_04_15.sql b/supabase/sql/critical_fixes_2026_04_15.sql
+index e412022..11ca5d9 100644
+--- a/supabase/sql/critical_fixes_2026_04_15.sql
++++ b/supabase/sql/critical_fixes_2026_04_15.sql
+@@ -294,8 +294,8 @@ BEGIN
+   v_diff := p_new_elo - COALESCE(v_current_elo, 1000);
+ 
+   IF v_diff <> 0 THEN
+-    INSERT INTO public.elo_history (user_id, change, result, date, created_at, match_id)
+-    VALUES (p_user_id, v_diff, 'adjustment', now(), now(), null);
++    INSERT INTO public.elo_history (user_id, old_rating, new_rating, change, result, date, created_at, match_id)
++    VALUES (p_user_id, COALESCE(v_current_elo, 1000), p_new_elo, v_diff, 'adjustment', now(), now(), null);
+   END IF;
+ 
+   -- Bypass sættes automatisk i recalc via triggeren, men sæt den også her for sikkerhed
+@@ -487,3 +487,65 @@ BEGIN
+   RETURN jsonb_build_object('success', true, 'remaining', v_remaining);
+ END;
+ $$;
++
++
++-- ============================================================================
++-- FIX #6: match_results UPDATE policy mangler admin-adgang
++-- Admin kan ikke bekræfte kampresultater fordi UPDATE-policyen kun tillader
++-- deltagere. Tilføj OR is_admin() til begge klausuler.
++-- ============================================================================
++
++-- Først: find og fjern den eksisterende UPDATE policy
++DO $$
++DECLARE
++  pol RECORD;
++BEGIN
++  FOR pol IN
++    SELECT policyname FROM pg_policies
++    WHERE tablename = 'match_results' AND cmd = 'UPDATE'
++  LOOP
++    EXECUTE format('DROP POLICY %I ON match_results', pol.policyname);
++  END LOOP;
++END;
++$$;
++
++-- Opret ny UPDATE policy med admin-adgang
++CREATE POLICY match_results_update_by_participant_or_admin ON match_results
++  FOR UPDATE TO authenticated
++  USING (
++    auth.uid() IN (SELECT mp.user_id FROM match_players mp WHERE mp.match_id = match_results.match_id)
++    OR public.is_admin()
++  )
++  WITH CHECK (
++    auth.uid() IN (SELECT mp.user_id FROM match_players mp WHERE mp.match_id = match_results.match_id)
++    OR public.is_admin()
++  );
++
++
++-- ============================================================================
++-- FIX #7: Opdater admin_adjust_elo til at inkludere old_rating og new_rating
++-- Så frontend kan vise justeringer korrekt i ELO-graf og beregninger.
++-- (Allerede inkluderet i funktionsdefinitionen ovenfor)
++-- ============================================================================
++
++-- Reparer eksisterende adjustment-rækker der mangler old_rating/new_rating.
++-- Bruger profil-ELO minus ændring som tilnærmelse til old_rating.
++DO $$
++DECLARE
++  r RECORD;
++  v_profile_elo numeric;
++BEGIN
++  FOR r IN
++    SELECT id, user_id, change FROM public.elo_history
++    WHERE result = 'adjustment' AND old_rating IS NULL AND change IS NOT NULL
++  LOOP
++    SELECT COALESCE(elo_rating, 1000) INTO v_profile_elo
++    FROM public.profiles WHERE id = r.user_id;
++
++    UPDATE public.elo_history SET
++      old_rating = v_profile_elo - r.change,
++      new_rating = v_profile_elo
++    WHERE id = r.id;
++  END LOOP;
++END;
++$$;
+-- 
+2.43.0
+

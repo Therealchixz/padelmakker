@@ -67,6 +67,10 @@ export function CityPlaceSearchField({
     } else if (String(seedQuery || '').trim()) {
       setQuery(String(seedQuery).trim());
     }
+    // Felterne opregnes med vilje frem for hele `value`: forAeldre sender ofte et
+    // nyt objekt med samme indhold, og hele objektet ville nulstille brugerens
+    // indtastning ved hver rendering. Alt hvad effekten laeser, staar i listen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value?.city, value?.latitude, value?.longitude, value?.label, seedQuery]);
 
   useEffect(() => {

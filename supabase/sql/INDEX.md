@@ -178,62 +178,66 @@ kan efterprøves direkte mod den kørende database.
 ## I databasen, men i ingen migration
 
 Oejebliksbillede fra **2026-09-20** (projekt `hzmrsqrerkoftcppfklu`).
-Ikke auto-genereret — se `live-only-functions.json` for hvordan det opdateres.
+Selve listen er et haandholdt oejebliksbillede (`live-only-functions.json`).
+Om hullet stadig er aabent afgoeres derimod HER, mod de migrations der findes nu.
 
-**49 funktioner koerer i produktion, som ingen migration opretter.**
-En database bygget fra `supabase/migrations/` alene ville mangle dem, saa et
-nyt miljoe (staging, gendannelse efter nedbrud) kan ikke bygges fra historikken
-som den er nu.
+**Hullet er lukket.** Alle 49 funktioner oprettes nu af en migration.
 
-| Funktion | Findes i arkivet? |
+De blev lavet i haanden foer historikken begyndte. `00000000000000_baseline_schema.sql`
+er dumpet direkte fra produktionen og daekker dem, saa en frisk database bliver
+identisk med den koerende - ikke fordi nogen holder to ting i sync.
+
+Listen staar tilbage som optegnelse over hvad der manglede.
+
+| Funktion | Oprettes nu af |
 |---|---|
-| `_americano_entity_finished_at` | `americano_liga_completed_at.sql` |
-| `_insert_system_notification` | **nej** |
-| `_league_entity_finished_at` | `americano_liga_completed_at.sql` |
-| `_result_error_entity_completed_at` | `americano_liga_completed_at.sql`<br>`feature_result_error_reports.sql`<br>`fix_result_error_completion_time.sql` |
-| `_rpc_rate_limit_or_raise` | `security_hardening_phase2.sql` |
-| `_skip_duplicate_entity_notification` | **nej** |
-| `_skip_duplicate_match_notification` | **nej** |
-| `admin_correct_americano_tournament` | `_p3b.sql`<br>`admin_correct_americano_and_recalc_elo.sql`<br>`admin_security_phase3_deploy.sql` |
-| `admin_correct_league_match` | `_p3b.sql`<br>`admin_correct_league_match.sql`<br>`admin_security_phase3_deploy.sql` |
-| `admin_correct_match_result_and_recalc_elo` | `_p3b.sql`<br>`admin_correct_match_result_and_recalc_elo.sql`<br>`admin_security_phase3_deploy.sql` |
-| `admin_delete_user` | `admin_delete_user.sql`<br>`admin_delete_user.sql`<br>`admin_security_phase3_deploy.sql` |
-| `admin_get_dm_messages_between` | `admin_dm_report_context.sql` |
-| `admin_list_admin_ids` | `admin_list_admin_ids.sql`<br>`security_hardening_phase2.sql` |
-| `admin_open_result_error_reports_count` | `feature_result_error_reports.sql` |
-| `admin_open_user_reports_count` | `user_blocks_and_reports.sql`<br>`user_report_admin_notify.sql` |
-| `apply_americano_elo_for_tournament` | `_americano_auth_fix.sql`<br>`_p3b.sql`<br>`admin_security_phase3_deploy.sql`<br>`americano_elo_rating.sql` |
-| `apply_elo_for_match` | `_alle_fixes.sql`<br>`apply_elo_dynamic_k.sql`<br>`elo_v2_glicko2_shadow.sql`<br>`match_result_opponent_confirmation_guard.sql` |
-| `apply_elo_for_match_core` | `elo_v2_glicko2_shadow.sql` |
-| `apply_elo_for_match_system` | `elo_v2_glicko2_shadow.sql` |
-| `apply_glicko2_shadow_for_match` | `elo_v2_glicko2_shadow.sql` |
-| `archive_profile_before_delete` | **nej** |
-| `block_user` | `user_blocks_and_reports.sql` |
-| `check_rate_limit` | `rate_limit.sql` |
-| `complete_americano_tournament` | `_americano_auth_fix.sql`<br>`_p3b.sql`<br>`admin_security_phase3_deploy.sql`<br>`americano_elo_rating.sql`<br>`americano_liga_completed_at.sql` |
-| `create_rating_admin_flag` | `elo_guardrails_admin_flags.sql` |
-| `detect_and_flag_suspicious_2v2_match` | `elo_guardrails_admin_flags.sql` |
-| `dm_users_blocked` | `user_blocks_and_reports.sql` |
-| `enforce_max_players` | **nej** |
-| `glicko2_shadow_update_one` | `elo_v2_glicko2_shadow.sql` |
-| `guard_match_result_confirmation` | `elo_security_hardening.sql`<br>`fix_force_start_and_confirm_trigger.sql`<br>`match_result_opponent_confirmation_guard.sql` |
-| `handle_new_user` | **nej** |
-| `is_banned` | `admin_ban_feature.sql` |
-| `is_user_admin_verified` | `security_hardening_phase2.sql` |
-| `join_match` | **nej** |
-| `messages_enforce_dm_block` | `user_blocks_and_reports.sql` |
-| `notify_auto_confirmed_match_result` | **nej** |
-| `notify_elo_changes_for_match` | **nej** |
-| `public_platform_stats` | `public_platform_stats_rpc.sql` |
-| `public_upcoming_americano_events` | `_alle_fixes.sql`<br>`public_upcoming_americano_events.sql` |
-| `recalc_americano_elo_from_history` | `_p3b.sql`<br>`admin_correct_americano_and_recalc_elo.sql`<br>`admin_security_phase3_deploy.sql` |
-| `recalc_americano_profile_stats` | `_alle_fixes.sql`<br>`americano_profile_stats.sql`<br>`fix_americano_visibility_and_stats.sql` |
-| `recalc_profile_stats_from_elo_history` | `_alle_fixes.sql`<br>`deep_fix_elo_sync.sql`<br>`fix_elo_sync_logic.sql`<br>`sync_profiles_from_elo_history.sql`<br>`unlock_and_sync_elo.sql` |
-| `submit_result_error_report` | `feature_result_error_reports.sql` |
-| `trg_americano_match_recalc_stats` | `_alle_fixes.sql`<br>`americano_profile_stats.sql` |
-| `trg_elo_history_auto_flag_match` | `elo_guardrails_admin_flags.sql` |
-| `trg_elo_history_sync_profile` | `_alle_fixes.sql`<br>`sync_profiles_from_elo_history.sql` |
-| `trg_set_americano_elo_history_engine_meta` | `elo_guardrails_admin_flags.sql` |
-| `trg_set_elo_history_engine_meta` | `elo_guardrails_admin_flags.sql` |
-| `unblock_user` | `user_blocks_and_reports.sql` |
+| `_americano_entity_finished_at` | `00000000000000_baseline_schema.sql` |
+| `_insert_system_notification` | `00000000000000_baseline_schema.sql` |
+| `_league_entity_finished_at` | `00000000000000_baseline_schema.sql` |
+| `_result_error_entity_completed_at` | `00000000000000_baseline_schema.sql` |
+| `_rpc_rate_limit_or_raise` | `00000000000000_baseline_schema.sql` |
+| `_skip_duplicate_entity_notification` | `00000000000000_baseline_schema.sql` |
+| `_skip_duplicate_match_notification` | `00000000000000_baseline_schema.sql` |
+| `admin_correct_americano_tournament` | `00000000000000_baseline_schema.sql` |
+| `admin_correct_league_match` | `00000000000000_baseline_schema.sql` |
+| `admin_correct_match_result_and_recalc_elo` | `00000000000000_baseline_schema.sql` |
+| `admin_delete_user` | `00000000000000_baseline_schema.sql` |
+| `admin_get_dm_messages_between` | `00000000000000_baseline_schema.sql` |
+| `admin_list_admin_ids` | `00000000000000_baseline_schema.sql` |
+| `admin_open_result_error_reports_count` | `00000000000000_baseline_schema.sql` |
+| `admin_open_user_reports_count` | `00000000000000_baseline_schema.sql` |
+| `apply_americano_elo_for_tournament` | `00000000000000_baseline_schema.sql` |
+| `apply_elo_for_match` | `00000000000000_baseline_schema.sql` |
+| `apply_elo_for_match_core` | `00000000000000_baseline_schema.sql` |
+| `apply_elo_for_match_system` | `00000000000000_baseline_schema.sql` |
+| `apply_glicko2_shadow_for_match` | `00000000000000_baseline_schema.sql` |
+| `archive_profile_before_delete` | `00000000000000_baseline_schema.sql` |
+| `block_user` | `00000000000000_baseline_schema.sql` |
+| `check_rate_limit` | `00000000000000_baseline_schema.sql` |
+| `complete_americano_tournament` | `00000000000000_baseline_schema.sql` |
+| `create_rating_admin_flag` | `00000000000000_baseline_schema.sql` |
+| `detect_and_flag_suspicious_2v2_match` | `00000000000000_baseline_schema.sql` |
+| `dm_users_blocked` | `00000000000000_baseline_schema.sql` |
+| `enforce_max_players` | `00000000000000_baseline_schema.sql` |
+| `glicko2_shadow_update_one` | `00000000000000_baseline_schema.sql` |
+| `guard_match_result_confirmation` | `00000000000000_baseline_schema.sql` |
+| `handle_new_user` | `00000000000000_baseline_schema.sql` |
+| `is_banned` | `00000000000000_baseline_schema.sql` |
+| `is_user_admin_verified` | `00000000000000_baseline_schema.sql` |
+| `join_match` | `00000000000000_baseline_schema.sql` |
+| `messages_enforce_dm_block` | `00000000000000_baseline_schema.sql` |
+| `notify_auto_confirmed_match_result` | `00000000000000_baseline_schema.sql` |
+| `notify_elo_changes_for_match` | `00000000000000_baseline_schema.sql` |
+| `public_platform_stats` | `00000000000000_baseline_schema.sql` |
+| `public_upcoming_americano_events` | `00000000000000_baseline_schema.sql` |
+| `recalc_americano_elo_from_history` | `00000000000000_baseline_schema.sql` |
+| `recalc_americano_profile_stats` | `00000000000000_baseline_schema.sql` |
+| `recalc_profile_stats_from_elo_history` | `00000000000000_baseline_schema.sql` |
+| `submit_result_error_report` | `00000000000000_baseline_schema.sql` |
+| `trg_americano_match_recalc_stats` | `00000000000000_baseline_schema.sql` |
+| `trg_elo_history_auto_flag_match` | `00000000000000_baseline_schema.sql` |
+| `trg_elo_history_sync_profile` | `00000000000000_baseline_schema.sql` |
+| `trg_set_americano_elo_history_engine_meta` | `00000000000000_baseline_schema.sql` |
+| `trg_set_elo_history_engine_meta` | `00000000000000_baseline_schema.sql` |
+| `unblock_user` | `00000000000000_baseline_schema.sql` |
 

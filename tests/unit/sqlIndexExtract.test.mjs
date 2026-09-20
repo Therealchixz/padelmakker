@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { extractFunctions } from '../../scripts/sql-index.mjs';
 
@@ -137,5 +140,46 @@ test('begge skrivemåder giver samme navn', async () => {
     const fns = extractFunctions(`CREATE FUNCTION ${variant}() RETURNS void AS $$ BEGIN END; $$;`);
     assert.equal(fns.length, 1, `funktion: ${variant}`);
     assert.equal(fns[0].name, 'bar', `funktion: ${variant}`);
+  }
+});
+
+/**
+ * Afsnittet "I databasen, men i ingen migration" paastod i maaneder at 49
+ * funktioner manglede, og at en frisk database ikke kunne bygges. Teksten var
+ * hardkodet, saa den blev staaende efter at baseline havde lukket hullet - og
+ * den ville have sendt naeste laeser i den forkerte retning.
+ *
+ * Dommen beregnes nu. Testen holder INDEX.md og virkeligheden sammen begge veje.
+ */
+test('INDEX.md paastaar ikke et hul som migrations daekker', () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+  const snapPath = join(root, 'supabase/sql/live-only-functions.json');
+  if (!existsSync(snapPath)) return;
+
+  const names = JSON.parse(readFileSync(snapPath, 'utf8')).functions || [];
+  const migrationsDir = join(root, 'supabase/migrations');
+  const defineret = new Set();
+  for (const f of readdirSync(migrationsDir).filter((n) => n.endsWith('.sql'))) {
+    for (const fn of extractFunctions(readFileSync(join(migrationsDir, f), 'utf8'))) {
+      defineret.add(fn.name);
+    }
+  }
+
+  const mangler = names.filter((n) => !defineret.has(n));
+  const index = readFileSync(join(root, 'supabase/sql/INDEX.md'), 'utf8');
+
+  if (mangler.length === 0) {
+    assert.match(index, /\*\*Hullet er lukket\.\*\*/);
+    assert.doesNotMatch(
+      index,
+      /kan ikke bygges fra historikken/,
+      'INDEX.md advarer stadig om et hul der er lukket',
+    );
+  } else {
+    assert.match(
+      index,
+      new RegExp(`\\*\\*${mangler.length} af ${names.length} funktioner`),
+      'INDEX.md naevner ikke det faktiske antal der mangler',
+    );
   }
 });

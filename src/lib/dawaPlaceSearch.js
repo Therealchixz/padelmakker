@@ -74,12 +74,6 @@ function dedupePlaces(places) {
   return out;
 }
 
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`DAWA ${res.status}`);
-  return res.json();
-}
-
 /**
  * Søg danske steder via DAWA (stednavne + postnumre).
  * Returnerer { city, latitude, longitude, label, id, source }[].

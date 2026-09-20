@@ -196,18 +196,44 @@ export function buildIndex() {
     lines.push('## I databasen, men i ingen migration');
     lines.push('');
     lines.push(`Oejebliksbillede fra **${snap.snapshot_dato}** (projekt \`${snap.projekt}\`).`);
-    lines.push('Ikke auto-genereret — se `live-only-functions.json` for hvordan det opdateres.');
+    lines.push('Selve listen er et haandholdt oejebliksbillede (`live-only-functions.json`).');
+    lines.push('Om hullet stadig er aabent afgoeres derimod HER, mod de migrations der findes nu.');
     lines.push('');
-    lines.push(`**${names.length} funktioner koerer i produktion, som ingen migration opretter.**`);
-    lines.push('En database bygget fra `supabase/migrations/` alene ville mangle dem, saa et');
-    lines.push('nyt miljoe (staging, gendannelse efter nedbrud) kan ikke bygges fra historikken');
-    lines.push('som den er nu.');
-    lines.push('');
-    lines.push('| Funktion | Findes i arkivet? |');
-    lines.push('|---|---|');
-    for (const n of names) {
-      const claims = claimsByName.get(n) || [];
-      lines.push(`| \`${n}\` | ${claims.length ? claims.map((c) => `\`${c.file}\``).join('<br>') : '**nej**'} |`);
+    // Oejebliksbilledet er en paastand om fortiden. Om hullet stadig er aabent
+    // afgoeres HER, mod de migrations der faktisk findes nu - ellers ville
+    // afsnittet blive ved med at advare om noget der forlaengst er lukket.
+    const liveByName = new Map(inMigrations.map((r) => [r.name, r.live.file]));
+    const stadigVaek = names.filter((n) => !liveByName.has(n));
+    const daekket = names.filter((n) => liveByName.has(n));
+
+    if (stadigVaek.length === 0) {
+      lines.push(`**Hullet er lukket.** Alle ${names.length} funktioner oprettes nu af en migration.`);
+      lines.push('');
+      lines.push('De blev lavet i haanden foer historikken begyndte. `00000000000000_baseline_schema.sql`');
+      lines.push('er dumpet direkte fra produktionen og daekker dem, saa en frisk database bliver');
+      lines.push('identisk med den koerende - ikke fordi nogen holder to ting i sync.');
+      lines.push('');
+      lines.push('Listen staar tilbage som optegnelse over hvad der manglede.');
+      lines.push('');
+      lines.push('| Funktion | Oprettes nu af |');
+      lines.push('|---|---|');
+      for (const n of names) lines.push(`| \`${n}\` | \`${liveByName.get(n)}\` |`);
+    } else {
+      lines.push(`**${stadigVaek.length} af ${names.length} funktioner koerer i produktion, som ingen migration opretter.**`);
+      lines.push('En database bygget fra `supabase/migrations/` alene ville mangle dem, saa et');
+      lines.push('nyt miljoe (staging, gendannelse efter nedbrud) kan ikke bygges fra historikken');
+      lines.push('som den er nu.');
+      if (daekket.length) {
+        lines.push('');
+        lines.push(`De oevrige ${daekket.length} er siden daekket af en migration.`);
+      }
+      lines.push('');
+      lines.push('| Funktion | Findes i arkivet? |');
+      lines.push('|---|---|');
+      for (const n of stadigVaek) {
+        const claims = claimsByName.get(n) || [];
+        lines.push(`| \`${n}\` | ${claims.length ? claims.map((c) => `\`${c.file}\``).join('<br>') : '**nej**'} |`);
+      }
     }
   }
 

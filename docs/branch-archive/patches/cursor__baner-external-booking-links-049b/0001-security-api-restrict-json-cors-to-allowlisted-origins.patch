@@ -1,0 +1,148 @@
+From 09030f5364cd868a432d68c79c438cc7570674c8 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 13 Apr 2026 08:36:11 +0000
+Subject: [PATCH] security(api): restrict JSON CORS to allowlisted origins
+
+- Replace Access-Control-Allow-Origin * with reflected Origin when allowed
+- Default: padelmakker.dk www+apex, localhost:5173, https://VERCEL_URL
+- Optional API_CORS_ORIGINS comma list for extra frontends
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ .env.example                                  |  5 +++
+ padelmakker-server/cors.js                    | 36 +++++++++++++++++++
+ padelmakker-server/routes/bookliSlots.js      |  3 +-
+ .../routes/halbookingSkansenLegacy.js         |  3 +-
+ padelmakker-server/routes/halbookingSlots.js  |  3 +-
+ padelmakker-server/routes/matchiSlots.js      |  3 +-
+ 6 files changed, 49 insertions(+), 4 deletions(-)
+ create mode 100644 padelmakker-server/cors.js
+
+diff --git a/.env.example b/.env.example
+index 6f6899e..209c360 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,5 +1,10 @@
+ # Valgfrit: canonical-URL, Open Graph og sitemap (bruges i DocumentHead / siteMeta.js)
+ # VITE_SITE_URL=https://www.padelmakker.dk
+ 
++# Vercel/serverless: ekstra tilladte Origin for CORS på /api/* (JSON), kommasepareret.
++# Standard inkluderer www, apex, localhost:5173 og automatisk https://$VERCEL_URL på preview.
++# Brug kun hvis du hoster frontenden på et ekstra domæne:
++# API_CORS_ORIGINS=https://app.eksempel.dk
++
+ # Valgfrit: YouTube video-id til rundvisning på forsiden (kun id, fx fra youtube.com/watch?v=XXXX)
+ # VITE_LANDING_TOUR_VIDEO_ID=
+diff --git a/padelmakker-server/cors.js b/padelmakker-server/cors.js
+new file mode 100644
+index 0000000..3174a1e
+--- /dev/null
++++ b/padelmakker-server/cors.js
+@@ -0,0 +1,36 @@
++/**
++ * Stram CORS for /api/* JSON-endpoints (ikke `*`).
++ * Sætter kun Access-Control-Allow-Origin når Origin matcher allowlisten.
++ */
++
++const DEFAULT_ORIGINS = [
++  'https://www.padelmakker.dk',
++  'https://padelmakker.dk',
++  'http://localhost:5173',
++  'http://127.0.0.1:5173',
++];
++
++function buildAllowlist() {
++  const env = globalThis.process?.env || {};
++  const extra = String(env.API_CORS_ORIGINS || '')
++    .split(',')
++    .map((s) => s.trim())
++    .filter(Boolean);
++  const vercelHost = env.VERCEL_URL?.trim();
++  const vercelOrigin = vercelHost ? `https://${vercelHost}` : null;
++  const base = [...DEFAULT_ORIGINS, ...(vercelOrigin ? [vercelOrigin] : []), ...extra];
++  return [...new Set(base)];
++}
++
++/**
++ * @param {import('http').IncomingMessage} req
++ * @param {import('http').ServerResponse} res
++ */
++export function setJsonCors(req, res) {
++  const origin = req.headers.origin;
++  if (!origin || typeof origin !== 'string') return;
++  const allow = buildAllowlist();
++  if (!allow.includes(origin)) return;
++  res.setHeader('Access-Control-Allow-Origin', origin);
++  res.setHeader('Vary', 'Origin');
++}
+diff --git a/padelmakker-server/routes/bookliSlots.js b/padelmakker-server/routes/bookliSlots.js
+index 3821155..f177ccb 100644
+--- a/padelmakker-server/routes/bookliSlots.js
++++ b/padelmakker-server/routes/bookliSlots.js
+@@ -6,10 +6,11 @@ import { getBookliVenue } from '../bookliAllowlist.js';
+ import { fetchBookliTimelineForDate } from '../bookliTimeline.js';
+ import { DateTime } from 'luxon';
+ import { checkRateLimit, getClientIp } from '../rateLimit.js';
++import { setJsonCors } from '../cors.js';
+ 
+ export async function handleBookliSlots(req, res) {
+   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+-  res.setHeader('Access-Control-Allow-Origin', '*');
++  setJsonCors(req, res);
+ 
+   if (req.method !== 'GET') {
+     res.status(405).json({ error: 'Method not allowed' });
+diff --git a/padelmakker-server/routes/halbookingSkansenLegacy.js b/padelmakker-server/routes/halbookingSkansenLegacy.js
+index 19f8d31..99e5952 100644
+--- a/padelmakker-server/routes/halbookingSkansenLegacy.js
++++ b/padelmakker-server/routes/halbookingSkansenLegacy.js
+@@ -4,10 +4,11 @@
+ 
+ import { fetchHalbookingPadelSchedule } from '../halbookingFetch.js';
+ import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
++import { setJsonCors } from '../cors.js';
+ 
+ export async function handleHalbookingSkansenLegacy(req, res) {
+   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+-  res.setHeader('Access-Control-Allow-Origin', '*');
++  setJsonCors(req, res);
+ 
+   if (req.method !== 'GET') {
+     res.status(405).json({ error: 'Method not allowed' });
+diff --git a/padelmakker-server/routes/halbookingSlots.js b/padelmakker-server/routes/halbookingSlots.js
+index 813a847..6c235fe 100644
+--- a/padelmakker-server/routes/halbookingSlots.js
++++ b/padelmakker-server/routes/halbookingSlots.js
+@@ -5,10 +5,11 @@
+ import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from '../halbookingFetch.js';
+ import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
+ import { checkRateLimit, getClientIp } from '../rateLimit.js';
++import { setJsonCors } from '../cors.js';
+ 
+ export async function handleHalbookingSlots(req, res) {
+   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+-  res.setHeader('Access-Control-Allow-Origin', '*');
++  setJsonCors(req, res);
+ 
+   if (req.method !== 'GET') {
+     res.status(405).json({ error: 'Method not allowed' });
+diff --git a/padelmakker-server/routes/matchiSlots.js b/padelmakker-server/routes/matchiSlots.js
+index ec88265..4bea874 100644
+--- a/padelmakker-server/routes/matchiSlots.js
++++ b/padelmakker-server/routes/matchiSlots.js
+@@ -6,10 +6,11 @@ import { getMatchiVenue, matchiScheduleUrl } from '../matchiAllowlist.js';
+ import { fetchMatchiSchedule } from '../matchiSchedule.js';
+ import { DateTime } from 'luxon';
+ import { checkRateLimit, getClientIp } from '../rateLimit.js';
++import { setJsonCors } from '../cors.js';
+ 
+ export async function handleMatchiSlots(req, res) {
+   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+-  res.setHeader('Access-Control-Allow-Origin', '*');
++  setJsonCors(req, res);
+ 
+   if (req.method !== 'GET') {
+     res.status(405).json({ error: 'Method not allowed' });
+-- 
+2.43.0
+

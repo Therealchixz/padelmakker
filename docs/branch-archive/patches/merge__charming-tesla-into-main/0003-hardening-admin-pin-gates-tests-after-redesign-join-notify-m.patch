@@ -1,0 +1,368 @@
+From 6d887e494f25a079bd6a92fb20eaa3e3bd48ea90 Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Sun, 5 Jul 2026 21:06:30 +0200
+Subject: [PATCH] Hardening: admin PIN gates, tests after redesign, join-notify
+ migration
+
+Align Kampe admin actions with PIN session; fix pending badge count.
+Add notify_match_creator_on_join migration and cron push policies.
+Update unit tests for redesigned home/onboarding/tour UI.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/dashboard/DashboardPage.jsx               |  5 +-
+ src/dashboard/KampeTab.jsx                    | 26 +++++-----
+ supabase/functions/send-push/index.ts         | 24 +++++++++
+ ...705130000_notify_match_creator_on_join.sql | 49 +++++++++++++++++++
+ tests/unit/activeSeeking.test.mjs             |  4 +-
+ tests/unit/homePremiumDashboard.test.mjs      | 17 +++----
+ tests/unit/mobileTourFixes.test.mjs           |  4 +-
+ tests/unit/onboardingSignupFlow.test.mjs      | 10 ++--
+ tests/unit/profileRegionCity.test.mjs         |  4 +-
+ 9 files changed, 107 insertions(+), 36 deletions(-)
+ create mode 100644 supabase/migrations/20260705130000_notify_match_creator_on_join.sql
+
+diff --git a/src/dashboard/DashboardPage.jsx b/src/dashboard/DashboardPage.jsx
+index bb2303e..729fa93 100644
+--- a/src/dashboard/DashboardPage.jsx
++++ b/src/dashboard/DashboardPage.jsx
+@@ -36,6 +36,7 @@ import {
+   fetchAdminSubTabBadges,
+ } from '../lib/userModeration';
+ import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
++import { useAdminPinSession } from '../lib/useAdminPinSession';
+ import { BADGE_POLL_VISIBLE_MS, usePageVisible } from '../lib/pageVisibility';
+ import {
+   scrollDashboardToTop,
+@@ -729,9 +730,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
+   const navigate = useNavigate();
+   const location = useLocation();
+   const isAdmin = user?.role === 'admin';
++  const { adminPinVerified } = useAdminPinSession(isAdmin);
++  const adminCanConfirmResults = isAdmin && adminPinVerified;
+   const unreadMessages = useUnreadMessageCount(user?.id);
+   const pendingLigaInvites = usePendingLigaInvites(user?.id);
+-  const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
++  const pendingKampe = usePendingKampeBadge(user?.id, adminCanConfirmResults);
+   const adminAttentionCount = useAdminAttentionBadge(user?.id, isAdmin);
+   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
+   const unreadNotifs = useUnreadNotificationsCount(user?.id);
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index 3eec6e1..5b86dbc 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -1028,7 +1028,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+   const switchPlayerTeam = async (matchId, targetUserId, newTeam) => {
+     const match = matches.find((m) => String(m.id) === String(matchId));
+     const isCreator = match && String(match.creator_id) === String(user.id);
+-    if (!isCreator && !isAdmin) return;
++    if (!isCreator && !adminCanAct) return;
+ 
+     const mp = matchPlayers[String(matchId)] || [];
+     const target = mp.find((p) => String(p.user_id) === String(targetUserId));
+@@ -1223,18 +1223,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+     const isFull = t1 >= 2 && t2 >= 2;
+ 
+-    if (!isFull && !isAdmin) {
++    if (!isFull && !adminCanAct) {
+       showToast("Kampen kan kun startes når der er 2 spillere på hvert hold (2 mod 2).");
+       return;
+     }
+ 
+-    if (!isFull && isAdmin) {
++    if (!isFull && adminCanAct) {
+       const ok = await ask({
+         message: "Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?",
+         confirmLabel: "Ja, start nu",
+       });
+       if (!ok) return;
+-    } else if (isAdmin && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
++    } else if (adminCanAct && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
+       const ok = await ask({
+         message: "Vil du starte denne kamp som admin?",
+         confirmLabel: "Ja, start",
+@@ -1258,7 +1258,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     const match = matches.find(m => m.id === matchId);
+     if (!match) return;
+     const status = getStatus(match);
+-    if (status === "completed" && !isAdmin) {
++    if (status === "completed" && !adminCanAct) {
+       showToast("Du kan ikke slette en afsluttet kamp.");
+       return;
+     }
+@@ -1281,13 +1281,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     try {
+       const mpBefore = matchPlayers[matchId] || [];
+       const isCreator = String(match.creator_id) === String(user.id);
+-      if (isAdmin && !isCreator) {
++      if (adminCanAct && !isCreator) {
+         const { data, error } = await supabase.rpc("admin_delete_match", { p_match_id: matchId });
+         if (error) throw error;
+         if (!data?.ok) {
+           throw new Error(data?.error || "Kunne ikke slette kampen som admin");
+         }
+-      } else if (isAdmin && isCreator) {
++      } else if (adminCanAct && isCreator) {
+         const { data, error } = await supabase.from("matches").delete().eq("id", matchId).select("id");
+         if (error) throw error;
+         if (!data?.length) throw new Error("Kampen blev ikke slettet");
+@@ -1656,7 +1656,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+         result: mr,
+         players: mp,
+         confirmedBy: user.id,
+-        isAdmin,
++        isAdmin: adminCanAct,
+         showToast,
+       });
+       if (!confirmation.ok) {
+@@ -2106,7 +2106,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+           const t2Avg = teamStats.t2Avg;
+ 
+           const renderPlayer = (p, teamNum) => {
+-            const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
++            const canKick = (isCreator || adminCanAct) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+             const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
+             const teamColor = teamNum === 1 ? theme.accent : theme.blue;
+             const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+@@ -2534,7 +2534,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+           {/* ---- PRIMARY: Bekræft / Afvis (kun spiller i kampen) ---- */}
+           {showPrimaryConfirm && (
+             <div style={{ display: "flex", gap: "8px" }}>
+-              {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
++              {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok && (
+                 <button
+                   onClick={() => confirmResult(m.id)}
+                   disabled={busy}
+@@ -2676,7 +2676,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+                   {/* Admin override: Bekræft / Slet resultat */}
+                   {adminCanForceConfirm && (
+                     <div style={{ display: "flex", gap: "8px" }}>
+-                      {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
++                      {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok && (
+                         <button
+                           onClick={() => confirmResult(m.id)}
+                           disabled={busy}
+@@ -2935,7 +2935,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       };
+     }
+     if (mr && !mr.confirmed && isPlayerInMatch) {
+-      if (canConfirmPadelMatchResult({ result: mr, players: bundle.mp, confirmedBy: user.id, isAdmin }).ok) {
++      if (canConfirmPadelMatchResult({ result: mr, players: bundle.mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok) {
+         return {
+           label: "Bekræft resultat",
+           onClick: () => {
+@@ -3324,7 +3324,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+                 ) : null}
+                 {adminCanForceConfirm ? (
+                   <div style={{ display: "flex", gap: "8px" }}>
+-                    {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok ? (
++                    {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok ? (
+                       <button
+                         type="button"
+                         onClick={() => confirmResult(m.id)}
+diff --git a/supabase/functions/send-push/index.ts b/supabase/functions/send-push/index.ts
+index 3d2ea47..32fa0f6 100644
+--- a/supabase/functions/send-push/index.ts
++++ b/supabase/functions/send-push/index.ts
+@@ -42,6 +42,30 @@ const DEFAULT_PUSH_POLICY: PushPolicy = Object.freeze({
+ });
+ 
+ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
++  match_reminder: {
++    channel: "kampe",
++    level: "normal",
++    sendPush: true,
++    silent: false,
++    urgency: "normal",
++    cooldownSeconds: 300,
++  },
++  tournament_reminder: {
++    channel: "kampe",
++    level: "normal",
++    sendPush: true,
++    silent: false,
++    urgency: "normal",
++    cooldownSeconds: 300,
++  },
++  result_nudge: {
++    channel: "resultat",
++    level: "normal",
++    sendPush: true,
++    silent: true,
++    urgency: "low",
++    cooldownSeconds: 300,
++  },
+   match_cancelled: {
+     channel: "kampe",
+     level: "critical",
+diff --git a/supabase/migrations/20260705130000_notify_match_creator_on_join.sql b/supabase/migrations/20260705130000_notify_match_creator_on_join.sql
+new file mode 100644
+index 0000000..35d4a9b
+--- /dev/null
++++ b/supabase/migrations/20260705130000_notify_match_creator_on_join.sql
+@@ -0,0 +1,49 @@
++-- Notify match creator when a player joins (without client reading creator_id).
++CREATE OR REPLACE FUNCTION public.notify_match_creator_on_join(
++  p_match_id uuid,
++  p_title text,
++  p_body text
++)
++RETURNS void
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++SET row_security = off
++AS $$
++DECLARE
++  v_creator uuid;
++  v_joiner uuid;
++BEGIN
++  v_joiner := (SELECT auth.uid());
++  IF v_joiner IS NULL THEN
++    RAISE EXCEPTION 'Ikke logget ind';
++  END IF;
++
++  SELECT m.creator_id INTO v_creator
++  FROM public.matches m
++  WHERE m.id = p_match_id;
++
++  IF v_creator IS NULL THEN
++    RETURN;
++  END IF;
++
++  IF v_creator = v_joiner THEN
++    RETURN;
++  END IF;
++
++  IF NOT EXISTS (
++    SELECT 1 FROM public.match_players mp
++    WHERE mp.match_id = p_match_id AND mp.user_id = v_joiner
++  ) THEN
++    RAISE EXCEPTION 'Du er ikke tilmeldt denne kamp';
++  END IF;
++
++  INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
++  VALUES (v_creator, 'match_join', p_title, p_body, p_match_id, false);
++END;
++$$;
++
++REVOKE ALL ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) FROM PUBLIC;
++GRANT EXECUTE ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) TO authenticated;
++
++NOTIFY pgrst, 'reload schema';
+diff --git a/tests/unit/activeSeeking.test.mjs b/tests/unit/activeSeeking.test.mjs
+index a5e1b5a..7635660 100644
+--- a/tests/unit/activeSeeking.test.mjs
++++ b/tests/unit/activeSeeking.test.mjs
+@@ -54,7 +54,7 @@ test('ActiveSeekingPanel integreret på Hjem, Makkere og Kampe', () => {
+   const makkere = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
+   const kampe = readFileSync(join(root, 'src/dashboard/KampeTab.jsx'), 'utf8');
+   assert.match(home, /ActiveSeekingPanel/);
+-  assert.match(home, /variant="home"/);
++  assert.match(home, /variant="homeCard"/);
+   assert.match(home, /ActiveSeekingOnboardingPrompt/);
+   assert.match(makkere, /ActiveSeekingPanel/);
+   assert.match(makkere, /channel="makker"/);
+@@ -68,7 +68,7 @@ test('filter-sider uden Kanaler-sektion; KampeFilterSheet uden søger-toggle', (
+   const sheet = readFileSync(join(root, 'src/components/kampe/KampeFilterSheet.jsx'), 'utf8');
+   assert.doesNotMatch(makkerPage, /Kanaler/);
+   assert.doesNotMatch(matchPage, /Kanaler/);
+-  assert.match(makkerPage, /Dette styrer hvornår du får besked/);
++  assert.match(makkerPage, /Mit makker-filter/);
+   assert.match(matchPage, /Dette styrer hvornår du får besked/);
+   assert.doesNotMatch(sheet, /Søger kamp/);
+   assert.doesNotMatch(sheet, /showSeekingToggle/);
+diff --git a/tests/unit/homePremiumDashboard.test.mjs b/tests/unit/homePremiumDashboard.test.mjs
+index 688a72b..ac634c0 100644
+--- a/tests/unit/homePremiumDashboard.test.mjs
++++ b/tests/unit/homePremiumDashboard.test.mjs
+@@ -8,20 +8,15 @@ const MAKKERE_TAB_URL = new URL('../../src/dashboard/MakkereTab.jsx', import.met
+ const RESPONSIVE_CSS_URL = new URL('../../src/responsive.css', import.meta.url)
+ const DASHBOARD_PAGE_URL = new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url)
+ 
+-test('home tab uses inline ELO hero with milestone and form', async () => {
++test('home tab uses compact greeting header and quick actions', async () => {
+   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+ 
+-  assert.match(homeTab, /aria-label="Din ELO status"/)
+-  assert.match(homeTab, /recentForm/)
+-  assert.match(homeTab, /nextEloMilestone/)
+-  assert.match(homeTab, /Næste mål/)
+-  assert.match(homeTab, /weeklyDelta/)
++  assert.match(homeTab, /greetingText/)
++  assert.match(homeTab, /displayName/)
++  assert.match(homeTab, /data-tour=\{`quick-action-\$\{t\}`\}/)
++  assert.match(homeTab, /Niveau og ELO er ikke det samme/)
+   assert.match(homeTab, /className="pm-home-seeking-cta"/)
+-  assert.match(homeTab, />Detaljer<\/button>/)
+-  assert.doesNotMatch(homeTab, /className="pm-home-elo-scale"/)
+-  assert.doesNotMatch(homeTab, /eloScalePct/)
+-  assert.doesNotMatch(homeTab, /<span>Begynder<\/span>/)
+-  assert.doesNotMatch(homeTab, /className="pm-stat-grid"/)
++  assert.match(homeTab, /data-tour="home-latest-activity"/)
+ })
+ 
+ test('home seeking CTA for match filter opens Kampe', async () => {
+diff --git a/tests/unit/mobileTourFixes.test.mjs b/tests/unit/mobileTourFixes.test.mjs
+index e2eb95a..1d6713e 100644
+--- a/tests/unit/mobileTourFixes.test.mjs
++++ b/tests/unit/mobileTourFixes.test.mjs
+@@ -22,8 +22,8 @@ test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
+   assert.match(dash, /const active = tab === t\.id && !mobileMoreVisible/);
+   assert.match(dash, /scrollBlock: 'start'/);
+   assert.match(dash, /waitForMount: true/);
+-  assert.match(dash, /tourForceOpen=\{tourOnNotificationStep\}/);
+-  assert.match(home, /data-tour="home-latest-activity" className="pm-tour-scroll-anchor"/);
++  assert.doesNotMatch(dash, /tourForceOpen=\{tourOnNotificationStep\}/);
++  assert.match(home, /pm-home-bell/);
+   assert.match(dash, /clampHighlight: true/);
+   assert.match(dash, /scrollTourTarget/);
+   assert.doesNotMatch(home, /pm-feed-filters-header.*home-latest-activity/);
+diff --git a/tests/unit/onboardingSignupFlow.test.mjs b/tests/unit/onboardingSignupFlow.test.mjs
+index cd76f85..c4be170 100644
+--- a/tests/unit/onboardingSignupFlow.test.mjs
++++ b/tests/unit/onboardingSignupFlow.test.mjs
+@@ -7,7 +7,7 @@ test('onboarding requires users to confirm their email address before continuing
+   const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
+ 
+   assert.match(onboardingPage, /email_confirm/);
+-  assert.match(onboardingPage, /Bekr[aæ]ft email/);
++  assert.match(onboardingPage, /Bekr[aæ]ft e-mail/);
+   assert.match(onboardingPage, /Emails matcher ikke|E-mailadresserne matcher ikke/);
+   assert.match(onboardingPage, /email skrevet ens i begge felter/);
+ });
+@@ -15,11 +15,11 @@ test('onboarding requires users to confirm their email address before continuing
+ test('onboarding explains the signup choices without adding an early profile preview', async () => {
+   const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
+ 
+-  assert.match(onboardingPage, /bruges til at matche dig med spillere p[aå] samme niveau/i);
++  assert.match(onboardingPage, /LEVEL_CARDS/);
+   assert.match(onboardingPage, /vises ikke offentligt/i);
+-  assert.match(onboardingPage, /under profil senere/i);
+-  assert.match(onboardingPage, /Din profil er klar til at finde makkere/i);
+-  assert.match(onboardingPage, /Mangler f[oø]r du kan forts[aæ]tte/i);
++  assert.match(onboardingPage, /Finjustér niveau/);
++  assert.match(onboardingPage, /Mangler før du kan fortsætte/);
++  assert.match(onboardingPage, /stepTitles = \["Opret profil", "Dit niveau", "Dit område", "Din profil"\]/);
+   assert.doesNotMatch(onboardingPage, /Forh[aå]ndsvisning af profil[\s\S]*step === 0/);
+ });
+ 
+diff --git a/tests/unit/profileRegionCity.test.mjs b/tests/unit/profileRegionCity.test.mjs
+index c7feb9c..b229fe6 100644
+--- a/tests/unit/profileRegionCity.test.mjs
++++ b/tests/unit/profileRegionCity.test.mjs
+@@ -19,8 +19,8 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
+   assert.doesNotMatch(profileUtils, /meta\.area \|\| meta\.region \|\| meta\.city/);
+   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
+   assert.match(onboarding, /Region.*\*.*valgfri/s);
+-  assert.match(onboarding, /Find makker/);
+-  assert.match(onboarding, /Kampe/);
++  assert.match(onboarding, /Bekræft e-mail/);
++  assert.match(onboarding, /Dit område/);
+   assert.match(makkereTab, /loadError/);
+   assert.match(makkereTab, /pm-state-card--error/);
+   assert.doesNotMatch(onboarding, /seeking_match/);
+-- 
+2.43.0
+
