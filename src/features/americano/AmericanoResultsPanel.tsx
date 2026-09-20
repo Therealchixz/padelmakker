@@ -5,12 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { AvatarCircle } from '../../components/AvatarCircle'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
-import {
-  americanoOutcomeColors,
-  americanoOutcomeForUserInMatch,
-  americanoViewerStatusLabel,
-  userIsOnCourtInAmericanoMatch,
-} from './americanoOutcomeColors'
+import { userIsOnCourtInAmericanoMatch } from './americanoOutcomeColors'
 import { notifyAmericanoTournamentCompleted } from '../../lib/notifyKampeEntityComplete'
 import { TOURNAMENT_ELO_LABEL } from '../../lib/tournamentCopy'
 import { advanceMexicanoRoundIfReady, mexicanoProgressLabel } from '../../lib/mexicanoAdvance.js'
@@ -90,113 +85,6 @@ function DualAvatar({ a, b }: { a: string; b: string }) {
     </div>
   )
 }
-type TeamOutcome = 'win' | 'loss' | 'tie'
-
-function TeamBlock({
-  name1,
-  name2,
-  pid1,
-  pid2,
-  score,
-  outcome,
-  baseTextColor,
-  showCheckForUser,
-  userIdByPartId,
-  currentUserId,
-  inputElement,
-  teamLabel,
-}: {
-  name1: string
-  name2: string
-  pid1: string
-  pid2: string
-  score: number | null
-  outcome: TeamOutcome
-  baseTextColor?: string
-  showCheckForUser: boolean
-  userIdByPartId: Map<string, string>
-  currentUserId: string
-  inputElement?: React.ReactNode
-  teamLabel?: string
-}) {
-  const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
-  const resolvedBaseTextColor = baseTextColor || c.text
-  const nameColor = outcome === 'loss' ? 'var(--pm-text-mid)' : resolvedBaseTextColor
-  const scoreColor = outcome === 'loss' ? 'var(--pm-text-mid)' : resolvedBaseTextColor
-  const scoreSize = outcome === 'tie' ? 24 : 26
-  const scoreWeight = outcome === 'loss' ? 700 : 800
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 0',
-        minHeight: 56,
-      }}
-    >
-      <DualAvatar a={name1} b={name2} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {teamLabel && (
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.muted, marginBottom: 2 }}>
-            {teamLabel}
-          </div>
-        )}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 14,
-            fontWeight: 600,
-            color: nameColor,
-            lineHeight: 1.35,
-          }}
-        >
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name1}</span>
-          {showCheckForUser && String(userIdByPartId.get(pid1)) === String(currentUserId) && (
-            <Check size={16} strokeWidth={2.5} color={c.accent} aria-hidden />
-          )}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 14,
-            fontWeight: 600,
-            color: nameColor,
-            lineHeight: 1.35,
-            marginTop: 2,
-          }}
-        >
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name2}</span>
-          {showCheckForUser && String(userIdByPartId.get(pid2)) === String(currentUserId) && (
-            <Check size={16} strokeWidth={2.5} color={c.accent} aria-hidden />
-          )}
-        </div>
-      </div>
-      <div
-        style={{
-          fontSize: inputElement ? undefined : scoreSize,
-          fontWeight: inputElement ? undefined : scoreWeight,
-          letterSpacing: inputElement ? undefined : '-0.03em',
-          color: inputElement ? undefined : scoreColor,
-          fontVariantNumeric: 'tabular-nums',
-          flexShrink: 0,
-          minWidth: 56,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: font,
-        }}
-      >
-        {inputElement || scoreStr}
-      </div>
-    </div>
-  )
-}
-
 type Props = {
   tournament: AmericanoTournament
   /** Opretteren af turneringen — kan låse op og rette gemte resultater */

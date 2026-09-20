@@ -535,6 +535,17 @@ export default function PadelMatchResultInput({
         )}
       </div>
 
+      {/* Reglerne staar ellers ingen steder i appen, saa en afvist score (fx 6-6)
+          efterlod brugeren uden forklaring. Sammenklappet, saa den ikke fylder. */}
+      <details style={{ marginBottom: 10 }}>
+        <summary style={{ fontSize: '12px', color: 'var(--pm-text-mid)', cursor: 'pointer', padding: '2px 0' }}>
+          Hvordan regnes et sæt?
+        </summary>
+        <p style={{ fontSize: '12px', color: 'var(--pm-text-mid)', lineHeight: 1.6, margin: '6px 0 0' }}>
+          {RULES_SUMMARY}
+        </p>
+      </details>
+
       {setCard(0)}
       {setCard(1)}
       {setCard(2)}

@@ -64,7 +64,7 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, CalendarDays, CalendarPlus, Share2, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
+import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, CalendarDays, CalendarPlus, Share2, Users, BarChart3, Check, Copy, ArrowRight, MapPin, RotateCcw } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -77,6 +77,7 @@ import { ConfirmResultModal } from './ConfirmResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
+import { completedMatchActions } from '../lib/completedMatchActions';
 import { completionMsFor2v2, isWithinResultErrorReportWindow } from '../lib/resultErrorReports';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
@@ -2700,8 +2701,20 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     const needsAdminPinForPage = isAdmin && !adminCanAct && !isPlayerInMatch;
     const showToolsAccordion =
       adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
+    // Afsluttet kamp: fejlindberetning (samme flow som Americano/liga) og revanche.
+    const completedActions = completedMatchActions({
+      status,
+      resultConfirmed: Boolean(mr?.confirmed),
+      joined,
+      isCreator,
+    });
+    const resultErrorControl = completedActions.canReportResultError
+      ? renderResultErrorControl(m, bundle)
+      : null;
+    const canRematch = completedActions.canRematch;
+    const showCompletedActions = Boolean(resultErrorControl) || canRematch;
     const hasManage =
-      canUseMatchChat || needsAdminPinForPage || hasSecondaryLinks || showToolsAccordion;
+      canUseMatchChat || needsAdminPinForPage || hasSecondaryLinks || showToolsAccordion || showCompletedActions;
 
     if (!hasManage) return null;
 
@@ -2724,6 +2737,20 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             >
               Indtast admin-PIN
             </button>
+          </div>
+        ) : null}
+        {showCompletedActions ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {canRematch ? (
+              <button
+                type="button"
+                onClick={() => handleRematch(m)}
+                style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px" }}
+              >
+                <RotateCcw size={14} /> Spil igen
+              </button>
+            ) : null}
+            {resultErrorControl}
           </div>
         ) : null}
         <MatchDetailActionCard
