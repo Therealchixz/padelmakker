@@ -58,3 +58,37 @@ test('en ufuldstændig definition springes over i stedet for at kaste', () => {
   assert.deepEqual(extractFunctions(''), []);
   assert.deepEqual(extractFunctions('-- bare en kommentar'), []);
 });
+
+// ---- extractTables: hullet i migrationshistorikken ----
+
+test('extractTables skelner mellem oprettede og ændrede tabeller', async () => {
+  const { extractTables } = await import('../../scripts/sql-index.mjs');
+  const { created, altered } = extractTables(`
+CREATE TABLE IF NOT EXISTS public.ny (id uuid);
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS x text;
+ALTER TABLE public.ny ADD COLUMN y text;
+`);
+  assert.ok(created.has('ny'));
+  assert.ok(!created.has('matches'), 'matches oprettes ikke her');
+  assert.ok(altered.has('matches'));
+  assert.ok(altered.has('ny'));
+});
+
+test('extractTables er ufølsom for public-præfiks, citationstegn og store bogstaver', async () => {
+  const { extractTables } = await import('../../scripts/sql-index.mjs');
+  const a = extractTables('CREATE TABLE "Profiles" (id uuid);');
+  assert.ok(a.created.has('profiles'));
+  const b = extractTables('ALTER TABLE ONLY public."matches" ADD COLUMN z text;');
+  assert.ok(b.altered.has('matches'));
+  const c = extractTables('alter table if exists courts add column w text;');
+  assert.ok(c.altered.has('courts'));
+});
+
+test('extractTables kaster ikke på tom eller irrelevant SQL', async () => {
+  const { extractTables } = await import('../../scripts/sql-index.mjs');
+  for (const sql of ['', '-- kommentar', 'SELECT 1;']) {
+    const { created, altered } = extractTables(sql);
+    assert.equal(created.size, 0);
+    assert.equal(altered.size, 0);
+  }
+});

@@ -60,6 +60,22 @@ export function extractFunctions(sql) {
   return out;
 }
 
+/**
+ * Tabeller som migrations OPRETTER, og tabeller de AENDRER.
+ * En tabel der aendres uden nogensinde at blive oprettet, er et hul i
+ * historikken: en frisk database kan ikke bygges fra den.
+ */
+export function extractTables(sql) {
+  const created = new Set();
+  const altered = new Set();
+  const createRe = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?"?([a-z0-9_]+)"?/gi;
+  const alterRe = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?:public\.)?"?([a-z0-9_]+)"?/gi;
+  let m;
+  while ((m = createRe.exec(sql)) !== null) created.add(m[1].toLowerCase());
+  while ((m = alterRe.exec(sql)) !== null) altered.add(m[1].toLowerCase());
+  return { created, altered };
+}
+
 function listSql(dir) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
@@ -68,11 +84,20 @@ function listSql(dir) {
 export function buildIndex() {
   // 1) Produktionssandheden: sidste migration der definerer en funktion vinder.
   const liveByName = new Map();
+  const tablesCreated = new Set();
+  const tablesAltered = new Map(); // navn -> foerste migration der aendrer den
   for (const file of listSql(MIGRATIONS_DIR)) {
-    for (const fn of extractFunctions(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'))) {
+    const text = readFileSync(join(MIGRATIONS_DIR, file), 'utf8');
+    for (const fn of extractFunctions(text)) {
       liveByName.set(fn.name, { file, fingerprint: fingerprint(fn.body) });
     }
+    const t = extractTables(text);
+    for (const name of t.created) tablesCreated.add(name);
+    for (const name of t.altered) if (!tablesAltered.has(name)) tablesAltered.set(name, file);
   }
+  const tablesMissing = [...tablesAltered.entries()]
+    .filter(([name]) => !tablesCreated.has(name))
+    .sort((a, b) => a[0].localeCompare(b[0]));
 
   // 2) Hvad hver fil i supabase/sql/ påstår.
   const claimsByName = new Map();
@@ -144,6 +169,23 @@ export function buildIndex() {
     for (const r of orphans) {
       lines.push(`| \`${r.name}\` | ${r.claims.map((c) => `\`${c.file}\``).join('<br>')} |`);
     }
+  }
+
+  if (tablesMissing.length) {
+    lines.push('');
+    lines.push('## Tabeller uden CREATE i historikken');
+    lines.push('');
+    lines.push(`**${tablesMissing.length} tabeller aendres af en migration uden nogensinde at blive oprettet af en.**`);
+    lines.push('De blev lavet i haanden foer historikken begyndte. En frisk database kan');
+    lines.push('derfor ikke bygges fra `supabase/migrations/` — foerste ALTER fejler med');
+    lines.push('`relation "..." does not exist`. Det rammer Supabase preview-branches og');
+    lines.push('enhver gendannelse eller nyt staging-miljoe. Produktionsdatabasen er ikke');
+    lines.push('beroert: den har tabellerne i forvejen, og `supabase db push` tilfoejer kun');
+    lines.push('nye migrations.');
+    lines.push('');
+    lines.push('| Tabel | Foerste migration der aendrer den |');
+    lines.push('|---|---|');
+    for (const [name, file] of tablesMissing) lines.push(`| \`${name}\` | \`${file}\` |`);
   }
 
   // Oejebliksbillede: funktioner der koerer i produktion uden nogen migration.

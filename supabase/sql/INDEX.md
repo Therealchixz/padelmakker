@@ -174,6 +174,25 @@ eller kørt manuelt uden migrationsfil — i så fald er de ikke dækket af depl
 | `trg_set_elo_history_engine_meta` | `elo_guardrails_admin_flags.sql` |
 | `unblock_user` | `user_blocks_and_reports.sql` |
 
+## Tabeller uden CREATE i historikken
+
+**6 tabeller aendres af en migration uden nogensinde at blive oprettet af en.**
+De blev lavet i haanden foer historikken begyndte. En frisk database kan
+derfor ikke bygges fra `supabase/migrations/` — foerste ALTER fejler med
+`relation "..." does not exist`. Det rammer Supabase preview-branches og
+enhver gendannelse eller nyt staging-miljoe. Produktionsdatabasen er ikke
+beroert: den har tabellerne i forvejen, og `supabase db push` tilfoejer kun
+nye migrations.
+
+| Tabel | Foerste migration der aendrer den |
+|---|---|
+| `americano_tournaments` | `20260527075043_americano_mexicano_format.sql` |
+| `courts` | `20260704120000_kampe_price_facilities_photos.sql` |
+| `match_players` | `20260826193647_match_player_court_side.sql` |
+| `matches` | `20260416125447_add_match_type_and_join_requests.sql` |
+| `messages` | `20260416123610_messages_realtime_and_update_policy.sql` |
+| `profiles` | `20260416140959_add_available_days_to_profiles.sql` |
+
 ## I databasen, men i ingen migration
 
 Oejebliksbillede fra **2026-09-20** (projekt `hzmrsqrerkoftcppfklu`).
