@@ -652,6 +652,10 @@ const accountMenuRowBtnStyle = ({ isDanger = false, isLast = false } = {}) => ({
   fontFamily: font,
 });
 
+// Konstant - uden for komponenten, saa listen ikke genskabes ved hver
+// rendering og kan staa i rute-effektens afhaengigheder.
+const VALID_TABS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
+
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet, updateProfile } = useAuth();
   const ask = useConfirm();
@@ -672,8 +676,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const kampeTabBadge =
     pendingKampe + pendingLigaInvites > 0 ? pendingKampe + pendingLigaInvites : null;
   const pathTab = parseDashboardTab(location.pathname);
-  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
-  const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
+  const tab = VALID_TABS.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((tabId, opts = {}) => {
     const raw = opts.search != null ? String(opts.search) : "";
     const q = raw ? (raw.startsWith("?") ? raw : `?${raw}`) : "";
@@ -685,7 +688,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       navigate("/dashboard/kampe?format=liga", { replace: true });
       return;
     }
-    if (!validTabs.includes(pathTab)) {
+    if (!VALID_TABS.includes(pathTab)) {
       navigate("/dashboard/hjem", { replace: true });
     }
   }, [pathTab, navigate]);

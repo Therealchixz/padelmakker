@@ -2364,7 +2364,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       counts.total += count;
     }
     return counts;
-  }, [getStatus, matchChatUnreadById, matchUnreadById, matches]);
+  }, [getStatus, matchChatUnreadById, matchUnreadById, matches, joinRequests, user.id]);
 
   const searchPlaceholder = kampeFormat === "liga"
     ? "Søg liga..."
@@ -2382,11 +2382,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
     setSearchQuery("");
   };
-  const onListFilterChange = (nextFilter) => {
+  const onListFilterChange = useCallback((nextFilter) => {
     const normalized = normalizeKampeListFilter(nextFilter);
     setKampeListFilter(normalized);
     mergeKampeSessionPrefs(user.id, { listFilter: normalized });
-  };
+  }, [user.id]);
   const onViewTabChange = (nextView) => {
     setViewTab(nextView);
     mergeKampeSessionPrefs(user.id, { view: nextView });
@@ -2548,7 +2548,14 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
     }
     return null;
-  }, [busyId, cancelJoinRequest, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
+  // Listen er komplet, men denne useCallback memoiserer reelt ikke: requestJoin,
+  // cancelJoinRequest og startMatch er almindelige funktioner, der genskabes hver
+  // rendering. ESLint foreslaar at pakke dem i useCallback - det ville ikke hjaelpe,
+  // for de afhaenger alle af `matches`, som skifter ved hver indlaesning. Til
+  // gengaeld ville en overset afhaengighed give praecis den slags forAeldede
+  // vaerdier som rettelsen ovenfor (adminCanAct) fjernede. Hoerer til opdelingen
+  // af denne fil, ikke til en lap her.
+  }, [busyId, cancelJoinRequest, adminCanAct, loadData, requestJoin, startMatch, user.id]);
 
   const renderJoinRequestsPanel = (m, bundle) => {
     const { isCreator, pendingRequests, isClosed, left } = bundle.cardState;
@@ -3031,8 +3038,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     markMatchNotifsRead,
     myUidStr,
     observeMatchCard,
+    open2v2Detail,
     profilesById,
-    requestJoin,
   ]);
 
   const toolbarFormatTabs = [
@@ -3093,7 +3100,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
     }
     return chips;
-  }, [kampeScope, kampeFormat, user, kampeListFilter]);
+  }, [kampeFormat, user, kampeListFilter, myElo, onListFilterChange]);
   const showCreatePanel =
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||

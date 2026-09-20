@@ -311,7 +311,6 @@ export function BanerTab() {
       }
       return v.id;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, playtomicDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue, loadPlaytomicVenue]);
 
   /** Unikke "gul tid"-forklaringer — vises én gang under banens slots i stedet for pr. chip. */

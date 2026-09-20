@@ -267,6 +267,10 @@ export function ProfilTab({ user, showToast, setTab }) {
         label: user.city,
       } : null);
     }
+    // Felterne opregnes frem for hele `user`: isValidCityPlace laeser praecis
+    // city/latitude/longitude, og hele objektet ville nulstille feltet hver gang
+    // profilen genindlaeses af andre grunde.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.city, user?.latitude, user?.longitude, editing]);
 
   useEffect(() => {

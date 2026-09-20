@@ -283,6 +283,9 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
   useLayoutEffect(() => {
     if (!open || !selectedBadge) return;
     scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    // `key` frem for hele objektet: effekten skal rulle naar der vaelges et ANDET
+    // maerke, ikke hver gang foraelderen laver et nyt objekt for det samme.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedBadge?.key]);
 
   if (!badges?.length) return null;

@@ -697,6 +697,10 @@ export function AmericanoTab({
     return () => {
       cancelled = true
     }
+    // participantSnippets laeses kun for at finde ud af hvad der MANGLER, og
+    // skrives med en funktionel opdatering. Stod den i listen, ville hver skrivning
+    // starte effekten forfra - en uendelig hentning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, participantsByTournament])
 
   useEffect(() => {
@@ -785,6 +789,9 @@ export function AmericanoTab({
     return () => {
       cancelled = true
     }
+    // Samme moenster: completedDetailCache er cachen effekten fylder. Den laeses kun
+    // som "har vi den allerede?" (linje 738) og maa derfor ikke udloese effekten.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedInKampe, embedDetailId, detailTournamentId, rows, profileId, participantsByTournament])
 
   const filterTournamentRow = useCallback(

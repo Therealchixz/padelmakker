@@ -162,6 +162,17 @@ function AdminAuditLogPanel({ title, emptyText, loading, error, entries, limit =
   );
 }
 
+// Konstant - ligger uden for komponenten, saa den ikke genskabes ved hver
+// rendering og dermed kan staa i adminSubTabPills' afhaengigheder.
+const ADMIN_SUB_TABS = [
+  { id: 'oversigt', label: 'Oversigt', shortLabel: 'Oversigt', icon: LayoutDashboard, badgeKey: null },
+  { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
+  { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
+  { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
+  { id: 'result_errors', label: 'Fejl', shortLabel: 'Fejl', icon: AlertCircle, badgeKey: 'resultErrors' },
+  { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle, badgeKey: 'console' },
+];
+
 export function AdminTab({ initialSubTab = null }) {
   const { user } = useAuth();
   const ask = useConfirm();
@@ -730,7 +741,7 @@ export function AdminTab({ initialSubTab = null }) {
     else fetchLiga();
   };
 
-  const fetchUserReports = async () => {
+  const fetchUserReports = useCallback(async () => {
     setReportsLoading(true);
     setReportsError('');
     try {
@@ -767,7 +778,7 @@ export function AdminTab({ initialSubTab = null }) {
     } finally {
       setReportsLoading(false);
     }
-  };
+  }, [reportStatusFilter]);
 
   const updateUserReportStatus = async (report, nextStatus) => {
     setReportBusyId(report.id);
@@ -797,7 +808,7 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
-  const fetchResultErrorReports = async () => {
+  const fetchResultErrorReports = useCallback(async () => {
     setResultErrorsLoading(true);
     setResultErrorsError('');
     try {
@@ -860,7 +871,7 @@ export function AdminTab({ initialSubTab = null }) {
     } finally {
       setResultErrorsLoading(false);
     }
-  };
+  }, [resultErrorStatusFilter]);
 
   const refreshActiveAdminTab = useCallback(() => {
     if (activeSubTab === 'users') return fetchUsers();
@@ -873,7 +884,8 @@ export function AdminTab({ initialSubTab = null }) {
     if (activeSubTab === 'result_errors') return fetchResultErrorReports();
     if (activeSubTab === 'console' || activeSubTab === 'oversigt') return fetchAdminConsole();
     return Promise.resolve();
-  }, [activeSubTab, matchSubTab, fetchUsers, fetchMatches, fetchAmericano, fetchLiga]);
+  }, [activeSubTab, matchSubTab, fetchUsers, fetchMatches, fetchAmericano, fetchLiga,
+      fetchUserReports, fetchResultErrorReports]);
 
   const updateResultErrorReportStatus = async (report, nextStatus) => {
     setResultErrorBusyId(report.id);
@@ -925,12 +937,12 @@ export function AdminTab({ initialSubTab = null }) {
   }, [
     activeSubTab,
     matchSubTab,
-    reportStatusFilter,
-    resultErrorStatusFilter,
     fetchUsers,
     fetchMatches,
     fetchAmericano,
     fetchLiga,
+    fetchUserReports,
+    fetchResultErrorReports,
   ]);
 
   useEffect(() => {
@@ -1344,18 +1356,9 @@ export function AdminTab({ initialSubTab = null }) {
     },
   ], [consoleStats, subTabBadges]);
 
-  const adminSubTabs = [
-    { id: 'oversigt', label: 'Oversigt', shortLabel: 'Oversigt', icon: LayoutDashboard, badgeKey: null },
-    { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
-    { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
-    { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
-    { id: 'result_errors', label: 'Fejl', shortLabel: 'Fejl', icon: AlertCircle, badgeKey: 'resultErrors' },
-    { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle, badgeKey: 'console' },
-  ];
-
   const adminSubTabPills = useMemo(
     () =>
-      adminSubTabs.map((t) => {
+      ADMIN_SUB_TABS.map((t) => {
         const Icon = t.icon;
         const badgeCount = subTabBadges[t.badgeKey] || 0;
         return {

@@ -167,7 +167,7 @@ export function AmericanoResultsPanel({
       matches,
       P,
     )
-  }, [isMexicano, isCreator, tournament, participantIdsOrdered, matches, P])
+  }, [isMexicano, canManage, tournament, participantIdsOrdered, matches, P])
 
   const nameByPartId = useCallback(
     (pid: string) => participants.find((p) => p.id === pid)?.display_name || '?',
@@ -248,7 +248,7 @@ export function AmericanoResultsPanel({
     } finally {
       setLoading(false)
     }
-  }, [tournament, isCreator, showToast])
+  }, [tournament, canManage, showToast])
 
   useEffect(() => {
     load()
