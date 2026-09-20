@@ -20,11 +20,13 @@ CREATE TABLE IF NOT EXISTS match_join_requests (
 ALTER TABLE match_join_requests ENABLE ROW LEVEL SECURITY;
 
 -- Users can see their own requests
+DROP POLICY IF EXISTS "join_req_select_own" ON match_join_requests;
 CREATE POLICY "join_req_select_own" ON match_join_requests
   FOR SELECT TO authenticated
   USING ((select auth.uid()) = user_id);
 
 -- Creators can see all requests for their matches
+DROP POLICY IF EXISTS "join_req_select_creator" ON match_join_requests;
 CREATE POLICY "join_req_select_creator" ON match_join_requests
   FOR SELECT TO authenticated
   USING (
@@ -36,11 +38,13 @@ CREATE POLICY "join_req_select_creator" ON match_join_requests
   );
 
 -- Users can create their own requests
+DROP POLICY IF EXISTS "join_req_insert" ON match_join_requests;
 CREATE POLICY "join_req_insert" ON match_join_requests
   FOR INSERT TO authenticated
   WITH CHECK ((select auth.uid()) = user_id);
 
 -- Creators can approve/reject requests for their matches
+DROP POLICY IF EXISTS "join_req_update_creator" ON match_join_requests;
 CREATE POLICY "join_req_update_creator" ON match_join_requests
   FOR UPDATE TO authenticated
   USING (
@@ -52,11 +56,13 @@ CREATE POLICY "join_req_update_creator" ON match_join_requests
   );
 
 -- Users can cancel (delete) their own pending requests
+DROP POLICY IF EXISTS "join_req_delete_own" ON match_join_requests;
 CREATE POLICY "join_req_delete_own" ON match_join_requests
   FOR DELETE TO authenticated
   USING ((select auth.uid()) = user_id);
 
 -- Admins bypass all RLS
+DROP POLICY IF EXISTS "join_req_admin" ON match_join_requests;
 CREATE POLICY "join_req_admin" ON match_join_requests
   FOR ALL TO authenticated
   USING (public.is_admin())
