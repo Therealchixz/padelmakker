@@ -22,7 +22,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   dump:
@@ -83,3 +84,71 @@ jobs:
           name: produktionsskema
           path: dump/
           retention-days: 7
+
+      # Udtrækket placeres som en baseline-migration med version 0, så den
+      # sorterer FØR alle eksisterende migrations. En frisk database bygger
+      # derefter skemaet først og lægger de 150 migrations oven på.
+      #
+      # PR'en åbnes som UDKAST og må ikke merges, før baseline er markeret som
+      # allerede anvendt i produktion. Ellers ser `supabase db push` den som ny
+      # og kører CREATE TABLE mod en database der har tabellerne i forvejen.
+      - name: Åbn PR med baseline-migrationen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          MIG="supabase/migrations/00000000000000_baseline_schema.sql"
+          GREN="schema-baseline/$(date -u +%Y%m%d-%H%M%S)"
+
+          mkdir -p supabase/migrations
+          {
+            echo "-- BASELINE: produktionsskemaet pr. $(date -u +%Y-%m-%d)."
+            echo "--"
+            echo "-- Genereret af .github/workflows/dump-schema-baseline.yml med"
+            echo "-- \`supabase db dump\`. Rediger ikke i haanden - koer workflowen igen."
+            echo "--"
+            echo "-- Findes FOER alle andre migrations (version 0), saa en frisk database"
+            echo "-- bygger skemaet foerst. Produktionen har indholdet i forvejen; derfor"
+            echo "-- skal denne version markeres som allerede anvendt med"
+            echo "-- \`supabase migration repair --status applied 00000000000000\`"
+            echo "-- FOER denne PR merges."
+            echo ""
+            cat dump/schema.sql
+          } > "$MIG"
+
+          # Baseline foerer nu de tabeller og funktioner ind i historikken, saa
+          # SQL-indekset skal regenereres - ellers fejler db:sql-index:check.
+          # At de "manglende" lister skrumper er netop beviset paa at det virker.
+          npm ci --prefer-offline --no-audit --fund=false
+          npm run db:sql-index
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$GREN"
+          git add "$MIG" supabase/sql/INDEX.md
+          git commit -m "chore(db): baseline af produktionsskemaet (genereret)"
+          git push -u origin "$GREN"
+
+          gh pr create --draft \
+            --base main --head "$GREN" \
+            --title "UDKAST: baseline af produktionsskemaet — må ikke merges endnu" \
+            --body "$(printf '%s\n' \
+              'Genereret af `dump-schema-baseline.yml` med Supabases eget `db dump`.' \
+              '' \
+              '## ⛔ Må ikke merges endnu' \
+              '' \
+              'Baseline har version `00000000000000` og er derfor ny for `supabase db push`.' \
+              'Merges den nu, forsøger deployet at køre `CREATE TABLE` mod produktionen,' \
+              'som har tabellerne i forvejen.' \
+              '' \
+              'Først skal versionen markeres som allerede anvendt:' \
+              '' \
+              '```' \
+              'supabase migration repair --status applied 00000000000000' \
+              '```' \
+              '' \
+              '## Hvad den skal bevise' \
+              '' \
+              'Supabase opretter en preview-branch på denne PR og bygger databasen fra' \
+              'bunden. Bliver det tjek grønt, kan skemaet genskabes fra historikken —' \
+              'hvilket det ikke kunne før.')"
