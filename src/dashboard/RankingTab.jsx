@@ -227,8 +227,15 @@ export function RankingTab({ user }) {
     [fetchProfilePage, fetchMyAllTimeRank],
   );
 
+  // activePeriod er MED VILJE uden standardvaerdi. Tidligere stod der
+  // `activePeriod = period`, men deps er kun [loadPeriodHistory], som ikke
+  // aendrer sig naar perioden skifter. Standardvaerdien laeste derfor en
+  // forael'det 'period' fra foerste render, og periodCutoffDate() falder
+  // tilbage til "denne maaned" for alt andet end 'week' - saa uge-ranglisten
+  // kunne stille genindlaese maanedstal. Alle kaldere sender perioden selv.
   const ensurePeriodHistory = useCallback(
-    async ({ background = false, activePeriod = period } = {}) => {
+    async ({ background = false, activePeriod } = {}) => {
+      if (!activePeriod) return;
       if (periodHistoryLoadedRef.current === activePeriod) return;
       profileFetchGenRef.current += 1;
       const gen = profileFetchGenRef.current;
@@ -268,7 +275,7 @@ export function RankingTab({ user }) {
     if (period === 'all') {
       await loadAllTimeProfiles({ background: false });
     } else {
-      await ensurePeriodHistory({ background: false });
+      await ensurePeriodHistory({ background: false, activePeriod: period });
     }
   }, [period, loadAllTimeProfiles, ensurePeriodHistory]);
 
@@ -280,7 +287,7 @@ export function RankingTab({ user }) {
     if (period === 'all') {
       void loadAllTimeProfiles({ background: false });
     } else {
-      void ensurePeriodHistory({ background: false });
+      void ensurePeriodHistory({ background: false, activePeriod: period });
     }
     // Kun ved ELO-sync — ikke ved skift mellem uge/måned/alle tider
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -321,7 +328,7 @@ export function RankingTab({ user }) {
       if (now - lastVisFetch < throttleMs) return;
       lastVisFetch = now;
       if (period === 'all') void loadAllTimeProfiles({ background: true });
-      else void ensurePeriodHistory({ background: true });
+      else void ensurePeriodHistory({ background: true, activePeriod: period });
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);

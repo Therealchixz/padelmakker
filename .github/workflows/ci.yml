@@ -46,6 +46,9 @@ jobs:
       - name: Migration integrity (backfilled versions present)
         run: npm run db:check-migration-integrity
 
+      - name: SQL-indeks er opdateret
+        run: npm run db:sql-index:check
+
       - name: Production build
         run: npm run build
 

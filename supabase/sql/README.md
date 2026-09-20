@@ -1,5 +1,14 @@
 # Supabase SQL - overblik og oprydning
 
+> **Leder du efter hvad databasen faktisk gør?** Se [`INDEX.md`](./INDEX.md).
+> Den siger for hver funktion, hvilken migration der gælder i produktion, og
+> hvilken fil her i mappen (hvis nogen) der er identisk med den. Genereret med
+> `npm run db:sql-index` og kontrolleret i CI, saa den ikke bliver foraeldet.
+>
+> Kort sagt: **denne mappe er et arkiv.** `supabase/migrations/` er sandheden.
+> 56 af 137 funktioner her er defineret i mere end én fil - INDEX.md fortæller
+> hvilken af dem der gælder.
+
 Denne mappe indeholder baade:
 - produktionskritiske migrations
 - hotfixes
