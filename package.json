@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 4",
     "test:unit": "node --test tests/unit/**/*.test.mjs",
     "audit:notifications": "node scripts/audit-notification-health.mjs",
     "check:ui-hex": "node scripts/check-ui-hex.mjs",
