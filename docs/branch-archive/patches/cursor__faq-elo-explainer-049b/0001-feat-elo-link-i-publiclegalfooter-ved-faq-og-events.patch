@@ -1,0 +1,30 @@
+From 2b771eaf5d6653cbb846da265e3ee191b50be468 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Thu, 9 Apr 2026 17:35:58 +0000
+Subject: [PATCH] feat: ELO-link i PublicLegalFooter (ved FAQ og Events)
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ src/components/PublicLegalFooter.jsx | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/components/PublicLegalFooter.jsx b/src/components/PublicLegalFooter.jsx
+index b8caa02..323594d 100644
+--- a/src/components/PublicLegalFooter.jsx
++++ b/src/components/PublicLegalFooter.jsx
+@@ -55,6 +55,12 @@ export function PublicLegalFooter() {
+       <span aria-hidden style={{ color: theme.border }}>
+         ·
+       </span>
++      <Link to="/elo" style={linkStyle}>
++        ELO
++      </Link>
++      <span aria-hidden style={{ color: theme.border }}>
++        ·
++      </span>
+       <Link to="/events" style={linkStyle}>
+         Events
+       </Link>
+-- 
+2.43.0
+

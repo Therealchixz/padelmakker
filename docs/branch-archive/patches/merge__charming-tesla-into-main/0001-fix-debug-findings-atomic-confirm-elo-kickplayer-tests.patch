@@ -1,0 +1,642 @@
+From 5596a053adee27a0d23346543880e8eafdd338de Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Sun, 5 Jul 2026 20:55:06 +0200
+Subject: [PATCH] Fix debug findings: atomic confirm+ELO, kickPlayer, tests
+
+Use confirm_match_result_and_apply_elo RPC so failed ELO rolls back confirmation.
+Re-fetch match_players after kick; fix venueHasMapCoords null handling.
+Filter BeskedTab message UPDATE subscriptions; update stale unit tests.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/dashboard/BeskedTab.jsx                   | 18 ++++-
+ src/dashboard/KampeTab.jsx                    |  6 +-
+ src/lib/banerMapLinks.js                      |  7 +-
+ src/lib/kampeFocusNavigation.js               |  2 +-
+ src/lib/notifyKampeEntityComplete.js          |  2 +-
+ src/lib/notifyKampeEntityFull.js              |  2 +-
+ src/lib/notifyKampeEntityRoster.js            |  2 +-
+ src/lib/notifyKampeEntityStarted.js           |  2 +-
+ src/lib/resolvePadelMatchResult.js            | 23 +++---
+ ...000_confirm_match_result_and_apply_elo.sql | 57 ++++++++++++++
+ .../confirm_match_result_and_apply_elo.sql    | 57 ++++++++++++++
+ tests/unit/banerBookingHelpCopy.test.mjs      |  2 +-
+ tests/unit/criticalFixes.test.mjs             |  2 +-
+ tests/unit/homePremiumDashboard.test.mjs      | 75 +++++--------------
+ tests/unit/matchSearchFilterUtils.test.mjs    | 13 ++--
+ tests/unit/notificationSecurityFixes.test.mjs |  4 +-
+ tests/unit/profileRegionCity.test.mjs         |  2 +-
+ tests/unit/resolvePadelMatchResult.test.mjs   | 67 ++++++++++++-----
+ 18 files changed, 233 insertions(+), 110 deletions(-)
+ create mode 100644 supabase/migrations/20260705120000_confirm_match_result_and_apply_elo.sql
+ create mode 100644 supabase/sql/confirm_match_result_and_apply_elo.sql
+
+diff --git a/src/dashboard/BeskedTab.jsx b/src/dashboard/BeskedTab.jsx
+index d027d4a..7a3743f 100644
+--- a/src/dashboard/BeskedTab.jsx
++++ b/src/dashboard/BeskedTab.jsx
+@@ -377,11 +377,20 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
+       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+     };
+ 
+-    const updateChannel = supabase
+-      .channel(`chat-up-${user.id}-${selectedId}`)
++    const updateChannelIncoming = supabase
++      .channel(`chat-up-in-${user.id}-${selectedId}`)
+       .on(
+         'postgres_changes',
+-        { event: 'UPDATE', schema: 'public', table: 'messages' },
++        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
++        handleMessageUpdate
++      )
++      .subscribe();
++
++    const updateChannelOutgoing = supabase
++      .channel(`chat-up-out-${user.id}-${selectedId}`)
++      .on(
++        'postgres_changes',
++        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender_id=eq.${user.id}` },
+         handleMessageUpdate
+       )
+       .subscribe();
+@@ -398,7 +407,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
+     return () => {
+       supabase.removeChannel(incomingChannel);
+       supabase.removeChannel(outgoingChannel);
+-      supabase.removeChannel(updateChannel);
++      supabase.removeChannel(updateChannelIncoming);
++      supabase.removeChannel(updateChannelOutgoing);
+       typingUnsub();
+       setOtherTyping(false);
+       setPartnerProfile(null);
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index a816619..3eec6e1 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -1205,7 +1205,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+       const { error } = await supabase.from("match_players").delete()
+         .eq("match_id", matchId).eq("user_id", targetUserId);
+       if (error) throw error;
+-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
++      const { data: remainingRows } = await supabase
++        .from("match_players")
++        .select("user_id, team")
++        .eq("match_id", matchId);
++      const mp = remainingRows || [];
+       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+       showToast("Spiller fjernet.");
+       await loadData();
+diff --git a/src/lib/banerMapLinks.js b/src/lib/banerMapLinks.js
+index 3e09b59..4e30c99 100644
+--- a/src/lib/banerMapLinks.js
++++ b/src/lib/banerMapLinks.js
+@@ -21,7 +21,10 @@ export function banerMapsDirectionsUrl(address) {
+ }
+ 
+ export function venueHasMapCoords(venue) {
+-  const lat = Number(venue?.latitude);
+-  const lng = Number(venue?.longitude);
++  const latRaw = venue?.latitude;
++  const lngRaw = venue?.longitude;
++  if (latRaw == null || lngRaw == null) return false;
++  const lat = Number(latRaw);
++  const lng = Number(lngRaw);
+   return Number.isFinite(lat) && Number.isFinite(lng);
+ }
+diff --git a/src/lib/kampeFocusNavigation.js b/src/lib/kampeFocusNavigation.js
+index 0d21cd1..0ae30ab 100644
+--- a/src/lib/kampeFocusNavigation.js
++++ b/src/lib/kampeFocusNavigation.js
+@@ -1,4 +1,4 @@
+-import { TOURNAMENT_KAMPE_TAB_LABEL } from './tournamentCopy';
++import { TOURNAMENT_KAMPE_TAB_LABEL } from './tournamentCopy.js';
+ 
+ /** Kampe-formatter som understøtter ?format= & ?focus= deep links fra notifikationer. */
+ export const KAMPE_FORMAT_PADEL = 'padel';
+diff --git a/src/lib/notifyKampeEntityComplete.js b/src/lib/notifyKampeEntityComplete.js
+index 67e2a37..e7c6106 100644
+--- a/src/lib/notifyKampeEntityComplete.js
++++ b/src/lib/notifyKampeEntityComplete.js
+@@ -1,6 +1,6 @@
+ import { supabase } from './supabase';
+ import { createNotificationsForUsers } from './notifications';
+-import { TOURNAMENT_ELO_LABEL, TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
++import { TOURNAMENT_ELO_LABEL, TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy.js';
+ 
+ function isMissingEntityRpc(error) {
+   const msg = String(error?.message || error || '').toLowerCase();
+diff --git a/src/lib/notifyKampeEntityFull.js b/src/lib/notifyKampeEntityFull.js
+index 6bea51b..141d2c7 100644
+--- a/src/lib/notifyKampeEntityFull.js
++++ b/src/lib/notifyKampeEntityFull.js
+@@ -1,5 +1,5 @@
+ import { createNotification } from './notifications';
+-import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
++import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy.js';
+ 
+ function isMissingEntityRpc(error) {
+   const msg = String(error?.message || error || '').toLowerCase();
+diff --git a/src/lib/notifyKampeEntityRoster.js b/src/lib/notifyKampeEntityRoster.js
+index 7fccf50..8b12a07 100644
+--- a/src/lib/notifyKampeEntityRoster.js
++++ b/src/lib/notifyKampeEntityRoster.js
+@@ -1,5 +1,5 @@
+ import { createNotification } from './notifications';
+-import { tournamentDefaultName } from './tournamentCopy';
++import { tournamentDefaultName } from './tournamentCopy.js';
+ 
+ /**
+  * Opretter: plads åbnet igen — kun ved tilmelding og når turneringen var/næsten fuld.
+diff --git a/src/lib/notifyKampeEntityStarted.js b/src/lib/notifyKampeEntityStarted.js
+index 725b222..39296c6 100644
+--- a/src/lib/notifyKampeEntityStarted.js
++++ b/src/lib/notifyKampeEntityStarted.js
+@@ -1,6 +1,6 @@
+ import { supabase } from './supabase';
+ import { createNotificationsForUsers } from './notifications';
+-import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
++import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy.js';
+ 
+ function isMissingEntityRpc(error) {
+   const msg = String(error?.message || error || '').toLowerCase();
+diff --git a/src/lib/resolvePadelMatchResult.js b/src/lib/resolvePadelMatchResult.js
+index 07775d8..8002f7d 100644
+--- a/src/lib/resolvePadelMatchResult.js
++++ b/src/lib/resolvePadelMatchResult.js
+@@ -66,7 +66,7 @@ export function filterConfirmablePendingResults({
+ 
+ export async function confirmPadelMatchResult({
+   supabaseClient,
+-  calculateAndApplyEloFn,
++  calculateAndApplyEloFn: _calculateAndApplyEloFn,
+   createNotificationFn,
+   createNotificationsForUsersFn,
+   matchId,
+@@ -74,7 +74,7 @@ export async function confirmPadelMatchResult({
+   players,
+   confirmedBy,
+   isAdmin = false,
+-  showToast,
++  showToast: _showToast,
+ }) {
+   if (!result?.id) {
+     return { ok: false, reason: 'Resultat ikke fundet.' };
+@@ -88,18 +88,17 @@ export async function confirmPadelMatchResult({
+   });
+   if (!confirmationAccess.ok) return confirmationAccess;
+ 
+-  const { error } = await supabaseClient
+-    .from('match_results')
+-    .update({ confirmed: true, confirmed_by: confirmedBy })
+-    .eq('id', result.id);
+-  if (error) throw error;
+-
+-  const eloResult = await calculateAndApplyEloFn(matchId, showToast, { matchResultId: result.id });
+-  if (!eloResult?.success) {
+-    return { ok: true, eloApplied: false, eloResult };
++  const { data: confirmData, error: confirmError } = await supabaseClient.rpc(
++    'confirm_match_result_and_apply_elo',
++    { p_match_result_id: result.id },
++  );
++  if (confirmError) throw confirmError;
++  if (confirmData?.error) {
++    return { ok: false, reason: confirmData.error, eloApplied: false };
+   }
+ 
+-  const playersUpdated = Number(eloResult.data?.players_updated) || 0;
++  const eloPayload = confirmData?.elo || confirmData;
++  const playersUpdated = Number(eloPayload?.players_updated) || 0;
+   const scoreDisplay = formatMatchResultScore(result);
+   const body =
+     playersUpdated > 0
+diff --git a/supabase/migrations/20260705120000_confirm_match_result_and_apply_elo.sql b/supabase/migrations/20260705120000_confirm_match_result_and_apply_elo.sql
+new file mode 100644
+index 0000000..1d2a33d
+--- /dev/null
++++ b/supabase/migrations/20260705120000_confirm_match_result_and_apply_elo.sql
+@@ -0,0 +1,57 @@
++-- Atomisk bekræftelse + ELO: rollback af confirmed hvis ELO fejler.
++CREATE OR REPLACE FUNCTION public.confirm_match_result_and_apply_elo(p_match_result_id uuid)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++SET row_security = off
++AS $$
++DECLARE
++  v_mr public.match_results%ROWTYPE;
++  v_uid uuid := auth.uid();
++  v_elo jsonb;
++  v_allowed boolean := false;
++BEGIN
++  IF v_uid IS NULL THEN
++    RETURN jsonb_build_object('error', 'Ikke logget ind');
++  END IF;
++
++  SELECT * INTO v_mr FROM public.match_results WHERE id = p_match_result_id FOR UPDATE;
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('error', 'Resultat ikke fundet');
++  END IF;
++
++  IF v_mr.confirmed IS TRUE THEN
++    RETURN jsonb_build_object('error', 'Resultatet er allerede bekræftet');
++  END IF;
++
++  IF to_regprocedure('public.is_user_admin_verified(uuid)') IS NOT NULL
++     AND public.is_user_admin_verified(v_uid) THEN
++    v_allowed := true;
++  ELSIF to_regprocedure('public.can_confirm_match_result(uuid, uuid, uuid)') IS NOT NULL
++        AND public.can_confirm_match_result(v_mr.match_id, v_mr.submitted_by, v_uid) THEN
++    v_allowed := true;
++  END IF;
++
++  IF NOT v_allowed THEN
++    RETURN jsonb_build_object('error', 'Resultatet skal bekræftes af en spiller fra modstanderholdet.');
++  END IF;
++
++  UPDATE public.match_results
++  SET confirmed = true, confirmed_by = v_uid
++  WHERE id = p_match_result_id;
++
++  v_elo := public.apply_elo_for_match(p_match_result_id);
++
++  IF v_elo IS NULL OR (v_elo ? 'error') THEN
++    RAISE EXCEPTION 'ELO application failed: %', COALESCE(v_elo->>'error', 'unknown');
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'elo', v_elo);
++END;
++$$;
++
++REVOKE ALL ON FUNCTION public.confirm_match_result_and_apply_elo(uuid) FROM PUBLIC;
++GRANT EXECUTE ON FUNCTION public.confirm_match_result_and_apply_elo(uuid) TO authenticated;
++
++NOTIFY pgrst, 'reload schema';
+diff --git a/supabase/sql/confirm_match_result_and_apply_elo.sql b/supabase/sql/confirm_match_result_and_apply_elo.sql
+new file mode 100644
+index 0000000..1d2a33d
+--- /dev/null
++++ b/supabase/sql/confirm_match_result_and_apply_elo.sql
+@@ -0,0 +1,57 @@
++-- Atomisk bekræftelse + ELO: rollback af confirmed hvis ELO fejler.
++CREATE OR REPLACE FUNCTION public.confirm_match_result_and_apply_elo(p_match_result_id uuid)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++SET row_security = off
++AS $$
++DECLARE
++  v_mr public.match_results%ROWTYPE;
++  v_uid uuid := auth.uid();
++  v_elo jsonb;
++  v_allowed boolean := false;
++BEGIN
++  IF v_uid IS NULL THEN
++    RETURN jsonb_build_object('error', 'Ikke logget ind');
++  END IF;
++
++  SELECT * INTO v_mr FROM public.match_results WHERE id = p_match_result_id FOR UPDATE;
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('error', 'Resultat ikke fundet');
++  END IF;
++
++  IF v_mr.confirmed IS TRUE THEN
++    RETURN jsonb_build_object('error', 'Resultatet er allerede bekræftet');
++  END IF;
++
++  IF to_regprocedure('public.is_user_admin_verified(uuid)') IS NOT NULL
++     AND public.is_user_admin_verified(v_uid) THEN
++    v_allowed := true;
++  ELSIF to_regprocedure('public.can_confirm_match_result(uuid, uuid, uuid)') IS NOT NULL
++        AND public.can_confirm_match_result(v_mr.match_id, v_mr.submitted_by, v_uid) THEN
++    v_allowed := true;
++  END IF;
++
++  IF NOT v_allowed THEN
++    RETURN jsonb_build_object('error', 'Resultatet skal bekræftes af en spiller fra modstanderholdet.');
++  END IF;
++
++  UPDATE public.match_results
++  SET confirmed = true, confirmed_by = v_uid
++  WHERE id = p_match_result_id;
++
++  v_elo := public.apply_elo_for_match(p_match_result_id);
++
++  IF v_elo IS NULL OR (v_elo ? 'error') THEN
++    RAISE EXCEPTION 'ELO application failed: %', COALESCE(v_elo->>'error', 'unknown');
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'elo', v_elo);
++END;
++$$;
++
++REVOKE ALL ON FUNCTION public.confirm_match_result_and_apply_elo(uuid) FROM PUBLIC;
++GRANT EXECUTE ON FUNCTION public.confirm_match_result_and_apply_elo(uuid) TO authenticated;
++
++NOTIFY pgrst, 'reload schema';
+diff --git a/tests/unit/banerBookingHelpCopy.test.mjs b/tests/unit/banerBookingHelpCopy.test.mjs
+index 8b4a0ef..1e45f33 100644
+--- a/tests/unit/banerBookingHelpCopy.test.mjs
++++ b/tests/unit/banerBookingHelpCopy.test.mjs
+@@ -12,7 +12,7 @@ test('baner booking help explains the booking flow in user-friendly language', a
+   assert.match(banerTab, /expandedRegions/)
+   assert.match(banerTab, /Grøn tid/)
+   assert.match(banerTab, /Gul tid/)
+-  assert.match(banerTab, /selve bookingen foregår altid hos centret/)
++  assert.match(banerTab, /Selve bookingen foregår altid hos centret/)
+   assert.match(banerTab, /Rapportér fejl/)
+   assert.doesNotMatch(banerTab, /konto-menuen/)
+   assert.doesNotMatch(banerTab, /Åbn ét sted ad gangen/)
+diff --git a/tests/unit/criticalFixes.test.mjs b/tests/unit/criticalFixes.test.mjs
+index e26367b..eb2d854 100644
+--- a/tests/unit/criticalFixes.test.mjs
++++ b/tests/unit/criticalFixes.test.mjs
+@@ -53,7 +53,7 @@ test('Admin user editor fetches fresh profile instead of list snapshot', async (
+   assert.match(adminTab, /openUserEditor/);
+   assert.match(adminTab, /fetchEloStatsBatchByUserIds/);
+   assert.match(adminTab, /normalizeProfileRow/);
+-  assert.match(adminTab, /AdminUserProfileOverview/);
++  assert.match(adminTab, /AdminUserEditModal/);
+   assert.doesNotMatch(adminTab, /onClick=\{\(\) => setEditingUser\(\{ \.\.\.u \}\)\}/);
+ });
+ 
+diff --git a/tests/unit/homePremiumDashboard.test.mjs b/tests/unit/homePremiumDashboard.test.mjs
+index a594b40..688a72b 100644
+--- a/tests/unit/homePremiumDashboard.test.mjs
++++ b/tests/unit/homePremiumDashboard.test.mjs
+@@ -8,81 +8,33 @@ const MAKKERE_TAB_URL = new URL('../../src/dashboard/MakkereTab.jsx', import.met
+ const RESPONSIVE_CSS_URL = new URL('../../src/responsive.css', import.meta.url)
+ const DASHBOARD_PAGE_URL = new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url)
+ 
+-test('home tab uses a player-card ELO hero without the long technical scale', async () => {
++test('home tab uses inline ELO hero with milestone and form', async () => {
+   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+ 
+-  assert.match(homeTab, /className="pm-home-premium-hero"/)
+-  assert.match(homeTab, /className="pm-home-premium-stats"/)
+-  assert.match(homeTab, /className="pm-home-player-card-head"/)
+-  assert.match(homeTab, /className="pm-home-next-goal-card"/)
+-  assert.match(homeTab, /className="pm-home-form-row"/)
++  assert.match(homeTab, /aria-label="Din ELO status"/)
+   assert.match(homeTab, /recentForm/)
+   assert.match(homeTab, /nextEloMilestone/)
+   assert.match(homeTab, /Næste mål/)
+-  assert.match(homeTab, /ELO til/)
+-  assert.match(homeTab, /Seneste form/)
++  assert.match(homeTab, /weeklyDelta/)
+   assert.match(homeTab, /className="pm-home-seeking-cta"/)
+   assert.match(homeTab, />Detaljer<\/button>/)
+   assert.doesNotMatch(homeTab, /className="pm-home-elo-scale"/)
+-  assert.doesNotMatch(homeTab, /className="pm-home-elo-scale-track"/)
+   assert.doesNotMatch(homeTab, /eloScalePct/)
+   assert.doesNotMatch(homeTab, /<span>Begynder<\/span>/)
+-  assert.doesNotMatch(homeTab, /<span>Pro<\/span>/)
+-  assert.doesNotMatch(homeTab, /progressPct/)
+-  assert.doesNotMatch(homeTab, /pm-home-elo-goal-track/)
+-  assert.doesNotMatch(homeTab, /weeklyEloChange/)
+-  assert.doesNotMatch(homeTab, /latestEloChange/)
+-  assert.doesNotMatch(homeTab, /Seneste:/)
+-  assert.doesNotMatch(homeTab, /denne uge/)
+-  assert.doesNotMatch(homeTab, /const levelBadge/)
+-  assert.doesNotMatch(homeTab, /\{levelBadge\}/)
+-  assert.doesNotMatch(homeTab, /className="pm-home-premium-latest"/)
+-  assert.doesNotMatch(homeTab, /className="pm-home-sparkline"/)
+-  assert.doesNotMatch(homeTab, /profileFresh\?\.avatar \|\| user\.avatar \|\| userInitials/)
+   assert.doesNotMatch(homeTab, /className="pm-stat-grid"/)
+ })
+ 
+-test('premium home player card has dedicated responsive styling', async () => {
+-  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
+-
+-  assert.match(css, /\.pm-home-premium-hero\s*\{/)
+-  assert.match(css, /\.pm-home-premium-stats\s*\{/)
+-  assert.match(css, /\.pm-home-player-card-head\s*\{/)
+-  assert.match(css, /\.pm-home-next-goal-card\s*\{/)
+-  assert.match(css, /\.pm-home-form-row\s*\{/)
+-  assert.doesNotMatch(css, /\.pm-home-elo-scale\s*\{/)
+-  assert.doesNotMatch(css, /\.pm-home-elo-scale-marker\s*\{/)
+-  assert.doesNotMatch(css, /\.pm-home-elo-goal\s*\{/)
+-  assert.match(css, /\.pm-home-seeking-cta\s*\{/)
+-  assert.doesNotMatch(css, /\.pm-home-elo-goal-track/)
+-  assert.doesNotMatch(css, /\.pm-home-premium-hero::before/)
+-  assert.doesNotMatch(css, /\.pm-home-sparkline/)
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero/)
+-})
+-
+-test('mobile home dashboard starts flush below the header without card rounding', async () => {
+-  const dashboardPage = await readFile(DASHBOARD_PAGE_URL, 'utf8')
+-  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
+-
+-  assert.match(dashboardPage, /pm-dash-main--home/)
+-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.pm-dash-main--home\s*\{[\s\S]*padding-top:\s*0/)
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero\s*\{[\s\S]*border-radius:\s*0;/)
+-})
+-
+-test('mobile player-card ELO hero is compact instead of a tall stacked block', async () => {
+-  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
++test('home seeking CTA for match filter opens Kampe', async () => {
++  const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+ 
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero\s*\{[\s\S]*padding:\s*16px 14px 16px;/)
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-player-card-head\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*0\.9fr\)\s*minmax\(132px,\s*1fr\);/)
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-stats\s*\{[\s\S]*grid-column:\s*1 \/ -1;/)
+-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-form-row\s*\{[\s\S]*padding:\s*8px 10px;/)
++  assert.match(homeTab, /filterMatchCount/)
++  assert.match(homeTab, /kampe matcher dit filter/)
++  assert.match(homeTab, /onClick=\{\(\) => setTab\('kampe'\)\}/)
+ })
+ 
+-test('home seeking CTA opens Makkere with the active seeking filter', async () => {
+-  const homeTab = await readFile(HOME_TAB_URL, 'utf8')
++test('makkere tab supports seeking deep link from URL', async () => {
+   const makkereTab = await readFile(MAKKERE_TAB_URL, 'utf8')
+ 
+-  assert.match(homeTab, /setTab\("makkere",\s*\{\s*search:\s*seekingByChannel\.total > 0 \? "seeking=1" : ""/)
+   assert.match(makkereTab, /useLocation/)
+   assert.match(makkereTab, /useRef/)
+   assert.match(makkereTab, /new URLSearchParams\(location\.search\)/)
+@@ -91,3 +43,12 @@ test('home seeking CTA opens Makkere with the active seeking filter', async () =
+   assert.match(makkereTab, /scrollIntoView\(\{\s*behavior:\s*'smooth',\s*block:\s*'start'/)
+   assert.match(makkereTab, /ref=\{seekingResultsRef\}/)
+ })
++
++test('home dashboard keeps mobile layout hooks and seeking CTA styling', async () => {
++  const dashboardPage = await readFile(DASHBOARD_PAGE_URL, 'utf8')
++  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
++
++  assert.match(dashboardPage, /pm-dash-main--home/)
++  assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.pm-dash-main--home\s*\{[\s\S]*padding-top:\s*0/)
++  assert.match(css, /\.pm-home-seeking-cta\s*\{/)
++})
+diff --git a/tests/unit/matchSearchFilterUtils.test.mjs b/tests/unit/matchSearchFilterUtils.test.mjs
+index 9283aa6..7c5921b 100644
+--- a/tests/unit/matchSearchFilterUtils.test.mjs
++++ b/tests/unit/matchSearchFilterUtils.test.mjs
+@@ -14,12 +14,13 @@ test('match search filter SQL adds prefs column and updates notify_match_watcher
+   assert.match(sql, /jsonb_array_elements_text/);
+ });
+ 
+-test('ProfilTab uses single Mit kamp-filter entry instead of separate toggles', () => {
+-  const src = readFileSync(join(root, 'src/dashboard/ProfilTab.jsx'), 'utf8');
+-  assert.match(src, /Mit kamp-filter/);
+-  assert.match(src, /MatchFilterProfileCard/);
+-  assert.doesNotMatch(src, /🔔 Kamp-watch/);
+-  assert.doesNotMatch(src, /⚡ Søger kamp nu/);
++test('kamp-filter lives on dedicated page instead of ProfilTab toggles', () => {
++  const filterPage = readFileSync(join(root, 'src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
++  const shortcut = readFileSync(join(root, 'src/components/SeekingFilterShortcutCard.jsx'), 'utf8');
++  assert.match(filterPage, /Mit kamp-filter/);
++  assert.match(shortcut, /Mit kamp-filter/);
++  assert.doesNotMatch(filterPage, /🔔 Kamp-watch/);
++  assert.doesNotMatch(filterPage, /⚡ Søger kamp nu/);
+ });
+ 
+ test('Dashboard exposes kamp-filter route', () => {
+diff --git a/tests/unit/notificationSecurityFixes.test.mjs b/tests/unit/notificationSecurityFixes.test.mjs
+index 931e9b6..92cd6ff 100644
+--- a/tests/unit/notificationSecurityFixes.test.mjs
++++ b/tests/unit/notificationSecurityFixes.test.mjs
+@@ -113,8 +113,8 @@ test('AuthContext profile load retries and exposes profileLoadError', () => {
+   const auth = readSrc('src/lib/AuthContext.jsx');
+   const platform = readSrc('src/padelmakker-platform.jsx');
+   assert.match(auth, /profileLoadError/);
+-  assert.match(auth, /fetchOrCreateProfileCore\(userRow\)/);
+-  assert.match(auth, /\.select\(\)\s*\n\s*\.single\(\)/s);
++  assert.match(auth, /fetchProfileFast\(userRow\)/);
++  assert.match(auth, /\.maybeSingle\(\)/);
+   assert.match(platform, /Kunne ikke hente din profil/);
+   assert.match(platform, /refreshProfile/);
+ });
+diff --git a/tests/unit/profileRegionCity.test.mjs b/tests/unit/profileRegionCity.test.mjs
+index 7bfc1e7..c7feb9c 100644
+--- a/tests/unit/profileRegionCity.test.mjs
++++ b/tests/unit/profileRegionCity.test.mjs
+@@ -19,8 +19,8 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
+   assert.doesNotMatch(profileUtils, /meta\.area \|\| meta\.region \|\| meta\.city/);
+   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
+   assert.match(onboarding, /Region.*\*.*valgfri/s);
+-  assert.match(onboarding, /Mit kamp-filter/);
+   assert.match(onboarding, /Find makker/);
++  assert.match(onboarding, /Kampe/);
+   assert.match(makkereTab, /loadError/);
+   assert.match(makkereTab, /pm-state-card--error/);
+   assert.doesNotMatch(onboarding, /seeking_match/);
+diff --git a/tests/unit/resolvePadelMatchResult.test.mjs b/tests/unit/resolvePadelMatchResult.test.mjs
+index bee1070..58c21c7 100644
+--- a/tests/unit/resolvePadelMatchResult.test.mjs
++++ b/tests/unit/resolvePadelMatchResult.test.mjs
+@@ -29,11 +29,22 @@ const players = [
+   { user_id: 'opponent', team: 2 },
+ ];
+ 
+-function createSupabaseDecisionMock({ admins = [] } = {}) {
++function createSupabaseDecisionMock({ admins = [], rpcResult = null, rpcError = null } = {}) {
+   const calls = [];
+   return {
+     calls,
+     client: {
++      rpc(fnName, params) {
++        calls.push({ action: 'rpc', fnName, params });
++        if (rpcError) return { data: null, error: rpcError };
++        return {
++          data: rpcResult ?? {
++            success: true,
++            elo: { success: true, players_updated: 4 },
++          },
++          error: null,
++        };
++      },
+       from(table) {
+         return {
+           update(payload) {
+@@ -161,14 +172,9 @@ test('confirmPadelMatchResult rejects same-team confirmation before touching the
+ test('confirmPadelMatchResult confirms result, applies ELO and notifies all players with tiebreak score', async () => {
+   const supabase = createSupabaseDecisionMock();
+   const notifications = [];
+-  const eloCalls = [];
+ 
+   const outcome = await confirmPadelMatchResult({
+     supabaseClient: supabase.client,
+-    calculateAndApplyEloFn: async (...args) => {
+-      eloCalls.push(args);
+-      return { success: true, data: { players_updated: 4 } };
+-    },
+     createNotificationFn: async (...args) => {
+       notifications.push(args);
+       return null;
+@@ -186,25 +192,47 @@ test('confirmPadelMatchResult confirms result, applies ELO and notifies all play
+     scoreDisplay: '6-2, 2-6, 6-7 (TB 5-7)',
+     playersUpdated: 4,
+   });
+-  assert.deepEqual(supabase.calls.slice(0, 2), [
+-    { table: 'match_results', action: 'update', payload: { confirmed: true, confirmed_by: 'confirmer' } },
+-    { table: 'match_results', action: 'update_eq', column: 'id', value: 'result-1' },
+-  ]);
+-  assert.equal(eloCalls[0][0], 'match-1');
+-  assert.equal(typeof eloCalls[0][1], 'function');
+-  assert.deepEqual(eloCalls[0][2], { matchResultId: 'result-1' });
++  assert.deepEqual(supabase.calls[0], {
++    action: 'rpc',
++    fnName: 'confirm_match_result_and_apply_elo',
++    params: { p_match_result_id: 'result-1' },
++  });
+   assert.deepEqual(notifications.map((n) => n[0]), ['submitter', 'partner', 'confirmer', 'opponent']);
+   assert.equal(notifications.every((n) => n[1] === 'result_confirmed'), true);
+   assert.equal(notifications.every((n) => String(n[3]).includes('6-7 (TB 5-7)')), true);
+ });
+ 
+-test('confirmPadelMatchResult does not notify when ELO application fails', async () => {
+-  const supabase = createSupabaseDecisionMock();
++test('confirmPadelMatchResult throws when atomic RPC fails so confirmation rolls back', async () => {
++  const supabase = createSupabaseDecisionMock({
++    rpcError: { message: 'ELO application failed: RPC failed' },
++  });
++  const notifications = [];
++
++  await assert.rejects(
++    async () => {
++      await confirmPadelMatchResult({
++        supabaseClient: supabase.client,
++        createNotificationFn: async (...args) => notifications.push(args),
++        matchId: 'match-1',
++        result: resultRow,
++        players,
++        confirmedBy: 'confirmer',
++        showToast: () => {},
++      });
++    },
++    (err) => String(err?.message || err).includes('ELO application failed'),
++  );
++  assert.equal(notifications.length, 0);
++});
++
++test('confirmPadelMatchResult returns RPC validation error without notifying', async () => {
++  const supabase = createSupabaseDecisionMock({
++    rpcResult: { error: 'Resultatet er allerede bekræftet' },
++  });
+   const notifications = [];
+ 
+   const outcome = await confirmPadelMatchResult({
+     supabaseClient: supabase.client,
+-    calculateAndApplyEloFn: async () => ({ success: false, error: 'RPC failed' }),
+     createNotificationFn: async (...args) => notifications.push(args),
+     matchId: 'match-1',
+     result: resultRow,
+@@ -213,8 +241,11 @@ test('confirmPadelMatchResult does not notify when ELO application fails', async
+     showToast: () => {},
+   });
+ 
+-  assert.equal(outcome.ok, true);
+-  assert.equal(outcome.eloApplied, false);
++  assert.deepEqual(outcome, {
++    ok: false,
++    reason: 'Resultatet er allerede bekræftet',
++    eloApplied: false,
++  });
+   assert.equal(notifications.length, 0);
+ });
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,586 @@
+From d66c89bfd43e70071f8dd1a4a62d0dfe44525bfb Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Sun, 5 Jul 2026 22:25:59 +0200
+Subject: [PATCH] =?UTF-8?q?Mobil=20UX:=20notifikationer=20i=20dashboard,?=
+ =?UTF-8?q?=20chat-deeplink=20og=20fejl=20p=C3=A5=20Hjem?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/components/NotificationBell.jsx |  5 +-
+ src/dashboard/DashboardPage.jsx     |  9 ++-
+ src/dashboard/HomeTab.jsx           | 57 ++++++++++++++---
+ src/dashboard/KampeTab.jsx          | 10 ++-
+ src/lib/kampeFocusNavigation.js     | 10 ++-
+ src/padelmakker-platform.jsx        |  3 -
+ src/pages/NotifikationerPage.jsx    | 96 +++++++++++++++++++++++------
+ src/responsive.css                  | 15 +++++
+ 8 files changed, 168 insertions(+), 37 deletions(-)
+
+diff --git a/src/components/NotificationBell.jsx b/src/components/NotificationBell.jsx
+index 4886309..3623014 100644
+--- a/src/components/NotificationBell.jsx
++++ b/src/components/NotificationBell.jsx
+@@ -26,6 +26,7 @@ import {
+   buildKampeFocusPath,
+   notificationKampeTarget,
+   kampeFocusFooterLabel,
++  kampeFocusOpensChat,
+ } from '../lib/kampeFocusNavigation';
+ 
+ const DISMISSED_MAX = 400;
+@@ -447,7 +448,9 @@ export function NotificationBell({ tourForceOpen = false }) {
+     }
+     await markNotifRead(n);
+     setOpen(false);
+-    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId));
++    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
++      openChat: kampeFocusOpensChat(n.type),
++    }));
+   };
+ 
+   const timeAgo = useCallback((dateStr) => {
+diff --git a/src/dashboard/DashboardPage.jsx b/src/dashboard/DashboardPage.jsx
+index 729fa93..3272bf9 100644
+--- a/src/dashboard/DashboardPage.jsx
++++ b/src/dashboard/DashboardPage.jsx
+@@ -52,6 +52,7 @@ const loadMatchSearchFilterPage = () => import('./MatchSearchFilterPage');
+ const loadMakkerSearchFilterPage = () => import('./MakkerSearchFilterPage');
+ const loadAdminTab = () => import('./AdminTab');
+ const loadBeskedTab = () => import('./BeskedTab');
++const loadNotifikationerPage = () => import('../pages/NotifikationerPage');
+ const MakkereTabLazy = lazy(() => loadMakkereTab().then((m) => ({ default: m.MakkereTab })));
+ const BanerTabLazy = lazy(() => loadBanerTab().then((m) => ({ default: m.BanerTab })));
+ const KampeTabLazy = lazy(() => loadKampeTab().then((m) => ({ default: m.KampeTab })));
+@@ -61,6 +62,7 @@ const MatchSearchFilterPageLazy = lazy(() => loadMatchSearchFilterPage().then((m
+ const MakkerSearchFilterPageLazy = lazy(() => loadMakkerSearchFilterPage().then((m) => ({ default: m.MakkerSearchFilterPage })));
+ const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTab })));
+ const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
++const NotifikationerPageLazy = lazy(() => loadNotifikationerPage().then((m) => ({ default: m.NotifikationerPage })));
+ 
+ const FEEDBACK_DEFAULT_CATEGORY = "bug";
+ const FEEDBACK_DEFAULT_PRIORITY = "normal";
+@@ -743,7 +745,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
+   const kampeTabBadge =
+     pendingKampe + pendingLigaInvites > 0 ? pendingKampe + pendingLigaInvites : null;
+   const pathTab = location.pathname.split("/")[2] || "hjem";
+-  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin"];
++  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
+   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
+   const setTab = useCallback((tabId, opts = {}) => {
+     const raw = opts.search != null ? String(opts.search) : "";
+@@ -1601,7 +1603,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
+ 
+       </div>
+ 
+-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
++      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
+         <Suspense
+           fallback={
+             <div
+@@ -1651,6 +1653,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
+                 Admin-adgang er låst. Indtast din 6-cifrede kode for at fortsætte.
+               </div>
+             )}
++            {tab === "notifikationer" && (
++              <NotifikationerPageLazy onBack={() => setTab("hjem")} />
++            )}
+           </Suspense>
+       </div>
+ 
+diff --git a/src/dashboard/HomeTab.jsx b/src/dashboard/HomeTab.jsx
+index c81720f..31880c5 100644
+--- a/src/dashboard/HomeTab.jsx
++++ b/src/dashboard/HomeTab.jsx
+@@ -84,14 +84,17 @@ export function HomeTab({ user, setTab, showToast }) {
+ 
+   // Kommende kampe: 2v2-kampe, Americano/Mexicano og liga-kampe brugeren er en del af, fra i dag og frem.
+   const [upcomingItems, setUpcomingItems] = useState([]);
++  const [upcomingLoadError, setUpcomingLoadError] = useState('');
+   useEffect(() => {
+     if (!user?.id) {
+       setUpcomingItems([]);
++      setUpcomingLoadError('');
+       return;
+     }
+     let cancelled = false;
+     (async () => {
+       try {
++        setUpcomingLoadError('');
+         const now = new Date();
+         const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+         const [mRes, amRes, ltRes] = await Promise.all([
+@@ -111,6 +114,9 @@ export function HomeTab({ user, setTab, showToast }) {
+             .eq('status', 'ready'),
+         ]);
+         if (cancelled) return;
++        if (mRes.error) throw mRes.error;
++        if (amRes.error) throw amRes.error;
++        if (ltRes.error) throw ltRes.error;
+ 
+         const items = [];
+ 
+@@ -167,7 +173,10 @@ export function HomeTab({ user, setTab, showToast }) {
+         setUpcomingItems(items.slice(0, 5));
+       } catch (err) {
+         console.warn('home upcoming items load:', err?.message || err);
+-        if (!cancelled) setUpcomingItems([]);
++        if (!cancelled) {
++          setUpcomingItems([]);
++          setUpcomingLoadError(err?.message || 'Kunne ikke hente kommende kampe.');
++        }
+       }
+     })();
+     return () => { cancelled = true; };
+@@ -175,14 +184,17 @@ export function HomeTab({ user, setTab, showToast }) {
+ 
+   // Invitationer: (1) anmodninger om at komme med i DINE kampe, (2) holdinvitationer i ligaen, (3) dine egne ventende anmodninger.
+   const [inviteItems, setInviteItems] = useState([]);
++  const [invitesLoadError, setInvitesLoadError] = useState('');
+   useEffect(() => {
+     if (!user?.id) {
+       setInviteItems([]);
++      setInvitesLoadError('');
+       return;
+     }
+     let cancelled = false;
+     (async () => {
+       try {
++        setInvitesLoadError('');
+         const [inboundRes, teamInvRes] = await Promise.all([
+           supabase.from('match_join_requests')
+             .select('id, user_id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
+@@ -192,6 +204,8 @@ export function HomeTab({ user, setTab, showToast }) {
+             .eq('player2_id', user.id).eq('status', 'pending'),
+         ]);
+         if (cancelled) return;
++        if (inboundRes.error) throw inboundRes.error;
++        if (teamInvRes.error) throw teamInvRes.error;
+ 
+         const items = [];
+ 
+@@ -219,7 +233,10 @@ export function HomeTab({ user, setTab, showToast }) {
+         setInviteItems(items.slice(0, 6));
+       } catch (err) {
+         console.warn('home invites load:', err?.message || err);
+-        if (!cancelled) setInviteItems([]);
++        if (!cancelled) {
++          setInviteItems([]);
++          setInvitesLoadError(err?.message || 'Kunne ikke hente invitationer.');
++        }
+       }
+     })();
+     return () => { cancelled = true; };
+@@ -1201,14 +1218,25 @@ export function HomeTab({ user, setTab, showToast }) {
+       )}
+ 
+       {/* Invitationer */}
+-      {inviteItems.length > 0 && (
++      {(inviteItems.length > 0 || invitesLoadError) && (
+         <div style={{ marginBottom: 18 }}>
+           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
+             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
+-            <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+-              {inviteItems.length}
+-            </span>
++            {inviteItems.length > 0 && (
++              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
++                {inviteItems.length}
++              </span>
++            )}
+           </div>
++          {invitesLoadError ? (
++            <div style={{ padding: '0 18px' }}>
++              <div className="pm-state-card pm-state-card--error">
++                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
++                <div className="pm-state-title">Kunne ikke hente invitationer</div>
++                <div className="pm-state-copy">{invitesLoadError}</div>
++              </div>
++            </div>
++          ) : (
+           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+             {inviteItems.map((it) => (
+               <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow }}>
+@@ -1244,16 +1272,28 @@ export function HomeTab({ user, setTab, showToast }) {
+               </div>
+             ))}
+           </div>
++          )}
+         </div>
+       )}
+ 
+       {/* Kommende kampe */}
+-      {upcomingItems.length > 0 && (
++      {(upcomingItems.length > 0 || upcomingLoadError) && (
+         <div style={{ marginBottom: 18 }}>
+           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
+             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
+-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
++            {upcomingItems.length > 0 && (
++              <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
++            )}
+           </div>
++          {upcomingLoadError ? (
++            <div style={{ padding: '0 18px' }}>
++              <div className="pm-state-card pm-state-card--error">
++                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
++                <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
++                <div className="pm-state-copy">{upcomingLoadError}</div>
++              </div>
++            </div>
++          ) : (
+           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+             {upcomingItems.map((it) => (
+               <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
+@@ -1272,6 +1312,7 @@ export function HomeTab({ user, setTab, showToast }) {
+               </div>
+             ))}
+           </div>
++          )}
+         </div>
+       )}
+ 
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index 639daab..21bcc50 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -1708,7 +1708,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
+   useEffect(() => {
+     if (!tabActive) return;
+-    const { format, focusId } = parseKampeFocusFromSearch(location.search);
++    const { format, focusId, openChat } = parseKampeFocusFromSearch(location.search);
+     if (!focusId) return;
+ 
+     const clearFocusInUrl = (keepFormat) => {
+@@ -1749,8 +1749,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     // Åbn detaljer direkte, så deeplinket altid viser kampen — også hvis et
+     // aktivt filter ellers ville skjule den fra den synlige liste.
+     setDetailMatchId(String(focusId));
++    if (openChat) {
++      const matchKey = String(focusId);
++      setMatchChatOpenById((prev) => ({ ...prev, [matchKey]: true }));
++      void loadMatchChat(matchKey, { showLoading: true });
++      void markMatchChatNotifsRead(matchKey);
++    }
+     clearFocusInUrl(KAMPE_FORMAT_PADEL);
+-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
++  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate, loadMatchChat, markMatchChatNotifsRead]);
+ 
+   useEffect(() => {
+     const mid = focusScrollMatchId;
+diff --git a/src/lib/kampeFocusNavigation.js b/src/lib/kampeFocusNavigation.js
+index 0ae30ab..5b5c22e 100644
+--- a/src/lib/kampeFocusNavigation.js
++++ b/src/lib/kampeFocusNavigation.js
+@@ -17,18 +17,25 @@ export function parseKampeFocusFromSearch(search) {
+   return {
+     format: normalizeKampeFormat(params.get('format')),
+     focusId: params.get('focus') ? String(params.get('focus')) : null,
++    openChat: params.get('chat') === '1',
+   };
+ }
+ 
+-export function buildKampeFocusPath(format, focusId) {
++export function buildKampeFocusPath(format, focusId, { openChat = false } = {}) {
+   const params = new URLSearchParams();
+   const f = normalizeKampeFormat(format);
+   if (f !== KAMPE_FORMAT_PADEL) params.set('format', f);
+   if (focusId) params.set('focus', String(focusId));
++  if (openChat) params.set('chat', '1');
+   const q = params.toString();
+   return `/dashboard/kampe${q ? `?${q}` : ''}`;
+ }
+ 
++export function kampeFocusOpensChat(notifType) {
++  const type = String(notifType || '').toLowerCase();
++  return type === 'match_chat' || type === 'match_chat_group';
++}
++
+ /** Hvor en notifikation skal åbne i Kampe (eller null hvis ikke klikbar). */
+ export function notificationKampeTarget(notif) {
+   if (!notif) return null;
+@@ -58,5 +65,6 @@ export function kampeFocusFooterLabel(format, notifType) {
+     if (type === 'league_started') return 'Tryk for at åbne Liga → I gang →';
+     return 'Tryk for at åbne Liga → Åbne →';
+   }
++  if (kampeFocusOpensChat(type)) return 'Tryk for at åbne chatten →';
+   return 'Tryk for at gå til kampen →';
+ }
+diff --git a/src/padelmakker-platform.jsx b/src/padelmakker-platform.jsx
+index cb3c64b..47fc3e0 100644
+--- a/src/padelmakker-platform.jsx
++++ b/src/padelmakker-platform.jsx
+@@ -36,8 +36,6 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m)
+ const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
+ const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
+ const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+-const NotifikationerPageLazy = lazy(() => import("./pages/NotifikationerPage").then((m) => ({ default: m.NotifikationerPage })));
+-
+ export default function PadelMakker() {
+   const { user, profile, loading, profileLoading, profileLoadError, refreshProfile, signOut } = useAuth();
+   const hasProfile = Boolean(user && profile);
+@@ -203,7 +201,6 @@ export default function PadelMakker() {
+             <Route path="/events" element={<PublicEventsPageLazy />} />
+             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
+             <Route path="/app" element={<InstallAppPageLazy />} />
+-            <Route path="/dashboard/notifikationer" element={canUseApp ? <NotifikationerPageLazy /> : <Navigate to="/" replace />} />
+             <Route
+               path="/dashboard"
+               element={
+diff --git a/src/pages/NotifikationerPage.jsx b/src/pages/NotifikationerPage.jsx
+index 6d5aa4c..881f5a3 100644
+--- a/src/pages/NotifikationerPage.jsx
++++ b/src/pages/NotifikationerPage.jsx
+@@ -1,10 +1,15 @@
+ import { useState, useEffect, useCallback, useMemo } from 'react';
+ import { useNavigate } from 'react-router-dom';
+-import { ChevronLeft, AlertCircle, Check, MessageCircle, Calendar, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
++import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+ import { useAuth } from '../lib/AuthContext';
+-import { theme, font } from '../lib/platformTheme';
+-import { buildKampeFocusPath, notificationKampeTarget, kampeFocusFooterLabel } from '../lib/kampeFocusNavigation';
++import { theme, font, btn } from '../lib/platformTheme';
++import {
++  buildKampeFocusPath,
++  notificationKampeTarget,
++  kampeFocusFooterLabel,
++  kampeFocusOpensChat,
++} from '../lib/kampeFocusNavigation';
+ import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
+ 
+ const DISMISSED_MAX = 400;
+@@ -82,16 +87,19 @@ function timeAgo(dateStr) {
+   return `${Math.floor(days / 7)}u`;
+ }
+ 
+-export function NotifikationerPage() {
++export function NotifikationerPage({ onBack }) {
+   const { user: authUser, profile } = useAuth();
+   const navigate = useNavigate();
+   const userId = authUser?.id;
+   const [notifs, setNotifs] = useState([]);
+   const [loading, setLoading] = useState(true);
++  const [loadError, setLoadError] = useState('');
+   const [matchMetaById, setMatchMetaById] = useState({});
+ 
+   const load = useCallback(async () => {
+-    if (!userId) { setNotifs([]); setLoading(false); return; }
++    if (!userId) { setNotifs([]); setLoading(false); setLoadError(''); return; }
++    setLoading(true);
++    setLoadError('');
+     try {
+       const { data, error } = await supabase
+         .from('notifications')
+@@ -99,7 +107,7 @@ export function NotifikationerPage() {
+         .eq('user_id', userId)
+         .order('created_at', { ascending: false })
+         .limit(40);
+-      if (error) { setNotifs([]); return; }
++      if (error) throw error;
+       const dismissed = loadDismissedIds(userId);
+       const filtered = (data || []).filter((n) => !dismissed.has(n.id));
+       setNotifs(filtered);
+@@ -108,13 +116,17 @@ export function NotifikationerPage() {
+         filtered.filter((n) => n?.type === 'match_chat' && n?.match_id != null).map((n) => String(n.match_id))
+       )];
+       if (!matchIds.length) { setMatchMetaById({}); return; }
+-      const { data: matchRows } = await supabase
++      const { data: matchRows, error: matchError } = await supabase
+         .from('matches').select('id, date, time, time_end, court_name').in('id', matchIds);
++      if (matchError) throw matchError;
+       const nextMeta = {};
+       (matchRows || []).forEach((m) => { nextMeta[String(m.id)] = m; });
+       setMatchMetaById(nextMeta);
+-    } catch { setNotifs([]); }
+-    finally { setLoading(false); }
++    } catch (err) {
++      setNotifs([]);
++      setMatchMetaById({});
++      setLoadError(err?.message || 'Kunne ikke hente notifikationer.');
++    } finally { setLoading(false); }
+   }, [userId]);
+ 
+   useEffect(() => { void load(); }, [load]);
+@@ -143,6 +155,14 @@ export function NotifikationerPage() {
+ 
+   const unreadCount = notifs.filter(n => !n.read).length;
+ 
++  const goBack = useCallback(() => {
++    if (typeof onBack === 'function') {
++      onBack();
++      return;
++    }
++    navigate('/dashboard/hjem', { replace: true });
++  }, [navigate, onBack]);
++
+   const markAllRead = async () => {
+     const unread = notifs.filter(n => !n.read).map(n => n.id);
+     if (!unread.length || !userId) return;
+@@ -161,11 +181,17 @@ export function NotifikationerPage() {
+     if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+   };
+ 
++  const markNotifRead = async (n) => {
++    const ids = Array.isArray(n?.notifIds) ? n.notifIds : [n?.id].filter(Boolean);
++    if (!ids.length || !userId || n.read) return;
++    await supabase.from('notifications').update({ read: true }).in('id', ids).eq('user_id', userId);
++    setNotifs(prev => prev.map(x => (x.id === n.id ? { ...x, read: true } : x)));
++    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
++  };
++
+   const openNotif = async (n) => {
+     if (!userId) return;
+-    await supabase.from('notifications').update({ read: true }).in('id', Array.isArray(n?.notifIds) ? n.notifIds : [n.id]).eq('user_id', userId);
+-    setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
++    await markNotifRead(n);
+ 
+     if (n?.type === 'result_error_report' && profile?.role === 'admin') {
+       navigate('/dashboard/admin?adminSub=result_errors'); return;
+@@ -177,7 +203,12 @@ export function NotifikationerPage() {
+       navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`); return;
+     }
+     const kampeTarget = notificationKampeTarget(n);
+-    if (kampeTarget) { navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId)); return; }
++    if (kampeTarget) {
++      navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
++        openChat: kampeFocusOpensChat(n.type),
++      }));
++      return;
++    }
+     if (n?.type === 'elo_change') { navigate('/dashboard/profil'); return; }
+     if (n?.type === 'result_submitted') { navigate('/dashboard/kampe'); return; }
+   };
+@@ -206,13 +237,12 @@ export function NotifikationerPage() {
+ 
+   return (
+     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: theme.bg, fontFamily: font }}>
+-      {/* Topbar */}
+-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
++      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', paddingTop: 'max(10px, env(safe-area-inset-top))', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+         <button
+           type="button"
+-          onClick={() => navigate(-1)}
++          onClick={goBack}
+           style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+-          aria-label="Tilbage"
++          aria-label="Tilbage til Hjem"
+         >
+           <ChevronLeft size={20} />
+         </button>
+@@ -221,17 +251,29 @@ export function NotifikationerPage() {
+           <button
+             type="button"
+             onClick={markAllRead}
+-            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
++            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '8px 0', minHeight: 44 }}
+           >
+             Markér alle læst
+           </button>
+         )}
+       </div>
+ 
+-      {/* List */}
+       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
+         {loading ? (
+           <div style={{ textAlign: 'center', padding: '32px 16px', color: theme.textLight, fontSize: 13 }}>Indlæser…</div>
++        ) : loadError ? (
++          <div style={{ padding: '0 18px' }}>
++            <div className="pm-state-card pm-state-card--error">
++              <div className="pm-state-icon" aria-hidden="true">⚠️</div>
++              <div className="pm-state-title">Kunne ikke hente notifikationer</div>
++              <div className="pm-state-copy">{loadError}</div>
++              <div className="pm-state-actions">
++                <button type="button" onClick={() => void load()} style={{ ...btn(true), fontSize: '13px' }}>
++                  Prøv igen
++                </button>
++              </div>
++            </div>
++          </div>
+         ) : displayNotifs.length === 0 ? (
+           <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textLight, fontSize: 13 }}>
+             <Bell size={28} color={theme.textLight} style={{ marginBottom: 10 }} />
+@@ -252,6 +294,7 @@ export function NotifikationerPage() {
+             || n.type === 'elo_change'
+             || n.type === 'result_submitted';
+           const isResultPending = n.type === 'result_submitted';
++          const canMarkReadOnly = !n.read && !isClickable && !isResultPending;
+           return (
+             <div key={n.id} style={cardStyle(!n.read)}>
+               <NotifIcon type={n.type} />
+@@ -274,6 +317,11 @@ export function NotifikationerPage() {
+                     {kampeTarget ? kampeFocusFooterLabel(kampeTarget.format, n.type) : 'Tryk for at åbne →'}
+                   </div>
+                 )}
++                {canMarkReadOnly && (
++                  <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
++                    Tryk for at markere som læst
++                  </div>
++                )}
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                 <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
+@@ -282,7 +330,7 @@ export function NotifikationerPage() {
+                   type="button"
+                   onClick={(e) => { e.stopPropagation(); void deleteNotif(n); }}
+                   aria-label="Slet"
+-                  style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: theme.textLight, display: 'flex' }}
++                  style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: theme.textLight, display: 'flex', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+                 >
+                   <Trash2 size={15} />
+                 </button>
+@@ -295,6 +343,14 @@ export function NotifikationerPage() {
+                   style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
+                 />
+               )}
++              {canMarkReadOnly && (
++                <button
++                  type="button"
++                  onClick={() => void markNotifRead(n)}
++                  aria-label="Markér som læst"
++                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
++                />
++              )}
+             </div>
+           );
+         })}
+diff --git a/src/responsive.css b/src/responsive.css
+index d3c3829..a521a51 100644
+--- a/src/responsive.css
++++ b/src/responsive.css
+@@ -1620,6 +1620,16 @@ button,
+   width: 100%;
+ }
+ 
++.pm-dash-main.pm-dash-main--notifikationer {
++  display: flex;
++  flex-direction: column;
++  min-height: 0;
++  max-width: none;
++  margin: 0;
++  padding: 0;
++  width: 100%;
++}
++
+ .pm-profile-header {
+   display: flex;
+   gap: 16px;
+@@ -1725,6 +1735,11 @@ button,
+     padding-top: max(0px, env(safe-area-inset-top));
+   }
+ 
++  .pm-dash-main--notifikationer {
++    padding-top: max(0px, env(safe-area-inset-top));
++    padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
++  }
++
+   /* Mobil chat: portal-overlay efter https://github.com/mattpilott/ios-chat */
+   body.pm-mobile-chat-overlay-open {
+     overflow: hidden;
+-- 
+2.43.0
+

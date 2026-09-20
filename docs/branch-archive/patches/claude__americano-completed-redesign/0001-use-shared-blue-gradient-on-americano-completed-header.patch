@@ -1,0 +1,29 @@
+From ce27016c03407de395a09d54b77064b46165980f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 17 May 2026 16:25:54 +0000
+Subject: [PATCH] Use shared blue gradient on Americano completed header
+
+---
+ src/features/americano/AmericanoCompletedCard.tsx | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/features/americano/AmericanoCompletedCard.tsx b/src/features/americano/AmericanoCompletedCard.tsx
+index 76f26f3..44739f9 100644
+--- a/src/features/americano/AmericanoCompletedCard.tsx
++++ b/src/features/americano/AmericanoCompletedCard.tsx
+@@ -361,10 +361,10 @@ export function AmericanoCompletedCard({
+         overflow: 'hidden',
+       }}
+     >
+-      {/* 1. Header — orange trofæ-gradient */}
++      {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}
+       <div
+         style={{
+-          background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
++          background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+           color: C.white,
+           padding: '16px 18px',
+         }}
+-- 
+2.43.0
+

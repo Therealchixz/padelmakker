@@ -1,0 +1,24 @@
+From 4d7005c2ce75944f709b09697d3bfae886bf4bcd Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Tue, 19 May 2026 19:49:20 +0000
+Subject: [PATCH] Fix admin PIN SQL comment (30 min)
+
+Co-authored-by: Mike <Therealchixz@users.noreply.github.com>
+---
+ supabase/sql/admin_pin_shorter_session.sql | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/supabase/sql/admin_pin_shorter_session.sql b/supabase/sql/admin_pin_shorter_session.sql
+index 7e7a01b..26470a3 100644
+--- a/supabase/sql/admin_pin_shorter_session.sql
++++ b/supabase/sql/admin_pin_shorter_session.sql
+@@ -1,5 +1,5 @@
+ -- =============================================================================
+--- Admin PIN: kortere session (60 min default, max 120 min fra klient)
++-- Admin PIN: kortere session (30 min default, max 60 min fra klient)
+ -- Kør i Supabase SQL Editor efter admin_pin_guard.sql
+ -- =============================================================================
+ 
+-- 
+2.43.0
+

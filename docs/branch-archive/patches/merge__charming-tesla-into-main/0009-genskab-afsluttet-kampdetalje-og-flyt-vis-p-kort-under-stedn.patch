@@ -1,0 +1,454 @@
+From d269994cc480a0fe2656a96bb5a54bd5ed26f19b Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Sun, 5 Jul 2026 22:49:57 +0200
+Subject: [PATCH] =?UTF-8?q?Genskab=20afsluttet=20kampdetalje=20og=20flyt?=
+ =?UTF-8?q?=20Vis=20p=C3=A5=20kort=20under=20stednavn?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Resultatkort, hold-gennemsnit ELO og ny ELO pr. spiller var forsvundet ved baneskift; kortlink sidder nu under placeringen.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ .../kampe/KampeMatchDetailSheet.jsx           |  47 +++---
+ src/components/kampe/MatchCompletedDetail.jsx | 150 ++++++++++++++++++
+ src/components/kampe/MatchCourtView.jsx       |  36 +++--
+ src/styles/kampdetalje.css                    |  81 +++++++++-
+ 4 files changed, 284 insertions(+), 30 deletions(-)
+ create mode 100644 src/components/kampe/MatchCompletedDetail.jsx
+
+diff --git a/src/components/kampe/KampeMatchDetailSheet.jsx b/src/components/kampe/KampeMatchDetailSheet.jsx
+index c4024fc..d319f06 100644
+--- a/src/components/kampe/KampeMatchDetailSheet.jsx
++++ b/src/components/kampe/KampeMatchDetailSheet.jsx
+@@ -1,4 +1,4 @@
+-import { X, CalendarDays, MapPin, ArrowUpRight } from 'lucide-react';
++import { X, CalendarDays, ArrowUpRight } from 'lucide-react';
+ import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+ import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
+ import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
+@@ -6,6 +6,7 @@ import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
+ import { btn } from '../../lib/platformTheme';
+ import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
+ import { MatchResultStrip } from '../MatchResultStrip';
++import { MatchCompletedDetail } from './MatchCompletedDetail';
+ import { MatchCourtView } from './MatchCourtView';
+ import '../../styles/kampdetalje.css';
+ 
+@@ -121,7 +122,20 @@ export function KampeMatchDetailSheet({
+         </div>
+ 
+         <div className="pm-kd-card pm-kd-price-card">
+-          <h2 className="pm-kd-title">{venue}</h2>
++          <div className="pm-kd-title-block">
++            <h2 className="pm-kd-title">{venue}</h2>
++            {directionsQuery ? (
++              <a
++                className="pm-kd-maplink pm-kd-maplink--under-title"
++                href={banerMapsDirectionsUrl(directionsQuery)}
++                target="_blank"
++                rel="noopener noreferrer"
++                onClick={(event) => event.stopPropagation()}
++              >
++                Vis på kort <ArrowUpRight size={11} aria-hidden />
++              </a>
++            ) : null}
++          </div>
+           {matchPrefs?.booked != null || unreadCount > 0 ? (
+             <div className="pm-kd-price-meta">
+               {matchPrefs?.booked != null ? (
+@@ -141,23 +155,6 @@ export function KampeMatchDetailSheet({
+               <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
+             </div>
+           </div>
+-          <div className="pm-kd-info-row">
+-            <div className="pm-kd-info-ic"><MapPin size={18} aria-hidden /></div>
+-            <div>
+-              <b>{venue}</b>
+-              {directionsQuery ? (
+-                <a
+-                  className="pm-kd-maplink"
+-                  href={banerMapsDirectionsUrl(directionsQuery)}
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  onClick={(event) => event.stopPropagation()}
+-                >
+-                  Vis på kort <ArrowUpRight size={11} aria-hidden />
+-                </a>
+-              ) : null}
+-            </div>
+-          </div>
+         </div>
+ 
+         {description ? (
+@@ -167,6 +164,16 @@ export function KampeMatchDetailSheet({
+           </>
+         ) : null}
+ 
++        {status === 'completed' && matchResult?.confirmed ? (
++          <MatchCompletedDetail
++            matchResult={matchResult}
++            teamStats={teamStats}
++            winnerTeam={winnerTeam}
++            currentUserId={currentUserId}
++            profilesById={profilesById}
++          />
++        ) : null}
++
+         <MatchCourtView
+           teamStats={teamStats}
+           status={status}
+@@ -186,7 +193,7 @@ export function KampeMatchDetailSheet({
+           onProfileClick={onProfileClick}
+         />
+ 
+-        {status === 'completed' && matchResult ? (
++        {status === 'completed' && matchResult && !matchResult.confirmed ? (
+           <MatchResultStrip
+             matchResult={matchResult}
+             myTeam={
+diff --git a/src/components/kampe/MatchCompletedDetail.jsx b/src/components/kampe/MatchCompletedDetail.jsx
+new file mode 100644
+index 0000000..66f4fd0
+--- /dev/null
++++ b/src/components/kampe/MatchCompletedDetail.jsx
+@@ -0,0 +1,150 @@
++import { TrendingDown, TrendingUp } from 'lucide-react';
++import { AvatarCircle } from '../AvatarCircle';
++import { formatMatchResultScore } from '../../lib/matchResultScore';
++
++function teamFirstNames(players, currentUserId) {
++  if (!players?.length) return '—';
++  return players
++    .map((p) => {
++      if (currentUserId && String(p.user_id) === String(currentUserId)) return 'Dig';
++      return (p.user_name || '?').split(' ')[0];
++    })
++    .join(' & ');
++}
++
++function countSetsWon(matchResult) {
++  let t1 = 0;
++  let t2 = 0;
++  for (let i = 1; i <= 3; i += 1) {
++    const g1 = Number(matchResult[`set${i}_team1`]);
++    const g2 = Number(matchResult[`set${i}_team2`]);
++    if (!Number.isFinite(g1) || !Number.isFinite(g2) || (g1 === 0 && g2 === 0)) continue;
++    if (g1 > g2) t1 += 1;
++    else if (g2 > g1) t2 += 1;
++  }
++  return { t1, t2 };
++}
++
++function teamAvgEloChange(players, changesById) {
++  const values = (players || [])
++    .map((p) => changesById?.[String(p.user_id)])
++    .filter((c) => c != null);
++  if (!values.length) return null;
++  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
++}
++
++function TeamAvatars({ players, profilesById }) {
++  return (
++    <div className="pm-kd-avstack">
++      {players.slice(0, 2).map((p) => {
++        const prof = profilesById[String(p.user_id)];
++        return (
++          <AvatarCircle
++            key={p.user_id}
++            avatar={prof?.avatar || p.user_emoji || '🎾'}
++            size={34}
++            emojiSize="14px"
++          />
++        );
++      })}
++    </div>
++  );
++}
++
++function EloTeamCard({ label, sublabel, delta, tone }) {
++  const isUp = tone === 'up';
++  return (
++    <div className="pm-kd-card pm-kd-elo-card">
++      <div className={`pm-kd-feed-ic ${isUp ? 'pm-kd-feed-ic--up' : 'pm-kd-feed-ic--down'}`}>
++        {isUp ? <TrendingUp size={16} aria-hidden /> : <TrendingDown size={16} aria-hidden />}
++      </div>
++      <div className="pm-kd-elo-card-copy">
++        <div className="pm-kd-elo-card-title">{label}</div>
++        <div className="pm-kd-elo-card-sub">{sublabel}</div>
++      </div>
++      {delta != null ? (
++        <span className={`pm-kd-elo-card-delta ${isUp ? 'pm-kd-elo-card-delta--up' : 'pm-kd-elo-card-delta--down'}`}>
++          {delta >= 0 ? '+' : ''}
++          {delta}
++        </span>
++      ) : null}
++    </div>
++  );
++}
++
++export function MatchCompletedDetail({
++  matchResult,
++  teamStats,
++  winnerTeam,
++  currentUserId = null,
++  profilesById = {},
++}) {
++  if (!matchResult?.confirmed || !winnerTeam) return null;
++
++  const t1 = teamStats?.t1 || [];
++  const t2 = teamStats?.t2 || [];
++  const changes = teamStats?.playerEloChangeByUserId || {};
++  const sets = countSetsWon(matchResult);
++  const scoreDetail = formatMatchResultScore(matchResult);
++  const t1AvgChange = teamAvgEloChange(t1, changes);
++  const t2AvgChange = teamAvgEloChange(t2, changes);
++  const winnerIsT1 = winnerTeam === 1;
++  const winnerAvgChange = winnerIsT1 ? t1AvgChange : t2AvgChange;
++  const loserAvgChange = winnerIsT1 ? t2AvgChange : t1AvgChange;
++
++  return (
++    <>
++      <div className="pm-kd-card pm-kd-result-card">
++        <span className="pm-kd-tag pm-kd-tag--amber pm-kd-result-badge">Afsluttet</span>
++        <div className="pm-kd-vs-row">
++          <div className="pm-kd-vs-score">
++            <TeamAvatars players={t1} profilesById={profilesById} />
++            <b>{teamFirstNames(t1, currentUserId)}</b>
++            {winnerIsT1 ? (
++              <span className="pm-kd-tag pm-kd-tag--amber pm-kd-winner-tag">Vindere</span>
++            ) : null}
++          </div>
++          <div className="pm-kd-set-score">
++            <div className="pm-kd-set-score-big">
++              {sets.t1}
++              <span className="pm-kd-set-score-sep"> – </span>
++              {sets.t2}
++            </div>
++            <div className="pm-kd-set-score-detail">{scoreDetail}</div>
++          </div>
++          <div className="pm-kd-vs-score">
++            <TeamAvatars players={t2} profilesById={profilesById} />
++            <b>{teamFirstNames(t2, currentUserId)}</b>
++            {!winnerIsT1 ? (
++              <span className="pm-kd-tag pm-kd-tag--amber pm-kd-winner-tag">Vindere</span>
++            ) : null}
++          </div>
++        </div>
++      </div>
++
++      {(winnerAvgChange != null || loserAvgChange != null) ? (
++        <>
++          <div className="pm-kd-section-h">
++            <h3>Elo-ændringer</h3>
++          </div>
++          {winnerAvgChange != null ? (
++            <EloTeamCard
++              label="Vindere"
++              sublabel="Hold-gennemsnit"
++              delta={winnerAvgChange}
++              tone="up"
++            />
++          ) : null}
++          {loserAvgChange != null ? (
++            <EloTeamCard
++              label="Modstandere"
++              sublabel="Hold-gennemsnit"
++              delta={loserAvgChange}
++              tone="down"
++            />
++          ) : null}
++        </>
++      ) : null}
++    </>
++  );
++}
+diff --git a/src/components/kampe/MatchCourtView.jsx b/src/components/kampe/MatchCourtView.jsx
+index 347a7e0..756f7a6 100644
+--- a/src/components/kampe/MatchCourtView.jsx
++++ b/src/components/kampe/MatchCourtView.jsx
+@@ -63,6 +63,9 @@ export function MatchCourtView({
+       otherTeamPlayerCount < SLOTS_PER_TEAM &&
+       !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + player.user_id);
+ 
++    const delta = playerEloChange(player);
++    const newElo = delta != null ? playerElo(player) + delta : null;
++
+     return (
+       <div key={player.user_id || `t${teamNum}-${player.user_name}`} className="pm-kd-slot">
+         <button
+@@ -89,13 +92,12 @@ export function MatchCourtView({
+           <div className="pm-kd-slot-copy">
+             <div className="pm-kd-slot-name">{player.user_name || 'Spiller'}</div>
+             <div className="pm-kd-slot-meta">
+-              {showEloChanges && playerEloChange(player) != null ? (
+-                <span
+-                  className={`pm-kd-tag ${playerEloChange(player) >= 0 ? 'pm-kd-tag--green' : 'pm-kd-tag--red'}`}
+-                >
+-                  {playerEloChange(player) >= 0 ? '+' : ''}
+-                  {playerEloChange(player)} ELO
+-                </span>
++              {showEloChanges && delta != null ? (
++                levelLabel ? (
++                  <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
++                ) : (
++                  <span className="pm-kd-lvl-badge">ELO {playerElo(player)}</span>
++                )
+               ) : levelLabel ? (
+                 <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
+               ) : (
+@@ -107,6 +109,18 @@ export function MatchCourtView({
+             </div>
+           </div>
+         </button>
++        {showEloChanges && newElo != null && delta != null ? (
++          <div className="pm-kd-slot-elo-end">
++            <span className="pm-kd-eyebrow">Ny ELO</span>
++            <span className="pm-kd-slot-new-elo">
++              {newElo}
++              <small className={delta >= 0 ? 'pm-kd-delta--up' : 'pm-kd-delta--down'}>
++                ({delta >= 0 ? '+' : ''}
++                {delta})
++              </small>
++            </span>
++          </div>
++        ) : null}
+         {canSwitchPlayer ? (
+           <button
+             type="button"
+@@ -163,11 +177,15 @@ export function MatchCourtView({
+ 
+   const renderTeam = (teamNum, players) => {
+     const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
++    const teamAvg = teamNum === 1 ? teamStats?.t1Avg : teamStats?.t2Avg;
+     const slots = teamSlots(players);
+ 
+     return (
+       <div key={`team-${teamNum}`}>
+-        <div className="pm-kd-team-label">{headerLabel}</div>
++        <div className="pm-kd-team-label">
++          {headerLabel}
++          {teamAvg != null ? ` · Gns. ${teamAvg}` : ''}
++        </div>
+         {slots.map((player, idx) =>
+           player ? renderPlayerSlot(player, teamNum) : renderEmptySlot(teamNum, idx)
+         )}
+@@ -178,7 +196,7 @@ export function MatchCourtView({
+   return (
+     <div className="pm-kampe-v2-court-wrap">
+       <div className="pm-kd-section-h">
+-        <h3>Holdene ({filledCount}/4)</h3>
++        <h3>{showEloChanges ? 'Deltagere' : `Holdene (${filledCount}/4)`}</h3>
+         {left > 0 && status !== 'completed' && status !== 'in_progress' ? (
+           <span className="pm-kd-tag pm-kd-tag--amber">
+             {left} {left === 1 ? 'plads' : 'pladser'} tilbage
+diff --git a/src/styles/kampdetalje.css b/src/styles/kampdetalje.css
+index b6cb55a..0efb4bc 100644
+--- a/src/styles/kampdetalje.css
++++ b/src/styles/kampdetalje.css
+@@ -197,6 +197,14 @@
+   text-decoration: none;
+ }
+ 
++.pm-kd-maplink--under-title {
++  margin-top: 6px;
++}
++
++.pm-kd-title-block {
++  margin-bottom: 2px;
++}
++
+ /* ── Sektionsoverskrift (mockup .section-h) ── */
+ .pm-kd-section-h {
+   display: flex;
+@@ -404,7 +412,7 @@
+ }
+ 
+ /* ── Resultatkort, afsluttet kamp (mockup vs-score / avstack) ── */
+-.pm-kd-result-card { position: relative; margin-top: 14px; }
++.pm-kd-result-card { position: relative; margin: 14px 16px 0; }
+ 
+ .pm-kd-result-badge {
+   position: absolute;
+@@ -412,6 +420,77 @@
+   right: 14px;
+ }
+ 
++.pm-kd-winner-tag {
++  margin-top: 6px;
++  font-size: 9px;
++  letter-spacing: 0.6px;
++  text-transform: uppercase;
++}
++
++.pm-kd-avstack {
++  display: flex;
++  justify-content: center;
++  gap: 4px;
++  margin-bottom: 6px;
++}
++
++.pm-kd-elo-card {
++  display: flex;
++  align-items: center;
++  gap: 12px;
++  margin: 0 16px 10px;
++  padding: 14px 16px;
++}
++
++.pm-kd-elo-card-copy {
++  flex: 1;
++  min-width: 0;
++}
++
++.pm-kd-elo-card-title {
++  font-weight: 600;
++  font-size: 13.5px;
++  color: var(--pm-text);
++}
++
++.pm-kd-elo-card-sub {
++  font-size: 11.5px;
++  color: var(--pm-text-light);
++  margin-top: 1px;
++}
++
++.pm-kd-elo-card-delta {
++  font-size: 18px;
++  font-weight: 700;
++  flex-shrink: 0;
++}
++
++.pm-kd-elo-card-delta--up { color: var(--pm-green); }
++.pm-kd-elo-card-delta--down { color: var(--pm-red); }
++
++.pm-kd-slot-elo-end {
++  flex-shrink: 0;
++  text-align: right;
++  min-width: 72px;
++}
++
++.pm-kd-slot-new-elo {
++  display: block;
++  font-size: 14px;
++  font-weight: 700;
++  color: var(--pm-navy);
++  margin-top: 2px;
++}
++
++.pm-kd-slot-new-elo small {
++  font-size: 10.5px;
++  font-weight: 600;
++  margin-left: 2px;
++}
++
++.pm-kd-delta--up { color: var(--pm-green); }
++.pm-kd-delta--down { color: var(--pm-red); }
++
+ .pm-kd-vs-row {
+   display: flex;
+   align-items: center;
+-- 
+2.43.0
+

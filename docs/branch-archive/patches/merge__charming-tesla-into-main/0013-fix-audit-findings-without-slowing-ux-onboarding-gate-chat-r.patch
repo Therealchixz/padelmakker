@@ -1,0 +1,1145 @@
+From 8123d902d9d8c306fee69d155a84933e1364701f Mon Sep 17 00:00:00 2001
+From: Mike Pedersen <super_opjus@hotmail.com>
+Date: Mon, 13 Jul 2026 20:41:07 +0200
+Subject: [PATCH] Fix audit findings without slowing UX: onboarding gate, chat
+ race, team caps.
+
+Harden onboarding to profile fields only, guard BeskedTab stale fetches, cache courts, scope ranking history by period, and race-safe join/team SQL with notifications index (applied to prod).
+---
+ src/dashboard/BeskedTab.jsx                   |  18 +-
+ src/dashboard/HomeTab.jsx                     |   7 +-
+ src/dashboard/KampeTab.jsx                    |   4 +-
+ src/dashboard/ProfilTab.jsx                   |   4 +-
+ src/dashboard/RankingTab.jsx                  |  26 +-
+ src/features/americano/AmericanoTab.tsx       |   4 +-
+ src/lib/AuthContext.jsx                       |  11 +
+ src/lib/courtsCache.js                        |  33 +++
+ src/lib/platformUtils.js                      |   9 +-
+ src/lib/profileUtils.js                       |   4 +-
+ src/padelmakker-platform.jsx                  |   6 +-
+ ...60713183000_join_request_team_race_fix.sql | 242 +++++++++++++++++
+ .../sql/approve_match_join_request_rpc.sql    |  70 ++++-
+ supabase/sql/join_request_team_race_fix.sql   | 244 ++++++++++++++++++
+ supabase/sql/set_match_player_team_rpc.sql    |  12 +-
+ tests/unit/onboardingGate.test.mjs            |  25 ++
+ tests/unit/rankingPagination.test.mjs         |   4 +-
+ 17 files changed, 678 insertions(+), 45 deletions(-)
+ create mode 100644 src/lib/courtsCache.js
+ create mode 100644 supabase/migrations/20260713183000_join_request_team_race_fix.sql
+ create mode 100644 supabase/sql/join_request_team_race_fix.sql
+ create mode 100644 tests/unit/onboardingGate.test.mjs
+
+diff --git a/src/dashboard/BeskedTab.jsx b/src/dashboard/BeskedTab.jsx
+index 8ce195c..c17701c 100644
+--- a/src/dashboard/BeskedTab.jsx
++++ b/src/dashboard/BeskedTab.jsx
+@@ -313,25 +313,32 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
+       setLoadingMsgs(true);
+     }
+ 
++    let cancelled = false;
++    const loadPartnerId = selectedId;
++
+     if (!isCacheFresh) {
+       setLoadingMsgs(true);
+       setMessageLoadError(null);
+-      fetchMessages(user.id, selectedId)
++      fetchMessages(user.id, loadPartnerId)
+         .then(msgs => {
++          if (cancelled || loadPartnerId !== selectedId) return;
+           setMessages(msgs);
+           setMessageThreadCache(threadKey, msgs);
+           const lastMsg = msgs[msgs.length - 1];
+           if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
+-          scheduleMarkRead(selectedId, 60);
+-          clearConversationUnread(selectedId);
++          scheduleMarkRead(loadPartnerId, 60);
++          clearConversationUnread(loadPartnerId);
+         })
+         .catch((e) => {
++          if (cancelled || loadPartnerId !== selectedId) return;
+           console.warn('load messages:', e);
+           const msg = 'Kunne ikke hente beskeder. Prøv igen.';
+           setMessageLoadError(msg);
+           showToast?.(msg);
+         })
+-        .finally(() => setLoadingMsgs(false));
++        .finally(() => {
++          if (!cancelled && loadPartnerId === selectedId) setLoadingMsgs(false);
++        });
+     }
+ 
+     const handleIncomingMessage = (payload) => {
+@@ -406,6 +413,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
+     });
+ 
+     return () => {
++      cancelled = true;
+       supabase.removeChannel(incomingChannel);
+       supabase.removeChannel(outgoingChannel);
+       supabase.removeChannel(updateChannelIncoming);
+@@ -414,7 +422,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
+       setOtherTyping(false);
+       setPartnerProfile(null);
+     };
+-  }, [clearConversationUnread, scheduleMarkRead, selectedId, upsertConversationFromMessage, user?.id]);
++  }, [clearConversationUnread, scheduleMarkRead, selectedId, showToast, upsertConversationFromMessage, user?.id]);
+ 
+   // Liga-hold chat
+   useEffect(() => {
+diff --git a/src/dashboard/HomeTab.jsx b/src/dashboard/HomeTab.jsx
+index 31880c5..908b7af 100644
+--- a/src/dashboard/HomeTab.jsx
++++ b/src/dashboard/HomeTab.jsx
+@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext';
+ import { theme, btn, font } from '../lib/platformTheme';
+ import { resolveDisplayName } from '../lib/platformUtils';
+ import { supabase } from '../lib/supabase';
+-import { Court } from '../api/base44Client';
++import { fetchCourtsCached } from '../lib/courtsCache';
+ import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
+ import { AvatarCircle } from '../components/AvatarCircle';
+ import { NotificationBell } from '../components/NotificationBell';
+@@ -478,7 +478,7 @@ export function HomeTab({ user, setTab, showToast }) {
+         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
+         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
+         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
+-        Court.filter(),
++        fetchCourtsCached(),
+       ]);
+       const round2Results = {
+         mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes, courtsRes,
+@@ -763,9 +763,10 @@ export function HomeTab({ user, setTab, showToast }) {
+     let retryTimer = null;
+     const scheduleRefetch = () => {
+       if (cancelled) return;
++      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+       if (debounceTimer) clearTimeout(debounceTimer);
+       debounceTimer = setTimeout(() => {
+-        if (!cancelled) fetchFeed({ silent: true });
++        if (!cancelled && document.visibilityState !== 'hidden') fetchFeed({ silent: true });
+       }, 1500);
+     };
+     const channel = supabase
+diff --git a/src/dashboard/KampeTab.jsx b/src/dashboard/KampeTab.jsx
+index 9c5245f..3674a4c 100644
+--- a/src/dashboard/KampeTab.jsx
++++ b/src/dashboard/KampeTab.jsx
+@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } fro
+ import { useNavigate, useLocation } from 'react-router-dom';
+ import { useAuth } from '../lib/AuthContext';
+ import { useConfirm } from '../lib/ConfirmDialogProvider';
+-import { Court } from '../api/base44Client';
++import { fetchCourtsCached } from '../lib/courtsCache';
+ import { fetchProfilesByIdMap } from '../lib/profileQueries';
+ import { supabase } from '../lib/supabase';
+ import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+@@ -357,7 +357,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
+     try {
+       const uid = user.id;
+       const [cd, openPoolRes, createdRes, myMpRes] = await Promise.all([
+-        Court.filter(),
++        fetchCourtsCached(),
+         supabase
+           .from("matches")
+           .select("*")
+diff --git a/src/dashboard/ProfilTab.jsx b/src/dashboard/ProfilTab.jsx
+index 65e9560..6c04ca4 100644
+--- a/src/dashboard/ProfilTab.jsx
++++ b/src/dashboard/ProfilTab.jsx
+@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
+ import { useAuth } from '../lib/AuthContext';
+ import { supabase } from '../lib/supabase';
+ import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
+-import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
++import { resolveDisplayName, sanitizeText, displayUserText } from '../lib/platformUtils';
+ import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+ import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
+ import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
+@@ -603,7 +603,7 @@ export function ProfilTab({ user, showToast, setTab }) {
+           </div>
+ 
+           <div style={{ padding: '0 18px' }}>
+-          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
++          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{displayUserText(user.bio)}&rdquo;</p>}
+ 
+           {!editing && !isValidProfileRegion(user.area) ? (
+             <div style={profilePromptCardStyle}>
+diff --git a/src/dashboard/RankingTab.jsx b/src/dashboard/RankingTab.jsx
+index d81b15a..fc6acfd 100644
+--- a/src/dashboard/RankingTab.jsx
++++ b/src/dashboard/RankingTab.jsx
+@@ -24,7 +24,7 @@ import {
+ import { TabbedFilterCard } from '../components/TabbedFilterCard';
+ 
+ const RANKING_PAGE_SIZE = 50;
+-const PERIOD_HISTORY_LIMIT = 5000;
++const PERIOD_HISTORY_LIMIT = 1500;
+ 
+ const PROFILE_RANKING_SELECT =
+   'id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins';
+@@ -74,7 +74,7 @@ export function RankingTab({ user }) {
+ 
+   const profileOffsetRef = useRef(0);
+   const profileFetchGenRef = useRef(0);
+-  const periodHistoryLoadedRef = useRef(false);
++  const periodHistoryLoadedRef = useRef('');
+   const prevPeriodRef = useRef(period);
+   const prevRankModeRef = useRef(rankMode);
+ 
+@@ -144,17 +144,22 @@ export function RankingTab({ user }) {
+     setMyGlobalRank((count ?? 0) + 1);
+   }, [myId, period, isAmericano, myAllTimeElo, myAllTimeAmericanoElo, orderColumn]);
+ 
+-  const loadPeriodHistory = useCallback(async () => {
++  const loadPeriodHistory = useCallback(async (activePeriod) => {
++    const cutoff = periodCutoffDate(activePeriod);
++    const cutoffStr = formatLocalDateYMD(cutoff);
++    const cutoffIso = cutoff.toISOString();
+     const [historyData, americanoHistoryData] = await Promise.all([
+       supabase
+         .from('elo_history')
+         .select('user_id, result, change, old_rating, new_rating, date, match_id')
++        .gte('date', cutoffStr)
+         .order('date', { ascending: false })
+         .order('match_id', { ascending: false })
+         .limit(PERIOD_HISTORY_LIMIT),
+       supabase
+         .from('americano_elo_history')
+         .select('id, tournament_id, user_id, old_rating, new_rating, change, points, created_at')
++        .gte('created_at', cutoffIso)
+         .order('created_at', { ascending: false })
+         .limit(PERIOD_HISTORY_LIMIT),
+     ]);
+@@ -218,16 +223,16 @@ export function RankingTab({ user }) {
+   );
+ 
+   const ensurePeriodHistory = useCallback(
+-    async ({ background = false } = {}) => {
+-      if (periodHistoryLoadedRef.current) return;
++    async ({ background = false, activePeriod = period } = {}) => {
++      if (periodHistoryLoadedRef.current === activePeriod) return;
+       profileFetchGenRef.current += 1;
+       const gen = profileFetchGenRef.current;
+       setLoadError(null);
+       if (!background) setInitialLoading(true);
+       else setRefreshing(true);
+       try {
+-        await loadPeriodHistory();
+-        if (gen === profileFetchGenRef.current) periodHistoryLoadedRef.current = true;
++        await loadPeriodHistory(activePeriod);
++        if (gen === profileFetchGenRef.current) periodHistoryLoadedRef.current = activePeriod;
+       } catch (e) {
+         console.error(e);
+         if (gen === profileFetchGenRef.current) {
+@@ -252,7 +257,7 @@ export function RankingTab({ user }) {
+     profileOffsetRef.current = 0;
+     setMyGlobalRank(null);
+     setLoadError(null);
+-    periodHistoryLoadedRef.current = false;
++    periodHistoryLoadedRef.current = '';
+     setEloHistory([]);
+     setAmericanoHistory([]);
+     if (period === 'all') {
+@@ -263,7 +268,7 @@ export function RankingTab({ user }) {
+   }, [period, loadAllTimeProfiles, ensurePeriodHistory]);
+ 
+   useEffect(() => {
+-    periodHistoryLoadedRef.current = false;
++    periodHistoryLoadedRef.current = '';
+     setEloHistory([]);
+     setAmericanoHistory([]);
+     setVisibleCount(RANKING_PAGE_SIZE);
+@@ -284,7 +289,8 @@ export function RankingTab({ user }) {
+     if (period === 'all') {
+       void loadAllTimeProfiles({ background: players.length > 0 });
+     } else {
+-      void ensurePeriodHistory({ background: true });
++      periodHistoryLoadedRef.current = '';
++      void ensurePeriodHistory({ background: true, activePeriod: period });
+     }
+   }, [period, loadAllTimeProfiles, ensurePeriodHistory, players.length]);
+ 
+diff --git a/src/features/americano/AmericanoTab.tsx b/src/features/americano/AmericanoTab.tsx
+index f76ad08..88acc11 100644
+--- a/src/features/americano/AmericanoTab.tsx
++++ b/src/features/americano/AmericanoTab.tsx
+@@ -4,7 +4,7 @@ import { EmptyStateIcon } from '../../components/EmptyStateIcon'
+ import { supabase } from '../../lib/supabase'
+ import { useAuth } from '../../lib/AuthContext'
+ import { useConfirm } from '../../lib/ConfirmDialogProvider'
+-import { Court } from '../../api/base44Client'
++import { fetchCourtsCached } from '../../lib/courtsCache'
+ import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
+ import { AmericanoResultsPanel } from './AmericanoResultsPanel'
+ import { AmericanoListCard } from './AmericanoListCard'
+@@ -202,7 +202,7 @@ export function AmericanoTab({
+         return
+       }
+       const [cd, trRes, myRes] = await Promise.all([
+-        Court.filter(),
++        fetchCourtsCached(),
+         supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(200),
+         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
+       ])
+diff --git a/src/lib/AuthContext.jsx b/src/lib/AuthContext.jsx
+index ff48bb1..dfb62ba 100644
+--- a/src/lib/AuthContext.jsx
++++ b/src/lib/AuthContext.jsx
+@@ -5,6 +5,7 @@ import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionFor
+ import { applyPendingAvatar } from './avatarUpload'
+ import { DEFAULT_REGION } from './platformConstants'
+ import { isSeekingActiveProfile } from './seekingFeedTtl'
++import { fetchPhoneVerificationExemptFromServer } from './phoneVerification'
+ import { BanNoticeModal } from '../components/BanNoticeModal'
+ import { startPresence, stopPresence } from './presence'
+ 
+@@ -167,6 +168,7 @@ export function AuthProvider({ children }) {
+   const [loading, setLoading] = useState(true)
+   const [profileLoading, setProfileLoading] = useState(false)
+   const [profileLoadError, setProfileLoadError] = useState(false)
++  const [phoneVerificationExempt, setPhoneVerificationExempt] = useState(false)
+   const [banNotice, setBanNotice] = useState(null)
+   const profileReqId = useRef(0)
+   const profileIdRef = useRef('')
+@@ -180,6 +182,7 @@ export function AuthProvider({ children }) {
+     signingOutRef.current = true
+     profileReqId.current += 1
+     setProfile(null)
++    setPhoneVerificationExempt(false)
+     setBanNotice({ reason: reason || '' })
+     try {
+       await supabase.rpc('admin_clear_pin_session')
+@@ -266,6 +269,7 @@ export function AuthProvider({ children }) {
+     const uid = userRow?.id != null ? String(userRow.id) : ''
+     if (!userRow?.id) {
+       setProfile(null)
++      setPhoneVerificationExempt(false)
+       profileIdRef.current = ''
+       setProfileLoadError(false)
+       if (!quiet) setProfileLoading(false)
+@@ -288,6 +292,11 @@ export function AuthProvider({ children }) {
+     if (!quiet) setProfileLoading(true)
+     setProfileLoadError(false)
+ 
++    void fetchPhoneVerificationExemptFromServer(supabase).then((exempt) => {
++      if (profileReqId.current !== id) return
++      setPhoneVerificationExempt(exempt === true)
++    })
++
+     const fetchWithTimeout = () =>
+       Promise.race([
+         fetchProfileFast(userRow),
+@@ -591,6 +600,7 @@ export function AuthProvider({ children }) {
+     setSession(null)
+     setUser(null)
+     setProfile(null)
++    setPhoneVerificationExempt(false)
+     profileIdRef.current = ''
+     setProfileLoading(false)
+     setProfileLoadError(false)
+@@ -663,6 +673,7 @@ export function AuthProvider({ children }) {
+         session,
+         user,
+         profile,
++        phoneVerificationExempt,
+         loading,
+         profileLoading,
+         profileLoadError,
+diff --git a/src/lib/courtsCache.js b/src/lib/courtsCache.js
+new file mode 100644
+index 0000000..aa0bb80
+--- /dev/null
++++ b/src/lib/courtsCache.js
+@@ -0,0 +1,33 @@
++import { Court } from '../api/base44Client'
++
++const TTL_MS = 10 * 60 * 1000
++
++let cachedRows = null
++let cachedAt = 0
++let inflight = null
++
++/** Hent baner med modul-cache — undgår fuld `courts`-select ved hver feed-refresh. */
++export async function fetchCourtsCached({ force = false } = {}) {
++  const now = Date.now()
++  if (!force && cachedRows && now - cachedAt < TTL_MS) {
++    return cachedRows
++  }
++  if (inflight) return inflight
++
++  inflight = Court.filter()
++    .then((rows) => {
++      cachedRows = rows || []
++      cachedAt = Date.now()
++      return cachedRows
++    })
++    .finally(() => {
++      inflight = null
++    })
++
++  return inflight
++}
++
++export function invalidateCourtsCache() {
++  cachedRows = null
++  cachedAt = 0
++}
+diff --git a/src/lib/platformUtils.js b/src/lib/platformUtils.js
+index 7c94e6e..b39e48c 100644
+--- a/src/lib/platformUtils.js
++++ b/src/lib/platformUtils.js
+@@ -6,9 +6,16 @@ export function availabilityTags(profileLike) {
+   return normalizeStringArrayField(profileLike?.availability);
+ }
+ 
++/** Fjern vinkelparenteser ved gem (React escaper ved visning). */
+ export function sanitizeText(str) {
+   if (typeof str !== 'string') return str;
+-  return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
++  return str.replace(/</g, '').replace(/>/g, '');
++}
++
++/** Vis brugertekst gemt med ældre entity-encoding (&lt; / &gt;). */
++export function displayUserText(str) {
++  if (typeof str !== 'string') return str;
++  return str.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+ }
+ 
+ export function resolveDisplayName(profileRow, authUser) {
+diff --git a/src/lib/profileUtils.js b/src/lib/profileUtils.js
+index 1f32363..d707190 100644
+--- a/src/lib/profileUtils.js
++++ b/src/lib/profileUtils.js
+@@ -384,11 +384,9 @@ export function validateDisplayName(raw) {
+   return { valid: true }
+ }
+ 
+-/** Har brugeren gennemført onboarding (email eller OAuth)? */
++/** Har brugeren gennemført onboarding (profilfelter — ikke JWT metadata)? */
+ export function isOnboardingComplete(user, profile) {
+   if (!user || !profile) return false
+-  const meta = user.user_metadata || {}
+-  if (meta.onboarding_completed === true) return true
+   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
+   const style = String(profile.play_style || '').trim()
+   const styleOk = style !== '' && style !== 'Ved ikke endnu'
+diff --git a/src/padelmakker-platform.jsx b/src/padelmakker-platform.jsx
+index 47fc3e0..ff18a24 100644
+--- a/src/padelmakker-platform.jsx
++++ b/src/padelmakker-platform.jsx
+@@ -37,13 +37,13 @@ const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => (
+ const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
+ const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+ export default function PadelMakker() {
+-  const { user, profile, loading, profileLoading, profileLoadError, refreshProfile, signOut } = useAuth();
++  const { user, profile, loading, profileLoading, profileLoadError, phoneVerificationExempt, refreshProfile, signOut } = useAuth();
+   const hasProfile = Boolean(user && profile);
+-  const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile);
++  const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile, phoneVerificationExempt);
+   const onboardingComplete = hasProfile && canAccessDashboard(user, profile, { phoneExempt });
+   const canUseApp = onboardingComplete;
+   const requiresEmailVerification = Boolean(user && shouldRequireEmailVerification(user));
+-  const requiresPhoneVerification = canUseApp && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile);
++  const requiresPhoneVerification = canUseApp && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile, phoneVerificationExempt);
+   const defaultAuthedPath = requiresEmailVerification
+     ? "/opret/bekraeft-email"
+     : requiresPhoneVerification
+diff --git a/supabase/migrations/20260713183000_join_request_team_race_fix.sql b/supabase/migrations/20260713183000_join_request_team_race_fix.sql
+new file mode 100644
+index 0000000..e14c17c
+--- /dev/null
++++ b/supabase/migrations/20260713183000_join_request_team_race_fix.sql
+@@ -0,0 +1,242 @@
++-- Race-safe team assignment: lock match row before counting/inserting players.
++-- Also adds notifications query index.
++
++CREATE OR REPLACE FUNCTION approve_match_join_request(
++  p_request_id UUID,
++  p_match_id   UUID,
++  p_user_id    UUID,
++  p_user_name  TEXT,
++  p_user_emoji TEXT
++)
++RETURNS JSONB
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++AS $$
++DECLARE
++  v_creator_id UUID;
++  v_t1         INT;
++  v_t2         INT;
++  v_team_num   INT;
++  v_new_count  INT;
++  v_req_status text;
++  v_on_team    INT;
++BEGIN
++  SELECT status
++  INTO v_req_status
++  FROM public.match_join_requests
++  WHERE id = p_request_id
++    AND match_id = p_match_id
++    AND user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'invalid_request');
++  END IF;
++
++  IF lower(coalesce(v_req_status, '')) <> 'pending' THEN
++    RETURN jsonb_build_object('success', false, 'error', 'request_not_pending');
++  END IF;
++
++  SELECT creator_id INTO v_creator_id
++  FROM public.matches
++  WHERE id = p_match_id
++  FOR UPDATE;
++
++  IF v_creator_id IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
++  END IF;
++  IF v_creator_id <> auth.uid() AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_creator');
++  END IF;
++
++  IF to_regprocedure('public._rpc_rate_limit_or_raise(text,integer,integer)') IS NOT NULL THEN
++    PERFORM public._rpc_rate_limit_or_raise('approve_join', 60, 3600);
++  END IF;
++
++  UPDATE match_join_requests
++  SET status = 'approved'
++  WHERE id = p_request_id
++    AND match_id = p_match_id
++    AND user_id = p_user_id
++    AND lower(coalesce(status, '')) = 'pending';
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'request_not_pending');
++  END IF;
++
++  SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
++  SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'match_full');
++  END IF;
++
++  v_team_num := CASE WHEN v_t1 <= v_t2 THEN 1 ELSE 2 END;
++
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    v_team_num := CASE WHEN v_team_num = 1 THEN 2 ELSE 1 END;
++  END IF;
++
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
++  INSERT INTO match_players (match_id, user_id, user_name, user_email, user_emoji, team)
++  VALUES (p_match_id, p_user_id, p_user_name, '', COALESCE(p_user_emoji, '🎾'), v_team_num)
++  ON CONFLICT DO NOTHING;
++
++  SELECT team INTO v_on_team
++  FROM match_players
++  WHERE match_id = p_match_id AND user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'insert_failed');
++  END IF;
++
++  SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
++  SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    DELETE FROM match_players
++    WHERE match_id = p_match_id AND user_id = p_user_id;
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
++  SELECT COUNT(*) INTO v_new_count FROM match_players WHERE match_id = p_match_id;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE matches SET status = 'full', current_players = v_new_count, seeking_player = false WHERE id = p_match_id;
++  ELSE
++    UPDATE matches SET current_players = v_new_count WHERE id = p_match_id;
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'team', v_on_team);
++END;
++$$;
++
++CREATE OR REPLACE FUNCTION public.set_match_player_team(
++  p_match_id uuid,
++  p_user_id uuid,
++  p_team int
++)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++SET row_security = off
++AS $$
++DECLARE
++  v_caller uuid;
++  v_creator_id uuid;
++  v_status text;
++  v_current_team int;
++  v_t1 int;
++  v_t2 int;
++  v_target_count int;
++  v_total int;
++BEGIN
++  v_caller := auth.uid();
++  IF v_caller IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_authenticated');
++  END IF;
++
++  IF p_team NOT IN (1, 2) THEN
++    RETURN jsonb_build_object('success', false, 'error', 'invalid_team');
++  END IF;
++
++  SELECT m.creator_id, lower(coalesce(m.status, 'open'))
++  INTO v_creator_id, v_status
++  FROM public.matches m
++  WHERE m.id = p_match_id
++  FOR UPDATE;
++
++  IF v_creator_id IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
++  END IF;
++
++  IF v_status NOT IN ('open', 'full') THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_open');
++  END IF;
++
++  IF p_user_id <> v_caller
++     AND v_creator_id <> v_caller
++     AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_authorized');
++  END IF;
++
++  SELECT mp.team
++  INTO v_current_team
++  FROM public.match_players mp
++  WHERE mp.match_id = p_match_id
++    AND mp.user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'player_not_in_match');
++  END IF;
++
++  IF v_current_team = p_team THEN
++    RETURN jsonb_build_object('success', true, 'team', p_team, 'unchanged', true);
++  END IF;
++
++  SELECT COUNT(*)
++  INTO v_target_count
++  FROM public.match_players mp
++  WHERE mp.match_id = p_match_id
++    AND mp.team = p_team;
++
++  IF v_target_count >= 2 THEN
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
++  END IF;
++
++  UPDATE public.match_players
++  SET team = p_team
++  WHERE match_id = p_match_id
++    AND user_id = p_user_id;
++
++  SELECT
++    COUNT(*) FILTER (WHERE team = 1),
++    COUNT(*) FILTER (WHERE team = 2),
++    COUNT(*)
++  INTO v_t1, v_t2, v_total
++  FROM public.match_players
++  WHERE match_id = p_match_id;
++
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    UPDATE public.match_players
++    SET team = v_current_team
++    WHERE match_id = p_match_id
++      AND user_id = p_user_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
++  END IF;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE public.matches
++    SET status = 'full',
++        current_players = v_total,
++        seeking_player = false
++    WHERE id = p_match_id;
++  ELSE
++    UPDATE public.matches
++    SET status = 'open',
++        current_players = v_total
++    WHERE id = p_match_id;
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'team', p_team);
++END;
++$$;
++
++CREATE INDEX IF NOT EXISTS idx_notifications_user_type_created
++  ON public.notifications (user_id, type, created_at DESC);
+diff --git a/supabase/sql/approve_match_join_request_rpc.sql b/supabase/sql/approve_match_join_request_rpc.sql
+index 2f905ab..84287f9 100644
+--- a/supabase/sql/approve_match_join_request_rpc.sql
++++ b/supabase/sql/approve_match_join_request_rpc.sql
+@@ -2,6 +2,7 @@
+ -- spilleren i match_players uden at RLS blokerer (creator må ikke indsætte
+ -- på vegne af en anden bruger via direkte INSERT).
+ -- Kræver security_hardening_phase2.sql for rate limit + pending-validering.
++-- Race-safe: låser match-rækken (FOR UPDATE) — se join_request_team_race_fix.sql
+ CREATE OR REPLACE FUNCTION approve_match_join_request(
+   p_request_id UUID,
+   p_match_id   UUID,
+@@ -21,15 +22,8 @@ DECLARE
+   v_team_num   INT;
+   v_new_count  INT;
+   v_req_status text;
++  v_on_team    INT;
+ BEGIN
+-  SELECT creator_id INTO v_creator_id FROM matches WHERE id = p_match_id;
+-  IF v_creator_id IS NULL THEN
+-    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
+-  END IF;
+-  IF v_creator_id <> auth.uid() AND NOT public.is_admin() THEN
+-    RETURN jsonb_build_object('success', false, 'error', 'not_creator');
+-  END IF;
+-
+   SELECT status
+   INTO v_req_status
+   FROM public.match_join_requests
+@@ -45,6 +39,18 @@ BEGIN
+     RETURN jsonb_build_object('success', false, 'error', 'request_not_pending');
+   END IF;
+ 
++  SELECT creator_id INTO v_creator_id
++  FROM public.matches
++  WHERE id = p_match_id
++  FOR UPDATE;
++
++  IF v_creator_id IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
++  END IF;
++  IF v_creator_id <> auth.uid() AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_creator');
++  END IF;
++
+   IF to_regprocedure('public._rpc_rate_limit_or_raise(text,integer,integer)') IS NOT NULL THEN
+     PERFORM public._rpc_rate_limit_or_raise('approve_join', 60, 3600);
+   END IF;
+@@ -62,23 +68,65 @@ BEGIN
+ 
+   SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
+   SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'match_full');
++  END IF;
++
+   v_team_num := CASE WHEN v_t1 <= v_t2 THEN 1 ELSE 2 END;
+ 
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    v_team_num := CASE WHEN v_team_num = 1 THEN 2 ELSE 1 END;
++  END IF;
++
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
+   INSERT INTO match_players (match_id, user_id, user_name, user_email, user_emoji, team)
+   VALUES (p_match_id, p_user_id, p_user_name, '', COALESCE(p_user_emoji, '🎾'), v_team_num)
+   ON CONFLICT DO NOTHING;
+ 
++  SELECT team INTO v_on_team
++  FROM match_players
++  WHERE match_id = p_match_id AND user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'insert_failed');
++  END IF;
++
++  SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
++  SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    DELETE FROM match_players
++    WHERE match_id = p_match_id AND user_id = p_user_id;
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
+   SELECT COUNT(*) INTO v_new_count FROM match_players WHERE match_id = p_match_id;
+ 
+-  IF v_t1 + (CASE WHEN v_team_num = 1 THEN 1 ELSE 0 END) >= 2
+-     AND v_t2 + (CASE WHEN v_team_num = 2 THEN 1 ELSE 0 END) >= 2 THEN
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
+     UPDATE matches SET status = 'full', current_players = v_new_count, seeking_player = false WHERE id = p_match_id;
+   ELSE
+     UPDATE matches SET current_players = v_new_count WHERE id = p_match_id;
+   END IF;
+ 
+-  RETURN jsonb_build_object('success', true, 'team', v_team_num);
++  RETURN jsonb_build_object('success', true, 'team', v_on_team);
+ END;
+ $$;
+ 
++REVOKE ALL ON FUNCTION approve_match_join_request(UUID, UUID, UUID, TEXT, TEXT) FROM PUBLIC;
+ GRANT EXECUTE ON FUNCTION approve_match_join_request(UUID, UUID, UUID, TEXT, TEXT) TO authenticated;
+diff --git a/supabase/sql/join_request_team_race_fix.sql b/supabase/sql/join_request_team_race_fix.sql
+new file mode 100644
+index 0000000..b424852
+--- /dev/null
++++ b/supabase/sql/join_request_team_race_fix.sql
+@@ -0,0 +1,244 @@
++-- Race-safe team assignment: lock match row before counting/inserting players.
++-- Also adds notifications query index.
++
++-- approve_match_join_request: prevent 3 players on one team under concurrent approvals
++CREATE OR REPLACE FUNCTION approve_match_join_request(
++  p_request_id UUID,
++  p_match_id   UUID,
++  p_user_id    UUID,
++  p_user_name  TEXT,
++  p_user_emoji TEXT
++)
++RETURNS JSONB
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++AS $$
++DECLARE
++  v_creator_id UUID;
++  v_t1         INT;
++  v_t2         INT;
++  v_team_num   INT;
++  v_new_count  INT;
++  v_req_status text;
++  v_on_team    INT;
++BEGIN
++  SELECT status
++  INTO v_req_status
++  FROM public.match_join_requests
++  WHERE id = p_request_id
++    AND match_id = p_match_id
++    AND user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'invalid_request');
++  END IF;
++
++  IF lower(coalesce(v_req_status, '')) <> 'pending' THEN
++    RETURN jsonb_build_object('success', false, 'error', 'request_not_pending');
++  END IF;
++
++  SELECT creator_id INTO v_creator_id
++  FROM public.matches
++  WHERE id = p_match_id
++  FOR UPDATE;
++
++  IF v_creator_id IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
++  END IF;
++  IF v_creator_id <> auth.uid() AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_creator');
++  END IF;
++
++  IF to_regprocedure('public._rpc_rate_limit_or_raise(text,integer,integer)') IS NOT NULL THEN
++    PERFORM public._rpc_rate_limit_or_raise('approve_join', 60, 3600);
++  END IF;
++
++  UPDATE match_join_requests
++  SET status = 'approved'
++  WHERE id = p_request_id
++    AND match_id = p_match_id
++    AND user_id = p_user_id
++    AND lower(coalesce(status, '')) = 'pending';
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'request_not_pending');
++  END IF;
++
++  SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
++  SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'match_full');
++  END IF;
++
++  v_team_num := CASE WHEN v_t1 <= v_t2 THEN 1 ELSE 2 END;
++
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    v_team_num := CASE WHEN v_team_num = 1 THEN 2 ELSE 1 END;
++  END IF;
++
++  IF (v_team_num = 1 AND v_t1 >= 2) OR (v_team_num = 2 AND v_t2 >= 2) THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
++  INSERT INTO match_players (match_id, user_id, user_name, user_email, user_emoji, team)
++  VALUES (p_match_id, p_user_id, p_user_name, '', COALESCE(p_user_emoji, '🎾'), v_team_num)
++  ON CONFLICT DO NOTHING;
++
++  SELECT team INTO v_on_team
++  FROM match_players
++  WHERE match_id = p_match_id AND user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'insert_failed');
++  END IF;
++
++  SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
++  SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
++
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    DELETE FROM match_players
++    WHERE match_id = p_match_id AND user_id = p_user_id;
++    UPDATE match_join_requests
++    SET status = 'pending'
++    WHERE id = p_request_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', v_team_num);
++  END IF;
++
++  SELECT COUNT(*) INTO v_new_count FROM match_players WHERE match_id = p_match_id;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE matches SET status = 'full', current_players = v_new_count, seeking_player = false WHERE id = p_match_id;
++  ELSE
++    UPDATE matches SET current_players = v_new_count WHERE id = p_match_id;
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'team', v_on_team);
++END;
++$$;
++
++-- set_match_player_team: lock match before team-cap check
++CREATE OR REPLACE FUNCTION public.set_match_player_team(
++  p_match_id uuid,
++  p_user_id uuid,
++  p_team int
++)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++SET row_security = off
++AS $$
++DECLARE
++  v_caller uuid;
++  v_creator_id uuid;
++  v_status text;
++  v_current_team int;
++  v_t1 int;
++  v_t2 int;
++  v_target_count int;
++  v_total int;
++BEGIN
++  v_caller := auth.uid();
++  IF v_caller IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_authenticated');
++  END IF;
++
++  IF p_team NOT IN (1, 2) THEN
++    RETURN jsonb_build_object('success', false, 'error', 'invalid_team');
++  END IF;
++
++  SELECT m.creator_id, lower(coalesce(m.status, 'open'))
++  INTO v_creator_id, v_status
++  FROM public.matches m
++  WHERE m.id = p_match_id
++  FOR UPDATE;
++
++  IF v_creator_id IS NULL THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
++  END IF;
++
++  IF v_status NOT IN ('open', 'full') THEN
++    RETURN jsonb_build_object('success', false, 'error', 'match_not_open');
++  END IF;
++
++  IF p_user_id <> v_caller
++     AND v_creator_id <> v_caller
++     AND NOT public.is_admin() THEN
++    RETURN jsonb_build_object('success', false, 'error', 'not_authorized');
++  END IF;
++
++  SELECT mp.team
++  INTO v_current_team
++  FROM public.match_players mp
++  WHERE mp.match_id = p_match_id
++    AND mp.user_id = p_user_id;
++
++  IF NOT FOUND THEN
++    RETURN jsonb_build_object('success', false, 'error', 'player_not_in_match');
++  END IF;
++
++  IF v_current_team = p_team THEN
++    RETURN jsonb_build_object('success', true, 'team', p_team, 'unchanged', true);
++  END IF;
++
++  SELECT COUNT(*)
++  INTO v_target_count
++  FROM public.match_players mp
++  WHERE mp.match_id = p_match_id
++    AND mp.team = p_team;
++
++  IF v_target_count >= 2 THEN
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
++  END IF;
++
++  UPDATE public.match_players
++  SET team = p_team
++  WHERE match_id = p_match_id
++    AND user_id = p_user_id;
++
++  SELECT
++    COUNT(*) FILTER (WHERE team = 1),
++    COUNT(*) FILTER (WHERE team = 2),
++    COUNT(*)
++  INTO v_t1, v_t2, v_total
++  FROM public.match_players
++  WHERE match_id = p_match_id;
++
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    UPDATE public.match_players
++    SET team = v_current_team
++    WHERE match_id = p_match_id
++      AND user_id = p_user_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
++  END IF;
++
++  IF v_t1 >= 2 AND v_t2 >= 2 THEN
++    UPDATE public.matches
++    SET status = 'full',
++        current_players = v_total,
++        seeking_player = false
++    WHERE id = p_match_id;
++  ELSE
++    UPDATE public.matches
++    SET status = 'open',
++        current_players = v_total
++    WHERE id = p_match_id;
++  END IF;
++
++  RETURN jsonb_build_object('success', true, 'team', p_team);
++END;
++$$;
++
++CREATE INDEX IF NOT EXISTS idx_notifications_user_type_created
++  ON public.notifications (user_id, type, created_at DESC);
+diff --git a/supabase/sql/set_match_player_team_rpc.sql b/supabase/sql/set_match_player_team_rpc.sql
+index 7ab56de..2a5d25f 100644
+--- a/supabase/sql/set_match_player_team_rpc.sql
++++ b/supabase/sql/set_match_player_team_rpc.sql
+@@ -1,5 +1,6 @@
+ -- SECURITY DEFINER: spillere kan skifte eget hold; opretter/admin kan flytte alle.
+ -- Direkte UPDATE på match_players fejler ofte stille pga. manglende RLS UPDATE-policy.
++-- Race-safe: låser match-rækken (FOR UPDATE) — se join_request_team_race_fix.sql
+ CREATE OR REPLACE FUNCTION public.set_match_player_team(
+   p_match_id uuid,
+   p_user_id uuid,
+@@ -33,7 +34,8 @@ BEGIN
+   SELECT m.creator_id, lower(coalesce(m.status, 'open'))
+   INTO v_creator_id, v_status
+   FROM public.matches m
+-  WHERE m.id = p_match_id;
++  WHERE m.id = p_match_id
++  FOR UPDATE;
+ 
+   IF v_creator_id IS NULL THEN
+     RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
+@@ -86,6 +88,14 @@ BEGIN
+   FROM public.match_players
+   WHERE match_id = p_match_id;
+ 
++  IF v_t1 > 2 OR v_t2 > 2 THEN
++    UPDATE public.match_players
++    SET team = v_current_team
++    WHERE match_id = p_match_id
++      AND user_id = p_user_id;
++    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
++  END IF;
++
+   IF v_t1 >= 2 AND v_t2 >= 2 THEN
+     UPDATE public.matches
+     SET status = 'full',
+diff --git a/tests/unit/onboardingGate.test.mjs b/tests/unit/onboardingGate.test.mjs
+new file mode 100644
+index 0000000..d6a794f
+--- /dev/null
++++ b/tests/unit/onboardingGate.test.mjs
+@@ -0,0 +1,25 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++
++const profileUtilsPath = path.join(
++  path.dirname(fileURLToPath(import.meta.url)),
++  '../../src/lib/profileUtils.js',
++);
++
++test('isOnboardingComplete gates on profile fields, not JWT metadata bypass', () => {
++  const src = readFileSync(profileUtilsPath, 'utf8');
++  const fnBlock = src.slice(
++    src.indexOf('export function isOnboardingComplete'),
++    src.indexOf('function isGenericProfileName'),
++  );
++  assert.doesNotMatch(fnBlock, /onboarding_completed/);
++  assert.match(fnBlock, /birthOk && styleOk && availOk/);
++});
++
++test('canAccessDashboard keeps phone-exempt substantial-profile path', () => {
++  const src = readFileSync(profileUtilsPath, 'utf8');
++  assert.match(src, /hasSubstantialProfileProgress\(profile\)/);
++});
+diff --git a/tests/unit/rankingPagination.test.mjs b/tests/unit/rankingPagination.test.mjs
+index f2254ab..7a4509f 100644
+--- a/tests/unit/rankingPagination.test.mjs
++++ b/tests/unit/rankingPagination.test.mjs
+@@ -19,6 +19,6 @@ test('RankingTab loads profiles in pages of 50 with load more', () => {
+ test('RankingTab only loads elo history for week and month periods', () => {
+   const src = readFileSync(rankingPath, 'utf8');
+   assert.match(src, /if \(period === 'all'\)/);
+-  assert.match(src, /await loadPeriodHistory\(\)/);
+-  assert.match(src, /setEloHistory\(\[\]\)/);
++  assert.match(src, /await loadPeriodHistory\(activePeriod\)/);
++  assert.match(src, /\.gte\('date', cutoffStr\)/);
+ });
+-- 
+2.43.0
+
