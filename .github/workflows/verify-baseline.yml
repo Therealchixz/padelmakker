@@ -1,0 +1,99 @@
+# Kan baseline bygge en database fra ingenting?
+#
+# Supabase' preview-branch kan ikke svare paa det: den arver produktionens liste
+# over koerte migrations, og efter sammenlaegningen matcher den ikke mappen. Den
+# fejler med "Remote migration versions not found in local migrations directory"
+# foer den overhovedet naar at koere SQL'en.
+#
+# Denne workflow spoerger direkte: start en TOM Postgres af samme slags Supabase
+# bruger, haeld baseline i, og se om det lykkes. Ingen forbindelse til
+# produktionen, ingen hemmeligheder, intet at oedelaegge.
+
+name: Verificér baseline mod tom database
+
+on:
+  pull_request:
+    paths:
+      - supabase/migrations/**
+      - .github/workflows/verify-baseline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # Samme image som Supabase CLI selv bruger — har auth-skema, roller og
+        # extensions som baseline forventer.
+        image: public.ecr.aws/supabase/postgres:17.6.1.104
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Kør baseline mod den tomme database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          MIG="supabase/migrations/00000000000000_baseline_schema.sql"
+          test -f "$MIG" || { echo "::error::baseline mangler: $MIG"; exit 1; }
+
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+          echo "Kører $(wc -l < "$MIG") linjer baseline..."
+          # ON_ERROR_STOP: første fejl afbryder, saa vi ikke faar falsk groent.
+          psql -h localhost -U postgres -d postgres \
+               -v ON_ERROR_STOP=1 -f "$MIG" > /tmp/baseline.log 2>&1 \
+            || { echo "::error::baseline kunne ikke koere"; tail -40 /tmp/baseline.log; exit 1; }
+
+          echo "Baseline kørte igennem."
+
+      - name: Tæl hvad der blev bygget
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          q() { psql -h localhost -U postgres -d postgres -tAc "$1"; }
+
+          TAB=$(q "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'")
+          FN=$(q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'")
+          POL=$(q "select count(*) from pg_policy")
+          IDX=$(q "select count(*) from pg_index i join pg_class c on c.oid=i.indrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public'")
+
+          {
+            echo "## Baseline byggede en database fra ingenting"
+            echo ""
+            echo "| | Antal |"
+            echo "|---|---|"
+            echo "| Tabeller | $TAB |"
+            echo "| Funktioner | $FN |"
+            echo "| Adgangsregler (RLS) | $POL |"
+            echo "| Indekser | $IDX |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "tabeller=$TAB funktioner=$FN politikker=$POL indekser=$IDX"
+
+          # Kernetabellerne, hvis fravaer braekkede gendannelsen til at begynde med.
+          for t in profiles matches match_players match_results messages courts; do
+            OK=$(q "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='$t'")
+            [ "$OK" = "1" ] || { echo "::error::tabellen $t blev ikke oprettet"; exit 1; }
+          done
+          echo "Alle seks kernetabeller findes."
+
+          # Skal matche produktionen: 42 tabeller.
+          [ "$TAB" -ge 42 ] || { echo "::error::forventede mindst 42 tabeller, fik $TAB"; exit 1; }
