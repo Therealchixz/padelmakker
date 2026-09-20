@@ -71,6 +71,19 @@ The app uses `signInWithOAuth` with PKCE; no extra env vars beyond `VITE_SUPABAS
 4. **Verificer** at intet er i drift begge veje:
    `select count(*) from supabase_migrations.schema_migrations;` skal matche `ls supabase/migrations/*.sql | wc -l`.
 5. **Commit + push** begge (`supabase/sql/` + `supabase/migrations/`).
+6. **Opdatér SQL-indekset**: `npm run db:sql-index` (CI fejler ellers).
+
+> **Hvad kører egentlig i produktionen?** `supabase/sql/` er et arkiv, ikke en
+> sandhed: 56 af 137 funktioner er defineret i flere filer dér, én i syv.
+> `supabase/migrations/` er det `supabase db push` udfører, så den SIDSTE
+> migration der definerer en funktion, er den der kører.
+> [`supabase/sql/INDEX.md`](supabase/sql/INDEX.md) udpeger for hver funktion den
+> gældende migration og den arkivfil der er identisk med den. Slå op dér frem for
+> at læse filer i `supabase/sql/` på må og få.
+>
+> **49 funktioner kører i produktion uden nogen migration** (se INDEX.md). Et nyt
+> miljø kan derfor ikke bygges fra historikken alene. Rør dem varsomt: ændrer du
+> en af dem, så lav en migration, så den ikke forbliver usporet.
 
 > **Hvorfor det er vigtigt.** `supabase db push` afviser at køre, hvis databasen kender en version
 > der ikke har en lokal fil — og en lokal fil uden en registreret version bliver *anvendt på
