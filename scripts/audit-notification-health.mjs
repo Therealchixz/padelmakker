@@ -4,7 +4,7 @@
  * Kør: node scripts/audit-notification-health.mjs
  * Exit 1 ved fund (egnet til CI).
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,14 +59,27 @@ function migrationVersion(file) {
   return m ? m[1] : '';
 }
 
+/**
+ * Find en historisk migration paa navn. Efter sammenlaegningen (20. sep. 2026)
+ * ligger de 150 gamle filer i supabase/migrations_archive/, mens
+ * supabase/migrations/ kun rummer baseline. Begge steder er "historikken".
+ */
+function findMigration(fragment) {
+  for (const dir of ['supabase/migrations', 'supabase/migrations_archive']) {
+    const abs = join(root, dir);
+    if (!existsSync(abs)) continue;
+    const hit = readdirSync(abs).find((name) => name.includes(fragment));
+    if (hit) return join(dir, hit);
+  }
+  return null;
+}
+
 // Legacy definitions are harmless when a LATER migration drops that overload
 // (migrations run in timestamp order and are never re-run).
-const dropOverloadFile = readdirSync(join(root, 'supabase/migrations')).find((name) =>
-  name.includes('drop_duplicate_notification_rpc_overloads'),
-);
-const dropOverloadVersion = dropOverloadFile ? migrationVersion(dropOverloadFile) : '';
-const dropOverloadSql = dropOverloadFile
-  ? read(join('supabase/migrations', dropOverloadFile))
+const dropOverloadPath = findMigration('drop_duplicate_notification_rpc_overloads');
+const dropOverloadVersion = dropOverloadPath ? migrationVersion(dropOverloadPath) : '';
+const dropOverloadSql = dropOverloadPath
+  ? read(dropOverloadPath)
   : '';
 
 for (const [name, defs] of byName) {
@@ -95,13 +108,8 @@ for (const [name, defs] of byName) {
 }
 
 // 2) DROP migration present (timestamp prefix may differ between local/remote sync)
-const migrationsDir = join(root, 'supabase/migrations');
-const dropMigrationFile = readdirSync(migrationsDir).find((name) =>
-  name.includes('drop_duplicate_notification_rpc_overloads'),
-);
-const dropMigration = dropMigrationFile
-  ? read(join('supabase/migrations', dropMigrationFile))
-  : '';
+const dropMigrationPath = findMigration('drop_duplicate_notification_rpc_overloads');
+const dropMigration = dropMigrationPath ? read(dropMigrationPath) : '';
 if (
   !dropMigration.includes('DROP FUNCTION IF EXISTS public.create_notification_for_user')
 ) {
