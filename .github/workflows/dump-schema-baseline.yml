@@ -21,9 +21,10 @@ name: Dump produktionsskema (baseline)
 on:
   workflow_dispatch:
 
+# Kun skrive-adgang til grene. Workflowen opretter ikke PR'er - det maa
+# GitHub Actions ikke i dette repo, og det er en fornuftig default.
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   dump:
@@ -92,9 +93,7 @@ jobs:
       # PR'en åbnes som UDKAST og må ikke merges, før baseline er markeret som
       # allerede anvendt i produktion. Ellers ser `supabase db push` den som ny
       # og kører CREATE TABLE mod en database der har tabellerne i forvejen.
-      - name: Åbn PR med baseline-migrationen
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Skub baseline-migrationen til en gren
         run: |
           set -euo pipefail
           MIG="supabase/migrations/00000000000000_baseline_schema.sql"
@@ -111,12 +110,12 @@ jobs:
             echo "-- bygger skemaet foerst. Produktionen har indholdet i forvejen; derfor"
             echo "-- skal denne version markeres som allerede anvendt med"
             echo "-- \`supabase migration repair --status applied 00000000000000\`"
-            echo "-- FOER denne PR merges."
+            echo "-- FOER den bliver merget."
             echo ""
             cat dump/schema.sql
           } > "$MIG"
 
-          # Baseline foerer nu de tabeller og funktioner ind i historikken, saa
+          # Baseline foerer tabellerne og funktionerne ind i historikken, saa
           # SQL-indekset skal regenereres - ellers fejler db:sql-index:check.
           # At de "manglende" lister skrumper er netop beviset paa at det virker.
           npm ci --prefer-offline --no-audit --fund=false
@@ -129,26 +128,21 @@ jobs:
           git commit -m "chore(db): baseline af produktionsskemaet (genereret)"
           git push -u origin "$GREN"
 
-          gh pr create --draft \
-            --base main --head "$GREN" \
-            --title "UDKAST: baseline af produktionsskemaet — må ikke merges endnu" \
-            --body "$(printf '%s\n' \
-              'Genereret af `dump-schema-baseline.yml` med Supabases eget `db dump`.' \
-              '' \
-              '## ⛔ Må ikke merges endnu' \
-              '' \
-              'Baseline har version `00000000000000` og er derfor ny for `supabase db push`.' \
-              'Merges den nu, forsøger deployet at køre `CREATE TABLE` mod produktionen,' \
-              'som har tabellerne i forvejen.' \
-              '' \
-              'Først skal versionen markeres som allerede anvendt:' \
-              '' \
-              '```' \
-              'supabase migration repair --status applied 00000000000000' \
-              '```' \
-              '' \
-              '## Hvad den skal bevise' \
-              '' \
-              'Supabase opretter en preview-branch på denne PR og bygger databasen fra' \
-              'bunden. Bliver det tjek grønt, kan skemaet genskabes fra historikken —' \
-              'hvilket det ikke kunne før.')"
+          # GitHub Actions maa ikke oprette PR'er her (Settings -> Actions ->
+          # "Allow GitHub Actions to create and approve pull requests" er slaaet
+          # fra, hvilket er en fornuftig default). Grenen er skubbet; PR'en
+          # oprettes udefra.
+          {
+            echo "## Baseline er klar paa en gren"
+            echo ""
+            echo "**Gren:** \`$GREN\`"
+            echo ""
+            echo "| | Antal |"
+            echo "|---|---|"
+            echo "| CREATE TABLE | $(grep -c 'CREATE TABLE' "$MIG") |"
+            echo "| CREATE FUNCTION | $(grep -c 'CREATE OR REPLACE FUNCTION\|CREATE FUNCTION' "$MIG") |"
+            echo "| CREATE POLICY | $(grep -c 'CREATE POLICY' "$MIG") |"
+            echo "| CREATE INDEX | $(grep -c 'CREATE INDEX\|CREATE UNIQUE INDEX' "$MIG") |"
+            echo ""
+            echo "[Opret PR](https://github.com/${GITHUB_REPOSITORY}/compare/main...${GREN}?expand=1) - **maa ikke merges**, foer versionen er markeret som allerede anvendt."
+          } >> "$GITHUB_STEP_SUMMARY"

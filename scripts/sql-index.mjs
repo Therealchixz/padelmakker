@@ -42,7 +42,7 @@ function fingerprint(body) {
  */
 export function extractFunctions(sql) {
   const out = [];
-  const re = /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:public\.)?([a-z0-9_]+)\s*\(/gi;
+  const re = /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:"?public"?\s*\.\s*)?"?([a-z0-9_]+)"?\s*\(/gi;
   let m;
   while ((m = re.exec(sql)) !== null) {
     const name = m[1].toLowerCase();
@@ -68,8 +68,8 @@ export function extractFunctions(sql) {
 export function extractTables(sql) {
   const created = new Set();
   const altered = new Set();
-  const createRe = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?"?([a-z0-9_]+)"?/gi;
-  const alterRe = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?:public\.)?"?([a-z0-9_]+)"?/gi;
+  const createRe = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"?public"?\s*\.\s*)?"?([a-z0-9_]+)"?/gi;
+  const alterRe = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?:"?public"?\s*\.\s*)?"?([a-z0-9_]+)"?/gi;
   let m;
   while ((m = createRe.exec(sql)) !== null) created.add(m[1].toLowerCase());
   while ((m = alterRe.exec(sql)) !== null) altered.add(m[1].toLowerCase());
