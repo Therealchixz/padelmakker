@@ -6,6 +6,10 @@ import { fetchCourtsCached } from '../lib/courtsCache';
 import { fetchProfilesByIdMap, MATCH_PLAYERS_SAFE_SELECT } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { calendarWindowForMatch, buildIcsEvent } from '../lib/matchIcsEvent';
+import { matchPlayerTeam, splitPlayersByTeam, teamMoveErrorMessage } from '../lib/matchTeams';
+import { nearestHalfHour, TIME_OPTIONS } from '../lib/timeSlotOptions';
+import { PADEL_RULE_SUMMARY } from '../lib/padelRuleSummary';
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
@@ -32,7 +36,6 @@ import { openPlayerChat } from '../lib/playerChat';
 import {
   courtSideErrorMessage,
   courtSideLabel,
-  sortPlayersByCourtSide,
 } from '../lib/matchPlayerCourtSide';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { mapUserFacingError } from '../lib/userFacingErrors';
@@ -104,145 +107,6 @@ import {
 } from '../lib/matchVenueOptions';
 
 const KAMPE_AUTO_READ_NOTIF_TYPES = KAMPE_NON_CHAT_NOTIF_TYPES.filter((type) => type !== 'match_invite');
-
-function matchPlayerTeam(p) {
-  return Number(p?.team);
-}
-
-function splitPlayersByTeam(players) {
-  const list = players || [];
-  const t1 = sortPlayersByCourtSide(list.filter((p) => matchPlayerTeam(p) === 1));
-  const t2 = sortPlayersByCourtSide(list.filter((p) => matchPlayerTeam(p) === 2));
-  const unassigned = list.filter((p) => {
-    const team = matchPlayerTeam(p);
-    return team !== 1 && team !== 2;
-  });
-  for (const p of unassigned) {
-    if (t1.length < 2 && t1.length <= t2.length) t1.push(p);
-    else if (t2.length < 2) t2.push(p);
-    else if (t1.length <= t2.length) t1.push(p);
-    else t2.push(p);
-  }
-  return { t1, t2 };
-}
-
-function teamMoveErrorMessage(data, fallbackTeam) {
-  const code = data?.error;
-  if (code === "team_full") return `Hold ${data?.team ?? fallbackTeam} er fuldt.`;
-  if (code === "match_not_open") return "Hold kan kun skiftes før kampen er startet.";
-  if (code === "not_authorized") return "Du har ikke lov til at flytte denne spiller.";
-  if (code === "player_not_in_match") return "Spilleren er ikke i kampen.";
-  if (code === "match_not_found") return "Kampen blev ikke fundet.";
-  return code || "Ukendt fejl";
-}
-
-function nearestHalfHour() {
-  const now = new Date();
-  const h = now.getHours();
-  const m = now.getMinutes();
-  if (m < 15) return `${String(h).padStart(2, '0')}:00`;
-  if (m < 45) return `${String(h).padStart(2, '0')}:30`;
-  return `${String((h + 1) % 24).padStart(2, '0')}:00`;
-}
-
-const TIME_OPTIONS = [];
-for (let h = 6; h <= 23; h++) {
-  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`);
-  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
-}
-
-const PADEL_RULE_SUMMARY = [
-  {
-    icon: '1.',
-    text: 'Kampen spilles som bedst af 3 sæt. Et sæt vindes typisk 6-0 til 6-4, eller 7-5 / 7-6 ved tætte sæt.',
-  },
-  {
-    icon: '2.',
-    text: 'Serven slås under hoftehøjde efter et hop og diagonalt over i modstanderens serverfelt.',
-  },
-  {
-    icon: '3.',
-    text: 'Bolden skal først ramme gulvet på modstanderens side. Derefter må den ramme glas/hegn og stadig være i spil.',
-  },
-  {
-    icon: '4.',
-    text: 'På egen side må bolden kun hoppe en gang, før du returnerer den.',
-  },
-  {
-    icon: '5.',
-    text: 'Du taber point hvis du rammer nettet, slår bolden direkte i væggen på modstanderens side eller slår bolden ud af banen.',
-  },
-  {
-    icon: '6.',
-    text: 'I PadelMakker registreres resultat som sætscore (fx 6-4, 7-5, 7-6), så begge hold hurtigt kan se kampens udfald.',
-  },
-];
-
-const CALENDAR_ZONE = 'Europe/Copenhagen';
-
-function parseMatchDateTime(matchDate, matchTime) {
-  const dateIso = String(matchDate || '').slice(0, 10);
-  const rawTime = String(matchTime || '').trim();
-  const timeMatch = /^(\d{1,2}):(\d{2})/.exec(rawTime);
-  if (!dateIso || !timeMatch) return null;
-
-  const hours = Math.max(0, Math.min(23, Number(timeMatch[1])));
-  const minutes = Math.max(0, Math.min(59, Number(timeMatch[2])));
-  const hh = String(hours).padStart(2, '0');
-  const mm = String(minutes).padStart(2, '0');
-  const dt = DateTime.fromISO(`${dateIso}T${hh}:${mm}:00`, { zone: CALENDAR_ZONE });
-  return dt.isValid ? dt : null;
-}
-
-function calendarWindowForMatch(match) {
-  const start = parseMatchDateTime(match?.date, match?.time);
-  if (!start) return null;
-
-  let end = parseMatchDateTime(match?.date, match?.time_end);
-  if (!end) {
-    const duration = Number(match?.duration);
-    const minutes = Number.isFinite(duration) && duration > 0 ? duration : 120;
-    end = start.plus({ minutes });
-  }
-  if (end <= start) end = end.plus({ days: 1 });
-  return { start, end };
-}
-
-function escapeIcsText(value) {
-  return String(value || '')
-    .replaceAll('\\', '\\\\')
-    .replaceAll(';', '\\;')
-    .replaceAll(',', '\\,')
-    .replace(/\r?\n/g, '\\n');
-}
-
-function toIcsUtc(dt) {
-  return dt.toUTC().toFormat("yyyyLLdd'T'HHmmss'Z'");
-}
-
-function buildIcsEvent({ uid, title, description, location, start, end, url }) {
-  const stamp = DateTime.utc().toFormat("yyyyLLdd'T'HHmmss'Z'");
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//PadelMakker//Kampe//DA',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${escapeIcsText(uid)}`,
-    `DTSTAMP:${stamp}`,
-    `DTSTART:${toIcsUtc(start)}`,
-    `DTEND:${toIcsUtc(end)}`,
-    `SUMMARY:${escapeIcsText(title)}`,
-    `LOCATION:${escapeIcsText(location)}`,
-    `DESCRIPTION:${escapeIcsText(description)}`,
-    `URL:${escapeIcsText(url)}`,
-    'END:VEVENT',
-    'END:VCALENDAR',
-    '',
-  ];
-  return lines.join('\r\n');
-}
 
 export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChange }) {
   const navigate = useNavigate();
