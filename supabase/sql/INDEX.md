@@ -82,7 +82,7 @@ kan efterprøves direkte mod den kørende database.
 | `create_rating_admin_flag` | `00000000000000_baseline_schema.sql` | `elo_guardrails_admin_flags.sql` | — |
 | `detect_and_flag_suspicious_2v2_match` | `00000000000000_baseline_schema.sql` | `elo_guardrails_admin_flags.sql` | — |
 | `discovery_notifications_today_count` | `00000000000000_baseline_schema.sql` | `discovery_notification_limits.sql` | 1 |
-| `dispatch_push_to_user` | `00000000000000_baseline_schema.sql` | — | 2 |
+| `dispatch_push_to_user` | `20260921074448_raise_pg_net_timeout_for_push_and_reminders.sql` | — | 2 |
 | `dm_message_preview` | `00000000000000_baseline_schema.sql` | `dm_chat_enhancements.sql` | — |
 | `dm_users_blocked` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
 | `enforce_max_players` | `00000000000000_baseline_schema.sql` | — | — |
