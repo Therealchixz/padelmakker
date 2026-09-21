@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { isSyntheticMouseAfterTouch } from '../lib/touchMouseGuard';
+import { useEffect, useRef, useState } from 'react';
+import { isSyntheticMouseAfterTouch, nextSelectedIndex } from '../lib/touchMouseGuard';
 import { font, theme } from '../lib/platformTheme';
 import { sortEloHistoryChronological, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
@@ -54,6 +54,7 @@ export function EloGraph({
   dark = false,
 }) {
   const svgRef = useRef(null);
+  const wrapRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
   // Hvornaar skaermen sidst blev roert. Browseren sender efterlignede muse-
   // haendelser lige efter et tryk; uden dette blinkede vaerdien 2-3 gange.
@@ -141,10 +142,24 @@ export function EloGraph({
     setHoverIdx(null);
   };
 
-  const onTouch = (e) => {
+  const onTouch = (erNytTryk) => (e) => {
     lastTouchAt.current = Date.now();
-    if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
+    if (!e.touches[0]) return;
+    const trykket = pickNearestIndex(e.touches[0].clientX);
+    setHoverIdx((nu) => nextSelectedIndex(nu, trykket, erNytTryk));
   };
+
+  // Tryk uden for grafen fjerner valget igen. Lytteren saettes kun op, naar der
+  // faktisk er noget valgt, saa den ikke koerer resten af tiden.
+  useEffect(() => {
+    if (hoverIdx == null) return undefined;
+    const udenfor = (e) => {
+      if (!wrapRef.current?.contains(e.target)) setHoverIdx(null);
+    };
+    // pointerdown daekker baade mus og finger og udloeses kun én gang pr. tryk.
+    document.addEventListener('pointerdown', udenfor);
+    return () => document.removeEventListener('pointerdown', udenfor);
+  }, [hoverIdx]);
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
   const areaPath =
@@ -170,15 +185,15 @@ export function EloGraph({
   }
 
   return (
-    <div style={{ position: 'relative', paddingBottom: '44px' }}>
+    <div ref={wrapRef} style={{ position: 'relative', paddingBottom: '44px' }}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', maxHeight: '190px', display: 'block', cursor: 'crosshair' }}
         onMouseMove={onSvgPointerMove}
         onMouseLeave={onSvgPointerLeave}
-        onTouchStart={onTouch}
-        onTouchMove={onTouch}
+        onTouchStart={onTouch(true)}
+        onTouchMove={onTouch(false)}
         // Ingen rydning naar fingeren slippes: paa en telefon slipper man altid,
         // og vaerdien skal blive staaende, til man trykker et andet sted.
         onTouchEnd={() => { lastTouchAt.current = Date.now(); }}
