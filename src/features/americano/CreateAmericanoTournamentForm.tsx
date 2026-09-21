@@ -1,25 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useScrollToFieldOnError } from '../../lib/formValidationScroll'
+import { nearestHalfHour, TIME_OPTIONS } from '../../lib/timeSlotOptions.js'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 import {
   getCreateFormSchedulePreview,
   recommendedCourtsPerRound,
 } from './americanoDisplayUtils'
-
-function nearestHalfHour(): string {
-  const now = new Date()
-  const h = now.getHours()
-  const m = now.getMinutes()
-  if (m < 15) return `${String(h).padStart(2, '0')}:00`
-  if (m < 45) return `${String(h).padStart(2, '0')}:30`
-  return `${String((h + 1) % 24).padStart(2, '0')}:00`
-}
-
-const TIME_OPTIONS: string[] = []
-for (let h = 6; h <= 23; h++) {
-  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
-  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
-}
 
 const PAYMENT_OPTIONS = [
   { id: 'mobilepay', label: 'MobilePay' },
