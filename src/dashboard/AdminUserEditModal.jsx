@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { X, Smartphone } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import { AppModal } from '../components/AppModal';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { AdminUserProfileOverview } from './AdminUserProfileOverview';
@@ -37,8 +37,11 @@ export function AdminUserEditModal({
       ariaLabel="Rediger spiller"
       maxWidthPreset="sm"
       zIndex={1000}
+      showClose
       contentStyle={{
-        maxHeight: 'min(90dvh, 900px)',
+        // 100% er pladsen INDEN for backdroppens polstring, altsaa under
+        // statuslinjen. 90dvh regnede fra hele skaermen og var derfor for hoej.
+        maxHeight: 'min(900px, 100%)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -56,14 +59,6 @@ export function AdminUserEditModal({
       ) : null}
       {user ? (
         <div className="pm-admin-modal-scroll pm-admin-modal-body">
-          <button
-            type="button"
-            onClick={onClose}
-            className="pm-admin-modal-close"
-            aria-label="Luk redigering"
-          >
-            <X size={20} />
-          </button>
           <h3 style={{ ...heading('18px'), marginBottom: '8px' }}>Rediger spiller</h3>
           <p className="pm-admin-help-copy" style={{ marginBottom: '12px' }}>
             Profil hentes frisk fra databasen. Felter nedenfor kan redigeres; fold profiloversigt sammen for hurtigere scroll.

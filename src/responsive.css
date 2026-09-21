@@ -5859,6 +5859,13 @@ button,
   color: var(--pm-text-mid);
 }
 
+/* Oprettelsesdato under mailen: skal kunne laeses, men ikke konkurrere med navnet. */
+.pm-admin-user-created {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  margin-top: 2px;
+}
+
 .pm-admin-elo-cell {
   font-size: 14px;
   font-weight: 700;
