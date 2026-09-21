@@ -125,6 +125,7 @@ export function NotificationPushControls({
         minute: '2-digit',
       });
       const prefs = normalizeNotificationPrefs(notificationPrefs);
+      let pushOutcome = null;
       const notifyError = await createNotification(
         userId,
         'match_invite',
@@ -133,6 +134,7 @@ export function NotificationPushControls({
         null,
         {
           notificationPrefs: prefs,
+          onPushResult: (r) => { pushOutcome = r; },
           pushPolicy: {
             channel: 'system',
             level: 'critical',
@@ -146,6 +148,17 @@ export function NotificationPushControls({
       );
       if (notifyError) {
         showPushMessage('Test fejlede — prøv igen');
+        return;
+      }
+      // Beskeden blev gemt. Men den siger kun "tjek lock screen", hvis push'en
+      // faktisk gik af sted — ellers loej knappen om hvad der var sket.
+      if (pushOutcome && !pushOutcome.ok) {
+        showPushMessage(
+          pushOutcome.reason === 'skipped'
+            ? 'Beskeden er oprettet, men push er slået fra i dine indstillinger'
+            : 'Beskeden er oprettet, men push kunne ikke sendes',
+        );
+        onAfterTest?.();
         return;
       }
       showPushMessage('Test sendt — tjek lock screen nu');
