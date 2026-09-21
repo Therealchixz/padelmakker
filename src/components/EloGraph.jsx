@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { isSyntheticMouseAfterTouch } from '../lib/touchMouseGuard';
 import { font, theme } from '../lib/platformTheme';
 import { sortEloHistoryChronological, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
@@ -54,6 +55,9 @@ export function EloGraph({
 }) {
   const svgRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
+  // Hvornaar skaermen sidst blev roert. Browseren sender efterlignede muse-
+  // haendelser lige efter et tryk; uden dette blinkede vaerdien 2-3 gange.
+  const lastTouchAt = useRef(null);
   const palette = graphPalette(dark);
   const gradId = dark ? 'eloGradDark' : 'eloGradLight';
 
@@ -128,11 +132,18 @@ export function EloGraph({
   };
 
   const onSvgPointerMove = (e) => {
+    if (isSyntheticMouseAfterTouch(lastTouchAt.current)) return;
     setHoverIdx(pickNearestIndex(e.clientX));
   };
 
   const onSvgPointerLeave = () => {
+    if (isSyntheticMouseAfterTouch(lastTouchAt.current)) return;
     setHoverIdx(null);
+  };
+
+  const onTouch = (e) => {
+    lastTouchAt.current = Date.now();
+    if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
   };
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
@@ -166,13 +177,11 @@ export function EloGraph({
         style={{ width: '100%', height: 'auto', maxHeight: '190px', display: 'block', cursor: 'crosshair' }}
         onMouseMove={onSvgPointerMove}
         onMouseLeave={onSvgPointerLeave}
-        onTouchStart={(e) => {
-          if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
-        }}
-        onTouchMove={(e) => {
-          if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
-        }}
-        onTouchEnd={onSvgPointerLeave}
+        onTouchStart={onTouch}
+        onTouchMove={onTouch}
+        // Ingen rydning naar fingeren slippes: paa en telefon slipper man altid,
+        // og vaerdien skal blive staaende, til man trykker et andet sted.
+        onTouchEnd={() => { lastTouchAt.current = Date.now(); }}
         aria-label={`${valueLabel}-graf over tid`}
       >
         {gridVals.map((v, i) => {
