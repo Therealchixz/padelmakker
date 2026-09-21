@@ -136,8 +136,15 @@ if (!existsSync(BASELINE_PATH)) {
   }
 }
 
-if (files.length !== 1) {
-  fail(`forventede praecis 1 migration (baseline), fandt ${files.length}: ${files.join(', ')}`);
+// Baseline skal ligge FOERST, ikke staa alene. Da sammenlaegningen var ny, laa
+// den alene, og kontrollen her kraevede praecis én fil. Det var for stramt: nye
+// aendringer bliver almindelige migrations oven paa baseline (se AGENTS.md), og
+// reglen spaendte ben for den foerste af dem. Det der betyder noget, er at
+// baseline bliver koert foerst - ellers rammer en ALTER en tom database.
+if (files[0] !== BASELINE_NAME) {
+  fail(`baseline skal sortere foerst, men foerste migration er ${files[0]}`);
+} else {
+  ok(`baseline sorterer foerst, ${files.length - 1} migration(er) oven paa`);
 }
 
 // Historikken skal vaere bevaret, ikke slettet.
