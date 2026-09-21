@@ -114,9 +114,19 @@ export function AppModal({
         inset: 0,
         zIndex,
         display: "flex",
-        alignItems: "center",
+        // flex-start + margin:auto frem for align-items:center. Med center
+        // flyder en modal, der er hoejere end pladsen, ud over BEGGE kanter og
+        // ignorerer polstringen - saa laa toppen under statuslinjen alligevel.
+        alignItems: "flex-start",
         justifyContent: "center",
-        padding: "16px",
+        // Sikkerhedszonen skal respekteres: uden den starter modalen under
+        // iPhones statuslinje, og en lukkeknap i toppen bliver uramelig.
+        // Paa skaerme uden udskaering er env() 0, saa det bliver 16px som foer.
+        padding:
+          "max(16px, calc(env(safe-area-inset-top, 0px) + 8px))"
+          + " max(16px, env(safe-area-inset-right, 0px))"
+          + " max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px))"
+          + " max(16px, env(safe-area-inset-left, 0px))",
         background: theme.overlay,
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
@@ -130,7 +140,8 @@ export function AppModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           width: "min(100%, " + resolvedMaxWidth + ")",
-          maxHeight: "85vh",
+          margin: "auto",
+          maxHeight: "100%",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",

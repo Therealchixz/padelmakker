@@ -23,6 +23,7 @@ import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEd
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { AdminUserEditModal } from './AdminUserEditModal';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { formatSignupDateDa } from '../lib/adminUserFormat';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow, toPersonNameCase } from '../lib/profileUtils';
 import {
@@ -1593,6 +1594,7 @@ export function AdminTab({ initialSubTab = null }) {
                       <div>
                         <div className="pm-admin-user-name" style={{ fontSize: '15px' }}>{adminDisplayName(u)}</div>
                         <div className="pm-admin-user-email" style={{ fontSize: '12px' }}>{u.email}</div>
+                        <div className="pm-admin-user-created">Oprettet {formatSignupDateDa(u.created_at)}</div>
                       </div>
                     </div>
                     <div className="pm-admin-card-elo">
