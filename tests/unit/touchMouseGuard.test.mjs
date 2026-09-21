@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import {
   isSyntheticMouseAfterTouch,
   SYNTHETIC_MOUSE_WINDOW_MS,
+  nextSelectedIndex,
 } from '../../src/lib/touchMouseGuard.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -69,4 +70,35 @@ test('EloGraph ser bort fra efterlignede musehaendelser', () => {
     `baade musebevaegelse og mouseleave skal vaere daekket, fandt ${kald} kald`,
   );
   assert.match(src, /lastTouchAt\.current = Date\.now\(\)/, 'tidspunktet skal registreres');
+});
+
+// --- Tryk sig vaek fra datoen igen ----------------------------------------
+
+test('et nyt tryk paa det valgte punkt fjerner valget', () => {
+  assert.equal(nextSelectedIndex(3, 3, true), null);
+});
+
+test('et tryk paa et andet punkt flytter valget', () => {
+  assert.equal(nextSelectedIndex(3, 5, true), 5);
+  assert.equal(nextSelectedIndex(null, 2, true), 2);
+});
+
+test('et traek hen over grafen slaar aldrig valget fra', () => {
+  // Uden dette ville boblen forsvinde midt i bevaegelsen, naar fingeren
+  // passerede det punkt der allerede var valgt.
+  assert.equal(nextSelectedIndex(3, 3, false), 3);
+  assert.equal(nextSelectedIndex(3, 4, false), 4);
+});
+
+test('indeks 0 kan ogsaa slaas fra - ikke forvekslet med "intet valgt"', () => {
+  // 0 er falsy i JavaScript; en tjek paa sandhedsvaerdi ville ramme forkert her.
+  assert.equal(nextSelectedIndex(0, 0, true), null);
+  assert.equal(nextSelectedIndex(null, 0, true), 0);
+});
+
+test('EloGraph rydder valget ved tryk uden for grafen', () => {
+  const src = readFileSync(join(root, 'src/components/EloGraph.jsx'), 'utf8');
+  assert.match(src, /addEventListener\('pointerdown'/, 'der skal lyttes efter tryk udenfor');
+  assert.match(src, /wrapRef\.current\?\.contains\(e\.target\)/, 'kun tryk UDEN for maa rydde');
+  assert.match(src, /removeEventListener\('pointerdown'/, 'lytteren skal fjernes igen');
 });

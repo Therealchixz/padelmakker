@@ -39,3 +39,21 @@ export function isSyntheticMouseAfterTouch(
   if (siden < 0) return false;
   return siden < windowMs;
 }
+
+/**
+ * Naeste valgte punkt, naar brugeren trykker paa grafen.
+ *
+ * Et nyt tryk paa det punkt der allerede er valgt, fjerner valget igen - saa
+ * man kan trykke sig vaek fra datoen uden at skulle ramme ved siden af.
+ * Et traek hen over grafen (touchmove) maa derimod aldrig slaa valget fra,
+ * ellers forsvinder boblen midt i bevaegelsen.
+ *
+ * @param {number|null} nuvaerende valgt indeks, eller null
+ * @param {number} trykket indekset der blev trykket paa
+ * @param {boolean} erNytTryk true ved touchstart, false ved touchmove
+ * @returns {number|null}
+ */
+export function nextSelectedIndex(nuvaerende, trykket, erNytTryk) {
+  if (erNytTryk && nuvaerende === trykket) return null;
+  return trykket;
+}
