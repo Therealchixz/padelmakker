@@ -105,3 +105,39 @@ test('app_config har ingen aabne grants i migrationshistorikken', () => {
     `${sidste.f}: authenticated skal ikke have rettigheder paa app_config`,
   );
 });
+
+/**
+ * try_form_match_proposal danner kampforslag og sender match_proposal-notifikationer.
+ * Baseline indeholder "REVOKE ALL ON FUNCTION ... FROM PUBLIC", men den revoke ramte
+ * ved siden af: Supabase giver separat EXECUTE til anon og authenticated, og en revoke
+ * mod PUBLIC roerer ikke den rettighed. Funktionen var kaldbar af anon i produktionen.
+ *
+ * Faelden er generel, saa testen er skrevet som en regel: en revoke der skal lukke
+ * adgang for almindelige brugere, skal naevne anon og authenticated ved navn.
+ */
+test('revoke mod PUBLIC staar aldrig alene i en ny migration', () => {
+  for (const fil of migrationsEfterBaseline()) {
+    const sql = readFileSync(join(migrationsDir, fil), 'utf8');
+    if (!/REVOKE[^;]*\bFROM\s+PUBLIC\b/i.test(sql)) continue;
+    assert.match(
+      sql,
+      /REVOKE[^;]*\bFROM\b[^;]*\b(anon|authenticated)\b/i,
+      `${fil}: "REVOKE ... FROM PUBLIC" lukker ingenting alene - Supabase giver `
+        + 'anon og authenticated EXECUTE/adgang separat. Naevn dem ved navn.',
+    );
+  }
+});
+
+test('try_form_match_proposal er lukket for anon og authenticated', () => {
+  const alle = migrationsEfterBaseline()
+    .map((f) => readFileSync(join(migrationsDir, f), 'utf8'))
+    .join('\n');
+
+  for (const rolle of ['anon', 'authenticated']) {
+    assert.match(
+      alle,
+      new RegExp(`REVOKE\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+public\\.try_form_match_proposal\\(uuid\\)\\s+FROM\\s+${rolle}`, 'i'),
+      `ingen migration fjerner EXECUTE fra ${rolle} paa try_form_match_proposal`,
+    );
+  }
+});
