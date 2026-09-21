@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { resolveNotificationPushPolicy, isImportantPushType } from './notificationPolicy';
 import { isPushChannelEnabled, pushLevelAllows } from './notificationPreferences';
 import { normalizeNotificationRecipientIds } from './notificationRecipients';
+import { deliverPush, pushResult } from './pushDelivery';
 
 export { normalizeNotificationRecipientIds } from './notificationRecipients';
 
@@ -37,57 +38,58 @@ async function loadNotificationPrefsForUser(userId) {
 
 async function sendPushNotification(userId, type, title, body, matchId, options = {}) {
   const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
-  if (!pushPolicy.sendPush) return;
+  if (!pushPolicy.sendPush) return pushResult(false, 'skipped', 'politik sender ikke push');
   if (options.notificationPrefs != null) {
     // Master-niveau (Alle / Kun det vigtige / Fra) gælder før kanal-til/fra.
-    if (!pushLevelAllows(options.notificationPrefs, isImportantPushType(type))) return;
-    if (!isPushChannelEnabled(options.notificationPrefs, pushPolicy.channel)) return;
+    if (!pushLevelAllows(options.notificationPrefs, isImportantPushType(type))) {
+      return pushResult(false, 'skipped', 'brugerens push-niveau');
+    }
+    if (!isPushChannelEnabled(options.notificationPrefs, pushPolicy.channel)) {
+      return pushResult(false, 'skipped', `kanal "${pushPolicy.channel}" slaaet fra`);
+    }
   }
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) return pushResult(false, 'not_configured', 'VITE_SUPABASE_URL mangler');
+  if (!import.meta.env.VITE_VAPID_PUBLIC_KEY) {
+    return pushResult(false, 'not_configured', 'VITE_VAPID_PUBLIC_KEY mangler');
+  }
+
+  let session = null;
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl || !import.meta.env.VITE_VAPID_PUBLIC_KEY) return;
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-
-    fetch(`${supabaseUrl}/functions/v1/send-push`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        targetUserId: userId,
-        title,
-        body,
-        matchId,
-        entityType: options.entityType || null,
-        entityId: options.entityId || null,
-        type: pushPolicy.type,
-        channel: pushPolicy.channel,
-        level: pushPolicy.level,
-        silent: pushPolicy.silent,
-        urgency: pushPolicy.urgency,
-        cooldownSeconds: pushPolicy.cooldownSeconds,
-        aggregate: pushPolicy.aggregate,
-        renotify: pushPolicy.renotify,
-      }),
-    })
-      .then(async (res) => {
-        if (res.ok) return;
-        let details = '';
-        try {
-          details = await res.text();
-        } catch {
-          /* ignore */
-        }
-        console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
-      })
-      .catch(() => { /* ignorér netværksfejl */ });
-  } catch {
-    /* ignorér */
+    ({ data: { session } } = await supabase.auth.getSession());
+  } catch (e) {
+    return pushResult(false, 'no_session', e?.message || String(e));
   }
+  if (!session?.access_token) return pushResult(false, 'no_session');
+
+  const udfald = await deliverPush({
+    url: `${supabaseUrl}/functions/v1/send-push`,
+    accessToken: session.access_token,
+    payload: {
+      targetUserId: userId,
+      title,
+      body,
+      matchId,
+      entityType: options.entityType || null,
+      entityId: options.entityId || null,
+      type: pushPolicy.type,
+      channel: pushPolicy.channel,
+      level: pushPolicy.level,
+      silent: pushPolicy.silent,
+      urgency: pushPolicy.urgency,
+      cooldownSeconds: pushPolicy.cooldownSeconds,
+      aggregate: pushPolicy.aggregate,
+      renotify: pushPolicy.renotify,
+    },
+  });
+
+  // Tidligere blev en fejl her kastet vaek med `.catch(() => {})`. Konsekvensen var
+  // at appen meldte "sendt", uanset om kaldet var blokeret eller doede med siden.
+  if (!udfald.ok && udfald.reason !== 'skipped') {
+    console.warn(`[push] send-push: ${udfald.reason}${udfald.detail ? ` - ${udfald.detail}` : ''}`);
+  }
+  return udfald;
 }
 
 /** Altid send entity-args (null når ingen) — ellers vælger Postgres forkert overload af create_notification_for_user. */
@@ -154,7 +156,19 @@ export async function createNotification(userId, type, title, body, matchId = nu
   if (rpcError) return rpcError;
 
   const prefs = options.notificationPrefs ?? await loadNotificationPrefsForUser(userId);
-  await sendPushNotification(userId, type, title, body, matchId, { ...options, notificationPrefs: prefs });
+  const push = await sendPushNotification(userId, type, title, body, matchId, {
+    ...options,
+    notificationPrefs: prefs,
+  });
+  // Opt-in: kaldere der vil vide om push'en faktisk gik af sted, kan spoerge.
+  // Returvaerdien holdes uaendret, saa eksisterende kaldere ikke paavirkes.
+  if (typeof options.onPushResult === 'function') {
+    try {
+      options.onPushResult(push);
+    } catch {
+      /* en fejl i callbacken maa ikke vaelte notifikationen */
+    }
+  }
   return rpcError;
 }
 
@@ -203,6 +217,8 @@ export async function sendDiscoveryEmailsForUsers(
 
     fetch(`${supabaseUrl}/functions/v1/send-discovery-email`, {
       method: 'POST',
+      // Som push: kaldet skal ogsaa naa frem, hvis brugeren navigerer videre.
+      keepalive: true,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
@@ -223,13 +239,18 @@ export async function sendDiscoveryEmailsForUsers(
         try {
           details = await res.text();
         } catch {
-          /* ignore */
+          /* ingen krop at laese */
         }
         console.warn(`[email] send-discovery-email svarede ${res.status}${details ? `: ${details}` : ''}`);
       })
-      .catch(() => { /* ignorér netværksfejl */ });
-  } catch {
-    /* ignorér */
+      // Samme fejl som push havde: en tavs catch her betoed at en blokeret eller
+      // afbrudt afsendelse forsvandt sporloest. Mailen er "nice to have", saa den
+      // blokerer stadig ikke noget - men den skal kunne ses i konsollen.
+      .catch((e) => {
+        console.warn(`[email] send-discovery-email kunne ikke kaldes: ${e?.message || e}`);
+      });
+  } catch (e) {
+    console.warn(`[email] send-discovery-email fejlede foer afsendelse: ${e?.message || e}`);
   }
 }
 
