@@ -24,6 +24,7 @@ import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { AdminUserEditModal } from './AdminUserEditModal';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { formatSignupDateDa } from '../lib/adminUserFormat';
+import { sortAdminUsers, nextSortConfig } from '../lib/adminUserSort';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow, toPersonNameCase } from '../lib/profileUtils';
 import {
@@ -1167,44 +1168,13 @@ export function AdminTab({ initialSubTab = null }) {
   };
 
   const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+    setSortConfig((nu) => nextSortConfig(nu, key));
   };
 
-  const sortedUsers = useMemo(() => {
-    let sortableUsers = [...users];
-    if (sortConfig.key) {
-      sortableUsers.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        // Special håndtering af roller (Admin > Player)
-        if (sortConfig.key === 'role') {
-          const priority = { admin: 1, player: 2 };
-          aValue = priority[aValue] || 3;
-          bValue = priority[bValue] || 3;
-        } else if (sortConfig.key === 'full_name') {
-          aValue = adminDisplayName(a).toLowerCase();
-          bValue = adminDisplayName(b).toLowerCase();
-        } else {
-          aValue = aValue == null ? '' : aValue;
-          bValue = bValue == null ? '' : bValue;
-        }
-
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableUsers;
-  }, [users, sortConfig]);
+  const sortedUsers = useMemo(
+    () => sortAdminUsers(users, sortConfig, adminDisplayName),
+    [users, sortConfig],
+  );
 
   const filteredUsers = sortedUsers.filter((u) => {
     const q = search.toLowerCase().trim();
@@ -1579,6 +1549,14 @@ export function AdminTab({ initialSubTab = null }) {
               style={btn(sortConfig.key === 'role', { size: 'sm', radius: 'pill' })}
             >
               Rolle <SortIcon columnKey="role" />
+            </button>
+            <button
+              type="button"
+              onClick={() => requestSort('created_at')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'created_at', { size: 'sm', radius: 'pill' })}
+            >
+              Oprettet <SortIcon columnKey="created_at" />
             </button>
           </div>
 
