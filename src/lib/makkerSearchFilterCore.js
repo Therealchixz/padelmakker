@@ -3,30 +3,30 @@
  */
 
 import {
-  seekingVisibleDurationLabel,
+  seekingVisibilityPhrase,
   INTENTS,
   PLAY_STYLES,
   AVAILABILITY,
   INTENT_LABELS,
   intentDisplayLabel,
-} from './platformConstants';
-import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
+} from './platformConstants.js';
+import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils.js';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
   formatPlaytomicLevel,
-} from './padelLevelUtils';
+} from './padelLevelUtils.js';
 import {
   DEFAULT_LEVEL_WINDOW,
   LEVEL_WINDOW_CHOICES,
   LEVEL_WINDOW_OPTIONS,
-} from './matchSearchFilterCore';
+} from './matchSearchFilterCore.js';
 import {
   isSeekingActiveProfile,
   mergeFeedVisibleSince,
   resolveSeekingMatchAtForProfile,
   resolveSeekingMatchVisible,
-} from './seekingFeedTtl';
+} from './seekingFeedTtl.js';
 import {
   normalizeMakkerFilterExtras,
   levelRangeForMakkerPartnerPref,
@@ -41,7 +41,7 @@ import {
   MAKKER_COURT_SIDE_MODES,
   MAKKER_INTENT_MODES,
   MAKKER_PARTNER_LEVEL_FILTERS,
-} from './makkerFilterMatch';
+} from './makkerFilterMatch.js';
 
 export {
   DEFAULT_LEVEL_WINDOW,
@@ -249,7 +249,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
 
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibleDurationLabel('makker')}`);
+  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibilityPhrase('makker')}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,

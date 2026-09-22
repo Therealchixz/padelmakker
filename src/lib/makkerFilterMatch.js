@@ -3,13 +3,13 @@
  * Spejler matchmakingUtils-scoring, men returnerer pass/fail til filter + notifikationer.
  */
 
-import { AVAILABILITY } from './platformConstants';
-import { normalizeStringArrayField } from './profileUtils';
+import { AVAILABILITY } from './platformConstants.js';
+import { normalizeStringArrayField } from './profileUtils.js';
 import {
   profilePlaytomicLevel,
   clampPlaytomicLevel,
   levelRangeForWindow,
-} from './padelLevelUtils';
+} from './padelLevelUtils.js';
 
 /** @deprecated Legacy modes — brug partnerCourtSide */
 export const MAKKER_COURT_SIDE_MODES = [

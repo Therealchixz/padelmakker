@@ -14,7 +14,7 @@ import {
   seekingChannelHint,
   seekingChannelLabel,
   seekingFilterPath,
-  seekingVisibleDurationLabel,
+  seekingVisibilityPhrase,
   seekingHomeStatusLabel,
   formatSeekingTtlCountdown,
   seekingTtlRemainingMs,
@@ -181,18 +181,18 @@ export function ActiveSeekingPanel({
         const nextUser = mergeProfilePatch(displayUser, patch);
         setLocalUser(nextUser);
         await updateProfile(patch);
-        const duration = seekingVisibleDurationLabel(ch);
+        const duration = seekingVisibilityPhrase(ch);
         if (enabled && ch === 'makker' && !wasMakkerOn && displayUser?.id) {
           const res = await notifyMakkerWatchersForProfile(displayUser.id);
           const matchMsg = makkerMatchToast(res.matches);
           showToast(
             matchMsg
-              || `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer i ${duration}`,
+              || `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer ${duration}`,
           );
         } else {
           showToast(
             enabled
-              ? `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer i ${duration}`
+              ? `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer ${duration}`
               : `${seekingChannelLabel(ch)} slået fra`,
           );
         }

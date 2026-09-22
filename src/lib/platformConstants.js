@@ -183,7 +183,17 @@ export function intentDisplayLabel(key) {
 // Shared UI/data refresh timings
 export const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 export const HOME_FEED_CACHE_TTL_MS = 45_000;
-/** Kamp: synlig i feed 24 timer. Makker: 7 dage. */
+/**
+ * Kamp: synlig i feed 24 timer. En konkret kamp i morgen er ikke aktuel i
+ * naeste uge, saa den udloeber med vilje.
+ *
+ * Makker UDLOEBER IKKE. "Jeg soeger en fast makker" holder op med at vaere
+ * sandt, naar brugeren siger det - ikke efter syv dage. Den gamle 7-dages
+ * graense fjernede 13 af 14 makker-soegende uden at fortaelle dem det.
+ * SEEK_MAKKER_TTL_DAYS staar tilbage, fordi rangeringen stadig bruger den til
+ * at lade gamle markeringer synke nedad i listen (se matchmakingUtils) - men
+ * den afgoer ikke laengere, OM man er synlig.
+ */
 export const SEEK_KAMP_TTL_DAYS = 1;
 export const SEEK_MAKKER_TTL_DAYS = 7;
 export const SEEK_KAMP_TTL_MS = SEEK_KAMP_TTL_DAYS * 24 * 60 * 60 * 1000;
@@ -193,10 +203,39 @@ export const SEEK_MAKKER_TTL_MS = SEEK_MAKKER_TTL_DAYS * 24 * 60 * 60 * 1000;
 export const SEEK_TTL_DAYS = SEEK_MAKKER_TTL_DAYS;
 export const SEEK_TTL_MS = SEEK_MAKKER_TTL_MS;
 
+/** Har kanalen en udloebsdato? Kun kampe har. */
+export function seekingChannelExpires(channel = 'makker') {
+  return channel === 'kamp';
+}
+
 /** Bruger-tekst pr. kanal: 'kamp' | 'makker'. */
 export function seekingVisibleDurationLabel(channel = 'makker') {
   const days = channel === 'kamp' ? SEEK_KAMP_TTL_DAYS : SEEK_MAKKER_TTL_DAYS;
   return days === 1 ? '24 timer' : `${days} dage`;
+}
+
+/**
+ * Hvor laenge man er synlig, som en faerdig saetningsdel.
+ *
+ * Det er et helt led og ikke bare et tal, fordi makker-kanalen ikke har nogen
+ * varighed at saette efter "i": "synlig i 7 dage" blev til "synlig til du
+ * slaar det fra". Al brugertekst om varighed skal gaa gennem denne, saa der
+ * ikke staar et loefte om syv dage et sted, appen ikke laengere holder.
+ */
+export function seekingVisibilityPhrase(channel = 'makker') {
+  return seekingChannelExpires(channel)
+    ? `i ${seekingVisibleDurationLabel(channel)}`
+    : 'til du slår det fra';
+}
+
+/**
+ * Samme, men om en ANDEN spiller - fx paa deres profil. "Til du slaar det fra"
+ * ville her pege paa den forkerte person.
+ */
+export function seekingVisibilityPhraseOther(channel = 'makker') {
+  return seekingChannelExpires(channel)
+    ? `i ${seekingVisibleDurationLabel(channel)}`
+    : 'indtil det slås fra';
 }
 
 /** Max discovery-push/in-app pr. kanal (kamp og makker hver for sig). */

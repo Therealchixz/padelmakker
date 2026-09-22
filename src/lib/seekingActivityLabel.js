@@ -9,7 +9,7 @@ import {
 } from './seekingFeedTtl.js';
 import { normalizeMatchSearchPrefs } from './matchSearchFilterCore.js';
 import { normalizeMakkerSearchPrefs } from './makkerSearchFilterCore.js';
-import { SEEK_KAMP_TTL_MS, SEEK_MAKKER_TTL_MS } from './platformConstants.js';
+import { SEEK_KAMP_TTL_MS } from './platformConstants.js';
 
 export { isProfileMatchFeedVisible, isProfileMakkerFeedVisible, isSeekingActiveProfile };
 
@@ -60,10 +60,18 @@ function formatSeekingSince(iso) {
   return `${d} d siden`;
 }
 
+/**
+ * "Soeger siden ..." paa en anden spillers profil.
+ *
+ * ttlMs = null betyder INGEN graense. Makker-markeringen udloeber ikke, og saa
+ * maa tidspunktet heller ikke forsvinde efter syv dage - saa stod der "Soeger
+ * makker" uden at man kunne se hvor laenge.
+ */
 function channelSinceIso(prefs, profile, ttlMs) {
   const normalized = prefs;
   const sinceMs = channelFeedSince(normalized, profile?.seeking_match_at);
-  if (sinceMs == null || Date.now() - sinceMs >= ttlMs) return null;
+  if (sinceMs == null) return null;
+  if (ttlMs != null && Date.now() - sinceMs >= ttlMs) return null;
   return new Date(sinceMs).toISOString();
 }
 
@@ -93,7 +101,7 @@ export function getPlayerSeekingDetails(profile, opts = {}) {
 
   if ((!channel || channel === 'makker') && isProfileMakkerFeedVisible(profile)) {
     const prefs = normalizeMakkerSearchPrefs(profile.makker_search_prefs, profile);
-    const sinceIso = channelSinceIso(prefs, profile, SEEK_MAKKER_TTL_MS);
+    const sinceIso = channelSinceIso(prefs, profile, null);
     blocks.push({
       type: 'makker',
       label: 'Søger makker',

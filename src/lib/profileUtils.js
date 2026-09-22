@@ -1,4 +1,4 @@
-import { DEFAULT_REGION } from "./platformConstants"
+import { DEFAULT_REGION } from "./platformConstants.js"
 import { canonicalAppRegion, isValidAppRegion } from "./appRegions.js"
 import { toPersonNameCase } from "./personNameCase.js"
 

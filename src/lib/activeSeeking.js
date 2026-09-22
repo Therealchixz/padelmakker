@@ -30,6 +30,7 @@ import {
   SEEK_KAMP_TTL_MS,
   SEEK_MAKKER_TTL_MS,
   seekingVisibleDurationLabel,
+  seekingVisibilityPhrase,
   DAYS_OF_WEEK,
   intentDisplayLabel,
 } from './platformConstants.js';
@@ -123,6 +124,8 @@ function channelTtlMs(channel) {
 export function seekingTtlRemainingMs(user, channel) {
   const prefs = normalizeChannelPrefs(user, channel);
   if (!prefs.feedVisible) return null;
+  // Makker-markeringen udloeber ikke, saa der er ingen resttid at vise.
+  if (channel !== 'kamp') return null;
   const since = channelFeedSince(prefs, user?.seeking_match_at);
   if (since == null) return null;
   const remaining = channelTtlMs(channel) - (Date.now() - since);
@@ -373,4 +376,4 @@ export function seekingHomeStatusLabel(user) {
   return 'Inaktiv';
 }
 
-export { seekingVisibleDurationLabel };
+export { seekingVisibleDurationLabel, seekingVisibilityPhrase };

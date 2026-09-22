@@ -2,21 +2,21 @@
  * Mit kamp-filter — ren logik (ingen Supabase-import).
  */
 
-import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
-import { seekingVisibleDurationLabel, AVAILABILITY } from './platformConstants';
-import { normalizeMakkerAvailabilityFilter } from './makkerFilterMatch';
+import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils.js';
+import { seekingVisibilityPhrase, AVAILABILITY } from './platformConstants.js';
+import { normalizeMakkerAvailabilityFilter } from './makkerFilterMatch.js';
 import {
   mergeFeedVisibleSince,
   resolveSeekingMatchAtForProfile,
   resolveSeekingMatchVisible,
-} from './seekingFeedTtl';
+} from './seekingFeedTtl.js';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
   matchPassesLevelFilter,
   formatPlaytomicLevel,
   levelRangeForWindow,
-} from './padelLevelUtils';
+} from './padelLevelUtils.js';
 
 export const MATCH_FILTER_PREFS_VERSION = 2;
 /** Standard: ±0,2 — i padel mærkes selv 0,3–0,4 tydeligt. */
@@ -201,7 +201,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (avail.length > 0) parts.push(avail.join(', '));
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel('kamp')}`);
+  if (prefs.feedVisible) channels.push(`feed ${seekingVisibilityPhrase('kamp')}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,
