@@ -191,11 +191,11 @@ Deno.serve(async (req: Request) => {
     const siteUrl = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
     const link = deepLink(type, matchId, entityId, siteUrl);
     const prefsLink = `${siteUrl}/dashboard/notifikationer`;
-    const unsubMailto =
-      "mailto:kontakt@padelmakker.dk?subject=" +
-      encodeURIComponent("Afmeld makker/kamp-mails") +
-      "&body=" +
-      encodeURIComponent("Hej — afmeld venligst e-mail om nye makkere/kampe for denne konto.");
+    // Framelding med ET klik, uden login. Erstatter den gamle "skriv til os
+    // og bed om at blive fjernet" - den slags foerer til spam-knappen i
+    // stedet, og nok spam-markeringer faar Gmail og Outlook til at sortere
+    // ALLE mails fra padelmakker.dk fra, ogsaa kodeord-nulstilling.
+    const unsubBase = `${Deno.env.get("SUPABASE_URL")}/functions/v1/email-unsubscribe`;
     const buttonLabel = ctaLabel(type);
 
     let sent = 0;
@@ -204,11 +204,26 @@ Deno.serve(async (req: Request) => {
       const toEmail = String(authUser?.user?.email || "").trim();
       if (authErr || !toEmail) continue;
 
+      // Uden et frameldingslink sender vi ikke. En mail, man ikke kan komme
+      // af med, er vaerre end ingen mail: den koster os afsenderens omdoemme.
+      const { data: unsubToken, error: tokenErr } = await admin.rpc(
+        "email_unsub_token_for",
+        { p_user_id: userId },
+      );
+      if (tokenErr || !unsubToken) {
+        console.error(
+          "send-discovery-email: intet frameldingstoken for bruger, springer over:",
+          tokenErr?.message || "tomt token",
+        );
+        continue;
+      }
+      const unsubLink = `${unsubBase}?t=${encodeURIComponent(String(unsubToken))}`;
+
       const textBody =
         `${title}\n\n${body}\n\n${buttonLabel}: ${link}\n\n` +
         `Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe i PadelMakker.\n` +
-        `Slå fra her: ${prefsLink}\n` +
-        `Eller svar/afmeld: ${unsubMailto.replace(/^mailto:/, "")}`;
+        `Afmeld med ét klik: ${unsubLink}\n` +
+        `Eller administrér i appen: ${prefsLink}`;
 
       const htmlBody = `
         <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.5;color:#111;max-width:560px">
@@ -222,9 +237,9 @@ Deno.serve(async (req: Request) => {
           </p>
           <p style="margin:0 0 8px;font-size:12px;color:#666">
             Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe.
-            <a href="${escapeHtml(prefsLink)}" style="color:#0B6E4F">Administrér i appen</a>
+            <a href="${escapeHtml(unsubLink)}" style="color:#0B6E4F">Afmeld</a>
             ·
-            <a href="${escapeHtml(unsubMailto)}" style="color:#0B6E4F">Afmeld via e-mail</a>
+            <a href="${escapeHtml(prefsLink)}" style="color:#0B6E4F">Administrér i appen</a>
           </p>
         </div>
       `.trim();
@@ -242,8 +257,11 @@ Deno.serve(async (req: Request) => {
           text: textBody,
           html: htmlBody,
           headers: {
-            // Mailto-afmelding (ingen one-click POST-endpoint endnu — undgå List-Unsubscribe-Post).
-            "List-Unsubscribe": `<${unsubMailto}>`,
+            // RFC 8058: naar begge headere er sat, viser Gmail og Outlook deres
+            // EGEN afmeld-knap i toppen af mailen og sender et POST hertil.
+            // Det er den knap, folk faktisk finder - alternativet er spam-knappen.
+            "List-Unsubscribe": `<${unsubLink}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
           },
         }),
       });

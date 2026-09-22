@@ -51,10 +51,19 @@ jobs:
             if [ -d "${dir}" ]; then
               fn_name="$(basename "${dir}")"
               echo "Deploying ${fn_name}..."
-              if [ "${fn_name}" = "report-feedback" ]; then
-                npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --no-verify-jwt
-              else
-                npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}"
-              fi
+              # Funktioner uden JWT: de skal kunne naas UDEN login.
+              #   report-feedback    - fejlrapport fra en bruger der ikke kan logge ind
+              #   email-unsubscribe  - frameldingslink i en mail; den der vil af med
+              #                        mailen, logger ikke ind foerst. Kraever vi login,
+              #                        trykker de spam i stedet, og saa ryger hele
+              #                        domaenets mails i filteret - ogsaa kodeord-mails.
+              case "${fn_name}" in
+                report-feedback|email-unsubscribe)
+                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --no-verify-jwt
+                  ;;
+                *)
+                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}"
+                  ;;
+              esac
             fi
           done
