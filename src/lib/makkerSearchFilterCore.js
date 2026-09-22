@@ -279,7 +279,11 @@ export function buildProfilePatchFromMakkerSearchPrefs(prefs, profile = {}) {
   return {
     makker_search_prefs: prefsOut,
     makker_watch_enabled: notifyOn,
-    makker_watch_at: notifyOn ? new Date().toISOString() : null,
+    // Tidspunktet registrerer HVORNAAR brugeren tog stilling - ikke hvornaar de
+    // sagde ja. Sattes det til null ved fravalg, var "har slaaet fra" umuligt at
+    // skelne fra "har aldrig rørt den", og et fremtidigt standardvalg ville slaa
+    // det til igen for nogen, der bevidst havde slaaet det fra.
+    makker_watch_at: new Date().toISOString(),
     seeking_match: feedOn,
     seeking_match_at: seekingAt,
     ...(region && region !== profile.area ? { area: region } : {}),

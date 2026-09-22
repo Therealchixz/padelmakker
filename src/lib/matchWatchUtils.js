@@ -65,7 +65,10 @@ export async function setMatchWatchEnabled(enabled) {
     .from('profiles')
     .update({
       match_watch_enabled: Boolean(enabled),
-      match_watch_at: enabled ? new Date().toISOString() : null,
+      // Tidspunktet registrerer HVORNAAR brugeren tog stilling - ikke hvornaar de
+      // sagde ja. Sattes det til null ved fravalg, var "har slaaet fra" umuligt
+      // at skelne fra "har aldrig roert den".
+      match_watch_at: new Date().toISOString(),
     })
     .eq('id', user.id);
 
