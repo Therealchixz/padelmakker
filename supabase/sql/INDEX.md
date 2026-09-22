@@ -16,8 +16,8 @@ kan efterprøves direkte mod den kørende database.
 | | Antal |
 |---|---|
 | Funktioner i migrations (= i drift) | 150 |
-| ...med en identisk fil i `supabase/sql/` | 112 |
-| ...hvor ingen arkivfil matcher (alle er forældede) | 27 |
+| ...med en identisk fil i `supabase/sql/` | 111 |
+| ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
 | ...som slet ikke findes i arkivet | 11 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
@@ -120,7 +120,7 @@ kan efterprøves direkte mod den kørende database.
 | `leave_match` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `list_dm_conversation_summaries` | `00000000000000_baseline_schema.sql` | `dm_chat_enhancements.sql` | 2 |
 | `list_pending_match_proposals` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | — |
-| `makker_feed_is_active` | `00000000000000_baseline_schema.sql` | `canonical_app_region_notify_fix.sql`<br>`seeking_makker_match.sql` | — |
+| `makker_feed_is_active` | `20260922214627_makker_seeking_stays_on_until_turned_off.sql` | — | 2 |
 | `makker_filter_availability_overlap` | `00000000000000_baseline_schema.sql` | `makker_availability_flexible.sql`<br>`makker_filter_v2.sql` | — |
 | `makker_filter_court_side_ok` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
 | `makker_filter_intent_compat_score` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
@@ -143,7 +143,7 @@ kan efterprøves direkte mod den kørende database.
 | `notify_league_invite` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_accepted` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_declined` | `00000000000000_baseline_schema.sql` | — | — |
-| `notify_makker_watchers` | `00000000000000_baseline_schema.sql` | — | 5 |
+| `notify_makker_watchers` | `20260922214737_notify_makker_watchers_neighbours_and_no_expiry.sql` | — | 5 |
 | `notify_match_creator_on_join` | `00000000000000_baseline_schema.sql` | `notify_match_creator_on_join_only.sql` | 2 |
 | `notify_match_watchers` | `20260922210624_notify_match_watchers_reaches_neighbouring_regions.sql` | — | 6 |
 | `padel_elo_to_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |

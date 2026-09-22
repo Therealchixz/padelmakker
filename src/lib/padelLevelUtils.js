@@ -4,7 +4,7 @@
  */
 
 import { parseMatchLevelRange } from './matchLevelRange.js';
-import { levelLabel } from './platformConstants';
+import { levelLabel } from './platformConstants.js';
 
 export const PLAYTOMIC_LEVEL_MIN = 1;
 export const PLAYTOMIC_LEVEL_MAX = 7;

@@ -1,41 +1,47 @@
 /**
- * Synlighed i feed for kamp (24 t) og makker (7 d) — adskilt TTL.
+ * Synlighed i feed. Kamp udloeber efter 24 timer; makker udloeber ikke.
  */
 
 import {
   SEEK_KAMP_TTL_MS,
   SEEK_MAKKER_TTL_MS,
-  seekingVisibleDurationLabel,
+  seekingVisibilityPhraseOther,
   DAYS_OF_WEEK,
   intentDisplayLabel,
   PARTNER_LEVEL_LABELS,
-} from './platformConstants';
-import { normalizeStringArrayField } from './profileUtils';
+} from './platformConstants.js';
+import { normalizeStringArrayField } from './profileUtils.js';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterConfigured,
   resolveFilterRegion,
   resolveFilterLevel,
-} from './matchSearchFilterCore';
+} from './matchSearchFilterCore.js';
 import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterConfigured,
   resolveMakkerFilterRegion,
   resolveMakkerFilterLevel,
-} from './makkerSearchFilterCore';
-import { DEFAULT_LEVEL_WINDOW } from './matchSearchFilterCore';
-import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils';
+} from './makkerSearchFilterCore.js';
+import { DEFAULT_LEVEL_WINDOW } from './matchSearchFilterCore.js';
+import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
 import {
   levelRangeForMakkerPartnerPref,
   partnerCourtSideLabel,
   availabilityMeansAllTimeSlots,
   normalizeMakkerPartnerLevel,
-} from './makkerFilterMatch';
+} from './makkerFilterMatch.js';
 
 export { SEEK_KAMP_TTL_MS, SEEK_MAKKER_TTL_MS };
 
-/** Længste feed-TTL — bruges til DB-query og legacy SEEK_TTL_MS. */
-export const SEEK_FEED_QUERY_TTL_MS = SEEK_MAKKER_TTL_MS;
+/**
+ * Hvor langt tilbage feed-query'en skal hente. Makker udloeber ikke laengere,
+ * saa graensen kan ikke vaere makker-TTL'en - saa ville de brugere, der
+ * markerede sig for laengst, aldrig komme med i svaret fra databasen.
+ * Et aar er rigeligt til at daekke alle reelle markeringer og holder stadig
+ * query'en fra at scanne hele tabellen.
+ */
+export const SEEK_FEED_QUERY_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
 function parseSinceMs(iso) {
   if (!iso) return null;
@@ -65,8 +71,13 @@ function isMatchFeedActiveFromPrefs(prefs, profile = {}) {
 function isMakkerFeedActiveFromPrefs(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
   if (!isMakkerFilterConfigured(normalized, profile) || !normalized.feedVisible) return false;
-  const since = channelFeedSince(normalized, profile.seeking_match_at);
-  return isChannelFeedWithinTtl(since, SEEK_MAKKER_TTL_MS);
+  // Makker-markeringen udloeber IKKE. Den staar, til brugeren slaar den fra.
+  // 14 brugere havde sat fluebenet; kun 1 var inden for de gamle 7 dage - de
+  // oevrige var forsvundet uden at vide det. Tidspunktet bruges stadig til at
+  // vise "soeger siden ..." og til rangeringen, men afgoer ikke synlighed.
+  // KAMP-kanalen udloeber fortsat efter 24 timer, og det er rigtigt: en konkret
+  // kamp i morgen er ikke aktuel i naeste uge.
+  return channelFeedSince(normalized, profile.seeking_match_at) != null;
 }
 
 export function isProfileMatchFeedVisible(profile) {
@@ -250,8 +261,12 @@ export function compactMakkerSeekingLine(prefs, profile = {}) {
   return compactMakkerSeekingDetails(prefs, profile).join(' · ');
 }
 
+/**
+ * Hvor laenge en ANDEN spillers markering staar - vises paa deres profil.
+ * Kamp udloeber efter 24 timer; makker staar, til de selv slaar den fra.
+ */
 export function seekingChannelDurationLabel(channel) {
-  return seekingVisibleDurationLabel(channel);
+  return seekingVisibilityPhraseOther(channel);
 }
 
 /** ISO-tidspunkt for hvornår kanalen blev synlig (til sortering i feed). */

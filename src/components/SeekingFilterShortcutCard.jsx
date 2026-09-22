@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme } from '../lib/platformTheme';
-import { seekingVisibleDurationLabel } from '../lib/platformConstants';
+import { seekingVisibilityPhrase } from '../lib/platformConstants';
 import { seekingChannelLabel } from '../lib/activeSeeking';
 import {
   normalizeMatchSearchPrefs,
@@ -55,7 +55,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
 
   const filterPath = isKamp ? '/dashboard/kamp-filter' : '/dashboard/makker-filter';
   const filterLabel = isKamp ? 'Mit kamp-filter' : 'Mit makker-filter';
-  const durationLabel = seekingVisibleDurationLabel(isKamp ? 'kamp' : 'makker');
+  const durationPhrase = seekingVisibilityPhrase(isKamp ? 'kamp' : 'makker');
   const Icon = isKamp ? Filter : Users;
 
   const openFilter = () => {
@@ -141,9 +141,9 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
           </div>
           <p style={{ fontSize: 11, color: theme.textMid, lineHeight: 1.45, margin: '4px 0 0' }}>
             {feedVisibleNow
-              ? `Du vises i ${isKamp ? 'aktivitetsfeed' : 'Find makker'} i ${durationLabel}.`
+              ? `Du vises i ${isKamp ? 'aktivitetsfeed' : 'Find makker'} ${durationPhrase}.`
               : info.configured
-                ? `Slå synlighed til for at blive fundet (${durationLabel}).`
+                ? `Slå synlighed til for at blive fundet (${durationPhrase}).`
                 : info.detail}
           </p>
         </div>
