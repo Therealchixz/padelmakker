@@ -15,10 +15,10 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 150 |
+| Funktioner i migrations (= i drift) | 153 |
 | ...med en identisk fil i `supabase/sql/` | 111 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
-| ...som slet ikke findes i arkivet | 11 |
+| ...som slet ikke findes i arkivet | 14 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
 ## Funktioner i drift
@@ -86,8 +86,11 @@ kan efterprøves direkte mod den kørende database.
 | `dispatch_push_to_user` | `20260921074448_raise_pg_net_timeout_for_push_and_reminders.sql` | — | 2 |
 | `dm_message_preview` | `00000000000000_baseline_schema.sql` | `dm_chat_enhancements.sql` | — |
 | `dm_users_blocked` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
+| `email_unsub_token_for` | `20260922223032_email_unsubscribe_rpcs.sql` | — | — |
+| `email_unsubscribe_by_token` | `20260922223032_email_unsubscribe_rpcs.sql` | — | — |
 | `enforce_max_players` | `00000000000000_baseline_schema.sql` | — | — |
 | `enroll_growth_campaign` | `00000000000000_baseline_schema.sql` | `security_hardening_match_writes_and_admin_pin.sql` | 1 |
+| `ensure_email_unsub_token` | `20260922223016_email_unsubscribe_tokens.sql` | — | — |
 | `expected_americano_match_count` | `00000000000000_baseline_schema.sql` | `americano_expected_match_count_v2.sql` | — |
 | `expected_americano_match_count_legacy` | `00000000000000_baseline_schema.sql` | `americano_expected_match_count_v2.sql` | — |
 | `expire_abandoned_in_progress_matches` | `00000000000000_baseline_schema.sql` | `match_proposal_reminders.sql` | — |
