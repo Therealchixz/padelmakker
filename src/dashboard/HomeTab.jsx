@@ -1235,66 +1235,81 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       )}
 
       {/* Kommende kampe */}
-      {(upcomingLoading || upcomingItems.length > 0 || upcomingLoadError) && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            {!upcomingLoading && upcomingItems.length > 0 && (
-              <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
-            )}
-          </div>
-          {upcomingLoadError ? (
-            <div style={{ padding: '0 18px' }}>
-              <div className="pm-state-card pm-state-card--error">
-                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
-                <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
-                <div className="pm-state-copy">{upcomingLoadError}</div>
-              </div>
-            </div>
-          ) : upcomingLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  style={{
-                    height: 72,
-                    borderRadius: 16,
-                    background: theme.border,
-                    opacity: 0.45 + i * 0.12,
-                    animation: 'pm-pulse 1.4s ease-in-out infinite',
-                    animationDelay: `${i * 0.12}s`,
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-            {upcomingItems.map((it) => (
-              <button
-                key={it.key}
-                type="button"
-                onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
-              >
-                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
-                  <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
-                  {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
-                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
-                </div>
-                {it.statusLabel ? (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                    {it.statusLabel}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
+          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
+          {!upcomingLoading && upcomingItems.length > 0 && (
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           )}
         </div>
-      )}
+        {upcomingLoadError ? (
+          <div style={{ padding: '0 18px' }}>
+            <div className="pm-state-card pm-state-card--error">
+              <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+              <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
+              <div className="pm-state-copy">{upcomingLoadError}</div>
+            </div>
+          </div>
+        ) : upcomingLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                style={{
+                  height: 72,
+                  borderRadius: 16,
+                  background: theme.border,
+                  opacity: 0.45 + i * 0.12,
+                  animation: 'pm-pulse 1.4s ease-in-out infinite',
+                  animationDelay: `${i * 0.12}s`,
+                }}
+              />
+            ))}
+          </div>
+        ) : upcomingItems.length === 0 ? (
+          <div style={{ padding: '0 18px' }}>
+            <button
+              type="button"
+              onClick={() => setTab('kampe')}
+              style={{ background: theme.surface, border: `1px dashed ${theme.border}`, borderRadius: 16, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              <div style={{ width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.accentBg, borderRadius: 10, color: theme.accent }}>
+                <CalendarPlus size={20} aria-hidden />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text }}>Ingen kommende kampe</div>
+                <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>Meld dig på en åben kamp, eller opret din egen.</div>
+              </div>
+              <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
+            </button>
+          </div>
+        ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+          {upcomingItems.map((it) => (
+            <button
+              key={it.key}
+              type="button"
+              onClick={() => setTab(it.target.tab, { search: it.target.search })}
+              style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
+                {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
+                <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
+              </div>
+              {it.statusLabel ? (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  {it.statusLabel}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+        )}
+      </div>
 
       {/* Invitationer */}
       {(inviteItems.length > 0 || invitesLoadError) && (
