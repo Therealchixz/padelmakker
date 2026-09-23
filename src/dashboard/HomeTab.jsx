@@ -158,7 +158,7 @@ async function fetchHomeUpcomingItems(userId) {
   return items.slice(0, 5);
 }
 
-export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false }) {
+export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false, deferOnboardingPrompt = false }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
@@ -1138,7 +1138,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       <MonthMasterTeaser />
 
       {/* Seeking onboarding prompt */}
-      {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
+      {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} deferred={deferOnboardingPrompt} /> : null}
 
       {/* Pulje: meld dig klar i et tidsrum — appen samler de fire */}
       {showToast ? (
@@ -1186,7 +1186,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           </button>
         ))}
       </div>
-      {showNiveauEloHint && (
+      {/* Kun én hjælpeboks ad gangen: ELO-forklaringen venter, til iPhone-tippet er skjult. */}
+      {showNiveauEloHint && !showIosInstallHint && (
         <div
           style={{
             background: theme.accentBg,

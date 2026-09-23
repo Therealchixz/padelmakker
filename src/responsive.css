@@ -4945,6 +4945,30 @@ button,
   text-wrap: pretty;
 }
 
+.pm-active-seeking-onboarding__lead--tight {
+  margin-bottom: 8px;
+}
+
+.pm-active-seeking-onboarding__list {
+  list-style: disc;
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pm-text);
+}
+
+.pm-active-seeking-onboarding__list li + li {
+  margin-top: 6px;
+}
+
+.pm-active-seeking-onboarding__note {
+  margin: 0 0 20px;
+  font-size: 12.5px;
+  color: var(--pm-text-mid);
+  line-height: 1.5;
+}
+
 .pm-active-seeking-onboarding__region {
   display: inline;
   font-weight: 700;

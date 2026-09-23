@@ -720,6 +720,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
   const welcomeStorageKey = user?.id ? `pm_dash_welcome_v1_${user.id}` : null;
 
+  // Kører velkomst eller rundvisning i dette besøg, venter "Aktiv søgning"-vinduet
+  // til næste besøg, så nye brugere ikke får flere vinduer oven i hinanden.
+  const onboardingThisVisit = useMemo(() => {
+    if (!tourStorageKey) return true;
+    try {
+      return localStorage.getItem(tourStorageKey) !== '1';
+    } catch {
+      return false;
+    }
+  }, [tourStorageKey]);
+
   const tabTourSelector = useCallback((tabId) => {
     return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
   }, [isMobileView]);
@@ -1578,7 +1589,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
           }
         >
-          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} />}
+          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} deferOnboardingPrompt={onboardingThisVisit || welcomeOpen || tourOpen} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive onCreatePanelChange={setKampeCreatePanelOpen} />}
