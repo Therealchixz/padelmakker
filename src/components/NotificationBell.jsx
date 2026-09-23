@@ -6,17 +6,9 @@ import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
-import { invalidateNotificationPrefsCache } from '../lib/notifications';
 import { NotificationPushControls } from './NotificationPushControls';
-import {
-  mergeNotificationPrefToggle,
-  mergeNotificationEmailToggle,
-  mergeNotificationPushLevel,
-  normalizeNotificationPrefs,
-  NOTIFICATION_PUSH_CHANNELS,
-  NOTIFICATION_EMAIL_CHANNELS,
-  NOTIFICATION_PUSH_LEVELS,
-} from '../lib/notificationPreferences';
+import { normalizeNotificationPrefs } from '../lib/notificationPreferences';
+import { NotificationSettingsPanel } from './NotificationSettingsPanel';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import { formatNotificationAge, settleExpiredNotifications } from '../lib/notificationAge';
 import {
@@ -34,7 +26,7 @@ const NOTIF_REFRESH_INTERVAL_MS = 10000;
 const REALTIME_RETRY_DELAY_MS = 1500;
 
 export function NotificationBell({ tourForceOpen = false }) {
-  const { user: authUser, profile, updateProfile } = useAuth();
+  const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
@@ -52,40 +44,6 @@ export function NotificationBell({ tourForceOpen = false }) {
       ? crypto.randomUUID()
       : `nb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
   );
-
-  const [notifPrefs, setNotifPrefs] = useState(() => normalizeNotificationPrefs(profile?.notification_prefs));
-  const [prefsSaving, setPrefsSaving] = useState(false);
-  const [showPrefToggles, setShowPrefToggles] = useState(false);
-
-  useEffect(() => {
-    setNotifPrefs(normalizeNotificationPrefs(profile?.notification_prefs));
-  }, [profile?.notification_prefs]);
-
-  const persistPrefs = async (nextPrefs) => {
-    if (!userId) return;
-    const prevPrefs = notifPrefs;
-    setNotifPrefs(nextPrefs);
-    setPrefsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ notification_prefs: nextPrefs })
-        .eq('id', userId);
-      if (error) {
-        console.warn('notification_prefs update:', error.message);
-        setNotifPrefs(prevPrefs);
-      } else {
-        invalidateNotificationPrefsCache(userId);
-        try {
-          await updateProfile({ notification_prefs: nextPrefs });
-        } catch (profileErr) {
-          console.warn('notification_prefs profile sync:', profileErr?.message || profileErr);
-        }
-      }
-    } finally {
-      setPrefsSaving(false);
-    }
-  };
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
@@ -502,111 +460,11 @@ export function NotificationBell({ tourForceOpen = false }) {
             </div>
           </div>
 
-          <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
-              Notifikationer på telefon {prefsSaving ? "…" : ""}
-            </div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {NOTIFICATION_PUSH_LEVELS.map((lvl) => {
-                const active = (notifPrefs.pushLevel || "all") === lvl.id;
-                return (
-                  <button
-                    key={lvl.id}
-                    type="button"
-                    onClick={() => { if (!active) void persistPrefs(mergeNotificationPushLevel(notifPrefs, lvl.id)); }}
-                    style={{
-                      flex: 1,
-                      padding: "7px 6px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      borderRadius: "8px",
-                      border: "1px solid " + (active ? theme.accent : theme.border),
-                      background: active ? theme.accent : theme.surface,
-                      color: active ? theme.onAccent : theme.textMid,
-                      cursor: active ? "default" : "pointer",
-                      fontFamily: font,
-                      transition: "background 0.15s, border-color 0.15s, color 0.15s",
-                    }}
-                  >
-                    {lvl.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.4 }}>
-              {notifPrefs.pushLevel === "off"
-                ? "Ingen push til telefonen. Du ser stadig alt her i klokken."
-                : notifPrefs.pushLevel === "important"
-                  ? "Kun invitationer, aflysninger, resultater og påmindelser sendes til telefonen."
-                  : "Alt sendes til telefonen (styret af kanalerne nedenfor)."}
-            </div>
-          </div>
-
-          <div style={{ padding: "8px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
-            <button
-              type="button"
-              onClick={() => setShowPrefToggles((v) => !v)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                fontSize: "11px",
-                fontWeight: 700,
-                color: theme.textMid,
-                cursor: "pointer",
-                fontFamily: font,
-              }}
-            >
-              {showPrefToggles ? "▼" : "▶"} Push-kanaler {prefsSaving ? "…" : ""}
-            </button>
-            {showPrefToggles && (
-              <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                {NOTIFICATION_PUSH_CHANNELS.filter((ch) => ch.id !== "system" || profile?.role === "admin").map((ch) => (
-                  <label
-                    key={ch.id}
-                    style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: theme.text, cursor: "pointer" }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={notifPrefs.push[ch.id] !== false}
-                      onChange={(e) => {
-                        void persistPrefs(mergeNotificationPrefToggle(notifPrefs, ch.id, e.target.checked));
-                      }}
-                    />
-                    {ch.label}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ padding: "8px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textMid, marginBottom: "6px" }}>
-              E-mail {prefsSaving ? "…" : ""}
-            </div>
-            <p style={{ margin: "0 0 8px", fontSize: "11px", color: theme.textLight, lineHeight: 1.4 }}>
-              Brugbar hvis du ikke har installeret appen som PWA — push virker kun i browser/PWA.
-            </p>
-            {NOTIFICATION_EMAIL_CHANNELS.map((ch) => (
-              <label
-                key={ch.id}
-                style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: theme.text, cursor: "pointer" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={notifPrefs.email?.[ch.id] === true}
-                  onChange={(e) => {
-                    void persistPrefs(mergeNotificationEmailToggle(notifPrefs, ch.id, e.target.checked));
-                  }}
-                />
-                {ch.label}
-              </label>
-            ))}
-          </div>
+          <NotificationSettingsPanel />
 
           <NotificationPushControls
             userId={userId}
-            notificationPrefs={notifPrefs}
+            notificationPrefs={normalizeNotificationPrefs(profile?.notification_prefs)}
             variant="dropdown"
             onAfterTest={() => void load()}
           />

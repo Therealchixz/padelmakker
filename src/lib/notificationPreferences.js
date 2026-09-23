@@ -45,6 +45,28 @@ export const REACTIVATION_OPEN_MATCHES_OPTIONS = Object.freeze([
   },
 ]);
 
+/**
+ * "Stille om natten": ingen push til telefonen i tidsrummet, undtagen vigtige
+ * beskeder. Samme standard som send-push (QUIET_DEFAULT).
+ */
+export const QUIET_HOURS_DEFAULT = Object.freeze({ enabled: true, start: 22, end: 7 });
+
+function normalizeQuietHours(raw) {
+  const q = raw && typeof raw === 'object' ? raw : {};
+  const hour = (v, fallback) => (Number.isInteger(v) && v >= 0 && v <= 23 ? v : fallback);
+  return {
+    enabled: typeof q.enabled === 'boolean' ? q.enabled : QUIET_HOURS_DEFAULT.enabled,
+    start: hour(q.start, QUIET_HOURS_DEFAULT.start),
+    end: hour(q.end, QUIET_HOURS_DEFAULT.end),
+  };
+}
+
+/** Er klokken (0-23) inden for det stille tidsrum? Tidsrummet må gå over midnat. */
+export function isWithinQuietHours(hour, start, end) {
+  if (start === end) return false;
+  return start > end ? hour >= start || hour < end : hour >= start && hour < end;
+}
+
 const DEFAULT_PREFS = Object.freeze({
   pushLevel: 'all',
   reactivationOpenMatches: 'weekly',
@@ -77,8 +99,10 @@ export function normalizeNotificationPrefs(raw) {
     reactivationOpenMatches: DEFAULT_PREFS.reactivationOpenMatches,
     push: { ...DEFAULT_PREFS.push },
     email: { ...DEFAULT_PREFS.email },
+    quietHours: normalizeQuietHours(null),
   };
   if (!raw || typeof raw !== 'object') return base;
+  base.quietHours = normalizeQuietHours(raw.quietHours);
   if (typeof raw.pushLevel === 'string' && VALID_PUSH_LEVELS.has(raw.pushLevel)) {
     base.pushLevel = raw.pushLevel;
   }
@@ -128,6 +152,7 @@ export function mergeNotificationPrefToggle(prefs, channelId, enabled) {
       [channelId]: Boolean(enabled),
     },
     email: { ...normalized.email },
+    quietHours: { ...normalized.quietHours },
   };
 }
 
@@ -141,6 +166,7 @@ export function mergeNotificationEmailToggle(prefs, channelId, enabled) {
       ...normalized.email,
       [channelId]: Boolean(enabled),
     },
+    quietHours: { ...normalized.quietHours },
   };
 }
 
@@ -151,6 +177,7 @@ export function mergeNotificationPushLevel(prefs, level) {
     reactivationOpenMatches: normalized.reactivationOpenMatches,
     push: { ...normalized.push },
     email: { ...normalized.email },
+    quietHours: { ...normalized.quietHours },
   };
 }
 
@@ -166,6 +193,16 @@ export function mergeReactivationOpenMatches(prefs, value) {
     reactivationOpenMatches: next,
     push: { ...normalized.push },
     email: { ...normalized.email },
+    quietHours: { ...normalized.quietHours },
+  };
+}
+
+/** @param {{ enabled?: boolean, start?: number, end?: number }} patch */
+export function mergeQuietHours(prefs, patch) {
+  const normalized = normalizeNotificationPrefs(prefs);
+  return {
+    ...normalized,
+    quietHours: normalizeQuietHours({ ...normalized.quietHours, ...(patch || {}) }),
   };
 }
 

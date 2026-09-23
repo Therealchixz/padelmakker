@@ -1032,8 +1032,8 @@ export function OnboardingPage() {
         }}
       >
         Vi sender dig en mail, når en spiller i dit område søger makker eller opretter
-        en kamp, der passer til dig — højst én om dagen. Du kan afmelde med ét klik
-        direkte i mailen.
+        en kamp, der passer til dig. Nyhederne samles i én mail kl. 17 —
+        højst én om dagen. Du kan afmelde med ét klik direkte i mailen.
       </p>
       {turnstileEnabled && (
         <div id="onb-captcha" style={{ ...insetCard, marginBottom: "14px" }}>

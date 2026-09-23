@@ -651,6 +651,40 @@ async function authorizeCrossUserPush({
   return false;
 }
 
+/**
+ * "Stille om natten": standard kl. 22-07 dansk tid. Kun vigtige beskeder
+ * (aflysninger, invitationer, kampforslag med frist) kommer igennem; resten
+ * venter i appen. Brugeren kan slå det fra eller flytte tidspunkterne
+ * (notification_prefs.quietHours = { enabled, start, end }).
+ */
+const QUIET_DEFAULT = { enabled: true, start: 22, end: 7 };
+
+function quietHoursFromPrefs(prefs: Record<string, unknown> | null) {
+  const raw = prefs && typeof prefs.quietHours === "object" && prefs.quietHours
+    ? (prefs.quietHours as Record<string, unknown>)
+    : {};
+  const hour = (v: unknown, fallback: number) =>
+    Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 23 ? (v as number) : fallback;
+  return {
+    enabled: typeof raw.enabled === "boolean" ? raw.enabled : QUIET_DEFAULT.enabled,
+    start: hour(raw.start, QUIET_DEFAULT.start),
+    end: hour(raw.end, QUIET_DEFAULT.end),
+  };
+}
+
+function isWithinQuietHours(hour: number, start: number, end: number) {
+  if (start === end) return false;
+  return start > end ? hour >= start || hour < end : hour >= start && hour < end;
+}
+
+function copenhagenHour(now: Date = new Date()) {
+  return Number(new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Copenhagen",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(now));
+}
+
 function ttlForLevel(level: PushPolicy["level"]) {
   if (level === "critical") return 3600;
   if (level === "quiet") return 300;
@@ -935,6 +969,18 @@ Deno.serve(async (req: Request) => {
         : null;
     if (pushBucket && prefChannel in pushBucket && pushBucket[prefChannel] === false) {
       return new Response(JSON.stringify({ sent: 0, skipped: "user_prefs" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const quiet = quietHoursFromPrefs(pushPrefs);
+    if (
+      policy.level !== "critical" &&
+      quiet.enabled &&
+      isWithinQuietHours(copenhagenHour(), quiet.start, quiet.end)
+    ) {
+      // Beskeden ligger allerede i appen; telefonen skal bare ikke vække nogen.
+      return new Response(JSON.stringify({ sent: 0, skipped: "quiet_hours" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

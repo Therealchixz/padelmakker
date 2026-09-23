@@ -80,6 +80,24 @@ function deepLink(type: string, matchId: string | null, entityId: string | null,
   return `${siteUrl}/dashboard/notifikationer`;
 }
 
+/** Dato i København som YYYY-MM-DD, `offsetDays` dage fra nu. */
+function copenhagenDate(offsetDays = 0): string {
+  const d = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen" }).format(d);
+}
+
+/**
+ * Sendes mailen nu, eller venter den til den daglige opsummering kl. 17
+ * (send-discovery-digest)? Kun kampe i dag eller i morgen haster: en åben kamp
+ * skal have fire spillere hurtigt. Alt andet samles, så den anden nyhed samme
+ * dag ikke går tabt i dagsspærren.
+ */
+function sendsImmediately(type: string, matchDate: string | null): boolean {
+  if (type !== "match_watch_match" || !matchDate) return false;
+  const d = String(matchDate).slice(0, 10);
+  return d === copenhagenDate(0) || d === copenhagenDate(1);
+}
+
 function ctaLabel(type: string) {
   if (type === "match_watch_match") return "Se kampen";
   if (type === "makker_suggestion") return "Se notifikation";
@@ -132,6 +150,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
+
+    let matchDate: string | null = null;
+    if (type === "match_watch_match" && matchId) {
+      const { data: matchRow } = await admin.from("matches").select("date").eq("id", matchId).maybeSingle();
+      matchDate = matchRow?.date ? String(matchRow.date) : null;
+    }
+    if (!sendsImmediately(type, matchDate)) {
+      // Nyheden ligger allerede som in-app notifikation og kommer med i
+      // dagens opsummering kl. 17.
+      return jsonResponse(req, { ok: true, sent: 0, skipped: "digest" });
+    }
+
     const sinceIso = new Date(Date.now() - NOTIF_WINDOW_MINUTES * 60_000).toISOString();
 
     let query = admin
@@ -311,6 +341,20 @@ Deno.serve(async (req: Request) => {
         continue;
       }
       sent += 1;
+
+      // Markér som mailet, så den ikke også kommer i opsummeringen kl. 17.
+      let markQuery = admin
+        .from("notifications")
+        .update({ emailed_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("type", type)
+        .gte("created_at", sinceIso)
+        .is("emailed_at", null);
+      markQuery = type === "match_watch_match" && matchId
+        ? markQuery.eq("match_id", matchId)
+        : markQuery.eq("entity_id", entityId || "");
+      const { error: markErr } = await markQuery;
+      if (markErr) console.error("send-discovery-email mark emailed:", markErr.message);
     }
 
     return jsonResponse(req, {
