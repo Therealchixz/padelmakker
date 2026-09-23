@@ -75,7 +75,7 @@ kan efterprøves direkte mod den kørende database.
 | `cancel_play_intent` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | — |
 | `canonical_app_region` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `check_rate_limit` | `00000000000000_baseline_schema.sql` | — | 1 |
-| `claim_email_send_slot` | `20260922224245_discovery_email_frequency_cap.sql` | — | — |
+| `claim_email_send_slot` | `20260923103039_discovery_email_cap_one_per_day.sql` | — | — |
 | `complete_americano_tournament` | `00000000000000_baseline_schema.sql` | `_americano_auth_fix.sql`<br>`_p3b.sql`<br>`admin_security_phase3_deploy.sql`<br>`americano_elo_rating.sql`<br>`americano_liga_completed_at.sql` | — |
 | `confirm_match_result_and_apply_elo` | `00000000000000_baseline_schema.sql` | `confirm_match_result_and_apply_elo.sql` | — |
 | `create_notification_for_user` | `00000000000000_baseline_schema.sql` | `notification_rate_limits_restore.sql` | 5 |
