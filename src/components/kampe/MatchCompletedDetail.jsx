@@ -51,8 +51,8 @@ function TeamAvatars({ players, profilesById }) {
   );
 }
 
-function EloTeamCard({ label, sublabel, delta, tone }) {
-  const isUp = tone === 'up';
+function EloTeamCard({ label, sublabel, delta }) {
+  const isUp = delta == null || delta >= 0;
   return (
     <div className="pm-kd-card pm-kd-elo-card">
       <div className={`pm-kd-feed-ic ${isUp ? 'pm-kd-feed-ic--up' : 'pm-kd-feed-ic--down'}`}>
@@ -89,8 +89,36 @@ export function MatchCompletedDetail({
   const t1AvgChange = teamAvgEloChange(t1, changes);
   const t2AvgChange = teamAvgEloChange(t2, changes);
   const winnerIsT1 = winnerTeam === 1;
-  const winnerAvgChange = winnerIsT1 ? t1AvgChange : t2AvgChange;
-  const loserAvgChange = winnerIsT1 ? t2AvgChange : t1AvgChange;
+
+  // Var du med, vises DIN ændring (samme tal som ved dit navn under
+  // Deltagere) og det andet hold ved navn. Før stod der "Vindere" og
+  // "Modstandere" med holdgennemsnit, så man efter et nederlag både var
+  // "modstanderen" og så tre forskellige tal for samme kamp.
+  const isIn = (players) => Boolean(currentUserId) && players.some((p) => String(p.user_id) === String(currentUserId));
+  const myTeamNum = isIn(t1) ? 1 : isIn(t2) ? 2 : null;
+  const myChange = myTeamNum ? changes?.[String(currentUserId)] ?? null : null;
+  const teamCard = (num) => {
+    const players = num === 1 ? t1 : t2;
+    const won = (num === 1) === winnerIsT1;
+    return {
+      key: `t${num}`,
+      label: teamFirstNames(players, currentUserId),
+      sublabel: `${won ? 'Vandt' : 'Tabte'} · gennemsnit for holdet`,
+      delta: num === 1 ? t1AvgChange : t2AvgChange,
+    };
+  };
+  let eloCards;
+  if (myTeamNum && myChange != null) {
+    const iWon = (myTeamNum === 1) === winnerIsT1;
+    eloCards = [
+      { key: 'me', label: 'Dig', sublabel: `${iWon ? 'Du vandt' : 'Du tabte'} · din ELO-ændring`, delta: Math.round(myChange) },
+      teamCard(myTeamNum === 1 ? 2 : 1),
+    ];
+  } else {
+    // Vinderne først.
+    eloCards = winnerIsT1 ? [teamCard(1), teamCard(2)] : [teamCard(2), teamCard(1)];
+  }
+  eloCards = eloCards.filter((c) => c.delta != null);
 
   return (
     <>
@@ -122,27 +150,14 @@ export function MatchCompletedDetail({
         </div>
       </div>
 
-      {(winnerAvgChange != null || loserAvgChange != null) ? (
+      {eloCards.length > 0 ? (
         <>
           <div className="pm-kd-section-h">
             <h3>Elo-ændringer</h3>
           </div>
-          {winnerAvgChange != null ? (
-            <EloTeamCard
-              label="Vindere"
-              sublabel="Hold-gennemsnit"
-              delta={winnerAvgChange}
-              tone="up"
-            />
-          ) : null}
-          {loserAvgChange != null ? (
-            <EloTeamCard
-              label="Modstandere"
-              sublabel="Hold-gennemsnit"
-              delta={loserAvgChange}
-              tone="down"
-            />
-          ) : null}
+          {eloCards.map((c) => (
+            <EloTeamCard key={c.key} label={c.label} sublabel={c.sublabel} delta={c.delta} />
+          ))}
         </>
       ) : null}
     </>

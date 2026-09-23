@@ -59,10 +59,13 @@ export function KampeMatchDetailSheet({
 
   if (!open || !match) return null;
 
+  // En spillet kamp skal ikke stå med "Bane ikke booket".
+  const isFinished = status === 'completed' || winnerTeam != null;
   const venue =
-    matchPrefs?.booked === false && !String(match.court_name || '').trim()
+    !isFinished && matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
+  const showBooked = matchPrefs?.booked != null && !isFinished;
   const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
   const statusBadge = getKampeDetailStatusBadge({
     status,
@@ -108,9 +111,9 @@ export function KampeMatchDetailSheet({
             </a>
           ) : null}
         </div>
-        {matchPrefs?.booked != null || unreadCount > 0 ? (
+        {showBooked || unreadCount > 0 ? (
           <div className="pm-kd-price-meta">
-            {matchPrefs?.booked != null ? (
+            {showBooked ? (
               <span className={`pm-kd-tag ${matchPrefs.booked ? 'pm-kd-tag--green' : 'pm-kd-tag--amber'}`}>
                 {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
               </span>

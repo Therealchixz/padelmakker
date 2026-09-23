@@ -87,7 +87,7 @@ export function KampeMatchListCard({
   onClick,
 }) {
   const venue =
-    matchPrefs?.booked === false && !String(match.court_name || '').trim()
+    status !== 'completed' && winnerTeam == null && matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
   const dull = isFull && !joined && status !== 'completed' && status !== 'in_progress';
