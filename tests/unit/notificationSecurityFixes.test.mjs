@@ -102,9 +102,13 @@ test('LigaTab sends push for team invite flows', () => {
 
 test('NotificationBell invalidates prefs cache and rolls back on error', () => {
   const src = readSrc('src/components/NotificationBell.jsx');
+  // Indstillingerne bor i NotificationSettingsPanel, som både klokken og
+  // notifikationssiden (telefon) bruger.
+  const settings = readSrc('src/components/NotificationSettingsPanel.jsx');
   const dismiss = readSrc('src/lib/notificationDismissStorage.js');
-  assert.match(src, /invalidateNotificationPrefsCache/);
-  assert.match(src, /setNotifPrefs\(prevPrefs\)/);
+  assert.match(src, /<NotificationSettingsPanel \/>/);
+  assert.match(settings, /invalidateNotificationPrefsCache/);
+  assert.match(settings, /setNotifPrefs\(prevPrefs\)/);
   assert.match(src, /\.eq\("user_id", userId\)/);
   assert.match(src, /loadSeqRef/);
   assert.match(src, /realtimeInstanceRef/);
