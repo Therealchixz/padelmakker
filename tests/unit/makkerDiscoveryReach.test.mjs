@@ -220,6 +220,28 @@ test('makker-discovery naar naboregioner, ikke kun sin egen', () => {
   assert.equal(antal, 2, `${m.f}: begge loekker skal bruge nabolisten, fandt ${antal}`);
 });
 
+test('knappen taeller ogsaa for dem der har aabnet filteret', () => {
+  // 7 brugere stod som modtagere uden at kunne modtage noget: knappen
+  // "giv mig besked" taalte kun, hvis makker-filteret var HELT tomt, og har
+  // man aabnet filteret én gang, staar der et 'notify: false' i det.
+  //
+  // makker_watch_at skelner: det saettes, hver gang en bruger GEMMER sit
+  // filter. Er det null, har de aldrig taget stilling, og standarden gaelder.
+  // Har de gemt med notify fra, er makker_watch_enabled false, og grenen
+  // falder alligevel - et bevidst nej staar stadig.
+  const m = sidsteMigrationMed(/FUNCTION public\.notify_makker_watchers/i);
+  assert.match(
+    m.sql,
+    /p\.makker_search_prefs = '\{\}'::jsonb\s*\n[\s\S]{0,200}OR p\.makker_watch_at IS NULL/,
+    `${m.f}: et tomt filter maa ikke vaere eneste vej ind`,
+  );
+  assert.match(
+    m.sql,
+    /p\.makker_watch_enabled = true\s*\n\s*AND \(/,
+    `${m.f}: knappen skal stadig vaere slaaet til`,
+  );
+});
+
 test('udloebsgaten er fjernet ogsaa i notifikationerne', () => {
   const m = sidsteMigrationMed(/FUNCTION public\.notify_makker_watchers/i);
   // Ordet maa gerne staa i kommentaren der forklarer fjernelsen; det er
