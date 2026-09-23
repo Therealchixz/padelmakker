@@ -139,7 +139,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(lightbox); }}
               disabled={busy}
-              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 10, background: theme.red, color: 'var(--pm-on-accent)', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 10, background: theme.redSolid, color: 'var(--pm-on-accent)', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             >
               Slet billede
             </button>

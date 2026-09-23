@@ -5,7 +5,9 @@
   --pm-surface-alt: #F8FAFC;
   --pm-text:        #0B1120;
   --pm-text-mid:    #3E4C63;
-  --pm-text-light:  #6B7A8F;
+  /* #6B7A8F gav 4,37:1 paa hvid og 3,4-4,1:1 paa de farvede bokse. #596579
+     holder 4,5:1 paa alle overflader og er stadig tydeligt lysere end text-mid. */
+  --pm-text-light:  #596579;
 
   --pm-accent:      #16377E;
   /* Udfyldte flader (knapper, bobler, badges) med hvid tekst ovenpaa.
@@ -21,29 +23,35 @@
   --pm-navy-bg:     #EEF2FB;
   --pm-navy-deep:   #0D2752;
   --pm-navy-soft:   #1D4A9E;
-  --pm-amber:       #D97706;
+  /* Orange og groen bruges som tekstfarve paa lyse flader; #D97706 og #059669
+     gav kun 2,9-3,8:1. De moerkere nuancer holder 4,5:1 paa hvid og paa deres
+     egne -bg-flader. */
+  --pm-amber:       #B45309;
   --pm-amber-bg:    #FAEFDC;
   --pm-amber-text:  #92400E;
   --pm-amber-border:#EDD9B5;
 
-  --pm-warm:        #D97706;
+  --pm-warm:        #B45309;
   --pm-warm-bg:     #FEF3C7;
   --pm-blue:        #2563EB;
   --pm-blue-bg:     #EFF6FF;
   --pm-red:         #DC2626;
+  /* Udfyldte roede maerker med hvid tekst (antal ulaeste m.m.). Samme ide som
+     --pm-accent-solid: i moerk tilstand er --pm-red for lys til hvid tekst. */
+  --pm-red-solid:   #DC2626;
   --pm-red-bg:      #FEF2F2;
 
-  --pm-green:       #059669;
+  --pm-green:       #047857;
   --pm-green-bg:    #ECFDF5;
   --pm-purple:      #7C3AED;
   --pm-purple-bg:   #F5F3FF;
   --pm-info:        #2563EB;
   --pm-info-bg:     #EFF6FF;
   --pm-info-border: #93C5FD;
-  --pm-success:     #059669;
+  --pm-success:     #047857;
   --pm-success-bg:  #ECFDF5;
   --pm-success-border:#6EE7B7;
-  --pm-warning:     #D97706;
+  --pm-warning:     #B45309;
   --pm-warning-bg:  #FEF3C7;
   --pm-warning-border:#FCD34D;
   --pm-danger:      #DC2626;
@@ -76,9 +84,10 @@
   --pm-rank-hero-gradient: linear-gradient(135deg, #0D2752, #16377E);
   --pm-surface-muted: #f1f5f9;
   --pm-video-bg: #0f172a;
-  --pm-form-win: #22c55e;
-  --pm-form-loss: #ef4444;
-  --pm-form-draw: #9ca3af;
+  /* Form-prikkerne har hvide bogstaver (V/T/U); de lyse nuancer gav 2,3-3,8:1. */
+  --pm-form-win: #15803D;
+  --pm-form-loss: #DC2626;
+  --pm-form-draw: #6B7280;
   --pm-elo-progress-track: rgba(255,255,255,0.15);
   --pm-overlay:     rgba(0,0,0,0.35);
   --pm-overlay-strong: rgba(0,0,0,0.5);
@@ -119,8 +128,9 @@
   --pm-surface-alt: #162032;
 
   --pm-text:        #E2E8F0;
-  --pm-text-mid:    #94A3B8;
-  --pm-text-light:  #64748B;
+  /* #94A3B8/#64748B gav 4,49:1 og 3,07:1 paa kortene og de blaa bokse. */
+  --pm-text-mid:    #A3B1C4;
+  --pm-text-light:  #8795AA;
 
   --pm-accent:      #60A5FA;
   /* Hvid tekst paa #60A5FA giver 2,5:1 og falder for WCAG AA. #2563EB giver
@@ -140,6 +150,7 @@
   --pm-blue:        #60A5FA;
   --pm-blue-bg:     #162038;
   --pm-red:         #F87171;
+  --pm-red-solid:   #DC2626;
   --pm-red-bg:      #2D1515;
 
   --pm-green:       #34D399;

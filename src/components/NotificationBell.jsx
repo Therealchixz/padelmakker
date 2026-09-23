@@ -460,7 +460,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       >
         <Bell size={20} color={theme.textMid} strokeWidth={2} />
         {unreadCount > 0 && (
-          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.red, color: theme.onAccent, fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
+          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.redSolid, color: theme.onAccent, fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

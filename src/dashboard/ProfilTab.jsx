@@ -964,7 +964,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ fontSize: 10, color: theme.textLight, marginBottom: 10, lineHeight: 1.45 }}>
             <div>{activeOverviewSource}</div>
             {activeOverviewUpdatedAt !== 'ukendt' ? (
-              <div style={{ marginTop: 2, opacity: 0.85 }}>Opdateret {activeOverviewUpdatedAt}</div>
+              <div style={{ marginTop: 2 }}>Opdateret {activeOverviewUpdatedAt}</div>
             ) : null}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, marginBottom: 20 }}>

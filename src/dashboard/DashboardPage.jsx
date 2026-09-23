@@ -1354,7 +1354,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   height: "18px",
                   padding: "0 5px",
                   borderRadius: "999px",
-                  background: theme.red,
+                  background: theme.redSolid,
                   color: theme.onAccent,
                   fontSize: "10px",
                   fontWeight: 800,
@@ -1416,7 +1416,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                         height: '16px',
                         padding: '0 4px',
                         borderRadius: '999px',
-                        background: theme.red,
+                        background: theme.redSolid,
                         color: theme.onAccent,
                         fontSize: '9px',
                         fontWeight: 800,
@@ -1522,7 +1522,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
-                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.redSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                   {t.badge > 9 ? "9+" : t.badge}
                 </span>
               )}
@@ -1881,7 +1881,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 {t.icon}
                 {t.label}
                 {t.badge && (
-                  <span style={{ background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
+                  <span style={{ background: theme.redSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
                     {t.badge > 9 ? "9+" : t.badge}
                   </span>
                 )}
