@@ -13,7 +13,8 @@ test('RankingTab loads profiles in pages of 50 with load more', () => {
   const src = readFileSync(rankingPath, 'utf8');
   assert.match(src, /RANKING_PAGE_SIZE = 50/);
   assert.match(src, /Indlæs \$\{RANKING_PAGE_SIZE\} flere/);
-  assert.match(src, /\.range\(from, to\)/);
+  assert.match(src, /\.range\(offset, offset \+ limit - 1\)/);
+  assert.match(src, /fetchRankingPage\(/);
 });
 
 test('RankingTab only loads elo history for week and month periods', () => {

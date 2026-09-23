@@ -26,6 +26,7 @@ import {
 } from '../lib/tournamentCopy';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { MonthMasterTeaser } from '../components/GrowthCampaignBanner';
+import { fetchRankingPage, RANKING_START_CURSOR } from '../lib/rankingPages';
 
 const RANKING_PAGE_SIZE = 50;
 const PERIOD_HISTORY_LIMIT = 1500;
@@ -60,6 +61,9 @@ export function RankingTab({ user }) {
   const [hasMore, setHasMore] = useState(false);
   const [visibleCount, setVisibleCount] = useState(RANKING_PAGE_SIZE);
   const [myGlobalRank, setMyGlobalRank] = useState(null);
+  // Antal spillede, der er hentet, og om det er dem alle (så "af N" er endeligt).
+  const [rankedCount, setRankedCount] = useState(0);
+  const [rankedComplete, setRankedComplete] = useState(false);
   const [viewPlayer, setViewPlayer] = useState(null);
   const [rankMode, setRankMode] = useState(() => {
     try {
@@ -77,7 +81,7 @@ export function RankingTab({ user }) {
   });
   const [filterArea, setFilterArea] = useState('all');
 
-  const profileOffsetRef = useRef(0);
+  const profileCursorRef = useRef(RANKING_START_CURSOR);
   const profileFetchGenRef = useRef(0);
   const periodHistoryLoadedRef = useRef('');
   const prevPeriodRef = useRef(period);
@@ -117,6 +121,8 @@ export function RankingTab({ user }) {
   const myId = user?.id != null ? String(user.id) : '';
   const isAmericano = rankMode === 'americano';
   const orderColumn = isAmericano ? 'americano_elo_rating' : 'elo_rating';
+  const gamesColumn = isAmericano ? 'americano_played' : 'games_played';
+  const myPlayed = isAmericano ? myAllTimeAmericanoPlayed > 0 : myAllTimeGames > 0;
 
   useEffect(() => {
     try {
@@ -136,10 +142,16 @@ export function RankingTab({ user }) {
 
   const fetchMyAllTimeRank = useCallback(async () => {
     if (!myId || period !== 'all') return;
+    // Uden kampe har man ingen placering (vises som —).
+    if (!myPlayed) {
+      setMyGlobalRank(0);
+      return;
+    }
     const myScore = isAmericano ? myAllTimeAmericanoElo : myAllTimeElo;
     const { count, error } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
+      .gt(gamesColumn, 0)
       .gt(orderColumn, myScore);
     if (error) {
       console.warn('ranking: my placement', error.message);
@@ -147,7 +159,7 @@ export function RankingTab({ user }) {
       return;
     }
     setMyGlobalRank((count ?? 0) + 1);
-  }, [myId, period, isAmericano, myAllTimeElo, myAllTimeAmericanoElo, orderColumn]);
+  }, [myId, period, isAmericano, myPlayed, myAllTimeElo, myAllTimeAmericanoElo, orderColumn, gamesColumn]);
 
   const loadPeriodHistory = useCallback(async (activePeriod) => {
     const cutoff = periodCutoffDate(activePeriod);
@@ -175,24 +187,40 @@ export function RankingTab({ user }) {
   }, []);
 
   const fetchProfilePage = useCallback(
-    async (offset, append) => {
-      const from = offset;
-      const to = offset + RANKING_PAGE_SIZE - 1;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(PROFILE_RANKING_SELECT)
-        .order(orderColumn, { ascending: false })
-        .range(from, to);
-      if (error) throw error;
-      const rows = (data || []).map((row, idx) => ({
-        ...row,
-        _globalRank: from + idx + 1,
-      }));
-      setPlayers((prev) => (append ? [...prev, ...rows] : rows));
-      setHasMore(rows.length === RANKING_PAGE_SIZE);
-      profileOffsetRef.current = append ? offset + rows.length : rows.length;
+    async (append) => {
+      const page = await fetchRankingPage({
+        cursor: append ? profileCursorRef.current : RANKING_START_CURSOR,
+        pageSize: RANKING_PAGE_SIZE,
+        fetchRanked: async (offset, limit) => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select(PROFILE_RANKING_SELECT)
+            .gt(gamesColumn, 0)
+            .order(orderColumn, { ascending: false })
+            .order('id', { ascending: true })
+            .range(offset, offset + limit - 1);
+          if (error) throw error;
+          return data;
+        },
+        fetchUnranked: async (offset, limit) => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select(PROFILE_RANKING_SELECT)
+            .or(`${gamesColumn}.is.null,${gamesColumn}.eq.0`)
+            .order('full_name', { ascending: true, nullsFirst: false })
+            .order('id', { ascending: true })
+            .range(offset, offset + limit - 1);
+          if (error) throw error;
+          return data;
+        },
+      });
+      setPlayers((prev) => (append ? [...prev, ...page.rows] : page.rows));
+      setHasMore(page.hasMore);
+      setRankedCount(page.cursor.ranked);
+      setRankedComplete(page.rankedComplete);
+      profileCursorRef.current = page.cursor;
     },
-    [orderColumn],
+    [orderColumn, gamesColumn],
   );
 
   const loadAllTimeProfiles = useCallback(
@@ -205,12 +233,12 @@ export function RankingTab({ user }) {
       if (!background) {
         setInitialLoading(true);
         setPlayers([]);
-        profileOffsetRef.current = 0;
+        profileCursorRef.current = RANKING_START_CURSOR;
       } else {
         setRefreshing(true);
       }
       try {
-        await fetchProfilePage(0, false);
+        await fetchProfilePage(false);
         if (gen === profileFetchGenRef.current) void fetchMyAllTimeRank();
       } catch (e) {
         console.error(e);
@@ -266,7 +294,7 @@ export function RankingTab({ user }) {
     setHasMore(false);
     setVisibleCount(RANKING_PAGE_SIZE);
     setProfileById({});
-    profileOffsetRef.current = 0;
+    profileCursorRef.current = RANKING_START_CURSOR;
     setMyGlobalRank(null);
     setLoadError(null);
     periodHistoryLoadedRef.current = '';
@@ -496,11 +524,11 @@ export function RankingTab({ user }) {
   const userRank = useMemo(() => {
     if (filterArea !== 'all') {
       const idx = displaySorted.findIndex((p) => String(p.id) === myId);
-      return idx >= 0 ? idx + 1 : 0;
+      return idx >= 0 && !displaySorted[idx]._unranked ? idx + 1 : 0;
     }
     if (period === 'all' && myGlobalRank != null) return myGlobalRank;
     const idx = sorted.findIndex((p) => String(p.id) === myId);
-    if (idx >= 0) return idx + 1;
+    if (idx >= 0) return sorted[idx]._unranked ? 0 : idx + 1;
     if (period !== 'all') {
       const globalIdx = periodRankList.findIndex((r) => String(r.id) === myId);
       return globalIdx >= 0 ? globalIdx + 1 : 0;
@@ -530,7 +558,8 @@ export function RankingTab({ user }) {
       : userEntry?.score || 0;
 
   // Rank change tracking using localStorage (global/all-area only)
-  const rankStorageKey = myId ? `pm_prevrank_${myId}_${rankMode}_${period}` : null;
+  // v2: kun spillede tæller med, så gamle placeringer kan ikke sammenlignes.
+  const rankStorageKey = myId ? `pm_prevrank_v2_${myId}_${rankMode}_${period}` : null;
   const [rankChange, setRankChange] = useState(0);
   const rankProcessedKeyRef = useRef('');
 
@@ -550,7 +579,7 @@ export function RankingTab({ user }) {
     setLoadingMore(true);
     try {
       if (period === 'all') {
-        await fetchProfilePage(profileOffsetRef.current, true);
+        await fetchProfilePage(true);
       } else {
         setVisibleCount((n) => Math.min(n + RANKING_PAGE_SIZE, periodRankList.length));
       }
@@ -575,11 +604,12 @@ export function RankingTab({ user }) {
     all: isAmericano ? TOURNAMENT_RANKING_ALL_TIME : `Samlet ${TWO_V_TWO_ELO_LABEL}`,
   };
 
+  const areaRankedCount = displaySorted.filter((p) => !p._unranked).length;
   const rankTotalLabel =
     period === 'all'
-      ? hasMore
-        ? `${displaySorted.length}+`
-        : String(displaySorted.length)
+      ? rankedComplete
+        ? String(rankedCount)
+        : `${rankedCount}+`
       : String(totalRanked ?? displaySorted.length);
 
   const rankModeTabs = [
@@ -593,7 +623,8 @@ export function RankingTab({ user }) {
   ];
 
   const showInitialLoader = initialLoading && sorted.length === 0;
-  const hasPodium = period === 'all' && !showInitialLoader && displaySorted.length >= 3;
+  // Podiet kræver tre, der har spillet; de står øverst i listen.
+  const hasPodium = period === 'all' && !showInitialLoader && areaRankedCount >= 3;
 
   const renderPod = (p, place) => {
     const isFirst = place === 1;
@@ -751,7 +782,7 @@ export function RankingTab({ user }) {
               {period === 'all' && myBundleLoading
                 ? ''
                 : userRank > 0 && (totalRanked != null || displaySorted.length > 0)
-                  ? `af ${filterArea !== 'all' ? displaySorted.length : period === 'all' && myGlobalRank != null ? rankTotalLabel : totalRanked ?? displaySorted.length}`
+                  ? `af ${filterArea !== 'all' ? areaRankedCount : period === 'all' && myGlobalRank != null ? rankTotalLabel : totalRanked ?? displaySorted.length}`
                   : ''}
             </span>
           </div>
@@ -871,8 +902,22 @@ export function RankingTab({ user }) {
                 ? (hasPodium ? sliceIdx + 4 : sliceIdx + 1)
                 : (p._globalRank ?? (hasPodium ? sliceIdx + 4 : sliceIdx + 1));
               const isLast = sliceIdx === listPlayers.length - 1;
+              const unranked = Boolean(p._unranked);
+              const firstUnranked = unranked && (sliceIdx === 0 || !listPlayers[sliceIdx - 1]._unranked);
               return (
                 <div key={p.id}>
+                  {firstUnranked && (
+                    <div
+                      className="pm-rank-unranked-head"
+                      style={{
+                        padding: '14px 14px 8px',
+                        background: theme.surfaceAlt,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Har ikke spillet endnu</div>
+                      <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>Får en placering efter første kamp</div>
+                    </div>
+                  )}
                   <div
                     onClick={() => !me && setViewPlayer(p)}
                     onKeyDown={(e) => {
@@ -897,7 +942,7 @@ export function RankingTab({ user }) {
                       width: 24, textAlign: 'center', fontWeight: 700,
                       fontSize: 13, color: me ? theme.accent : theme.textMid, flexShrink: 0,
                     }}>
-                      {place}
+                      {unranked ? '–' : place}
                     </div>
                     <AvatarCircle
                       avatar={p.avatar}
@@ -916,7 +961,9 @@ export function RankingTab({ user }) {
                             ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano`
                             : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
                           : period === 'all'
-                            ? `${Math.round(Number(p.elo_rating) || 1000)} ELO${p.level ? ` · Niveau ${formatPlaytomicLevel(p.level)}` : ''} · ${p.periodGames} kampe`
+                            ? unranked
+                              ? [p.area, p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : null].filter(Boolean).join(' · ')
+                              : `${Math.round(Number(p.elo_rating) || 1000)} ELO${p.level ? ` · Niveau ${formatPlaytomicLevel(p.level)}` : ''} · ${p.periodGames} kampe`
                             : `${p.periodGames} kampe · ${p.periodWins} sejre`}
                       </div>
                     </div>
@@ -926,7 +973,7 @@ export function RankingTab({ user }) {
                         ? theme.accent
                         : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
                     }}>
-                      {period === 'all' ? score : score > 0 ? `+${score}` : score}
+                      {unranked ? null : period === 'all' ? score : score > 0 ? `+${score}` : score}
                     </div>
                   </div>
                   {!isLast && <div style={{ height: 1, background: theme.border, margin: '0 14px' }} />}
