@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useDarkMode } from '../lib/useDarkMode';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -23,6 +24,9 @@ export function LoginPage() {
   const turnstileEnabled = isTurnstileEnabled();
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  // Samme moerke logo som forsiden og dashboardet bruger. Uden dette staar
+  // det moerkeblaa logo paa moerkeblaa baggrund og forsvinder naesten.
+  const [dark] = useDarkMode();
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
@@ -129,8 +133,8 @@ export function LoginPage() {
         <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "28px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <picture>
-            <source srcSet="/logo-brand-nav.webp" type="image/webp" />
-            <img src="/logo-brand.png" alt="PadelMakker" style={{ height: "38px", display: "inline-block" }} />
+            <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
+            <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker" style={{ height: "38px", display: "inline-block" }} />
           </picture>
           <h1 style={{ ...heading("20px"), letterSpacing: "-0.3px", marginTop: "22px", marginBottom: 0 }}>Velkommen tilbage</h1>
           <p style={{ color: theme.textMid, fontSize: "13px", marginTop: "5px", marginBottom: 0, lineHeight: 1.5 }}>Log ind for at finde din næste kamp</p>
@@ -146,7 +150,7 @@ export function LoginPage() {
           <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
           <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "8px" }} />
           <div style={{ textAlign: "right", marginBottom: "16px" }}>
-            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: 0, color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font }}>
+            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: "11px 6px", margin: "-11px -6px", color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font, minHeight: "44px" }}>
               Glemt adgangskode?
             </button>
           </div>

@@ -8,6 +8,11 @@
   --pm-text-light:  #6B7A8F;
 
   --pm-accent:      #16377E;
+  /* Udfyldte flader (knapper, bobler, badges) med hvid tekst ovenpaa.
+     I lys tilstand er den identisk med --pm-accent, saa intet aendrer sig.
+     I moerk tilstand er accenten lys nok til at hvid tekst falder til 2,5:1,
+     og derfor har udfyldte flader brug for deres egen, moerkere farve. */
+  --pm-accent-solid: #16377E;
   --pm-accent-hover:#0D2752;
   --pm-accent-bg:   #E8EEF9;
   --pm-landing-cta-blue: #16377E;
@@ -95,7 +100,10 @@
   --pm-space-2:     12px;
   --pm-space-3:     16px;
   --pm-space-4:     20px;
-  --pm-control-h:   38px;
+  /* Hoejden paa knapper, felter og dropdowns. Var 38px, hvilket gjorde stort
+     set hver trykflade i appen 4-6px for lille: Apple anbefaler 44x44 og
+     Google 48x48 for noget, man rammer med en finger. */
+  --pm-control-h:   44px;
   --pm-transition-ui: 0.18s ease;
   --pm-focus-ring: 0 0 0 3px rgba(22, 55, 126, 0.35);
   --pm-focus-ring-dark: 0 0 0 3px rgba(96, 165, 250, 0.32);
@@ -115,6 +123,10 @@
   --pm-text-light:  #64748B;
 
   --pm-accent:      #60A5FA;
+  /* Hvid tekst paa #60A5FA giver 2,5:1 og falder for WCAG AA. #2563EB giver
+     5,2:1 med hvid tekst og staar stadig 3,5:1 mod baggrunden, saa knappen
+     kan ses som form. --pm-accent bliver lys, fordi den bruges til links. */
+  --pm-accent-solid: #2563EB;
   --pm-accent-hover:#3B82F6;
   --pm-accent-bg:   #1E3A5F;
   --pm-landing-cta-blue: #1D4ED8;
