@@ -26,6 +26,7 @@ import {
   AMERICANO_VENUE_NONE,
 } from '../../lib/matchVenueOptions'
 import { VenueRegionPicker } from '../../components/VenueRegionPicker'
+import { DateInputField } from '../../components/DateInputField'
 import { LevelRangeSlider } from '../../components/LevelRangeSlider.jsx'
 import { formatPlaytomicLevelRange } from '../../lib/padelLevelUtils'
 
@@ -348,12 +349,12 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Dato</label>
-            <input
-              type="date"
+            <DateInputField
               value={date}
               min={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }}
+              onChange={(e: { target: { value: string } }) => setDate(e.target.value)}
+              inputStyle={{ ...inputStyle, marginBottom: 0 }}
+              aria-label="Dato"
             />
           </div>
 

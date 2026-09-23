@@ -33,6 +33,7 @@ import { scrollFormFieldIntoView, fieldValidationErrorStyle, fieldValidationMess
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { DateInputField } from '../components/DateInputField';
+import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 import { buildAdminChatPath } from '../lib/adminContactUtils';
 import {
@@ -1690,8 +1691,8 @@ export function LigaTab({
                         : `${sys} · ${r.points_win ?? 3} sejr · ${r.points_draw ?? 1} tiebreak-tab · ${r.points_loss ?? 0} nederlag`,
                     ]);
                   }
-                  if (r.start_date || r.end_date) rows.push(['Sæson', `${r.start_date || '?'}${r.end_date ? ` – ${r.end_date}` : ''}`]);
-                  if (r.registration_deadline) rows.push(['Tilmeldingsfrist', r.registration_deadline]);
+                  if (r.start_date || r.end_date) rows.push(['Sæson', `${r.start_date ? formatMatchDateDa(r.start_date) : '?'}${r.end_date ? ` – ${formatMatchDateDa(r.end_date)}` : ''}`]);
+                  if (r.registration_deadline) rows.push(['Tilmeldingsfrist', formatMatchDateDa(r.registration_deadline)]);
                   if (r.region) rows.push(['Region', r.region]);
                   if (r.max_teams) rows.push(['Maks. hold', String(r.max_teams)]);
                   return rows.map(([label, value]) => (

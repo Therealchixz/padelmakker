@@ -3967,10 +3967,9 @@ button,
   gap: 8px;
 }
 
-.pm-baner-date-label input {
+.pm-baner-date-label .pm-date-field {
   width: auto;
-  padding: 8px 10px;
-  font-size: 13px;
+  min-width: 8.5em;
 }
 
 .pm-baner-meta {
@@ -4316,6 +4315,13 @@ button,
 
 .pm-date-field__placeholder {
   color: var(--pm-text-light);
+}
+
+/* Feltet er usynligt ovenpå facaden; vis fokus på facaden ved tastatur. */
+.pm-date-field:has(.pm-date-field__overlay:focus-visible) .pm-date-field__facade {
+  /* inputStyle sætter outline: none inline */
+  outline: 2px solid var(--pm-accent) !important;
+  outline-offset: -2px;
 }
 
 .pm-date-field__overlay {
@@ -11474,11 +11480,12 @@ button,
   color: var(--pm-text-mid);
 }
 
-.pm-chat-v2-time-picker input {
+.pm-chat-v2-time-picker .pm-date-field__facade {
   border: 1px solid var(--pm-border);
   border-radius: 12px;
   padding: 10px 12px;
   font: inherit;
+  font-weight: 400;
   background: var(--pm-surface-alt);
   color: var(--pm-text);
 }

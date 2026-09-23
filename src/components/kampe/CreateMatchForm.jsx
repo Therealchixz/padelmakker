@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { btn, font, inputStyle, labelStyle, theme } from '../../lib/platformTheme';
+import { DateInputField } from '../DateInputField';
 import { PillTabs } from '../PillTabs';
 import { LevelRangeSlider } from '../LevelRangeSlider';
 import { VenueRegionPicker } from '../VenueRegionPicker';
@@ -154,20 +155,19 @@ export function CreateMatchForm({
               )}
             </div>
             <div ref={padelCreateDateFieldRef} style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Dato</label>
-              <input
-                type="date"
+              <DateInputField
+                label="Dato"
+                labelStyle={labelStyle}
                 value={newMatch.date}
                 min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => {
                   setNewMatch((m) => ({ ...m, date: e.target.value }));
                   if (padelCreateFieldError?.field === 'date') setPadelCreateFieldError(null);
                 }}
-                style={{
+                inputStyle={{
                   ...inputStyle,
                   fontSize: "13px",
-                  appearance: "none",
-                  WebkitAppearance: "none",
+                  marginBottom: 0,
                   ...fieldValidationErrorStyle(Boolean(padelDateError)),
                 }}
                 aria-invalid={padelDateError ? true : undefined}

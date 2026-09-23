@@ -29,6 +29,7 @@ import { onlineStatusLabel } from '../lib/chatPresenceUtils';
 import { useOnlineIds } from '../lib/presence';
 import { broadcastDmTyping, subscribeDmTyping, broadcastTeamTyping, subscribeTeamTyping } from '../lib/dmTypingUtils';
 import { ChatActionSheet } from '../components/chat/ChatActionSheet';
+import { DateInputField } from '../components/DateInputField';
 import { fetchDmHiddenUserIds, fetchUsersIBlocked } from '../lib/userModeration';
 import { BeskedChatActions } from '../components/BeskedChatActions';
 import { ChatInbox } from '../components/chat/ChatInbox';
@@ -1146,18 +1147,23 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           <div className="pm-chat-v2-time-picker">
             <label>
               Dato
-              <input
-                type="date"
+              <DateInputField
                 value={timeDraft.date}
                 onChange={(e) => setTimeDraft((prev) => ({ ...prev, date: e.target.value }))}
+                className="pm-chat-v2-time-picker-field"
+                inputStyle={{ marginBottom: 0 }}
+                aria-label="Dato"
               />
             </label>
             <label>
               Tid
-              <input
+              <DateInputField
                 type="time"
                 value={timeDraft.time}
                 onChange={(e) => setTimeDraft((prev) => ({ ...prev, time: e.target.value }))}
+                className="pm-chat-v2-time-picker-field"
+                inputStyle={{ marginBottom: 0 }}
+                aria-label="Tid"
               />
             </label>
             <button type="button" className="pm-chat-v2-time-picker-send" onClick={() => void handlePickTime()}>
