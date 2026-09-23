@@ -9,6 +9,8 @@ import {
   isSeekingTtlExpired,
   describeActiveSeeking,
   buildSeekingProfilePatch,
+  buildMatchNotifyPatch,
+  isMatchNotifyOn,
   buildExpiredSeekingSyncPatch,
   hasSeekingRegion,
   seekingChannelHint,
@@ -178,7 +180,9 @@ export function ActiveSeekingPanel({
       setBusyChannel(ch);
       try {
         const wasMakkerOn = isSeekingUiActive(displayUser, 'makker');
-        const patch = buildSeekingProfilePatch(displayUser, ch, enabled, regionOverride);
+        const patch = ch === 'kamp'
+          ? buildMatchNotifyPatch(displayUser, enabled, regionOverride)
+          : buildSeekingProfilePatch(displayUser, ch, enabled, regionOverride);
         const nextUser = mergeProfilePatch(displayUser, patch);
         setLocalUser(nextUser);
         await updateProfile(patch);
@@ -189,6 +193,12 @@ export function ActiveSeekingPanel({
           showToast(
             matchMsg
               || `${seekingChannelLabel(ch)} aktiv — synlig og notifikationer ${duration}`,
+          );
+        } else if (ch === 'kamp') {
+          showToast(
+            enabled
+              ? 'Du får besked, når der kommer en ny kamp på dit niveau'
+              : 'Besked om nye kampe er slået fra',
           );
         } else {
           showToast(
@@ -231,7 +241,7 @@ export function ActiveSeekingPanel({
   }, [variant, channelProp]);
 
   const homeOnline = useMemo(
-    () => isSeekingUiActive(displayUser, 'makker') || isSeekingUiActive(displayUser, 'kamp'),
+    () => isSeekingUiActive(displayUser, 'makker') || isMatchNotifyOn(displayUser),
     [displayUser],
   );
   const homeExpired = useMemo(
@@ -241,8 +251,10 @@ export function ActiveSeekingPanel({
   const homeStatus = useMemo(() => seekingHomeStatusLabel(displayUser), [displayUser]);
 
   const renderRow = (ch) => {
-    const active = isSeekingUiActive(displayUser, ch);
-    const expired = isSeekingTtlExpired(displayUser, ch);
+    // Kamp er ren besked (uden udløb); makker er synlighed + besked.
+    const notifyOnly = ch === 'kamp';
+    const active = notifyOnly ? isMatchNotifyOn(displayUser) : isSeekingUiActive(displayUser, ch);
+    const expired = notifyOnly ? false : isSeekingTtlExpired(displayUser, ch);
     const desc = describeActiveSeeking(displayUser, ch);
     const busy = busyChannel === ch;
 
@@ -263,7 +275,7 @@ export function ActiveSeekingPanel({
                 <span className="pm-active-seeking-badge pm-active-seeking-badge--expired">Udløbet</span>
               ) : null}
             </div>
-            {active || expired ? (
+            {(active || expired) && !notifyOnly ? (
               <>
                 <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
                 {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}
@@ -306,7 +318,7 @@ export function ActiveSeekingPanel({
               <span className="pm-active-seeking-badge pm-active-seeking-badge--expired">Udløbet</span>
             ) : null}
           </div>
-          {active || expired ? (
+          {(active || expired) && !notifyOnly ? (
             <>
               <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
               {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}

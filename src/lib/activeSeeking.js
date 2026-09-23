@@ -319,13 +319,40 @@ export function buildSeekingProfilePatch(user, channel, enabled, regionOverride)
  * @param {SeekingChannel} channel
  */
 export function seekingChannelLabel(channel) {
-  return channel === 'kamp' ? 'Besked om kampe' : 'Synlig som makker';
+  return channel === 'kamp' ? 'Besked om nye kampe' : 'Synlig som makker';
 }
 
 export function seekingChannelHint(channel) {
   return channel === 'kamp'
-    ? '24 timer: besked om nye åbne kampe — uden at vælge tid'
-    : 'Når en anden søger det samme, får I begge besked';
+    ? 'Når nogen opretter en åben kamp på dit niveau i nærheden'
+    : 'Andre kan se dig under Find makker. Når I passer sammen, får I begge besked';
+}
+
+/**
+ * "Besked om nye kampe": serveren sender til alle med match_watch_enabled,
+ * uden udløb. Kolonnen er derfor sandheden, ikke den kombinerede switch.
+ * @param {object} user
+ */
+export function isMatchNotifyOn(user) {
+  return user?.match_watch_enabled === true;
+}
+
+/**
+ * Slår kun besked om nye kampe til/fra. Rører ikke synligheden.
+ * @param {object} user
+ * @param {boolean} enabled
+ * @param {string} [regionOverride]
+ */
+export function buildMatchNotifyPatch(user, enabled, regionOverride) {
+  const prefs = normalizeChannelPrefs(user, 'kamp');
+  const region = enabled
+    ? canonicalRegionForForm(regionOverride)
+      || resolveFilterRegion(prefs, user)
+      || canonicalRegionForForm(user?.area)
+      || prefs.region
+      || ''
+    : prefs.region;
+  return buildProfilePatchFromMatchSearchPrefs({ ...prefs, notify: Boolean(enabled), region }, user);
 }
 
 /**
@@ -348,7 +375,14 @@ export function buildExpiredSeekingSyncPatch(user) {
 
   for (const ch of /** @type {const} */ (['makker', 'kamp'])) {
     if (!isSeekingTtlExpired(merged, ch)) continue;
-    const chPatch = buildSeekingProfilePatch(merged, ch, false);
+    // Kun synligheden udløber. "Besked om nye kampe" varer, til brugeren selv
+    // slår den fra, så notify bevares for kamp.
+    const chPatch = ch === 'kamp'
+      ? buildProfilePatchFromMatchSearchPrefs(
+        { ...normalizeChannelPrefs(merged, 'kamp'), feedVisible: false, notify: isMatchNotifyOn(merged) },
+        merged,
+      )
+      : buildSeekingProfilePatch(merged, ch, false);
     merged = {
       ...merged,
       ...chPatch,
@@ -369,7 +403,7 @@ export function seekingHomeStatusLabel(user) {
   const kamp = isSeekingUiActive(user, 'kamp');
   if (makker && kamp) return 'Makker og kamp aktive';
   if (makker) return 'Synlig som makker';
-  if (kamp) return 'Besked om kampe';
+  if (kamp) return 'Besked om nye kampe';
   if (isSeekingTtlExpired(user, 'makker') || isSeekingTtlExpired(user, 'kamp')) {
     return 'Udløbet — slå til for at forny';
   }

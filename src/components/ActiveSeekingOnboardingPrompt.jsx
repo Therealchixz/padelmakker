@@ -21,7 +21,7 @@ function shouldOffer(user) {
     return false;
   }
   if (!user?.id) return false;
-  if (isCombinedSeekingEnabled(user, 'makker') || isCombinedSeekingEnabled(user, 'kamp')) return false;
+  if (isCombinedSeekingEnabled(user, 'makker')) return false;
   return true;
 }
 
@@ -34,7 +34,7 @@ function dismiss() {
 }
 
 /**
- * Én gang efter onboarding: tilbud om aktiv søgning for makker og kamp.
+ * Én gang efter onboarding: tilbud om at blive synlig som makker.
  * `deferred` holder den tilbage, mens velkomst/rundvisning kører, så nye
  * brugere ikke får flere vinduer oven i hinanden.
  */
@@ -57,21 +57,16 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast, deferred = fals
     }
     setBusy(true);
     try {
+      // Kun makker: kampe klares af "Jeg vil spille" og besked om nye kampe,
+      // som er slået til som standard.
       const wasMakkerOn = isProfileMakkerFeedVisible(user);
-      let patch = buildSeekingProfilePatch(user, 'makker', true);
-      const kampPatch = buildSeekingProfilePatch(
-        { ...user, ...patch },
-        'kamp',
-        true,
-      );
-      patch = { ...patch, ...kampPatch };
-      await updateProfile(patch);
+      await updateProfile(buildSeekingProfilePatch(user, 'makker', true));
       if (!wasMakkerOn && user?.id) {
         const res = await notifyMakkerWatchersForProfile(user.id);
         const matchMsg = makkerMatchToast(res.matches);
-        showToast(matchMsg || 'Aktiv søgning er slået til for makker og kamp');
+        showToast(matchMsg || 'Du er nu synlig som makker');
       } else {
-        showToast('Aktiv søgning er slået til for makker og kamp');
+        showToast('Du er nu synlig som makker');
       }
     } catch (err) {
       console.warn('active seeking onboarding:', err?.message || err);
@@ -89,24 +84,24 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast, deferred = fals
   };
 
   return (
-    <AppModal open={open} onClose={handleNo} ariaLabel="Aktiv søgning" maxWidthPreset="md">
+    <AppModal open={open} onClose={handleNo} ariaLabel="Synlig som makker" maxWidthPreset="md">
       <div className="pm-modal-body pm-modal-body--compact pm-active-seeking-onboarding">
         <div className="pm-active-seeking-onboarding__icon" aria-hidden>
           <Bell size={22} strokeWidth={2} />
         </div>
         <h2 className="pm-active-seeking-onboarding__title">
-          Søger du makker og kampe?
+          Søger du en fast makker?
         </h2>
         <p className="pm-active-seeking-onboarding__lead pm-active-seeking-onboarding__lead--tight">
-          Slå aktiv søgning til i{' '}
+          Bliv synlig som makker i{' '}
           <span className="pm-active-seeking-onboarding__region">{regionLabel}</span>:
         </p>
         <ul className="pm-active-seeking-onboarding__list">
-          <li>Andre spillere kan se, at du søger makker og kamp.</li>
-          <li>Du får besked, når en makker eller åben kamp matcher dit niveau.</li>
+          <li>Andre spillere kan se dig under Find makker.</li>
+          <li>Du får besked, når en spiller på dit niveau også søger.</li>
         </ul>
         <p className="pm-active-seeking-onboarding__note">
-          Du kan slå det fra igen under Makkere og Kampe.
+          Du kan slå det fra igen under Makkere.
         </p>
         <div className="pm-active-seeking-onboarding__actions">
           <button
@@ -115,7 +110,7 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast, deferred = fals
             onClick={() => void handleYes()}
             style={{ ...btn(true), width: '100%', justifyContent: 'center', opacity: busy ? 0.7 : 1 }}
           >
-            {busy ? 'Aktiverer…' : 'Ja, vis mig og giv besked'}
+            {busy ? 'Aktiverer…' : 'Ja, vis mig som makker'}
           </button>
           <button
             type="button"

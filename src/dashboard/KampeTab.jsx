@@ -94,6 +94,7 @@ import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
 import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet';
 import { isProfileMatchFeedVisible } from '../lib/seekingFeedTtl';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
+import { PlayIntentPanel } from '../components/PlayIntentPanel';
 import { FILTER_RETURN_KAMPE } from '../lib/filterReturnNavigation';
 import {
   getMatchVenueOptions,
@@ -3047,13 +3048,22 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           <KampeActiveFilterChips chips={activeFilterChips} />
 
           {kampeFormat === 'padel' && (
-            <ActiveSeekingPanel
-              variant="compact"
-              channel="kamp"
-              user={user}
-              showToast={showToast}
-              filterReturnTo={FILTER_RETURN_KAMPE}
-            />
+            <>
+              {/* Samme "Jeg vil spille" som på Hjem: dag + tidsrum → appen finder tre andre. */}
+              <PlayIntentPanel
+                user={user}
+                showToast={showToast}
+                onMatchCreated={() => void loadData()}
+                style={{ margin: '0 0 12px' }}
+              />
+              <ActiveSeekingPanel
+                variant="compact"
+                channel="kamp"
+                user={user}
+                showToast={showToast}
+                filterReturnTo={FILTER_RETURN_KAMPE}
+              />
+            </>
           )}
         </>
       ) : null}

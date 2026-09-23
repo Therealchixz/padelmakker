@@ -18,8 +18,8 @@ test('aktiv-søgning-vinduet venter, mens velkomst/rundvisning kører', async ()
 
 test('aktiv-søgning-vinduet siger tydeligt, at man bliver synlig', async () => {
   const prompt = await read('src/components/ActiveSeekingOnboardingPrompt.jsx');
-  assert.match(prompt, /Andre spillere kan se, at du søger/);
-  assert.match(prompt, /Ja, vis mig og giv besked/);
+  assert.match(prompt, /Andre spillere kan se dig under Find makker/);
+  assert.match(prompt, /Ja, vis mig som makker/);
   assert.doesNotMatch(prompt, /'Ja, giv mig besked'/);
 });
 
