@@ -147,7 +147,7 @@ kan efterprøves direkte mod den kørende database.
 | `notify_league_invite` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_accepted` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_declined` | `00000000000000_baseline_schema.sql` | — | — |
-| `notify_makker_watchers` | `20260922224517_makker_discovery_reaches_lapsed_users.sql` | — | 5 |
+| `notify_makker_watchers` | `20260923100444_makker_watch_button_beats_stale_filter_default.sql` | — | 5 |
 | `notify_match_creator_on_join` | `00000000000000_baseline_schema.sql` | `notify_match_creator_on_join_only.sql` | 2 |
 | `notify_match_watchers` | `20260922224422_match_discovery_reaches_lapsed_users.sql` | — | 6 |
 | `padel_elo_to_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
