@@ -35,13 +35,15 @@ function dismiss() {
 
 /**
  * Én gang efter onboarding: tilbud om aktiv søgning for makker og kamp.
+ * `deferred` holder den tilbage, mens velkomst/rundvisning kører, så nye
+ * brugere ikke får flere vinduer oven i hinanden.
  */
-export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
+export function ActiveSeekingOnboardingPrompt({ user, showToast, deferred = false }) {
   const { updateProfile } = useAuth();
   const [open, setOpen] = useState(() => shouldOffer(user));
   const [busy, setBusy] = useState(false);
 
-  if (!open || !showToast) return null;
+  if (!open || !showToast || deferred) return null;
 
   const regionLabel = regionDisplayLabel(user?.area) || user?.area || 'dit område';
   const canEnable = hasSeekingRegion(user, 'makker') || Boolean(user?.area);
@@ -93,12 +95,18 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
           <Bell size={22} strokeWidth={2} />
         </div>
         <h2 className="pm-active-seeking-onboarding__title">
-          Vil du have besked om makker og kampe?
+          Søger du makker og kampe?
         </h2>
-        <p className="pm-active-seeking-onboarding__lead">
-          Få besked, når en padelmakker eller åben kamp matcher dit niveau i{' '}
-          <span className="pm-active-seeking-onboarding__region">{regionLabel}</span>. Du bliver også
-          synlig for andre spillere, der søger.
+        <p className="pm-active-seeking-onboarding__lead pm-active-seeking-onboarding__lead--tight">
+          Slå aktiv søgning til i{' '}
+          <span className="pm-active-seeking-onboarding__region">{regionLabel}</span>:
+        </p>
+        <ul className="pm-active-seeking-onboarding__list">
+          <li>Andre spillere kan se, at du søger makker og kamp.</li>
+          <li>Du får besked, når en makker eller åben kamp matcher dit niveau.</li>
+        </ul>
+        <p className="pm-active-seeking-onboarding__note">
+          Du kan slå det fra igen under Makkere og Kampe.
         </p>
         <div className="pm-active-seeking-onboarding__actions">
           <button
@@ -107,7 +115,7 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
             onClick={() => void handleYes()}
             style={{ ...btn(true), width: '100%', justifyContent: 'center', opacity: busy ? 0.7 : 1 }}
           >
-            {busy ? 'Aktiverer…' : 'Ja, giv mig besked'}
+            {busy ? 'Aktiverer…' : 'Ja, vis mig og giv besked'}
           </button>
           <button
             type="button"
@@ -115,7 +123,7 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
             onClick={handleNo}
             style={{ ...btn(false), width: '100%', justifyContent: 'center' }}
           >
-            Nej tak — senere
+            Nej tak
           </button>
         </div>
       </div>

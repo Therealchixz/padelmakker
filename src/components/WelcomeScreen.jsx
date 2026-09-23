@@ -22,7 +22,8 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
       style={{
         position: 'fixed', inset: 0, zIndex: 1300, background: theme.bg,
         display: 'flex', flexDirection: 'column', fontFamily: font,
-        padding: 'max(28px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom))',
+        // Cookie-baren ligger øverst i stakken; plads til den holder "Gå til appen" fri.
+        padding: 'max(28px, env(safe-area-inset-top)) 22px calc(max(24px, env(safe-area-inset-bottom)) + var(--pm-cookie-bar-h, 0px))',
         overflowY: 'auto',
       }}
     >

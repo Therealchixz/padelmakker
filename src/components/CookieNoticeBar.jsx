@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { font, theme, btn } from '../lib/platformTheme';
 
 const STORAGE_KEY = 'pm_cookie_notice_v1';
+// Højden deles som CSS-variabel, så fuldskærmsvinduer (fx Velkommen) kan holde
+// deres nederste knap fri af baren.
+const HEIGHT_VAR = '--pm-cookie-bar-h';
 
 export function CookieNoticeBar() {
   const [visible, setVisible] = useState(false);
+  const barRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -16,6 +20,20 @@ export function CookieNoticeBar() {
       setVisible(true);
     }
   }, []);
+
+  useEffect(() => {
+    const el = barRef.current;
+    if (!visible || !el || typeof document === 'undefined') return undefined;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty(HEIGHT_VAR, `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    update();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    return () => {
+      ro?.disconnect();
+      root.style.removeProperty(HEIGHT_VAR);
+    };
+  }, [visible]);
 
   const dismiss = () => {
     try {
@@ -30,6 +48,7 @@ export function CookieNoticeBar() {
 
   return (
     <div
+      ref={barRef}
       role="dialog"
       aria-label="Information om cookies"
       style={{
