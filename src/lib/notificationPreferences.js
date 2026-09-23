@@ -9,7 +9,10 @@ export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
   { id: 'system', label: 'Vigtige beskeder (drift)' },
 ]);
 
-/** E-mail-kanaler (valgfri backup, fx uden PWA-push). */
+/**
+ * E-mail-kanaler. For de fleste brugere er mail den ENESTE kanal, der virker:
+ * push kraever, at appen er installeret som PWA, og det har 2 ud af 98 gjort.
+ */
 export const NOTIFICATION_EMAIL_CHANNELS = Object.freeze([
   { id: 'opdagelse', label: 'Nye makkere/kampe der passer' },
 ]);
@@ -54,8 +57,17 @@ const DEFAULT_PREFS = Object.freeze({
     invitation: true,
     system: true,
   },
+  // Mail om nye makkere/kampe er slaaet TIL som standard.
+  //
+  // Den var fra, og knappen ligger inde i klokke-menuen. Resultat: 1 bruger ud
+  // af 98 havde fundet den. Det er samme fejl som med selve makker-beskeden -
+  // en indstilling, ingen finder, virker som om funktionen ikke findes.
+  //
+  // Forudsaetningen for at turde det er paa plads: frameldingen virker med ét
+  // klik direkte fra mailen, uden login, og der sendes hoejst én mail per
+  // person per uge.
   email: {
-    opdagelse: false,
+    opdagelse: true,
   },
 });
 

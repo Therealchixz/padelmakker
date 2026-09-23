@@ -15,10 +15,10 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 153 |
+| Funktioner i migrations (= i drift) | 155 |
 | ...med en identisk fil i `supabase/sql/` | 111 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
-| ...som slet ikke findes i arkivet | 14 |
+| ...som slet ikke findes i arkivet | 16 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
 ## Funktioner i drift
@@ -75,6 +75,7 @@ kan efterprøves direkte mod den kørende database.
 | `cancel_play_intent` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | — |
 | `canonical_app_region` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `check_rate_limit` | `00000000000000_baseline_schema.sql` | — | 1 |
+| `claim_email_send_slot` | `20260922224245_discovery_email_frequency_cap.sql` | — | — |
 | `complete_americano_tournament` | `00000000000000_baseline_schema.sql` | `_americano_auth_fix.sql`<br>`_p3b.sql`<br>`admin_security_phase3_deploy.sql`<br>`americano_elo_rating.sql`<br>`americano_liga_completed_at.sql` | — |
 | `confirm_match_result_and_apply_elo` | `00000000000000_baseline_schema.sql` | `confirm_match_result_and_apply_elo.sql` | — |
 | `create_notification_for_user` | `00000000000000_baseline_schema.sql` | `notification_rate_limits_restore.sql` | 5 |
@@ -146,9 +147,9 @@ kan efterprøves direkte mod den kørende database.
 | `notify_league_invite` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_accepted` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `notify_league_invite_declined` | `00000000000000_baseline_schema.sql` | — | — |
-| `notify_makker_watchers` | `20260922214737_notify_makker_watchers_neighbours_and_no_expiry.sql` | — | 5 |
+| `notify_makker_watchers` | `20260922224517_makker_discovery_reaches_lapsed_users.sql` | — | 5 |
 | `notify_match_creator_on_join` | `00000000000000_baseline_schema.sql` | `notify_match_creator_on_join_only.sql` | 2 |
-| `notify_match_watchers` | `20260922210624_notify_match_watchers_reaches_neighbouring_regions.sql` | — | 6 |
+| `notify_match_watchers` | `20260922224422_match_discovery_reaches_lapsed_users.sql` | — | 6 |
 | `padel_elo_to_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `padel_level_to_elo` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `parse_clock_time` | `00000000000000_baseline_schema.sql` | `play_intent_open_match_notify.sql`<br>`play_intent_pool.sql` | — |
@@ -161,6 +162,7 @@ kan efterprøves direkte mod den kørende database.
 | `recalc_americano_elo_from_history` | `00000000000000_baseline_schema.sql` | `_p3b.sql`<br>`admin_correct_americano_and_recalc_elo.sql`<br>`admin_security_phase3_deploy.sql` | — |
 | `recalc_americano_profile_stats` | `00000000000000_baseline_schema.sql` | `fix_americano_visibility_and_stats.sql` | 2 |
 | `recalc_profile_stats_from_elo_history` | `00000000000000_baseline_schema.sql` | — | 5 |
+| `release_email_send_slot` | `20260922224600_release_email_send_slot.sql` | — | — |
 | `report_americano_match_score` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `report_user` | `00000000000000_baseline_schema.sql` | — | 3 |
 | `respond_to_match_proposal` | `00000000000000_baseline_schema.sql` | — | 1 |

@@ -252,7 +252,11 @@ test('spam-spaerrerne er uroerte', () => {
   assert.match(m.sql, /v_max_per_subject constant integer := 8/, 'graensen per soegning skal vaere 8');
   assert.match(m.sql, /v_max_per_day constant integer := 5/, 'dagsgraensen skal vaere 5');
   assert.match(m.sql, /interval '7 days'/, '7-dages gentagelsesspaerren skal bestaa');
-  assert.match(m.sql, /v_inactive_days constant integer := 21/, 'inaktive brugere skal fortsat springes over');
+  // 21-dages aktivitetsfilteret er fjernet MED VILJE (se
+  // discoveryEmailReach.test.mjs): det udelukkede praecis de frafaldne
+  // brugere, en mail er til for. Det der holder igen nu, er hvor mange
+  // ULAESTE beskeder man allerede har liggende.
+  assert.match(m.sql, /v_max_unread constant integer := 3/, 'ulaest-graensen skal bestaa');
 });
 
 test('funktionen beholder sine rettigheder', () => {
