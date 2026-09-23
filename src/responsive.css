@@ -10080,6 +10080,16 @@ button,
   animation: pm-sheet-backdrop-fade-in 240ms ease-out both;
 }
 
+
+.pm-player-profile-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+}
+
 .pm-kampe-v2-sheet.pm-player-profile-sheet {
   height: min(85vh, 640px);
   max-height: min(85vh, 640px);
