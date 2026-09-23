@@ -56,7 +56,8 @@ import {
 } from '../lib/kampeListFilterCore';
 import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
-import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
+import { buildMatchLevelRange, parseMatchLevelRange } from '../lib/matchLevelRange';
+import { defaultMatchLevelEloRange } from '../lib/padelLevelUtils';
 import {
   KAMPE_FORMAT_PADEL,
   KAMPE_FORMAT_AMERICANO,
@@ -247,7 +248,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     description: "",
     match_type: "open",
     price_per_person: "",
-    payment_method: "mobilepay",
+    // Gratis indtil der skrives en pris; så skiftes der til MobilePay.
+    payment_method: "free",
   });
 
   /**
@@ -584,13 +586,14 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (!showCreate) return;
     setNewMatch((m) => {
       if (m.level_min !== "" || m.level_max !== "") return m;
+      const range = defaultMatchLevelEloRange(user);
       return {
         ...m,
-        level_min: String(clampElo(myElo - 100, myElo)),
-        level_max: String(clampElo(myElo + 100, myElo)),
+        level_min: String(range.min),
+        level_max: String(range.max),
       };
     });
-  }, [showCreate, myElo]);
+  }, [showCreate, user]);
 
   useEffect(() => {
     mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
@@ -1093,7 +1096,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       return;
     }
     setPadelCreateFieldError(null);
-    setPadelCreateStep((s) => Math.min(3, s + 1));
+    setPadelCreateStep((s) => Math.min(2, s + 1));
   };
 
   const joinMatchWithTeam = async (matchId, teamNum, courtSide = null) => {
@@ -3258,6 +3261,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           createVenueOptions={createVenueOptions}
           courtBookedTabs={courtBookedTabs}
           matchTypeTabs={matchTypeTabs}
+          defaultLevelElo={defaultMatchLevelEloRange(user)}
           padelCreateStep={padelCreateStep}
           setPadelCreateStep={setPadelCreateStep}
           goPadelCreateNext={goPadelCreateNext}
