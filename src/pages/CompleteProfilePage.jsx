@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useDarkMode } from '../lib/useDarkMode';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -30,6 +31,9 @@ export function CompleteProfilePage() {
     [user, profile, phoneExempt],
   );
 
+  // Samme moerke logo som forsiden og dashboardet bruger. Uden dette staar
+  // det moerkeblaa logo paa moerkeblaa baggrund og forsvinder naesten.
+  const [dark] = useDarkMode();
   const [email, setEmail] = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
   const [phone, setPhone] = useState('');
@@ -146,8 +150,8 @@ export function CompleteProfilePage() {
       <div className="pm-auth-narrow">
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <picture>
-            <source srcSet="/logo-brand-nav.webp" type="image/webp" />
-            <img src="/logo-brand.png" alt="PadelMakker" style={{ height: 38, display: 'inline-block' }} />
+            <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
+            <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker" style={{ height: 38, display: 'inline-block' }} />
           </picture>
           <h1 style={{ ...heading('22px'), letterSpacing: '-0.3px', marginTop: 22, marginBottom: 0 }}>
             Færdiggør din profil

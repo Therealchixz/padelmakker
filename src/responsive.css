@@ -703,7 +703,7 @@ body {
   height: 46px;
   border-radius: 16px;
   color: var(--pm-on-accent);
-  background: linear-gradient(135deg, var(--pm-navy-deep, #0D2752), var(--pm-accent));
+  background: linear-gradient(135deg, var(--pm-navy-deep, #0D2752), var(--pm-accent-solid));
   box-shadow: var(--pm-shadow-accent);
 }
 
@@ -955,7 +955,7 @@ body {
   min-width: 118px;
   border-radius: 999px;
   padding: 10px 12px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 12px;
   font-weight: 900;
@@ -1236,7 +1236,7 @@ button,
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--pm-on-accent);
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   box-shadow: var(--pm-shadow-lg);
   display: flex;
   align-items: flex-start;
@@ -1255,7 +1255,7 @@ button,
   line-height: 1.35;
 }
 .pm-toast--info {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 .pm-toast--success {
@@ -2780,8 +2780,8 @@ button,
 }
 
 .pm-ui-btn-chip-active {
-  border-color: var(--pm-accent);
-  background: var(--pm-accent);
+  border-color: var(--pm-accent-solid);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -3262,7 +3262,7 @@ button,
 
 .pm-pill-tab-active,
 .pm-pill-tab[aria-selected="true"] {
-  background: var(--pm-navy, var(--pm-accent));
+  background: var(--pm-navy, var(--pm-accent-solid));
   color: var(--pm-on-accent, #fff);
   box-shadow: 0 2px 6px rgba(13, 39, 82, 0.22);
   font-weight: 700;
@@ -4499,6 +4499,10 @@ button,
     border: none;
     cursor: pointer;
     padding: 8px;
+    /* Var 38x38 af sin padding alene. Ikon-knapper er de svaereste at ramme,
+       og denne er indgangen til hele menuen paa mobil. */
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 8px;
     color: var(--pm-text-mid);
     touch-action: manipulation;
@@ -5136,7 +5140,7 @@ button,
 }
 
 .pm-day-pill--active {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -5422,7 +5426,7 @@ button,
   position: absolute;
   top: -2px;
   right: -2px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   border-radius: 10px;
   font-size: 9px;
@@ -5583,7 +5587,7 @@ button,
 }
 
 .pm-besked-bubble--me {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   border-radius: 14px 14px 4px 14px;
 }
@@ -6034,7 +6038,7 @@ button,
 }
 
 .pm-admin-mobile-edit {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   border: none;
   border-radius: var(--pm-radius-md);
   padding: 8px 16px;
@@ -6992,7 +6996,7 @@ button,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   cursor: pointer;
   flex-shrink: 0;
@@ -7042,8 +7046,8 @@ button,
 }
 
 .pm-kampe-v2-format-pill--active {
-  background: var(--pm-accent);
-  border-color: var(--pm-accent);
+  background: var(--pm-accent-solid);
+  border-color: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -8594,7 +8598,7 @@ button,
 }
 
 .pm-kampe-v2-join-request-btn--approve {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -9212,7 +9216,7 @@ button,
   padding: 12px 16px;
   border: none;
   border-radius: 10px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 14px;
   font-weight: 700;
@@ -9590,7 +9594,7 @@ button,
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   display: flex;
   align-items: center;
@@ -10521,8 +10525,8 @@ button,
 }
 
 .pm-chat-v2-inbox-compose--active {
-  background: var(--pm-accent);
-  border-color: var(--pm-accent);
+  background: var(--pm-accent-solid);
+  border-color: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -10644,7 +10648,7 @@ button,
   height: 20px;
   border-radius: 10px;
   padding: 0 6px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 11.5px;
   font-weight: 800;
@@ -10851,7 +10855,7 @@ button,
 }
 
 .pm-chat-v2-bubble--mine {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -10933,7 +10937,7 @@ button,
 }
 
 .pm-chat-v2-input-send--active {
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
 
@@ -11245,7 +11249,7 @@ button,
   border: none;
   border-radius: 999px;
   padding: 7px 14px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 12px;
   font-weight: 800;
@@ -11317,7 +11321,7 @@ button,
   padding: 7px 16px;
   border: none;
   border-radius: 999px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 12.5px;
   font-weight: 700;
@@ -11442,7 +11446,7 @@ button,
   border: none;
   border-radius: 12px;
   padding: 12px 16px;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-weight: 800;
   cursor: pointer;
@@ -11809,7 +11813,7 @@ button,
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  background: var(--pm-accent);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   flex-shrink: 0;
 }

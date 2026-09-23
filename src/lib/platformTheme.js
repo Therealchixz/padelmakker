@@ -11,6 +11,7 @@ export const theme = {
   textMid:     'var(--pm-text-mid)',
   textLight:   'var(--pm-text-light)',
   accent:      'var(--pm-accent)',
+  accentSolid: 'var(--pm-accent-solid)',
   accentHover: 'var(--pm-accent-hover)',
   accentBg:    'var(--pm-accent-bg)',
   onAccent:    'var(--pm-on-accent)',
@@ -64,7 +65,9 @@ const BTN_SIZE_PRESETS = {
   sm: {
     fontSize: '12px',
     padding: '8px var(--pm-space-2)',
-    minHeight: '34px',
+    // 40 frem for 44: disse bruges til taette filter-chips, hvor 44 ville
+    // sprede layoutet. Stadig langt over WCAG 2.5.8's mindstemaal paa 24.
+    minHeight: '40px',
     gap: '5px',
   },
   md: {
@@ -105,8 +108,8 @@ export const btn = (primary, options = {}) => {
     fontWeight: fontWeight ?? 700,
     padding: sizePreset?.padding || '10px var(--pm-space-3)',
     borderRadius: radiusValue,
-    border: primary ? '1px solid var(--pm-accent)' : '1px solid var(--pm-border)',
-    background: primary ? 'var(--pm-accent)' : 'var(--pm-surface)',
+    border: primary ? '1px solid var(--pm-accent-solid)' : '1px solid var(--pm-border)',
+    background: primary ? 'var(--pm-accent-solid)' : 'var(--pm-surface)',
     color: primary ? 'var(--pm-on-accent)' : 'var(--pm-text)',
     cursor: 'pointer',
     transition: 'background-color 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s',
@@ -117,7 +120,10 @@ export const btn = (primary, options = {}) => {
     alignItems: 'center',
     justifyContent: 'center',
     gap: sizePreset?.gap || '6px',
-    ...(sizePreset?.minHeight || minHeight ? { minHeight: minHeight || sizePreset?.minHeight } : {}),
+    // Uden et stoerrelsesvalg havde knappen ingen minimumshoejde og landede
+    // paa 38-40px af sin padding alene. 44px er Apples anbefalede mindstemaal
+    // for noget, man rammer med en finger.
+    minHeight: minHeight || sizePreset?.minHeight || '44px',
   };
 };
 

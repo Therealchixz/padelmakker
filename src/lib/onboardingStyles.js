@@ -3,7 +3,7 @@
  * (.field, .input, .btn-navy, .btn-ghost, .topbar, .chip, .inset-card, .step-dot m.fl.)
  * Bruger theme-tokens fra platformTheme, så dark mode følger med.
  */
-import { font, theme } from './platformTheme';
+import { font, theme } from './platformTheme.js';
 
 /** Navy gradient-hero (mockup: linear-gradient(150deg, #0D2752, #1D4A9E)) */
 export const navyGradient = `linear-gradient(150deg, ${theme.navyDeep}, ${theme.navySoft})`;
@@ -106,8 +106,10 @@ export const whiteCard = {
 
 /** .circle-btn — rund tilbage-knap i topbar */
 export const circleBtn = {
-  width: 39,
-  height: 39,
+  // 44x44: tilbage- og annuller-knapperne i oprettelsen er kun ikoner, og
+  // ikon-knapper er de svaereste at ramme. 39px var under Apples mindstemaal.
+  width: 44,
+  height: 44,
   borderRadius: '50%',
   background: theme.surface,
   border: `1px solid ${theme.border}`,

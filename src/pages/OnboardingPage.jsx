@@ -1086,7 +1086,11 @@ export function OnboardingPage() {
               fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
-              padding: 0,
+              // Trykflade: padding vokser feltet, negativ margin holder
+              // teksten praecis hvor den stod. Var 18px hoej.
+              padding: "12px 8px",
+              margin: "-12px -8px",
+              minHeight: "44px",
               fontFamily: font,
             }}
           >
