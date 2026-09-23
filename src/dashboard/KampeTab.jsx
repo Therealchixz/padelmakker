@@ -95,6 +95,7 @@ import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet
 import { isProfileMatchFeedVisible } from '../lib/seekingFeedTtl';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { PlayIntentPanel } from '../components/PlayIntentPanel';
+import { matchJoinPushContent } from '../lib/matchJoinNotice';
 import { FILTER_RETURN_KAMPE } from '../lib/filterReturnNavigation';
 import {
   getMatchVenueOptions,
@@ -1127,10 +1128,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
       if (!result?.already_joined) {
-        const { error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
+        const fallbackBody = `${myDisplayName} har tilmeldt sig Hold ${joinedTeam} i din kamp.`;
+        const { data: joinNotice, error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
           p_match_id: matchId,
           p_title: "Ny spiller tilmeldt!",
-          p_body: `${myDisplayName} har tilmeldt sig Hold ${joinedTeam} i din kamp.`,
+          p_body: fallbackBody,
         });
         if (nErr) {
           console.warn("notify_match_creator_on_join:", nErr.message || nErr);
@@ -1138,13 +1140,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             "Tilmelding gemt, men notifikation fejlede. Kør opdateret create_notification_rpc.sql (notify_match_creator_on_join) i Supabase."
           );
         } else if (match?.creator_id && String(match.creator_id) !== String(user.id)) {
-          void sendPushNotificationsForUsers(
-            [match.creator_id],
-            'match_join',
-            'Ny spiller tilmeldt!',
-            `${myDisplayName} har tilmeldt sig Hold ${joinedTeam} i din kamp.`,
-            matchId,
-          );
+          const push = matchJoinPushContent(joinNotice, fallbackBody);
+          if (push) {
+            void sendPushNotificationsForUsers([match.creator_id], 'match_join', push.title, push.body, matchId);
+          }
         }
       }
 

@@ -18,6 +18,7 @@ import {
   NOTIFICATION_PUSH_LEVELS,
 } from '../lib/notificationPreferences';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
+import { formatNotificationAge, settleExpiredNotifications } from '../lib/notificationAge';
 import {
   notificationKampeTarget,
   kampeFocusFooterLabel,
@@ -163,9 +164,15 @@ export function NotificationBell({ tourForceOpen = false }) {
         return;
       }
       const dismissed = loadDismissedIds(userId);
-      const filtered = (data || []).filter((n) => !dismissed.has(n.id));
+      // Udløbne kampforslag markeres læst, så de ikke tæller i klokken.
+      const { rows: filtered, expiredIds } = settleExpiredNotifications(
+        (data || []).filter((n) => !dismissed.has(n.id)),
+      );
       if (loadSeqRef.current !== seq) return;
       setNotifs(filtered);
+      if (expiredIds.length) {
+        void supabase.from("notifications").update({ read: true }).in("id", expiredIds).eq("user_id", userId);
+      }
 
       const matchIds = [...new Set(
         filtered
@@ -364,15 +371,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     navigate(target.path);
   };
 
-  const timeAgo = useCallback((dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "nu";
-    if (mins < 60) return mins + " min";
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return hours + "t";
-    return Math.floor(hours / 24) + "d";
-  }, []);
 
   const matchLabel = useCallback((matchId) => {
     const m = matchMetaById[String(matchId)];
@@ -671,7 +669,7 @@ export function NotificationBell({ tourForceOpen = false }) {
                                 : "Tryk for at åbne →"}
                       </div>
                     )}
-                    <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
+                    <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{formatNotificationAge(n.created_at)}</div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", flexShrink: 0 }}>
                     {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent }} />}

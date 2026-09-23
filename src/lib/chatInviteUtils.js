@@ -3,6 +3,7 @@ import { buildMatchInvitePayload } from './chatMessageUtils';
 import { rpcJoinOpenMatch } from './matchJoinUtils';
 import { listShareableCourts } from './chatVenueShareUtils';
 import { createNotificationsForUsers, sendPushNotificationsForUsers } from './notifications';
+import { matchJoinPushContent } from './matchJoinNotice';
 
 export { mapBanerVenueToShareableCourt } from './chatVenueShareUtils';
 export async function fetchInvitableMatches(userId) {
@@ -111,20 +112,18 @@ export async function joinMatchFromChatInvite({
   const isFull = result?.is_full === true;
 
   if (!alreadyJoined) {
-    const { error: nErr } = await supabase.rpc('notify_match_creator_on_join', {
+    const fallbackBody = `${userName || 'En spiller'} har tilmeldt sig Hold ${teamNum} i din kamp.`;
+    const { data: joinNotice, error: nErr } = await supabase.rpc('notify_match_creator_on_join', {
       p_match_id: matchId,
       p_title: 'Ny spiller tilmeldt!',
-      p_body: `${userName || 'En spiller'} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+      p_body: fallbackBody,
     });
     if (nErr) console.warn('notify_match_creator_on_join (chat invite):', nErr.message || nErr);
     else if (matchRow.creator_id && userId && String(matchRow.creator_id) !== String(userId)) {
-      void sendPushNotificationsForUsers(
-        [matchRow.creator_id],
-        'match_join',
-        'Ny spiller tilmeldt!',
-        `${userName || 'En spiller'} har tilmeldt sig Hold ${teamNum} i din kamp.`,
-        matchId,
-      );
+      const push = matchJoinPushContent(joinNotice, fallbackBody);
+      if (push) {
+        void sendPushNotificationsForUsers([matchRow.creator_id], 'match_join', push.title, push.body, matchId);
+      }
     }
   }
 

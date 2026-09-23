@@ -17,6 +17,7 @@ import {
 } from '../lib/notificationDismissStorage';
 import { NotificationPushControls } from '../components/NotificationPushControls';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
+import { formatNotificationAge, isExpiredActionNotification, settleExpiredNotifications } from '../lib/notificationAge';
 
 function NotifIcon({ type }) {
   const iconStyle = { width: 18, height: 18, strokeWidth: 2.2, flexShrink: 0 };
@@ -60,19 +61,6 @@ function NotifIcon({ type }) {
   }
 }
 
-function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'nu';
-  if (mins < 60) return `${mins} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} t`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'I går';
-  if (days < 7) return `${days}d`;
-  return `${Math.floor(days / 7)}u`;
-}
-
 export function NotifikationerPage({ onBack }) {
   const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
@@ -110,10 +98,17 @@ export function NotifikationerPage({ onBack }) {
       ]);
       if (error) throw error;
       if (unreadError) throw unreadError;
-      setUnreadTotal(unreadCount || 0);
       const dismissed = loadDismissedIds(userId);
-      const filtered = (data || []).filter((n) => !dismissed.has(n.id));
+      // Udløbne kampforslag markeres læst, så de ikke står som opgaver.
+      const { rows: filtered, expiredIds } = settleExpiredNotifications(
+        (data || []).filter((n) => !dismissed.has(n.id)),
+      );
+      setUnreadTotal(Math.max(0, (unreadCount || 0) - expiredIds.length));
       setNotifs(filtered);
+      if (expiredIds.length) {
+        void supabase.from('notifications').update({ read: true }).in('id', expiredIds).eq('user_id', userId)
+          .then(({ error: markErr }) => { if (!markErr) emitNotificationsSync(); });
+      }
 
       const matchIds = [...new Set(
         filtered.filter((n) => n?.type === 'match_chat' && n?.match_id != null).map((n) => String(n.match_id))
@@ -316,6 +311,7 @@ export function NotifikationerPage({ onBack }) {
           const kampeTarget = notificationKampeTarget(n);
           const isClickable = Boolean(clickTarget);
           const isResultPending = n.type === 'result_submitted';
+          const isExpired = isExpiredActionNotification(n);
           const canMarkReadOnly = !n.read && !isClickable && !isResultPending;
           return (
             <div key={n.id} style={cardStyle(!n.read)}>
@@ -343,6 +339,11 @@ export function NotifikationerPage({ onBack }) {
                         : 'Tryk for at åbne →'}
                   </div>
                 )}
+                {isExpired && (
+                  <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
+                    Udløbet
+                  </div>
+                )}
                 {canMarkReadOnly && (
                   <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
                     Tryk for at markere som læst
@@ -350,7 +351,7 @@ export function NotifikationerPage({ onBack }) {
                 )}
               </div>
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
+                <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{formatNotificationAge(n.created_at)}</time>
                 {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.accent }} />}
                 <button
                   type="button"
