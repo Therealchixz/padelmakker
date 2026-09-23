@@ -360,6 +360,17 @@ export function OnboardingPage() {
     }
 
     setSubmitting(true); setErr("");
+    /*
+      GDPR art. 7 stk. 1: vi skal kunne PAAVISE accepten, ikke bare kraeve
+      den. Feltet er sendt med i user_metadata, hvor en database-trigger
+      skriver det til consent_log. Browseren skriver ikke selv til loggen -
+      saa kunne kontoen aendre sin egen historik.
+    */
+    const consentMeta = {
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: LEGAL_INFO.lastUpdated,
+      terms_source: oauthSession ? 'opret-google' : 'opret',
+    };
     try {
       const nameCheck = validateFirstLastName(form.first_name, form.last_name);
       if (!nameCheck.valid) {
@@ -411,6 +422,7 @@ export function OnboardingPage() {
           const { error: metaErr } = await supabase.auth.updateUser({
             data: {
               ...profilePayload,
+              ...consentMeta,
               onboarding_completed: true,
               onboarding_applied_to_profile: true,
               phone_verification_required: false,
@@ -425,6 +437,7 @@ export function OnboardingPage() {
           phone: normalizedPhone,
           data: {
             ...profilePayload,
+            ...consentMeta,
             onboarding_completed: true,
             onboarding_applied_to_profile: true,
             signup_phone: normalizedPhone,
@@ -482,6 +495,7 @@ export function OnboardingPage() {
         form.email.trim(),
         {
           ...profilePayload,
+          ...consentMeta,
           onboarding_completed: true,
         },
         turnstileEnabled ? captchaToken : ''
@@ -1001,7 +1015,10 @@ export function OnboardingPage() {
       </label>
       {/*
         Mail er slaaet til som standard, og saa skal det staa her - ikke gemt i
-        en indstilling, brugeren skal lede efter. Sidste linje er ikke pynt:
+        en indstilling, brugeren skal lede efter. Tallet skal passe: loftet blev
+        aendret fra én om ugen til én om dagen, og saa staar der én om dagen.
+        At love mindre end man sender er ikke beskedenhed, det er en urigtig
+        oplysning. Sidste linje er ikke pynt:
         naar folk kan slippe af med en mail med ét klik, trykker de ikke spam,
         og saa bliver domaenets oevrige mails (kodeord, bekraeftelse) ved med
         at naa frem.
@@ -1015,7 +1032,7 @@ export function OnboardingPage() {
         }}
       >
         Vi sender dig en mail, når en spiller i dit område søger makker eller opretter
-        en kamp, der passer til dig — højst én om ugen. Du kan afmelde med ét klik
+        en kamp, der passer til dig — højst én om dagen. Du kan afmelde med ét klik
         direkte i mailen.
       </p>
       {turnstileEnabled && (

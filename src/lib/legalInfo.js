@@ -8,6 +8,6 @@ export const LEGAL_INFO = {
   cvr: '46403193',
   email: 'kontakt@padelmakker.dk',
   siteUrl: 'https://www.padelmakker.dk',
-  lastUpdated: '25. maj 2026',
+  lastUpdated: '23. september 2026',
   minAgeYears: 16,
 };

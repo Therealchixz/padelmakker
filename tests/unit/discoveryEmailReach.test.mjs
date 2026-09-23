@@ -78,7 +78,9 @@ test('brugeren faar det at vide ved oprettelse', () => {
   // en indstilling, man skal lede efter.
   const src = readFileSync(join(root, 'src/pages/OnboardingPage.jsx'), 'utf8');
   assert.match(src, /Vi sender dig en mail/, 'teksten skal fortaelle, at vi sender mail');
-  assert.match(src, /højst én om ugen/, 'og hvor ofte');
+  // Ugen blev til en dag 23. sep. Teksten skal foelge loftet, ikke omvendt:
+  // gdprEfterlevelse.test.mjs kraever at de to tal er det samme.
+  assert.match(src, /højst én om dagen/, 'og hvor ofte');
   assert.match(src, /afmelde med ét klik/, 'og hvordan man slipper af med den');
 });
 
@@ -155,11 +157,13 @@ test('en fejlet mail giver ugen tilbage', () => {
 
 test('spaerren ligger i databasen, ikke kun i koden', () => {
   const m = sidsteMigrationMed(/FUNCTION public\.claim_email_send_slot/);
-  assert.ok(m, 'ingen migration definerer ugespaerren');
+  assert.ok(m, 'ingen migration definerer spaerren');
+  // Bevidst aendret fra '7 days' 23. sep: af de uger hvor nogen overhovedet
+  // fik en besked, havde 2 ud af 3 mere end én, og ugespaerren slugte resten.
   assert.match(
     m.sql,
-    /p_min_interval interval DEFAULT interval '7 days'/,
-    `${m.f}: standarden skal vaere én uge`,
+    /p_min_interval interval DEFAULT interval '1 day'/,
+    `${m.f}: standarden skal vaere ét doegn`,
   );
   assert.match(
     m.sql,

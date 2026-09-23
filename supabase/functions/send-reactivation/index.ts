@@ -103,6 +103,20 @@ async function sendReactivationEmail(
     return "skipped";
   }
 
+  // Samme daglige spaerre som opdagelses-mailen, og BEVIDST samme noegle:
+  // paa /opret lover vi "hoejst én om dagen". Havde paamindelsen sin egen
+  // spaerre, kunne den samme dag laegge en mail nummer to oveni, og loeftet
+  // ville vaere usandt. Nu er det loeftet, der bestemmer.
+  const { data: slotOk, error: slotErr } = await admin.rpc("claim_email_send_slot", {
+    p_user_id: userId,
+    p_kind: "discovery",
+  });
+  if (slotErr) {
+    console.error("send-reactivation slot:", slotErr.message);
+    return "failed";
+  }
+  if (slotOk !== true) return "skipped";
+
   const siteUrl = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
   const unsubLink = `${Deno.env.get("SUPABASE_URL")}/functions/v1/email-unsubscribe`
     + `?t=${encodeURIComponent(String(unsubToken))}`;
@@ -117,8 +131,10 @@ async function sendReactivationEmail(
 
   const textBody =
     `${title}\n\n${body}\n\nSe hvem: ${link}\n\n`
-    + `Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe i PadelMakker.\n`
-    + `Afmeld med ét klik: ${unsubLink}`;
+    + `Du får denne mail, fordi du har en profil på PadelMakker, og besked om nye\n`
+    + `makkere og kampe er slået til på din konto.\n`
+    + `Afmeld med ét klik: ${unsubLink}\n\n`
+    + `PadelMakker · CVR 46403193 · ${siteUrl}/privatlivspolitik`;
 
   const htmlBody = `
     <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.5;color:#111;max-width:560px">
@@ -130,9 +146,14 @@ async function sendReactivationEmail(
           Se hvem der søger
         </a>
       </p>
-      <p style="margin:0 0 8px;font-size:12px;color:#666">
-        Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe.
+      <p style="margin:0 0 6px;font-size:12px;color:#666">
+        Du får denne mail, fordi du har en profil på PadelMakker, og besked om nye makkere
+        og kampe er slået til på din konto.
         <a href="${esc(unsubLink)}" style="color:#0B6E4F">Afmeld</a>
+      </p>
+      <p style="margin:0;font-size:11px;color:#888">
+        PadelMakker · CVR 46403193 ·
+        <a href="${esc(siteUrl)}/privatlivspolitik" style="color:#888">Privatlivspolitik</a>
       </p>
     </div>
   `.trim();
@@ -157,6 +178,13 @@ async function sendReactivationEmail(
   if (!res.ok) {
     const errText = await res.text();
     console.error("send-reactivation resend:", res.status, errText.slice(0, 280));
+    // Pladsen blev taget foer afsendelsen. Uden denne ville en fejlet mail
+    // blokere morgendagens rigtige mail.
+    const { error: releaseErr } = await admin.rpc("release_email_send_slot", {
+      p_user_id: userId,
+      p_kind: "discovery",
+    });
+    if (releaseErr) console.error("send-reactivation release:", releaseErr.message);
     return "failed";
   }
   return "sent";

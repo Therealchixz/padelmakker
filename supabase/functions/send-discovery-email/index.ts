@@ -244,9 +244,11 @@ Deno.serve(async (req: Request) => {
 
       const textBody =
         `${title}\n\n${body}\n\n${buttonLabel}: ${link}\n\n` +
-        `Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe i PadelMakker.\n` +
+        `Du får denne mail, fordi du har en profil på PadelMakker, og besked om nye\n` +
+        `makkere og kampe er slået til på din konto.\n` +
         `Afmeld med ét klik: ${unsubLink}\n` +
-        `Eller administrér i appen: ${prefsLink}`;
+        `Eller administrér i appen: ${prefsLink}\n\n` +
+        `PadelMakker · CVR 46403193 · ${siteUrl}/privatlivspolitik`;
 
       const htmlBody = `
         <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.5;color:#111;max-width:560px">
@@ -258,11 +260,16 @@ Deno.serve(async (req: Request) => {
               ${escapeHtml(buttonLabel)}
             </a>
           </p>
-          <p style="margin:0 0 8px;font-size:12px;color:#666">
-            Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe.
+          <p style="margin:0 0 6px;font-size:12px;color:#666">
+            Du får denne mail, fordi du har en profil på PadelMakker, og besked om nye
+            makkere og kampe er slået til på din konto.
             <a href="${escapeHtml(unsubLink)}" style="color:#0B6E4F">Afmeld</a>
             ·
             <a href="${escapeHtml(prefsLink)}" style="color:#0B6E4F">Administrér i appen</a>
+          </p>
+          <p style="margin:0;font-size:11px;color:#888">
+            PadelMakker · CVR 46403193 ·
+            <a href="${escapeHtml(siteUrl)}/privatlivspolitik" style="color:#888">Privatlivspolitik</a>
           </p>
         </div>
       `.trim();

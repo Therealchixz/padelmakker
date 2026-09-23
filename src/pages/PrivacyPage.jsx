@@ -59,6 +59,21 @@ export function PrivacyPage() {
         misbrugsforebyggelse (art. 6 stk. 1 litra f).
       </p>
 
+      <h2 style={h2}>Beskeder om nye makkere og kampe</h2>
+      <p style={p}>
+        At blive sat i forbindelse med andre spillere er selve formålet med {LEGAL_INFO.brand}. Derfor er besked om nye
+        makkere og kampe i dit område slået til, når du opretter en profil — det står på oprettelsessiden, før du
+        opretter dig. Vi sender højst én sådan mail om dagen, og du hører aldrig om den samme spiller to gange inden for
+        syv dage.
+      </p>
+      <p style={p}>
+        Behandlingen sker for at levere det, du har oprettet dig for (art. 6 stk. 1 litra b) og ud fra en berettiget
+        interesse i at gøre tjenesten brugbar (litra f). Du kan til enhver tid sige fra: hver mail har et
+        afmeldingslink, der virker med ét klik og uden login, og du kan slå det fra under{' '}
+        <strong style={{ color: theme.text }}>Profil → Notifikationer</strong>. Vi bruger ikke din e-mailadresse til
+        reklame for andre produkter og videregiver den ikke til andre end de databehandlere, der er nævnt nedenfor.
+      </p>
+
       <h2 style={h2}>Underleverandører (databehandlere)</h2>
       <p style={p}>
         Vi bruger betroede leverandører, der behandler data på vores vegne og kun efter vores instruks:
@@ -75,12 +90,33 @@ export function PrivacyPage() {
           Supabase Auth).
         </li>
         <li style={li}>
+          <strong style={{ color: theme.text }}>Resend</strong> — udsendelse af e-mails fra tjenesten (bekræftelse,
+          nulstilling af adgangskode og beskeder om nye makkere og kampe). Resend modtager din e-mailadresse og
+          mailens indhold for at kunne levere den.
+        </li>
+        <li style={li}>
           <strong style={{ color: theme.text }}>Google</strong> — hvis du vælger “Log ind med Google”; Google behandler
           oplysninger efter deres egne vilkår som selvstændig dataansvarlig for den del.
         </li>
         <li style={li}>
           <strong style={{ color: theme.text }}>Cloudflare Turnstile</strong> — sikkerhedscheck (captcha) ved login og
           oprettelse, når det er aktiveret.
+        </li>
+      </ul>
+
+      <h2 style={h2}>Opslag din browser foretager</h2>
+      <p style={p}>
+        To opslag sker direkte fra din browser, når du opretter dig. De to tjenester ser derfor din IP-adresse:
+      </p>
+      <ul style={{ margin: '0 0 12px', paddingLeft: '1.25rem', color: theme.textMid }}>
+        <li style={li}>
+          <strong style={{ color: theme.text }}>Dataforsyningen</strong> (Styrelsen for Dataforsyning og Infrastruktur) —
+          forslag til by og postnummer, mens du skriver. Vi sender kun den tekst, du taster i by-feltet.
+        </li>
+        <li style={li}>
+          <strong style={{ color: theme.text }}>Have I Been Pwned</strong> — kontrol af, om den adgangskode du vælger er
+          dukket op i et kendt datalæk. Din adgangskode forlader <em>ikke</em> din enhed: vi sender kun de første fem
+          tegn af et tjeksum af den og sammenligner svaret lokalt. Tjenesten kan hverken se adgangskoden eller hvem du er.
         </li>
       </ul>
       <p style={p}>
@@ -106,6 +142,11 @@ export function PrivacyPage() {
           sletter eller anonymiserer vi personoplysninger, der ikke skal gemmes længere — som udgangspunkt inden for{' '}
           <strong style={{ color: theme.text }}>30 dage</strong>, medmindre længere opbevaring er påkrævet ved lov eller
           nødvendig for at håndtere tvister.
+        </li>
+        <li style={li}>
+          <strong style={{ color: theme.text }}>Dokumentation for accept:</strong> vi gemmer tidspunktet for, at du
+          accepterede handelsbetingelser og privatlivspolitik, og hvilken version du accepterede. Det er vi forpligtet
+          til efter GDPR art. 7, og det opbevares så længe du har en konto.
         </li>
         <li style={li}>
           <strong style={{ color: theme.text }}>Tekniske logs:</strong> server- og sikkerhedslogs opbevares typisk i op til{' '}

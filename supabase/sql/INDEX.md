@@ -15,10 +15,10 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 155 |
+| Funktioner i migrations (= i drift) | 156 |
 | ...med en identisk fil i `supabase/sql/` | 110 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 29 |
-| ...som slet ikke findes i arkivet | 16 |
+| ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
 ## Funktioner i drift
@@ -75,7 +75,7 @@ kan efterprøves direkte mod den kørende database.
 | `cancel_play_intent` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | — |
 | `canonical_app_region` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `check_rate_limit` | `00000000000000_baseline_schema.sql` | — | 1 |
-| `claim_email_send_slot` | `20260922224245_discovery_email_frequency_cap.sql` | — | — |
+| `claim_email_send_slot` | `20260923103039_discovery_email_cap_one_per_day.sql` | — | — |
 | `complete_americano_tournament` | `00000000000000_baseline_schema.sql` | `_americano_auth_fix.sql`<br>`_p3b.sql`<br>`admin_security_phase3_deploy.sql`<br>`americano_elo_rating.sql`<br>`americano_liga_completed_at.sql` | — |
 | `confirm_match_result_and_apply_elo` | `00000000000000_baseline_schema.sql` | `confirm_match_result_and_apply_elo.sql` | — |
 | `create_notification_for_user` | `00000000000000_baseline_schema.sql` | `notification_rate_limits_restore.sql` | 5 |
@@ -162,6 +162,7 @@ kan efterprøves direkte mod den kørende database.
 | `recalc_americano_elo_from_history` | `00000000000000_baseline_schema.sql` | `_p3b.sql`<br>`admin_correct_americano_and_recalc_elo.sql`<br>`admin_security_phase3_deploy.sql` | — |
 | `recalc_americano_profile_stats` | `00000000000000_baseline_schema.sql` | `fix_americano_visibility_and_stats.sql` | 2 |
 | `recalc_profile_stats_from_elo_history` | `00000000000000_baseline_schema.sql` | — | 5 |
+| `record_consent_from_metadata` | `20260923112121_consent_log_records_signup_acceptance.sql` | — | — |
 | `release_email_send_slot` | `20260922224600_release_email_send_slot.sql` | — | — |
 | `report_americano_match_score` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `report_user` | `00000000000000_baseline_schema.sql` | — | 3 |
