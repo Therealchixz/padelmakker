@@ -5,12 +5,13 @@ import {
   isProposalNotification,
   proposalIdFromNotification,
 } from './playIntentUtils.js';
+import { isExpiredActionNotification } from './notificationAge.js';
 
 /**
  * Én klik-destination for klokke, notifikationsside og tests.
  * Returnerer null når beskeden ikke skal navigere (kun markér som læst).
  */
-export function resolveNotificationClickTarget(n, { isAdmin = false } = {}) {
+export function resolveNotificationClickTarget(n, { isAdmin = false, now = Date.now() } = {}) {
   if (!n) return null;
   const type = String(n?.type || '');
 
@@ -32,6 +33,8 @@ export function resolveNotificationClickTarget(n, { isAdmin = false } = {}) {
     return { kind: 'kampe-list', path: '/dashboard/kampe' };
   }
   if (isActionableProposalNotification(type)) {
+    // Fristen er udløbet: der er intet at bekræfte længere.
+    if (isExpiredActionNotification(n, now)) return null;
     return {
       kind: 'proposal-popup',
       path: buildProposalFocusPath(proposalIdFromNotification(n)),
