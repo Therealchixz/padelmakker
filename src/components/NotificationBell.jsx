@@ -8,7 +8,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { NotificationPushControls } from './NotificationPushControls';
 import { normalizeNotificationPrefs } from '../lib/notificationPreferences';
-import { NotificationSettingsPanel } from './NotificationSettingsPanel';
+import { NotificationSettingsDisclosure } from './NotificationSettingsPanel';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import { formatNotificationAge, settleExpiredNotifications } from '../lib/notificationAge';
 import {
@@ -460,7 +460,7 @@ export function NotificationBell({ tourForceOpen = false }) {
             </div>
           </div>
 
-          <NotificationSettingsPanel />
+          <NotificationSettingsDisclosure />
 
           <NotificationPushControls
             userId={userId}

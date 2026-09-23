@@ -14,7 +14,7 @@ export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
  * push kraever, at appen er installeret som PWA, og det har 2 ud af 98 gjort.
  */
 export const NOTIFICATION_EMAIL_CHANNELS = Object.freeze([
-  { id: 'opdagelse', label: 'Nye makkere/kampe der passer' },
+  { id: 'opdagelse', label: 'Nye kampe og makkere der passer' },
 ]);
 
 /** Overordnet niveau for push til telefonen (master over kanal-til/fra). */

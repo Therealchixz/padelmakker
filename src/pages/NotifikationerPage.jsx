@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, Settings, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { theme, font, btn } from '../lib/platformTheme';
@@ -16,7 +16,7 @@ import {
   NOTIFICATIONS_SYNC_EVENT,
 } from '../lib/notificationDismissStorage';
 import { NotificationPushControls } from '../components/NotificationPushControls';
-import { NotificationSettingsPanel } from '../components/NotificationSettingsPanel';
+import { NotificationSettingsDisclosure } from '../components/NotificationSettingsPanel';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import { formatNotificationAge, isExpiredActionNotification, settleExpiredNotifications } from '../lib/notificationAge';
 
@@ -72,7 +72,6 @@ export function NotifikationerPage({ onBack }) {
   const [loadError, setLoadError] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
   const [matchMetaById, setMatchMetaById] = useState({});
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -282,19 +281,7 @@ export function NotifikationerPage({ onBack }) {
       />
 
       {/* På telefonen findes indstillingerne kun her (klokken åbner denne side). */}
-      <div style={{ borderBottom: '1px solid ' + theme.border, background: theme.surface }}>
-        <button
-          type="button"
-          onClick={() => setSettingsOpen((v) => !v)}
-          aria-expanded={settingsOpen}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', minHeight: 44, padding: '10px 18px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'left' }}
-        >
-          <Settings size={16} color={theme.textMid} aria-hidden />
-          <span style={{ flex: 1 }}>Indstillinger for beskeder</span>
-          <ChevronDown size={16} color={theme.textMid} aria-hidden style={{ transform: settingsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-        </button>
-        {settingsOpen && <NotificationSettingsPanel />}
-      </div>
+      <NotificationSettingsDisclosure />
 
       <div className="pm-notifikationer-list" style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (

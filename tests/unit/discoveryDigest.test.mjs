@@ -163,9 +163,16 @@ test('send-push holder tæt om natten, undtagen for det vigtige', () => {
 test('indstillingen kan findes både på telefon og computer', () => {
   const panel = read('src/components/NotificationSettingsPanel.jsx');
   assert.match(panel, /Stille om natten/);
-  assert.match(panel, /mergeQuietHours\(notifPrefs, \{ enabled: e\.target\.checked \}\)/);
+  assert.match(panel, /mergeQuietHours\(notifPrefs, \{ enabled: on \}\)/);
+  // Samme knapper som resten af appen, ikke telefonens små flueben.
+  assert.match(panel, /<ToggleSwitch /);
+  assert.match(panel, /<PillTabs/);
+  assert.doesNotMatch(panel, /type="checkbox"/);
+  assert.doesNotMatch(panel, /<select/);
   assert.match(panel, /samles i én mail kl\. 17/);
   // Klokken åbner en side på telefonen; indstillingerne skal også være dér.
-  assert.match(read('src/components/NotificationBell.jsx'), /<NotificationSettingsPanel \/>/);
-  assert.match(read('src/pages/NotifikationerPage.jsx'), /<NotificationSettingsPanel \/>/);
+  assert.match(read('src/components/NotificationBell.jsx'), /<NotificationSettingsDisclosure \/>/);
+  assert.match(read('src/pages/NotifikationerPage.jsx'), /<NotificationSettingsDisclosure \/>/);
+  // Sammenfoldet som standard, så beskederne ikke skubbes ud af syne.
+  assert.match(panel, /export function NotificationSettingsDisclosure\(\) \{\s+const \[open, setOpen\] = useState\(false\);/);
 });
