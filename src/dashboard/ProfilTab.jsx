@@ -242,7 +242,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   );
   const { ligaRelationStats, ligaRelationLoading } = useLigaPartnerOpponentStats(user?.id, !!user?.id);
 
-  const [form, setForm] = useState(() => profileFormState(user));
+  const [form, setForm] = useState(() => profileFormState(user, authUser?.user_metadata));
   const [quickCityPlace, setQuickCityPlace] = useState(() => (
     isValidCityPlace(user) ? {
       city: user.city,
@@ -256,8 +256,8 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [reactivationPrefSaving, setReactivationPrefSaving] = useState(false);
 
   useEffect(() => {
-    if (!editing) setForm(profileFormState(user));
-  }, [user, editing]);
+    if (!editing) setForm(profileFormState(user, authUser?.user_metadata));
+  }, [user, authUser?.user_metadata, editing]);
 
   useEffect(() => {
     if (!editing) {
@@ -611,8 +611,10 @@ export function ProfilTab({ user, showToast, setTab }) {
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
-        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
-        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
+        // Tomme felter udelades: måned/dag kan ikke læses tilbage, så null ville
+        // overskrive en gemt dato, som formularen bare ikke kunne vise.
+        ...(form.birth_month ? { birth_month: parseInt(form.birth_month, 10) } : {}),
+        ...(form.birth_day ? { birth_day: parseInt(form.birth_day, 10) } : {}),
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
@@ -777,7 +779,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {/* Edit button floating in top-right corner */}
           <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }}>
             <button
-              onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+              onClick={() => { setForm(profileFormState(user, authUser?.user_metadata)); setEditing(true); }}
               style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border }}
             >
               <Settings size={12} /> Rediger
@@ -864,7 +866,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               </p>
               <button
                 type="button"
-                onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+                onClick={() => { setForm(profileFormState(user, authUser?.user_metadata)); setEditing(true); }}
                 style={{ ...btn(true), padding: '8px 14px', fontSize: '12px' }}
               >
                 Vælg region under Rediger
@@ -1430,7 +1432,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
-        <button onClick={() => { setForm(profileFormState(user)); setPendingAvatarFile(null); if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl); setAvatarPreviewUrl(null); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+        <button onClick={() => { setForm(profileFormState(user, authUser?.user_metadata)); setPendingAvatarFile(null); if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl); setAvatarPreviewUrl(null); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
           <X size={14} /> Annullér
         </button>
       </div>

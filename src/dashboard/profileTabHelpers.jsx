@@ -8,7 +8,9 @@ export function splitDisplayNameToFirstLast(full) {
   return { first_name: t.slice(0, i).trim(), last_name: t.slice(i + 1).trim() };
 }
 
-export function profileFormState(p) {
+// birth_month/birth_day kan ikke læses fra profiles (kolonne-rettighed), så de
+// hentes fra brugerens egen auth-metadata, som updateProfile holder i sync.
+export function profileFormState(p, authMeta = {}) {
   const { first_name, last_name } = splitDisplayNameToFirstLast(p.full_name || p.name || "");
   return {
     first_name: toPersonNameCase(first_name),
@@ -26,7 +28,7 @@ export function profileFormState(p) {
     availability: normalizeStringArrayField(p.availability),
     available_days: normalizeStringArrayField(p.available_days),
     birth_year: p.birth_year ? String(p.birth_year) : "",
-    birth_month: p.birth_month ? String(p.birth_month) : "",
-    birth_day: p.birth_day ? String(p.birth_day) : "",
+    birth_month: (p.birth_month ?? authMeta?.birth_month) ? String(p.birth_month ?? authMeta.birth_month) : "",
+    birth_day: (p.birth_day ?? authMeta?.birth_day) ? String(p.birth_day ?? authMeta.birth_day) : "",
   };
 }

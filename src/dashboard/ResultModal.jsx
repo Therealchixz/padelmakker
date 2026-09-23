@@ -60,7 +60,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
               <div key={i} style={{
                 fontSize: i === 0 ? 23 : 15,
                 fontWeight: 700,
-                color: i === 0 ? theme.navy : theme.textMid,
+                color: i === 0 ? theme.accent : theme.textMid,
                 letterSpacing: i === 0 ? 2 : 1,
                 lineHeight: 1.25,
               }}>
