@@ -999,6 +999,25 @@ export function OnboardingPage() {
           , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
         </span>
       </label>
+      {/*
+        Mail er slaaet til som standard, og saa skal det staa her - ikke gemt i
+        en indstilling, brugeren skal lede efter. Sidste linje er ikke pynt:
+        naar folk kan slippe af med en mail med ét klik, trykker de ikke spam,
+        og saa bliver domaenets oevrige mails (kodeord, bekraeftelse) ved med
+        at naa frem.
+      */}
+      <p
+        style={{
+          margin: "-6px 0 14px 31px",
+          fontSize: "11.5px",
+          color: theme.textLight,
+          lineHeight: 1.5,
+        }}
+      >
+        Vi sender dig en mail, når en spiller i dit område søger makker eller opretter
+        en kamp, der passer til dig — højst én om ugen. Du kan afmelde med ét klik
+        direkte i mailen.
+      </p>
       {turnstileEnabled && (
         <div id="onb-captcha" style={{ ...insetCard, marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>

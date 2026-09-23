@@ -199,6 +199,7 @@ Deno.serve(async (req: Request) => {
     const buttonLabel = ctaLabel(type);
 
     let sent = 0;
+    let skippedByCap = 0;
     for (const userId of optedInIds) {
       const { data: authUser, error: authErr } = await admin.auth.admin.getUserById(userId);
       const toEmail = String(authUser?.user?.email || "").trim();
@@ -218,6 +219,28 @@ Deno.serve(async (req: Request) => {
         continue;
       }
       const unsubLink = `${unsubBase}?t=${encodeURIComponent(String(unsubToken))}`;
+
+      // Hoejst én opdagelses-mail per person per uge.
+      //
+      // Notifikations-funktionen spaerrer kun for gentagelser om den SAMME
+      // person i 7 dage - fem forskellige makkere paa én dag er inden for
+      // reglerne. Fem mails paa en dag til en, der ikke har aabnet appen i et
+      // halvt aar, er praecis det, der faar folk til at trykke spam.
+      //
+      // Spaerren ligger i databasen, fordi denne funktion kaldes fra browseren
+      // og kan koere flere gange samtidig. Reservationen lykkes kun én gang.
+      const { data: slotOk, error: slotErr } = await admin.rpc("claim_email_send_slot", {
+        p_user_id: userId,
+        p_kind: "discovery",
+      });
+      if (slotErr) {
+        console.error("send-discovery-email slot:", slotErr.message);
+        continue;
+      }
+      if (slotOk !== true) {
+        skippedByCap += 1;
+        continue;
+      }
 
       const textBody =
         `${title}\n\n${body}\n\n${buttonLabel}: ${link}\n\n` +
@@ -269,12 +292,26 @@ Deno.serve(async (req: Request) => {
       if (!resendResponse.ok) {
         const errText = await resendResponse.text();
         console.error("send-discovery-email resend:", resendResponse.status, errText.slice(0, 280));
+        // Giv ugens reservation tilbage. Ellers har brugeren brugt sin uge paa
+        // en mail, der aldrig kom frem, og faar ingenting i syv dage.
+        const { error: releaseErr } = await admin.rpc("release_email_send_slot", {
+          p_user_id: userId,
+          p_kind: "discovery",
+        });
+        if (releaseErr) {
+          console.error("send-discovery-email release:", releaseErr.message);
+        }
         continue;
       }
       sent += 1;
     }
 
-    return jsonResponse(req, { ok: true, sent, candidates: optedInIds.length });
+    return jsonResponse(req, {
+      ok: true,
+      sent,
+      candidates: optedInIds.length,
+      skipped_by_weekly_cap: skippedByCap,
+    });
   } catch (error) {
     console.error("send-discovery-email uventet fejl:", error);
     return jsonResponse(req, { error: "Intern fejl" }, 500);
