@@ -133,6 +133,7 @@ function RelationRow({ emoji, name, subtitle, statValue, statColor, statLabel, a
     : undefined;
   return (
     <div
+      className="pm-hit-44"
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={interactive ? onOpen : undefined}

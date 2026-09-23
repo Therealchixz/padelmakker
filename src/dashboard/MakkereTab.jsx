@@ -706,6 +706,7 @@ export function MakkereTab({ user, showToast }) {
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h3>
             {activeSuggestions.length > 3 && (
               <button
+                className="pm-hit-44"
                 onClick={() => setShowAllSuggestions(v => !v)}
                 style={{ fontSize: '12.5px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
               >
@@ -782,7 +783,7 @@ export function MakkereTab({ user, showToast }) {
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
-          className={`pm-ui-btn-chip ${showFilters || activeFilterCount > 0 ? 'pm-ui-btn-chip-active' : ''}`}
+          className={`pm-ui-btn-chip pm-hit-44 ${showFilters || activeFilterCount > 0 ? 'pm-ui-btn-chip-active' : ''}`}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', fontSize: '13px' }}
         >
           <SlidersHorizontal size={13} />
@@ -812,6 +813,7 @@ export function MakkereTab({ user, showToast }) {
           onChange={(id) => handleFilterChange(() => setFilterFav(id === 'fav'))}
           ariaLabel="Vis favoritter"
           size="sm"
+          className="pm-pill-tabs--fill"
           style={{ width: 'auto', flex: '1 1 200px', maxWidth: '320px' }}
         />
         {activeFilterCount > 0 && (
@@ -825,6 +827,7 @@ export function MakkereTab({ user, showToast }) {
         )}
         {!makkerFilterOn && (
           <button
+            className="pm-hit-44"
             type="button"
             onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
             style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}

@@ -1219,6 +1219,7 @@ export function AmericanoTab({
         <>
       <div className="pm-help-box" style={{ marginBottom: 16 }}>
         <button
+          className="pm-hit-44"
           type="button"
           onClick={() => setAmericanoHelpOpen((v) => !v)}
           aria-expanded={americanoHelpOpen}

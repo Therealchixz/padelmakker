@@ -30,6 +30,7 @@ import { ChevronDown, Clock } from 'lucide-react';
 function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
   return (
     <button
+      className="pm-hit-44"
       type="button"
       role="switch"
       aria-checked={checked}

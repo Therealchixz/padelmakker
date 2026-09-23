@@ -3265,6 +3265,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         <>
           <div className="pm-help-box" style={{ marginBottom: 16 }}>
             <button
+              className="pm-hit-44"
               type="button"
               onClick={() => setPadelHelpOpen((v) => !v)}
               aria-expanded={padelHelpOpen}

@@ -236,6 +236,36 @@ a:focus-visible {
   box-shadow: var(--pm-focus-ring-dark);
 }
 
+/* ── Trykflade på mindst 44x44 uden at ændre udseende eller layout ──
+   Et usynligt lag centreret over elementet fanger tryk omkring det. Klik på
+   ::after tæller som klik på selve elementet. Virker ikke, hvis elementet
+   selv eller en tæt forælder har overflow: hidden/auto. */
+.pm-hit-44,
+.pm-kampe-v2-create--icon,
+.pm-kampe-v2-filter-btn,
+.pm-kampe-v2-format-pill,
+.pm-kampe-v2-filter-toggle,
+.pm-feed-filter-chip,
+.pm-pill-tabs--fill .pm-pill-tab {
+  position: relative;
+}
+
+.pm-hit-44::after,
+.pm-kampe-v2-create--icon::after,
+.pm-kampe-v2-filter-btn::after,
+.pm-kampe-v2-format-pill::after,
+.pm-kampe-v2-filter-toggle::after,
+.pm-feed-filter-chip::after,
+.pm-pill-tabs--fill .pm-pill-tab::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
 /* ── Base colors for html/body ── */
 html, body {
   background: var(--pm-bg);

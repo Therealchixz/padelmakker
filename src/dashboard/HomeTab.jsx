@@ -1106,14 +1106,16 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               }}
               style={{
                 display: 'block',
-                marginTop: '8px',
+                marginBottom: '-18px',
                 background: 'transparent',
                 border: 'none',
                 color: theme.textMid,
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
-                padding: 0,
+                // Ekstra luft nedad og til højre giver 44x44 trykflade uden at flytte teksten
+                // eller ramme linket lige ovenover; den negative margin holder layoutet.
+                padding: '8px 16px 18px 0',
                 fontFamily: font,
               }}
             >
@@ -1214,14 +1216,16 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             }}
             style={{
               display: 'block',
-              marginTop: '8px',
+              marginBottom: '-18px',
               background: 'transparent',
               border: 'none',
               color: theme.textMid,
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
-              padding: 0,
+              // Ekstra luft nedad og til højre giver 44x44 trykflade uden at flytte teksten
+              // eller ramme linket lige ovenover; den negative margin holder layoutet.
+              padding: '8px 16px 18px 0',
               fontFamily: font,
             }}
           >
