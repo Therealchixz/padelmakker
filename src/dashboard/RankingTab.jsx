@@ -890,12 +890,12 @@ export function RankingTab({ user }) {
                       padding: '11px 14px',
                       background: me ? theme.accentBg : 'transparent',
                       cursor: me ? 'default' : 'pointer',
-                      borderLeft: me ? `3px solid ${theme.navy}` : undefined,
+                      borderLeft: me ? `3px solid ${theme.accent}` : undefined,
                     }}
                   >
                     <div style={{
                       width: 24, textAlign: 'center', fontWeight: 700,
-                      fontSize: 13, color: me ? theme.navy : theme.textMid, flexShrink: 0,
+                      fontSize: 13, color: me ? theme.accent : theme.textMid, flexShrink: 0,
                     }}>
                       {place}
                     </div>
@@ -923,7 +923,7 @@ export function RankingTab({ user }) {
                     <div style={{
                       fontSize: 14, fontWeight: 700, flexShrink: 0,
                       color: period === 'all'
-                        ? theme.navy
+                        ? theme.accent
                         : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
                     }}>
                       {period === 'all' ? score : score > 0 ? `+${score}` : score}
@@ -962,7 +962,7 @@ export function RankingTab({ user }) {
           margin: '12px 18px 18px',
           background: theme.surface,
           borderRadius: 12,
-          border: `1.5px solid ${theme.navy}`,
+          border: `1.5px solid ${theme.accent}`,
           padding: '11px 14px',
           display: 'flex',
           alignItems: 'center',

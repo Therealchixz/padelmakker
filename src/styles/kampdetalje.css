@@ -394,7 +394,7 @@
 }
 
 .pm-kd-slot--empty.pm-kd-slot--clickable { cursor: pointer; }
-.pm-kd-slot--empty.pm-kd-slot--clickable:hover { border-color: var(--pm-navy); }
+.pm-kd-slot--empty.pm-kd-slot--clickable:hover { border-color: var(--pm-accent); }
 
 .pm-kd-ghost {
   width: 43px;
@@ -527,7 +527,7 @@
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   margin-top: 2px;
 }
 
@@ -738,7 +738,7 @@
   height: 40px;
   border-radius: 50%;
   background: var(--pm-kd-inset);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;

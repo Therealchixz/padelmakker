@@ -733,7 +733,7 @@ export function OnboardingPage() {
               alignItems: "center",
               gap: "13px",
               background: theme.surface,
-              border: `1.5px solid ${sel ? theme.navy : theme.border}`,
+              border: `1.5px solid ${sel ? theme.accent : theme.border}`,
               borderRadius: "14px",
               padding: "14px 16px",
               marginBottom: "11px",
