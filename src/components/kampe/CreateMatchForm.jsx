@@ -1,19 +1,22 @@
 /**
- * Opret-guiden til 2v2-kampe - tre trin: bane & tid, pris & kamptype, bekraeft.
+ * Opret-guiden til 2v2-kampe - to trin: info (med valgfri pris, beskrivelse
+ * og kamptype foldet sammen) og bekraeft.
  *
  * Flyttet ud af KampeTab uaendret. Al tilstand bor stadig i KampeTab; denne fil
  * er ren visning, saa den kan laeses og aabnes uden at have 4.000 linjer omkring
  * sig. Props er med vilje eksplicitte frem for et samlet objekt - saa fanger
  * ESLint det, hvis noget mangler.
  */
-import { btn, inputStyle, labelStyle, theme } from '../../lib/platformTheme';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { btn, font, inputStyle, labelStyle, theme } from '../../lib/platformTheme';
+import { DateInputField } from '../DateInputField';
 import { PillTabs } from '../PillTabs';
 import { LevelRangeSlider } from '../LevelRangeSlider';
 import { VenueRegionPicker } from '../VenueRegionPicker';
 import { fieldValidationErrorStyle, fieldValidationMessage } from '../../lib/formValidationScroll';
 import { TIME_OPTIONS } from '../../lib/timeSlotOptions';
 import { isMatchVenueTbd, MATCH_VENUE_TBD, courtNameFromVenueSelection } from '../../lib/matchVenueOptions';
-import { clampElo } from '../../lib/matchLevelRange';
 import { timeToMinutes } from '../../lib/matchDisplayUtils';
 import { eloToLevel, levelToElo, formatPlaytomicLevelRange, formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 
@@ -23,6 +26,7 @@ export function CreateMatchForm({
   creating,
   createMatch,
   myElo,
+  defaultLevelElo,
   venueOptions,
   createVenueOptions,
   courtBookedTabs,
@@ -39,6 +43,24 @@ export function CreateMatchForm({
   padelCreateVenueFieldRef,
   padelCreateDurationFieldRef,
 }) {
+  // Valgfrie felter er foldet sammen, medmindre der allerede står noget i dem.
+  const [moreOpen, setMoreOpen] = useState(() => Boolean(
+    String(newMatch.description || '').trim()
+      || Number(String(newMatch.price_per_person || '').replace(',', '.')) > 0
+      || newMatch.match_type === 'closed',
+  ));
+  const priceValue = Number(String(newMatch.price_per_person || '').replace(',', '.'));
+  const hasPrice = Number.isFinite(priceValue) && priceValue > 0;
+  const onPriceChange = (value) => {
+    const n = Number(String(value || '').replace(',', '.'));
+    const paid = Number.isFinite(n) && n > 0;
+    setNewMatch((m) => ({
+      ...m,
+      price_per_person: value,
+      // Ingen pris = gratis. Skrives der en pris, foreslås MobilePay.
+      payment_method: paid ? (m.payment_method === 'free' ? 'mobilepay' : m.payment_method) : 'free',
+    }));
+  };
   return (
     <div
       ref={padelCreateFormRef}
@@ -51,7 +73,7 @@ export function CreateMatchForm({
       }}
     >
       <div className="pm-wiz" style={{ margin: "0 0 16px" }}>
-        {[{ n: 1, label: "Info" }, { n: 2, label: "Pris" }, { n: 3, label: "Bekræft" }].map((s, i, arr) => {
+        {[{ n: 1, label: "Info" }, { n: 2, label: "Bekræft" }].map((s, i, arr) => {
           const state = s.n < padelCreateStep ? "done" : s.n === padelCreateStep ? "on" : "";
           return (
             <span key={s.n} style={{ display: "contents" }}>
@@ -133,20 +155,19 @@ export function CreateMatchForm({
               )}
             </div>
             <div ref={padelCreateDateFieldRef} style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Dato</label>
-              <input
-                type="date"
+              <DateInputField
+                label="Dato"
+                labelStyle={labelStyle}
                 value={newMatch.date}
                 min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => {
                   setNewMatch((m) => ({ ...m, date: e.target.value }));
                   if (padelCreateFieldError?.field === 'date') setPadelCreateFieldError(null);
                 }}
-                style={{
+                inputStyle={{
                   ...inputStyle,
                   fontSize: "13px",
-                  appearance: "none",
-                  WebkitAppearance: "none",
+                  marginBottom: 0,
                   ...fieldValidationErrorStyle(Boolean(padelDateError)),
                 }}
                 aria-invalid={padelDateError ? true : undefined}
@@ -207,8 +228,8 @@ export function CreateMatchForm({
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Hvilket niveau søger du?</label>
               {(() => {
-                const lvlMin = eloToLevel(Number(newMatch.level_min) || clampElo(myElo - 100, myElo));
-                const lvlMax = eloToLevel(Number(newMatch.level_max) || clampElo(myElo + 100, myElo));
+                const lvlMin = eloToLevel(Number(newMatch.level_min) || defaultLevelElo.min);
+                const lvlMax = eloToLevel(Number(newMatch.level_max) || defaultLevelElo.max);
                 return (
                   <>
                     <div className="pm-level-range-box">
@@ -228,75 +249,88 @@ export function CreateMatchForm({
               })()}
             </div>
           </div>
-          <div style={{ margin: "14px 0 0", background: "var(--pm-surface-muted)", border: "1px solid var(--pm-americano-tie-border)", borderRadius: 12, padding: "12px 14px", fontSize: 11.5, color: theme.textLight, lineHeight: 1.55 }}>
-            Pris, betaling og kamptype konfigureres i næste trin.
+          <div style={{ marginTop: 14, borderTop: `1px solid ${theme.border}` }}>
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              aria-expanded={moreOpen}
+              style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "8px 0", background: "none", border: "none", cursor: "pointer", fontFamily: font, fontSize: 14, fontWeight: 600, color: theme.text, textAlign: "left" }}
+            >
+              <span style={{ flex: 1 }}>
+                Flere valg <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 400, color: theme.textLight, marginTop: 2 }}>
+                  Pris, beskrivelse og om spillere skal godkendes
+                </span>
+              </span>
+              <ChevronDown size={16} color={theme.textMid} aria-hidden style={{ transform: moreOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+            {moreOpen ? (
+              <div style={{ paddingTop: 6 }}>
+            <label style={{ ...labelStyle, marginTop: 0 }}>
+              Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
+            </label>
+            <input
+              value={newMatch.description}
+              onChange={(e) => setNewMatch((m) => ({ ...m, description: e.target.value }))}
+              placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
+              style={{ ...inputStyle, marginBottom: "14px" }}
+            />
+            <div className="pm-form-2col" style={{ marginBottom: "14px" }}>
+              <div style={{ minWidth: 0 }}>
+                <label style={labelStyle}>
+                  Pris pr. person <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={newMatch.price_per_person}
+                    onChange={(e) => onPriceChange(e.target.value)}
+                    placeholder="0"
+                    style={{ ...inputStyle, fontSize: "13px", paddingRight: "32px" }}
+                  />
+                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: theme.textLight, pointerEvents: "none" }}>kr.</span>
+                </div>
+              </div>
+              {hasPrice ? (
+              <div style={{ minWidth: 0 }}>
+                <label style={labelStyle}>Betaling</label>
+                <select
+                  value={newMatch.payment_method}
+                  onChange={(e) => setNewMatch((m) => ({ ...m, payment_method: e.target.value }))}
+                  style={{ ...inputStyle, fontSize: "13px" }}
+                >
+                  <option value="mobilepay">MobilePay</option>
+                  <option value="cash">Ved fremmøde</option>
+                                </select>
+              </div>
+              ) : null}
+            </div>
+            <label style={labelStyle}>Kamptype</label>
+            <PillTabs
+              tabs={matchTypeTabs}
+              value={newMatch.match_type === "closed" ? "closed" : "open"}
+              onChange={(id) => setNewMatch((m) => ({ ...m, match_type: id }))}
+              ariaLabel="Kamptype"
+              size="sm"
+              style={{ marginTop: "4px" }}
+            />
+            <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+              {newMatch.match_type === "open"
+                ? "Alle kan tilmelde sig direkte."
+                : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
+            </p>
+              </div>
+            ) : null}
           </div>
         </>
         );
       })()}
 
-      {padelCreateStep === 2 && (
-        <>
-          <label style={{ ...labelStyle, marginTop: 0 }}>
-            Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
-          </label>
-          <input
-            value={newMatch.description}
-            onChange={(e) => setNewMatch((m) => ({ ...m, description: e.target.value }))}
-            placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
-            style={{ ...inputStyle, marginBottom: "14px" }}
-          />
-          <div className="pm-form-2col" style={{ marginBottom: "14px" }}>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>
-                Pris pr. person <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={newMatch.price_per_person}
-                  onChange={(e) => setNewMatch((m) => ({ ...m, price_per_person: e.target.value }))}
-                  placeholder="0"
-                  style={{ ...inputStyle, fontSize: "13px", paddingRight: "32px" }}
-                />
-                <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: theme.textLight, pointerEvents: "none" }}>kr.</span>
-              </div>
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Betaling</label>
-              <select
-                value={newMatch.payment_method}
-                onChange={(e) => setNewMatch((m) => ({ ...m, payment_method: e.target.value }))}
-                style={{ ...inputStyle, fontSize: "13px" }}
-              >
-                <option value="mobilepay">MobilePay</option>
-                <option value="cash">Ved fremmøde</option>
-                <option value="free">Gratis</option>
-              </select>
-            </div>
-          </div>
-          <label style={labelStyle}>Kamptype</label>
-          <PillTabs
-            tabs={matchTypeTabs}
-            value={newMatch.match_type === "closed" ? "closed" : "open"}
-            onChange={(id) => setNewMatch((m) => ({ ...m, match_type: id }))}
-            ariaLabel="Kamptype"
-            size="sm"
-            style={{ marginTop: "4px" }}
-          />
-          <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
-            {newMatch.match_type === "open"
-              ? "Alle kan tilmelde sig direkte."
-              : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
-          </p>
-        </>
-      )}
-
-      {padelCreateStep === 3 && (() => {
+      {padelCreateStep === 2 && (() => {
         const courtLabel = courtNameFromVenueSelection(newMatch.court_id, createVenueOptions) || "Ikke valgt endnu";
-        const lvlMin = eloToLevel(Number(newMatch.level_min) || clampElo(myElo - 100, myElo));
-        const lvlMax = eloToLevel(Number(newMatch.level_max) || clampElo(myElo + 100, myElo));
+        const lvlMin = eloToLevel(Number(newMatch.level_min) || defaultLevelElo.min);
+        const lvlMax = eloToLevel(Number(newMatch.level_max) || defaultLevelElo.max);
         const startM = timeToMinutes(newMatch.time);
         const dur = parseInt(newMatch.duration, 10) || 120;
         const endM = Number.isFinite(startM) ? startM + dur : null;
@@ -318,7 +352,7 @@ export function CreateMatchForm({
           { label: "Tid", value: `${dateLabel} · ${newMatch.time}${endTime ? `–${endTime}` : ""}` },
           { label: "Niveau", value: formatMatchLevelRangeLabel(newMatch.level_min, newMatch.level_max) || `Niveau ${formatPlaytomicLevelRange(lvlMin, lvlMax)}` },
           { label: "Kamptype", value: newMatch.match_type === "closed" ? "Lukket (godkendelse)" : "Åben" },
-          { label: "Pris", value: `${priceLabel} · ${paymentLabels[newMatch.payment_method] || newMatch.payment_method}` },
+          { label: "Pris", value: priceLabel === "Gratis" ? "Gratis" : `${priceLabel} · ${paymentLabels[newMatch.payment_method] || newMatch.payment_method}` },
         ];
         if (newMatch.description?.trim()) {
           summaryRows.push({ label: "Beskrivelse", value: newMatch.description.trim() });
@@ -373,13 +407,13 @@ export function CreateMatchForm({
             Annullér
           </button>
         )}
-        {padelCreateStep < 3 ? (
+        {padelCreateStep < 2 ? (
           <button
             type="button"
             onClick={goPadelCreateNext}
             style={{ ...btn(true, { size: "md", fontWeight: 600 }), flex: 2 }}
           >
-            {padelCreateStep === 1 ? "Næste: Pris & kamptype →" : "Næste: Bekræft →"}
+            Næste: Bekræft →
           </button>
         ) : (
           <button

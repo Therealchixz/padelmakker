@@ -101,6 +101,18 @@ export function levelRangeForWindow(center, window) {
   };
 }
 
+/**
+ * Standard-niveau for en ny kamp: opretterens eget niveau ± 0,5 (bredeste valg i
+ * kampfilteret). Før var det ELO ± 100, hvilket gav ca. ± 1,5 niveau (fx 1.4–4.4)
+ * og ikke hang sammen med det niveau, resten af appen viser.
+ */
+export const MATCH_DEFAULT_LEVEL_WINDOW = 0.5;
+
+export function defaultMatchLevelEloRange(profile) {
+  const { min, max } = levelRangeForWindow(profilePlaytomicLevel(profile), MATCH_DEFAULT_LEVEL_WINDOW);
+  return { min: levelToElo(min), max: levelToElo(max) };
+}
+
 export function levelsOverlap(minA, maxA, minB, maxB) {
   return minA <= maxB && minB <= maxA;
 }

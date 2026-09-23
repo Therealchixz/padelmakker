@@ -571,16 +571,6 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
-          {onInviteMatch && (
-            <button type="button" onClick={onInviteMatch} style={{ ...btn(true), width: '100%', justifyContent: 'center' }}>
-              Invitér til kamp
-            </button>
-          )}
-          {onMessage && (
-            <button type="button" onClick={onMessage} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>
-              <MessageCircle size={15} /> Send besked
-            </button>
-          )}
           {currentProfile?.id && String(currentProfile.id) !== String(player.id) ? (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }} data-tour="profile-moderation-actions">
               <BeskedChatActions
@@ -598,6 +588,22 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         </>
         )}
         </div>
+        {/* Handlingerne står fast i bunden, så man ikke skal rulle forbi al
+            statistikken for at skrive eller invitere. */}
+        {(onInviteMatch || onMessage) && (
+          <div className="pm-player-profile-actions">
+            {onInviteMatch && (
+              <button type="button" onClick={onInviteMatch} style={{ ...btn(true), flex: 1, justifyContent: 'center', minHeight: 44 }}>
+                Invitér til kamp
+              </button>
+            )}
+            {onMessage && (
+              <button type="button" onClick={onMessage} style={{ ...btn(false), flex: 1, justifyContent: 'center', minHeight: 44 }}>
+                <MessageCircle size={15} /> Send besked
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </>,
     document.body,

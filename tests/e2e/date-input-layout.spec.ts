@@ -55,7 +55,7 @@ test.describe('Date input layout', () => {
             <input id="text-ref" class="field" type="text" placeholder="Navn" />
             <div class="pm-date-field">
               <div class="pm-date-field__facade field">
-                <span class="pm-date-field__placeholder">dd-mm-åååå</span>
+                <span class="pm-date-field__placeholder">dd.mm.åååå</span>
               </div>
               <input class="pm-date-field__overlay" type="date" aria-label="Startdato" />
             </div>

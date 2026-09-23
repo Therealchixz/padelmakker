@@ -18,8 +18,12 @@ import {
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { BanerVenueLocation } from '../components/BanerVenueLocation';
+import { DateInputField } from '../components/DateInputField';
+import { formatMatchDateHeadlineDa } from '../lib/matchDisplayUtils';
 import { CourtFacilitiesGrid } from '../lib/courtFacilities';
 import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
+
+const BANER_DATE_INPUT_STYLE = { ...inputStyle, padding: '8px 10px', fontSize: '13px', marginBottom: 0 };
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
@@ -612,7 +616,7 @@ export function BanerTab() {
                 {v.kind === 'link' ? (
                   <>
                     <p className="pm-baner-section-title">
-                      {v.title} — {linkDate}
+                      {v.title} — {formatMatchDateHeadlineDa(linkDate)}
                     </p>
                     <DateNavigator
                       dateYmd={linkDate}
@@ -624,11 +628,11 @@ export function BanerTab() {
                     <div className="pm-baner-toolbar pm-baner-toolbar--spaced">
                       <label className="pm-baner-date-label">
                         Dato
-                        <input
-                          type="date"
+                        <DateInputField
                           value={linkDate}
                           onChange={(e) => setLinkDateByVenue((m) => ({ ...m, [v.id]: e.target.value }))}
-                          style={inputStyle}
+                          inputStyle={BANER_DATE_INPUT_STYLE}
+                          aria-label="Dato"
                         />
                       </label>
                     </div>
@@ -656,7 +660,7 @@ export function BanerTab() {
                         'Oversigt hentes fra MATCHi (offentlig kalender). 30 min. pr. felt — grøn åbner MATCHi med valgt dato.'}
                     </p>
                     <p className="pm-baner-section-title">
-                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${matchiDate}`}
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${formatMatchDateHeadlineDa(matchiDate)}`}
                     </p>
                     <DateNavigator
                       dateYmd={matchiDate}
@@ -670,15 +674,15 @@ export function BanerTab() {
                     <div className="pm-baner-toolbar">
                       <label className="pm-baner-date-label">
                         Dato
-                        <input
-                          type="date"
+                        <DateInputField
                           value={matchiDate}
                           onChange={(e) => {
                             const val = e.target.value;
                             setMatchiDateByVenue((m) => ({ ...m, [v.id]: val }));
                             loadMatchiVenue(v.id, val);
                           }}
-                          style={inputStyle}
+                          inputStyle={BANER_DATE_INPUT_STYLE}
+                          aria-label="Dato"
                         />
                       </label>
                       <button
@@ -748,7 +752,7 @@ export function BanerTab() {
                         'Ledige tider fra Playtomic. Kun ledige starttider vises — grøn åbner Playtomic med valgt dato.'}
                     </p>
                     <p className="pm-baner-section-title">
-                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${playtomicDate}`}
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${formatMatchDateHeadlineDa(playtomicDate)}`}
                     </p>
                     <DateNavigator
                       dateYmd={playtomicDate}
@@ -762,15 +766,15 @@ export function BanerTab() {
                     <div className="pm-baner-toolbar">
                       <label className="pm-baner-date-label">
                         Dato
-                        <input
-                          type="date"
+                        <DateInputField
                           value={playtomicDate}
                           onChange={(e) => {
                             const val = e.target.value;
                             setPlaytomicDateByVenue((m) => ({ ...m, [v.id]: val }));
                             loadPlaytomicVenue(v.id, val);
                           }}
-                          style={inputStyle}
+                          inputStyle={BANER_DATE_INPUT_STYLE}
+                          aria-label="Dato"
                         />
                       </label>
                       <button
@@ -840,7 +844,7 @@ export function BanerTab() {
                       book efter login.
                     </p>
                     <p className="pm-baner-section-title">
-                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${bookliDate}`}
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${formatMatchDateHeadlineDa(bookliDate)}`}
                     </p>
                     <DateNavigator
                       dateYmd={bookliDate}
@@ -854,15 +858,15 @@ export function BanerTab() {
                     <div className="pm-baner-toolbar">
                       <label className="pm-baner-date-label">
                         Dato
-                        <input
-                          type="date"
+                        <DateInputField
                           value={bookliDate}
                           onChange={(e) => {
                             const val = e.target.value;
                             setBookliDateByVenue((m) => ({ ...m, [v.id]: val }));
                             loadBookliVenue(v.id, val);
                           }}
-                          style={inputStyle}
+                          inputStyle={BANER_DATE_INPUT_STYLE}
+                          aria-label="Dato"
                         />
                       </label>
                       <button
@@ -954,15 +958,15 @@ export function BanerTab() {
                     <div className="pm-baner-toolbar">
                       <label className="pm-baner-date-label">
                         Dato
-                        <input
-                          type="date"
+                        <DateInputField
                           value={halbookingDate}
                           onChange={(e) => {
                             const val = e.target.value;
                             setHalbookingDateByVenue((m) => ({ ...m, [v.id]: val }));
                             loadHalbookingVenue(v.id, val);
                           }}
-                          style={inputStyle}
+                          inputStyle={BANER_DATE_INPUT_STYLE}
+                          aria-label="Dato"
                         />
                       </label>
                     </div>
