@@ -242,7 +242,9 @@ export function ActiveSeekingPanel({
                 <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
                 {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}
               </>
-            ) : (
+            ) : notifyOnly && active ? null : (
+              // Er besked om nye kampe slået til, er rækken én linje; forklaringen
+              // vises kun, når den er slået fra.
               <p className="pm-active-seeking-hint">{seekingChannelHint(ch)}</p>
             )}
           </div>

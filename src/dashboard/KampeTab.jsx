@@ -3272,42 +3272,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         />
       ) : (
         <>
-          <div className="pm-help-box" style={{ marginBottom: 16 }}>
-            <button
-              className="pm-hit-44"
-              type="button"
-              onClick={() => setPadelHelpOpen((v) => !v)}
-              aria-expanded={padelHelpOpen}
-              style={{
-                width: "100%",
-                border: "none",
-                background: "transparent",
-                padding: 0,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-                textAlign: "left",
-              }}
-            >
-              <span className="pm-help-box-title">Sådan fungerer 2v2-kampe</span>
-              <span className="pm-help-box-chevron">
-                {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-              </span>
-            </button>
-            {padelHelpOpen ? (
-              <div className="pm-help-box-content" style={{ marginTop: 8 }}>
-                {PADEL_RULE_SUMMARY.map((item) => (
-                  <div key={item.icon} className="pm-help-box-item">
-                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                    <span>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
           <PillTabs
             tabs={padelSubTabs}
             value={viewTab}
@@ -3376,6 +3340,43 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Forklaringen står under listen, så kampene kommer først. */}
+          <div className="pm-help-box" style={{ marginTop: 16 }}>
+            <button
+              className="pm-hit-44"
+              type="button"
+              onClick={() => setPadelHelpOpen((v) => !v)}
+              aria-expanded={padelHelpOpen}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                textAlign: "left",
+              }}
+            >
+              <span className="pm-help-box-title">Sådan fungerer 2v2-kampe</span>
+              <span className="pm-help-box-chevron">
+                {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </span>
+            </button>
+            {padelHelpOpen ? (
+              <div className="pm-help-box-content" style={{ marginTop: 8 }}>
+                {PADEL_RULE_SUMMARY.map((item) => (
+                  <div key={item.icon} className="pm-help-box-item">
+                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </>
       )}
