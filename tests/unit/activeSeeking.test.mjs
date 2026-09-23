@@ -24,8 +24,9 @@ test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /canonicalRegionForForm\(user\?\.area\)/);
 });
 
-test('søger-labels skelner mellem tidsspecifik hensigt og 24t-besked', () => {
-  assert.match(activeSeeking, /Besked om kampe/);
+test('søger-labels: besked om nye kampe (uden udløb) og synlig som makker', () => {
+  assert.match(activeSeeking, /Besked om nye kampe/);
+  assert.doesNotMatch(activeSeeking, /24 timer: besked/);
   assert.match(activeSeeking, /Synlig som makker/);
   assert.match(activeSeeking, /seekingChannelHint/);
   assert.match(activeSeeking, /får I begge besked/);
@@ -46,10 +47,10 @@ test('ActiveSeekingPanel har home dropdown og compact med optimistisk state', ()
   assert.doesNotMatch(panel, /Juster makker-kriterier/);
 });
 
-test('onboarding-prompt tilbyder begge kanaler med profil-defaults', () => {
-  assert.match(onboarding, /buildSeekingProfilePatch/);
+test('onboarding-prompt tilbyder kun makker (kampe klares af Jeg vil spille)', () => {
+  assert.match(onboarding, /buildSeekingProfilePatch\(user, 'makker', true\)/);
   assert.match(onboarding, /pm-active-seeking-onboarding-v1/);
-  assert.match(onboarding, /makker og kamp/);
+  assert.doesNotMatch(onboarding, /'kamp'/);
 });
 
 test('onboarding-prompt bruger modal-body med ordentlig padding', () => {

@@ -207,7 +207,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
   );
 }
 
-export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlayer }) {
+export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlayer, style }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -396,7 +396,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
   if (!userId) return null;
 
   return (
-    <div style={{ margin: '0 18px 18px' }}>
+    <div style={{ margin: '0 18px 18px', ...style }}>
       {proposals.map((p) => {
         if (focusedProposal && String(p.id) === String(focusedProposal.id)) return null;
         const expired = Boolean(deadlineInfo(p.expires_at, now)?.expired);
