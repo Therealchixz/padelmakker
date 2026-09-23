@@ -306,6 +306,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
             Badges
           </h3>
           <button
+            className="pm-hit-44"
             type="button"
             onClick={() => openModal()}
             style={{

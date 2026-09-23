@@ -473,7 +473,7 @@ export function BanerTab() {
         <button
           type="button"
           onClick={() => setShowBookingHelp((v) => !v)}
-          className="pm-help-box-toggle"
+          className="pm-help-box-toggle pm-hit-44"
           aria-expanded={showBookingHelp}
         >
           <span className="pm-help-box-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>

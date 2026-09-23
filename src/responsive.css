@@ -2790,12 +2790,14 @@ button,
 }
 
 .pm-feed-filters-scroll {
-  margin-top: 8px;
+  /* 2px flyttet fra margin til padding, så chipsenes 44px-trykflade ikke
+     klippes af rullefeltet; placeringen på skærmen er uændret. */
+  margin-top: 6px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 0 8px 18px;
+  padding: 6px 0 8px 18px;
 }
 
 .pm-feed-filters-scroll::-webkit-scrollbar {
@@ -2827,6 +2829,7 @@ button,
   .pm-feed-filters-scroll {
     margin-top: 0;
     overflow: visible;
+    padding-top: 4px;
   }
 
   .pm-feed-filters-row {
@@ -3155,6 +3158,9 @@ button,
 .pm-pill-tabs--fill .pm-pill-tab {
   flex: 1 1 auto;
   min-width: max-content;
+  /* Teksten afkortes aldrig her, så fanen behøver ikke klippe; det lader
+     den usynlige 44px-trykflade (se variables.css) stikke ud over fanen. */
+  overflow: visible;
 }
 
 .pm-profile-top {
@@ -7020,8 +7026,10 @@ button,
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 2px;
-  margin-bottom: 12px;
+  /* 3px luft over og under (opvejet af negativ margin), så fanernes
+     44px-trykflade ikke klippes af rullefeltet. Placeringen er uændret. */
+  padding: 3px 0;
+  margin: -3px 0 11px;
   scrollbar-width: none;
 }
 

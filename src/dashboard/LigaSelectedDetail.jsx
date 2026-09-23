@@ -85,7 +85,7 @@ function LigaRulesBox({ title, rules, collapsible = false, storageKey = '' }) {
         <button
           type="button"
           onClick={() => collapsible && setOpen((o) => !o)}
-          className="pm-help-box-toggle"
+          className="pm-help-box-toggle pm-hit-44"
           style={{ cursor: collapsible ? 'pointer' : 'default' }}
         >
           <span className="pm-help-box-title">{title}</span>

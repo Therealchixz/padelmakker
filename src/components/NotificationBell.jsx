@@ -445,6 +445,7 @@ export function NotificationBell({ tourForceOpen = false }) {
     )}
     <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
+        className="pm-hit-44"
         type="button"
         onClick={() => {
           if (window.innerWidth < 768) {
