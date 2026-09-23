@@ -178,7 +178,7 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
             height: 22,
             borderRadius: '50%',
             border: 'none',
-            background: theme.red,
+            background: theme.redSolid,
             color: theme.onAccent,
             fontSize: 12,
             fontWeight: 700,

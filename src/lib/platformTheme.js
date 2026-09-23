@@ -29,6 +29,7 @@ export const theme = {
   infoBorder:  'var(--pm-info-border)',
   warningBorder:'var(--pm-warning-border)',
   red:         'var(--pm-red)',
+  redSolid:    'var(--pm-red-solid)',
   redBg:       'var(--pm-red-bg)',
   dangerBorder:'var(--pm-danger-border)',
   dangerStrong:'var(--pm-danger-strong)',

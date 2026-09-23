@@ -2480,7 +2480,7 @@ export function AdminTab({ initialSubTab = null }) {
             <button
               type="button"
               onClick={() => { void confirmDeleteWithPin(); }}
-              style={{ ...btn(true), flex: 1, background: theme.red, borderColor: theme.red }}
+              style={{ ...btn(true), flex: 1, background: theme.redSolid, borderColor: theme.redSolid }}
               disabled={deletePinBusy}
             >
               {deletePinBusy ? 'Sletter...' : 'Slet spiller'}

@@ -289,7 +289,7 @@ export function AmericanoOpenCard({
                       height: 18,
                       borderRadius: '50%',
                       border: 'none',
-                      background: theme.red,
+                      background: theme.redSolid,
                       color: theme.onAccent,
                       fontSize: 11,
                       fontWeight: 700,
