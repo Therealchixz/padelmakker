@@ -106,7 +106,7 @@ test('NotificationBell invalidates prefs cache and rolls back on error', () => {
   // notifikationssiden (telefon) bruger.
   const settings = readSrc('src/components/NotificationSettingsPanel.jsx');
   const dismiss = readSrc('src/lib/notificationDismissStorage.js');
-  assert.match(src, /<NotificationSettingsPanel \/>/);
+  assert.match(src, /<NotificationSettingsDisclosure \/>/);
   assert.match(settings, /invalidateNotificationPrefsCache/);
   assert.match(settings, /setNotifPrefs\(prevPrefs\)/);
   assert.match(src, /\.eq\("user_id", userId\)/);
