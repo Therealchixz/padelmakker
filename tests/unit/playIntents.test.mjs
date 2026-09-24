@@ -138,7 +138,10 @@ test('aktive hensigter vises som chips under knappen', () => {
   assert.match(src, /pm-play-intent-block/);
   assert.match(src, /pm-play-intent-chips/);
   assert.match(src, /pm-play-intent-chip__x/);
-  assert.match(src, /åben kamp i samme hul/);
+  // Siden 24. sep. 2026 opretter knappen en åben kamp; findes der allerede en
+  // i samme tidsrum, vises den først.
+  assert.match(src, /findOverlappingOpenMatches/);
+  assert.match(src, /Der er allerede en åben kamp/);
 });
 
 test('shortTime klipper sekunder fra Postgres-tider', () => {
