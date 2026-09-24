@@ -219,8 +219,10 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("FEEDBACK_FROM_EMAIL") ||
       "PadelMakker <kontakt@padelmakker.dk>";
     const siteUrl = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
-    const link = deepLink(type, matchId, entityId, siteUrl);
-    const prefsLink = `${siteUrl}/dashboard/notifikationer`;
+    // ?kilde=opdagelse: appen gemmer mærket, når personen er logget ind
+    // (log_app_return), så vi kan se, om mailen får folk tilbage.
+    const link = `${deepLink(type, matchId, entityId, siteUrl)}?kilde=opdagelse`;
+    const prefsLink = `${siteUrl}/dashboard/notifikationer?kilde=opdagelse`;
     // Framelding med ET klik, uden login. Erstatter den gamle "skriv til os
     // og bed om at blive fjernet" - den slags foerer til spam-knappen i
     // stedet, og nok spam-markeringer faar Gmail og Outlook til at sortere

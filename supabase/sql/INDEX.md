@@ -15,8 +15,8 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 161 |
-| ...med en identisk fil i `supabase/sql/` | 116 |
+| Funktioner i migrations (= i drift) | 164 |
+| ...med en identisk fil i `supabase/sql/` | 119 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
@@ -48,6 +48,7 @@ kan efterprøves direkte mod den kørende database.
 | `admin_get_growth_campaign_draw_status` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | — |
 | `admin_list_admin_ids` | `00000000000000_baseline_schema.sql` | `admin_list_admin_ids.sql`<br>`security_hardening_phase2.sql` | — |
 | `admin_list_growth_campaign_entries` | `00000000000000_baseline_schema.sql` | `growth_campaign_first_200.sql` | — |
+| `admin_mail_return_stats` | `20260924171250_app_return_tracking.sql` | `app_return_tracking.sql` | — |
 | `admin_open_result_error_reports_count` | `00000000000000_baseline_schema.sql` | `feature_result_error_reports.sql` | — |
 | `admin_open_user_reports_count` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql`<br>`user_report_admin_notify.sql` | — |
 | `admin_pin_status` | `00000000000000_baseline_schema.sql` | `admin_pin_guard.sql` | — |
@@ -105,6 +106,7 @@ kan efterprøves direkte mod den kørende database.
 | `get_due_reminders` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `get_growth_campaign_public` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | 1 |
 | `get_my_growth_campaign_status` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | 1 |
+| `get_winback_candidates` | `20260924171252_winback_candidates.sql` | `winback_candidates.sql` | — |
 | `glicko2_shadow_update_one` | `00000000000000_baseline_schema.sql` | `elo_v2_glicko2_shadow.sql` | — |
 | `guard_americano_complete_transition` | `00000000000000_baseline_schema.sql` | `americano_expected_match_count_v2.sql` | — |
 | `guard_americano_participant_insert` | `00000000000000_baseline_schema.sql` | `harden_kampe_lifecycle_guards.sql` | — |
@@ -126,6 +128,7 @@ kan efterprøves direkte mod den kørende database.
 | `leave_match` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `list_dm_conversation_summaries` | `00000000000000_baseline_schema.sql` | `dm_chat_enhancements.sql` | 2 |
 | `list_pending_match_proposals` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | — |
+| `log_app_return` | `20260924171250_app_return_tracking.sql` | `app_return_tracking.sql` | — |
 | `makker_feed_is_active` | `20260922214627_makker_seeking_stays_on_until_turned_off.sql` | — | 2 |
 | `makker_filter_availability_overlap` | `00000000000000_baseline_schema.sql` | `makker_availability_flexible.sql`<br>`makker_filter_v2.sql` | — |
 | `makker_filter_court_side_ok` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |

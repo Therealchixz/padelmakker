@@ -10,6 +10,7 @@ import { clearAllChatCaches } from './chatCacheUtils'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 import { startPresence, stopPresence } from './presence'
 import { PROFILE_SAFE_SELECT } from './profileQueries'
+import { logPendingVisitSource } from './visitSourceLog'
 import {
   fetchProfileRowResult,
   loadOrCreateProfileResult,
@@ -325,8 +326,10 @@ export function AuthProvider({ children }) {
         const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfileRef.current(s.user)
-        else setProfile(null)
+        if (s?.user) {
+          loadProfileRef.current(s.user)
+          void logPendingVisitSource()
+        } else setProfile(null)
       } catch (e) {
         if (!cancelled) {
           console.error('Auth init error:', e)
@@ -350,7 +353,10 @@ export function AuthProvider({ children }) {
           // profileLoading true og hele appen erstattes af spinner (blink).
           const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
           loadProfileRef.current(s.user, { quiet: quietRefresh })
-          if (event === 'SIGNED_IN') void touchLastActiveRef.current(s.user.id)
+          if (event === 'SIGNED_IN') {
+            void touchLastActiveRef.current(s.user.id)
+            void logPendingVisitSource()
+          }
         } else {
           profileReqId.current += 1
           setProfile(null)

@@ -120,7 +120,8 @@ async function sendReactivationEmail(
   const siteUrl = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
   const unsubLink = `${Deno.env.get("SUPABASE_URL")}/functions/v1/email-unsubscribe`
     + `?t=${encodeURIComponent(String(unsubToken))}`;
-  const link = `${siteUrl}/dashboard/makkere`;
+  // ?kilde=paamindelse: se log_app_return - maaler om mailen faar folk tilbage.
+  const link = `${siteUrl}/dashboard/makkere?kilde=paamindelse`;
   const fromEmail =
     Deno.env.get("DISCOVERY_FROM_EMAIL") ||
     Deno.env.get("FEEDBACK_FROM_EMAIL") ||
