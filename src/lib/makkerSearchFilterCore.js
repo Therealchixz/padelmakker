@@ -219,6 +219,18 @@ export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfil
   return profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId);
 }
 
+/**
+ * Hvad filteret gør lige nu, i hverdagssprog (før: "notifikationer + synlig …"
+ * eller "ingen kanal aktiv").
+ */
+function describeSeekingChannels(prefs, noun, channel) {
+  const visible = `synlig for andre ${seekingVisibilityPhrase(channel)}`;
+  if (prefs.notify && prefs.feedVisible) return `Du får besked om nye ${noun} og er ${visible}.`;
+  if (prefs.notify) return `Du får besked om nye ${noun}.`;
+  if (prefs.feedVisible) return `Du er ${visible}, men får ingen besked om nye ${noun}.`;
+  return `Slået fra: du får ingen besked om nye ${noun} og er ikke synlig for andre.`;
+}
+
 export function describeMakkerFilter(prefs, profile = {}) {
   if (!isMakkerFilterConfigured(prefs, profile)) {
     return { configured: false, summary: 'Ikke sat op', detail: 'Vælg region og gem dit filter.' };
@@ -238,7 +250,10 @@ export function describeMakkerFilter(prefs, profile = {}) {
       .slice(0, 2);
     parts.push(labels.join(', ') + (prefs.intents.length > 2 ? '…' : ''));
   }
-  parts.push(partnerCourtSideLabel(prefs.partnerCourtSide));
+  // "Ligegyldigt" alene i opsummeringen siger ikke, hvad det handler om.
+  if (prefs.partnerCourtSide && prefs.partnerCourtSide !== 'any') {
+    parts.push(partnerCourtSideLabel(prefs.partnerCourtSide));
+  }
 
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
@@ -247,10 +262,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
     if (avail.length > 0) parts.push(`${avail.length} tidsrum`);
   }
 
-  const channels = [];
-  if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibilityPhrase('makker')}`);
-  const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
+  const channelText = describeSeekingChannels(prefs, 'makkere', 'makker');
   return {
     configured: true,
     summary: parts.join(' · '),

@@ -1207,7 +1207,12 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         searchQuery={inboxSearch}
         onSearchChange={setInboxSearch}
         composeOpen={composeOpen}
-        onToggleCompose={() => setComposeOpen((o) => !o)}
+        onToggleCompose={() => {
+          // Søgefeltet skjules under "Ny besked"; en gammel søgning må ikke
+          // blive ved med at filtrere listen usynligt.
+          if (!composeOpen) setInboxSearch('');
+          setComposeOpen((o) => !o);
+        }}
         onOpenItem={(item) => {
           if (item.kind === 'team') openTeamConversation(item.id);
           else openConversation(item.id);

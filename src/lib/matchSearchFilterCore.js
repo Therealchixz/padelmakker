@@ -199,10 +199,15 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const avail = normalizeStringArrayField(prefs.availability);
   if (avail.length > 0) parts.push(avail.join(', '));
-  const channels = [];
-  if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`feed ${seekingVisibilityPhrase('kamp')}`);
-  const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
+  const visible = `synlig for andre ${seekingVisibilityPhrase('kamp')}`;
+  // Hverdagssprog i stedet for "notifikationer + feed …" / "ingen kanal aktiv".
+  const channelText = prefs.notify && prefs.feedVisible
+    ? `Du får besked om nye kampe og er ${visible}.`
+    : prefs.notify
+      ? 'Du får besked om nye kampe.'
+      : prefs.feedVisible
+        ? `Du er ${visible}, men får ingen besked om nye kampe.`
+        : 'Slået fra: du får ingen besked om nye kampe og er ikke synlig for andre.';
   return {
     configured: true,
     summary: parts.join(' · '),

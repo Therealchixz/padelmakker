@@ -34,6 +34,9 @@ const PERIOD_HISTORY_LIMIT = 1500;
 const PROFILE_RANKING_SELECT =
   'id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins';
 
+const kampeLabel = (n) => `${Number(n) || 0} ${Number(n) === 1 ? 'kamp' : 'kampe'}`;
+const sejreLabel = (n) => `${Number(n) || 0} ${Number(n) === 1 ? 'sejr' : 'sejre'}`;
+
 function periodCutoffDate(period) {
   const now = new Date();
   if (period === 'week') {
@@ -651,11 +654,17 @@ export function RankingTab({ user }) {
         <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
           {firstName}{isMe ? ' ✓' : ''}
         </b>
-        <span style={{ fontSize: 10.5, color: 'var(--pm-hero-subtitle)' }}>
-          {Math.round(Number((isAmericano ? p.americano_elo_rating : p.elo_rating)) || 1000)} ELO
-          {p.level ? ` · Niveau ${formatPlaytomicLevel(p.level)}` : ''}
-        </span>
-        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)' }}>{p.score}</div>
+        {/* ELO stod før både her og i det store tal nedenunder (podiet vises kun
+            for "Alle tider", hvor score er ELO), og "Niveau" brød over to linjer. */}
+        {p.level ? (
+          <span style={{ display: 'block', fontSize: 10.5, color: 'var(--pm-hero-subtitle)', whiteSpace: 'nowrap' }}>
+            Niveau {formatPlaytomicLevel(p.level)}
+          </span>
+        ) : null}
+        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)', whiteSpace: 'nowrap' }}>
+          {p.score}
+          <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--pm-hero-subtitle)' }}> ELO</span>
+        </div>
         <div style={{
           width: 22, height: 22, borderRadius: '50%',
           background: isFirst ? theme.amber : 'rgba(255,255,255,0.14)',
@@ -821,7 +830,7 @@ export function RankingTab({ user }) {
               ? period === 'all'
                 ? `${userEntry.periodGames} Americano/Mexicano · ${userEntry.periodWins} vundne runder`
                 : `${userEntry.periodGames} Americano/Mexicano · ${userEntry.periodPoints || 0} point`
-              : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
+              : `${kampeLabel(userEntry.periodGames)} · ${sejreLabel(userEntry.periodWins)}`}
           </div>
         )}
         {rankChange !== 0 && (
@@ -963,8 +972,8 @@ export function RankingTab({ user }) {
                           : period === 'all'
                             ? unranked
                               ? [p.area, p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : null].filter(Boolean).join(' · ')
-                              : `${Math.round(Number(p.elo_rating) || 1000)} ELO${p.level ? ` · Niveau ${formatPlaytomicLevel(p.level)}` : ''} · ${p.periodGames} kampe`
-                            : `${p.periodGames} kampe · ${p.periodWins} sejre`}
+                              : [p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : null, kampeLabel(p.periodGames)].filter(Boolean).join(' · ')
+                            : `${kampeLabel(p.periodGames)} · ${sejreLabel(p.periodWins)}`}
                       </div>
                     </div>
                     <div style={{
@@ -1031,7 +1040,7 @@ export function RankingTab({ user }) {
             <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
               {isAmericano
                 ? `${userEntry.periodGames || 0} Americano/Mexicano`
-                : `${Math.round(Number(userEntry.elo_rating) || 1000)} ELO${userEntry.level ? ` · Niveau ${formatPlaytomicLevel(userEntry.level)}` : ''} · ${userEntry.periodGames || 0} kampe`}
+                : [userEntry.level ? `Niveau ${formatPlaytomicLevel(userEntry.level)}` : null, kampeLabel(userEntry.periodGames || 0)].filter(Boolean).join(' · ')}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>

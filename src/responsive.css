@@ -5379,6 +5379,22 @@ button,
   color: var(--pm-text);
 }
 
+/* Feltet har ingen kant; vis fokus på rækken i stedet for en firkant om teksten. */
+.pm-besked-compose-search input:focus-visible,
+.pm-chat-v2-inbox-search input:focus-visible {
+  box-shadow: none !important;
+}
+
+.pm-chat-v2-inbox-head .pm-besked-compose {
+  margin: 0;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.pm-chat-v2-inbox-search:focus-within {
+  box-shadow: var(--pm-focus-ring);
+}
+
 .pm-besked-compose-search-clear {
   border: none;
   background: none;
