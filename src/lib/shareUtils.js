@@ -68,10 +68,12 @@ export async function sharePadelMatch({ match }) {
   if (!match?.id) {
     return { ok: false, method: 'none', error: 'Kamp mangler' };
   }
+  // Linket står i selve teksten, ikke som et separat link-felt. Messenger (og
+  // WhatsApp) sendte ellers linket og teksten som to beskeder – linket først.
+  // Ejeren testede det i Messenger 24. sep. 2026.
   return shareViaWebOrClipboard({
     title: 'Padel-kamp på PadelMakker',
-    text: buildMatchShareText(match),
-    url: shareMatchUrl(SITE_ORIGIN, match.id),
+    text: `${buildMatchShareText(match)}\n${shareMatchUrl(SITE_ORIGIN, match.id)}`,
   });
 }
 
