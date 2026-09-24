@@ -49,6 +49,10 @@ test('delt link har ?kilde=deling, så admin-kortet kan tælle det', () => {
   const utils = read('src/lib/shareUtils.js');
   assert.match(utils, /buildMatchShareText\(match\)/);
   assert.match(utils, /shareMatchUrl\(SITE_ORIGIN, match\.id\)/);
+  // Én samlet besked: linket står i teksten, ikke som separat url (Messenger
+  // sendte ellers to beskeder med linket først).
+  const fn = utils.slice(utils.indexOf('export async function sharePadelMatch'));
+  assert.doesNotMatch(fn.slice(0, fn.indexOf('\n}\n')), /\burl:/);
   assert.match(read('src/components/kampe/CreatedMatchReceipt.jsx'), /shareMatchUrl\(SITE_ORIGIN, m\.id\)/);
 });
 
