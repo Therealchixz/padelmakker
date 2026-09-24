@@ -49,13 +49,18 @@ import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { ArrowRight, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
 
-/** Niveau-kort fra mockup'et (Onboarding · 2 Niveau) — klik sætter levelNumeric. */
+/**
+ * Niveau-kort — klik sætter levelNumeric. Følger Dansk Padel Forbunds skala
+ * ("Find/kend dit padelniveau"), som ejeren sendte 24. sep. 2026: 3.0 er
+ * 3. division/DPF50, og 4.0 er allerede 1. division/DPF200. Før stod 4.0 som
+ * "Erfaren – bandeja", og det fik almindelige klubspillere til at vælge for højt.
+ */
 const LEVEL_CARDS = [
-  { num: '1.0', value: 1, title: 'Helt ny', desc: 'Har aldrig eller næsten aldrig spillet padel.' },
-  { num: '2.0', value: 2, title: 'Begynder', desc: 'Kan holde bolden i gang i rolige dueller.' },
-  { num: '3.0', value: 3, title: 'Øvet', desc: 'Spiller jævnligt, behersker glasvægge og lob.' },
-  { num: '4.0', value: 4, title: 'Erfaren', desc: 'Taktisk spil, bandeja og kontrolleret tempo.' },
-  { num: '5.0+', value: 5, title: 'Elite', desc: 'Turneringsspiller på højt niveau.' },
+  { num: '1.0', value: 1, title: 'Begynder', desc: 'Ny til padel og ingen erfaring fra anden ketchersport.' },
+  { num: '2.0', value: 2, title: 'Let øvet', desc: 'Du får dueller i gang og kan returnere boldene.' },
+  { num: '3.0', value: 3, title: 'Øvet', desc: 'Du spiller 3. division eller DPF50-turneringer.' },
+  { num: '4.0', value: 4, title: 'Meget øvet', desc: 'Du spiller 1. division eller DPF200-turneringer.' },
+  { num: '5.0+', value: 5, title: 'Elite', desc: 'Elitedivision, DPF1000, landshold eller professionel.' },
 ];
 
 export function OnboardingPage() {
@@ -719,7 +724,7 @@ export function OnboardingPage() {
     <div key={1}>
       <div style={{ textAlign: "center", padding: "0 8px 16px" }}>
         <div style={screenHeading}>Hvor godt spiller du?</div>
-        <div style={screenSub}>Dit niveau bruges til at matche dig med spillere på samme niveau – din Elo justerer sig automatisk efter dine kampe</div>
+        <div style={screenSub}>Dit niveau bruges til at matche dig med spillere på samme niveau. Vi følger Dansk Padel Forbunds skala – 3.0 og derover er divisions- og turneringsspillere.</div>
       </div>
       {LEVEL_CARDS.map((c) => {
         const sel = selectedLevelCard === c.value;
@@ -793,6 +798,7 @@ export function OnboardingPage() {
       {showLevelQuiz ? (
         <LevelQuiz
           onUse={(lvl) => { set("levelNumeric", lvl); setShowLevelQuiz(false); }}
+          onManual={() => { setShowLevelQuiz(false); setShowFineTune(true); }}
           onClose={() => setShowLevelQuiz(false)}
         />
       ) : (
@@ -813,7 +819,7 @@ export function OnboardingPage() {
             fontFamily: font,
           }}
         >
-          Ikke sikker? Svar på 4 hurtige spørgsmål →
+          Ikke sikker? Svar på 5 hurtige spørgsmål →
         </button>
       )}
       <button
@@ -831,8 +837,8 @@ export function OnboardingPage() {
         }}
       >
         {showFineTune
-          ? "Skjul finjustering"
-          : `Finjustér niveau (valgt: ${formatPlaytomicLevel(form.levelNumeric)})`}
+          ? "Skjul"
+          : `Kender du dit niveau? Skriv det selv (valgt: ${formatPlaytomicLevel(form.levelNumeric)})`}
       </button>
       {showFineTune && (
         <div style={{ marginTop: "10px" }}>

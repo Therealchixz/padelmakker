@@ -7,7 +7,7 @@ import { LEVEL_QUIZ, suggestLevelFromQuiz } from '../lib/levelQuiz.js';
  * "Ikke sikker? Svar på 4 hurtige spørgsmål" under niveau-kortene ved
  * oprettelse. Viser ét spørgsmål ad gangen og til sidst et forslag.
  */
-export function LevelQuiz({ onUse, onClose }) {
+export function LevelQuiz({ onUse, onManual, onClose }) {
   const [answers, setAnswers] = useState({});
   const [index, setIndex] = useState(0);
   const suggestion = suggestLevelFromQuiz(answers);
@@ -98,7 +98,7 @@ export function LevelQuiz({ onUse, onClose }) {
             <div style={{ fontSize: 13, opacity: 0.85 }}>Vores bud på dit niveau</div>
             <div style={{ fontSize: 30, fontWeight: 800, margin: '2px 0' }}>ca. {formatPlaytomicLevel(suggestion)}</div>
             <div style={{ fontSize: 12.5, opacity: 0.85 }}>
-              Vi runder lidt ned – de fleste gætter for højt. Du kan altid rette det senere.
+              Det er kun et forslag, og vi runder lidt ned – de fleste gætter for højt. Ved du, hvad du spiller på, så skriv det selv.
             </div>
           </div>
           <button
@@ -117,6 +117,15 @@ export function LevelQuiz({ onUse, onClose }) {
           >
             Brug {formatPlaytomicLevel(suggestion)}
           </button>
+          {onManual ? (
+            <button
+              type="button"
+              onClick={onManual}
+              style={{ ...optionStyle, textAlign: 'center', marginBottom: 4 }}
+            >
+              Jeg kender mit niveau – skriv det selv
+            </button>
+          ) : null}
           <button type="button" onClick={() => { setAnswers({}); setIndex(0); }} style={linkBtn}>Svar igen</button>
         </>
       )}
