@@ -22,6 +22,21 @@ export const LEGACY_ADMIN_REGION_TO_APP = {
   København: 'Hovedstaden',
 };
 
+/**
+ * Nabo-regioner: besked om nye kampe og makkere når også dem. Skal holdes i
+ * sync med public.app_region_neighbours() i Supabase.
+ */
+export const APP_REGION_NEIGHBOURS = {
+  Nordjylland: ['Vestjylland', 'Østjylland'],
+  Vestjylland: ['Nordjylland', 'Østjylland', 'Sydjylland'],
+  Østjylland: ['Nordjylland', 'Vestjylland', 'Sydjylland', 'Fyn'],
+  Sydjylland: ['Vestjylland', 'Østjylland', 'Fyn'],
+  Fyn: ['Østjylland', 'Sydjylland', 'Sjælland'],
+  Sjælland: ['Fyn', 'Hovedstaden'],
+  Hovedstaden: ['Sjælland'],
+  Bornholm: [],
+};
+
 /** Gamle by-id'er fra filter-UI → app-landsdele. */
 export const LEGACY_CITY_ID_TO_APP_REGION = {
   kbh: 'Hovedstaden',

@@ -65,3 +65,15 @@ test('SQL: notify_match_watchers filtrerer begge modtagergrupper på niveau', ()
   assert.match(sql, /FROM public\.match_level_bounds\(v_match\.level_range, v_creator\.level::numeric\)/);
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.match_fits_watcher_level\(jsonb, numeric, numeric, numeric\) FROM PUBLIC, anon, authenticated/);
 });
+
+test('SQL: kampbeskeder bruger regionen fra kamp-filteret, ellers profilens', () => {
+  const dir = join(root, 'supabase/migrations');
+  const fil = readdirSync(dir).filter((f) => f.endsWith('_match_notify_uses_filter_region.sql'))[0];
+  assert.ok(fil, 'migrationen mangler');
+  const sql = readFileSync(join(dir, fil), 'utf8');
+  assert.match(sql, /COALESCE\(NULLIF\(btrim\(COALESCE\(p_prefs->>'region', ''\)\), ''\), p_area, ''\)/);
+  assert.equal((sql.match(/match_watcher_region\(p\.match_search_prefs, p\.area\) = ANY \(v_regions\)/g) || []).length, 2);
+  assert.doesNotMatch(sql, /canonical_app_region\(p\.area\)/);
+  // Niveau-reglen fra forrige migration skal stadig gælde.
+  assert.equal((sql.match(/match_fits_watcher_level\(p\.match_search_prefs, p\.level::numeric, v_match_min, v_match_max\)/g) || []).length, 2);
+});

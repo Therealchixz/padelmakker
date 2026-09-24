@@ -73,3 +73,20 @@ test('SQL: makker_filter_level_bounds bruger levelMin/levelMax, når begge er sa
   assert.match(sql, /p_prefs->>'levelMax'/);
   assert.match(sql, /WHEN c\.lo IS NOT NULL AND c\.hi IS NOT NULL/);
 });
+
+test('filtersider: region som én linje med liste fra bunden', async () => {
+  for (const rel of ['src/dashboard/MatchSearchFilterPage.jsx', 'src/dashboard/MakkerSearchFilterPage.jsx']) {
+    const page = await src(rel);
+    assert.match(page, /<RegionPickerRow/, rel);
+    assert.doesNotMatch(page, /REGIONS\.map/, rel);
+  }
+  const { APP_REGION_NEIGHBOURS, APP_REGIONS } = await import('../../src/lib/appRegions.js');
+  // Samme naboer som public.app_region_neighbours i databasen.
+  const sql = await src('supabase/migrations/20260922210546_app_region_neighbours_for_match_discovery.sql');
+  for (const r of APP_REGIONS) {
+    const m = new RegExp(`WHEN '${r}'\\s+THEN ARRAY\\[([^\\]]*)\\]`).exec(sql);
+    assert.ok(m, r);
+    const fraSql = m[1].split(',').map((x) => x.trim().replace(/'/g, '')).filter((x) => x && x !== r);
+    assert.deepEqual(APP_REGION_NEIGHBOURS[r], fraSql, r);
+  }
+});

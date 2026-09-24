@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, AVAILABILITY } from '../lib/platformConstants';
+import { DAYS_OF_WEEK, AVAILABILITY } from '../lib/platformConstants';
 import {
   MAKKER_AVAILABILITY_FLEXIBLE,
   availabilityMeansAllTimeSlots,
@@ -24,6 +24,7 @@ import {
   profilePlaytomicLevel,
 } from '../lib/padelLevelUtils';
 import { LevelRangeSlider } from '../components/LevelRangeSlider';
+import { RegionPickerRow } from '../components/RegionPickerRow';
 import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
@@ -149,19 +150,11 @@ export function MatchSearchFilterPage({ user, showToast }) {
       </div>
 
       <div style={labelStyle}>Region</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 20 }}>
-        {REGIONS.map((r) => (
-          <button
-            key={r}
-            type="button"
-            aria-pressed={prefs.region === r}
-            onClick={() => set({ region: r })}
-            style={{ ...btn(prefs.region === r), padding: '10px 8px', fontSize: 13 }}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
+      <RegionPickerRow
+        value={prefs.region || resolveFilterRegion(prefs, user)}
+        onChange={(r) => set({ region: r })}
+        sheetHint="Du får også besked om kampe i nabo-regionerne."
+      />
 
       {/* Samme regel som besked om nye kampe (match_fits_watcher_level i
           databasen): kampens niveau skal passe inden for den ramme, du vælger. */}
@@ -259,7 +252,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
 
       <div style={labelStyle}>Ugedage (valgfrit)</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vi viser kun spillere der har mindst én af disse dage. Tom = alle dage.
+        Kun kampe på disse dage. Tom = alle dage.
       </p>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {DAYS_OF_WEEK.map(({ key, label }) => {

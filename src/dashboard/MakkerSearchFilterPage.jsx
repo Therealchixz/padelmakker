@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, INTENTS } from '../lib/platformConstants';
+import { DAYS_OF_WEEK, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMakkerSearchPrefs,
@@ -23,6 +23,7 @@ import { formatPlaytomicLevel, formatPlaytomicLevelRange, profilePlaytomicLevel 
 import { LevelRangeSlider } from '../components/LevelRangeSlider';
 import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
+import { RegionPickerRow } from '../components/RegionPickerRow';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
@@ -196,19 +197,11 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       </div>
 
       <div style={labelStyle}>Region</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 20 }}>
-        {REGIONS.map((r) => (
-          <button
-            key={r}
-            type="button"
-            aria-pressed={prefs.region === r}
-            onClick={() => set({ region: r })}
-            style={{ ...btn(prefs.region === r), padding: '10px 8px', fontSize: 13 }}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
+      <RegionPickerRow
+        value={prefs.region || resolveMakkerFilterRegion(prefs, user)}
+        onChange={(r) => set({ region: r })}
+        sheetHint="Du får også besked om makkere i nabo-regionerne."
+      />
 
       {/* Man vælger selv fra og til (samme skyder som Opret kamp). Færdige
           spænd som "tæt på mit niveau" (±0,2) var for grove: 3,3 og 3,7 kan
