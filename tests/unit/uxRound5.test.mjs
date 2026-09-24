@@ -28,9 +28,10 @@ test('makker- og kampfilter beskriver status i hverdagssprog', async () => {
   assert.doesNotMatch(makker.summary, /Ligegyldigt/);
 });
 
-test('makkerfilter: ét niveauvalg og valgfrie felter under "Flere valg"', async () => {
+test('makkerfilter: niveau vælges frit med skyder, valgfrie felter under "Flere valg"', async () => {
   const page = await src('src/dashboard/MakkerSearchFilterPage.jsx');
-  assert.match(page, /MAKKER_LEVEL_CHOICES/);
+  assert.match(page, /<LevelRangeSlider/);
+  assert.match(page, /levelMin: levelBounds\.min, levelMax: levelBounds\.max/);
   assert.doesNotMatch(page, /LEVEL_WINDOW_CHOICES/);
   assert.doesNotMatch(page, /MAKKER_PARTNER_LEVEL_FILTERS/);
   assert.match(page, /Flere valg \(valgfrit\)/);
@@ -43,4 +44,32 @@ test('rangliste: top 3 viser ELO én gang, og "Niveau" brydes ikke', async () =>
   assert.doesNotMatch(pod, /elo_rating\)\) \|\| 1000\)\} ELO/);
   assert.match(pod, /whiteSpace: 'nowrap'/);
   assert.match(ranking, /Number\(n\) === 1 \? 'kamp' : 'kampe'/);
+});
+
+test('makkerfilter: selvvalgt fra-til niveau styrer matchningen', async () => {
+  const { customMakkerLevelBounds, makkerFilterLevelBounds } = await import('../../src/lib/makkerFilterMatch.js');
+  const { profileMatchesMakkerFilter, normalizeMakkerSearchPrefs } = await import('../../src/lib/makkerSearchFilterCore.js');
+  assert.equal(customMakkerLevelBounds({}), null);
+  assert.equal(customMakkerLevelBounds({ levelMin: 3.3 }), null);
+  assert.deepEqual(customMakkerLevelBounds({ levelMin: '3.7', levelMax: 3.3 }), { min: 3.3, max: 3.7 });
+  // Uden selvvalgt spænd gælder den gamle beregning (±0,2 om eget niveau).
+  assert.deepEqual(makkerFilterLevelBounds({ levelWindow: 0.2 }, 3.2, {}), { min: 3, max: 3.4 });
+  assert.deepEqual(makkerFilterLevelBounds({ levelMin: 3.3, levelMax: 3.5 }, 3.2, {}), { min: 3.3, max: 3.5 });
+
+  const normalized = normalizeMakkerSearchPrefs({ region: 'Region Hovedstaden', levelMin: 3.3, levelMax: 3.5 }, {});
+  assert.equal(normalized.levelMin, 3.3);
+  assert.equal(normalized.levelMax, 3.5);
+
+  const watcher = { area: 'Region Hovedstaden', level: 3.2 };
+  const at = (level) => ({ id: 'x', area: 'Region Hovedstaden', level });
+  assert.equal(profileMatchesMakkerFilter(at(3.4), normalized, watcher), true);
+  assert.equal(profileMatchesMakkerFilter(at(3.7), normalized, watcher), false);
+  assert.equal(profileMatchesMakkerFilter(at(3.2), normalized, watcher), false);
+});
+
+test('SQL: makker_filter_level_bounds bruger levelMin/levelMax, når begge er sat', async () => {
+  const sql = await src('supabase/sql/makker_filter_custom_level.sql');
+  assert.match(sql, /p_prefs->>'levelMin'/);
+  assert.match(sql, /p_prefs->>'levelMax'/);
+  assert.match(sql, /WHEN c\.lo IS NOT NULL AND c\.hi IS NOT NULL/);
 });

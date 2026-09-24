@@ -36,7 +36,7 @@ import {
 } from './platformConstants.js';
 import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
 import {
-  levelRangeForMakkerPartnerPref,
+  makkerFilterLevelBounds,
   partnerCourtSideLabel,
 } from './makkerFilterMatch.js';
 
@@ -199,8 +199,7 @@ export function buildActiveSeekingFilterSummary(user, channel) {
   const region = resolveMakkerFilterRegion(prefs, user);
   if (region) parts.push(region.replace(/^Region /, ''));
   const lvl = resolveMakkerFilterLevel(prefs, user);
-  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, user);
+  const { min, max } = makkerFilterLevelBounds(prefs, lvl, user);
   parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
   if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
   const intents = normalizeStringArrayField(prefs.intents)

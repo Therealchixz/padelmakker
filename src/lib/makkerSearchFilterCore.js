@@ -30,6 +30,7 @@ import {
 import {
   normalizeMakkerFilterExtras,
   levelRangeForMakkerPartnerPref,
+  makkerFilterLevelBounds,
   subjectPassesMakkerLevelFilter,
   courtSideMatchesMakkerFilter,
   playStyleMatchesMakkerFilter,
@@ -51,6 +52,8 @@ export {
   MAKKER_COURT_SIDE_MODES,
   MAKKER_INTENT_MODES,
   MAKKER_PARTNER_LEVEL_FILTERS,
+  levelRangeForMakkerPartnerPref,
+  makkerFilterLevelBounds,
   INTENTS,
   PLAY_STYLES,
   AVAILABILITY,
@@ -193,7 +196,7 @@ export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile
 
   const myLevel = resolveMakkerFilterLevel(prefs, watcherProfile);
   const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  if (!subjectPassesMakkerLevelFilter(myLevel, levelWindow, prefs.partnerLevel, watcherProfile, subjectProfile)) {
+  if (!subjectPassesMakkerLevelFilter(myLevel, levelWindow, prefs.partnerLevel, watcherProfile, subjectProfile, prefs)) {
     return false;
   }
 
@@ -239,9 +242,10 @@ export function describeMakkerFilter(prefs, profile = {}) {
   const region = resolveMakkerFilterRegion(prefs, profile);
   if (region) parts.push(region.replace(/^Region /, ''));
   const lvl = resolveMakkerFilterLevel(prefs, profile);
-  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, profile);
-  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  const { min, max } = makkerFilterLevelBounds(prefs, lvl, profile);
+  parts.push(min <= 1 && max >= 7
+    ? 'Alle niveauer'
+    : `Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
 
   if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
   if (normalizeStringArrayField(prefs.intents).length > 0) {

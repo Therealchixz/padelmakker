@@ -130,7 +130,7 @@ kan efterprøves direkte mod den kørende database.
 | `makker_filter_court_side_ok` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
 | `makker_filter_intent_compat_score` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
 | `makker_filter_intent_ok` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
-| `makker_filter_level_bounds` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
+| `makker_filter_level_bounds` | `20260924073235_makker_filter_custom_level.sql` | `makker_filter_custom_level.sql` | 1 |
 | `makker_filter_normalize_intent` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
 | `makker_filter_normalize_side` | `00000000000000_baseline_schema.sql` | `makker_filter_v2.sql` | — |
 | `makker_filter_partner_court_side_ok` | `00000000000000_baseline_schema.sql` | `makker_partner_court_side.sql` | — |

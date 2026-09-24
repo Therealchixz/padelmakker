@@ -26,7 +26,7 @@ import {
 import { DEFAULT_LEVEL_WINDOW } from './matchSearchFilterCore.js';
 import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
 import {
-  levelRangeForMakkerPartnerPref,
+  makkerFilterLevelBounds,
   partnerCourtSideLabel,
   availabilityMeansAllTimeSlots,
   normalizeMakkerPartnerLevel,
@@ -154,18 +154,11 @@ function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
 /** Niveau-interval som andre ser ved søger makker (kun tal, ikke «Samme niveau» osv.). */
 export function compactMakkerSeekingLevelDetail(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
-  const pref = normalizeMakkerPartnerLevel(normalized.partnerLevel, profile) || 'same';
-  if (pref === 'wide') {
+  const lvl = resolveMakkerFilterLevel(normalized, profile);
+  const { min, max } = makkerFilterLevelBounds(normalized, lvl, profile);
+  if (min <= 1 && max >= 7) {
     return 'Alle niveauer';
   }
-  const lvl = resolveMakkerFilterLevel(normalized, profile);
-  const win = Number(normalized.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = levelRangeForMakkerPartnerPref(
-    lvl,
-    win,
-    normalized.partnerLevel,
-    profile,
-  );
   return formatLevelRange(min, max);
 }
 

@@ -9,6 +9,7 @@ import {
   profilePlaytomicLevel,
   clampPlaytomicLevel,
   levelRangeForWindow,
+  parsePlaytomicLevelField,
 } from './padelLevelUtils.js';
 
 /** @deprecated Legacy modes — brug partnerCourtSide */
@@ -148,8 +149,30 @@ export function levelRangeForMakkerPartnerPref(center, levelWindow, partnerLevel
   return levelRangeForWindow(c, w);
 }
 
-export function subjectPassesMakkerLevelFilter(watcherLevel, levelWindow, partnerLevelPref, profile, subjectProfile) {
-  const { min, max } = levelRangeForMakkerPartnerPref(watcherLevel, levelWindow, partnerLevelPref, profile);
+/**
+ * Selvvalgt niveau fra-til (levelMin/levelMax i filteret). Null, hvis det ikke
+ * er sat; så gælder den gamle beregning ud fra eget niveau (partnerLevel +
+ * levelWindow). Samme regel i SQL: makker_filter_level_bounds.
+ */
+export function customMakkerLevelBounds(prefs = {}) {
+  const lo = parsePlaytomicLevelField(prefs?.levelMin);
+  const hi = parsePlaytomicLevelField(prefs?.levelMax);
+  if (lo == null || hi == null) return null;
+  return { min: Math.min(lo, hi), max: Math.max(lo, hi) };
+}
+
+/** Niveauspændet et makker-filter matcher. */
+export function makkerFilterLevelBounds(prefs = {}, watcherLevel, profile = {}) {
+  return customMakkerLevelBounds(prefs)
+    || levelRangeForMakkerPartnerPref(watcherLevel, prefs?.levelWindow, prefs?.partnerLevel, profile);
+}
+
+export function subjectPassesMakkerLevelFilter(watcherLevel, levelWindow, partnerLevelPref, profile, subjectProfile, prefs = {}) {
+  const { min, max } = makkerFilterLevelBounds(
+    { ...prefs, levelWindow, partnerLevel: partnerLevelPref },
+    watcherLevel,
+    profile,
+  );
   const subjectLevel = profilePlaytomicLevel(subjectProfile);
   return subjectLevel >= min && subjectLevel <= max;
 }
@@ -226,5 +249,14 @@ export function normalizeMakkerFilterExtras(parsed = {}, profile = {}) {
   const intentMode = VALID_INTENT_MODES.has(parsed.intentMode) ? parsed.intentMode : 'compatible';
   const partnerLevel = normalizeMakkerPartnerLevel(parsed.partnerLevel, profile);
   const availability = normalizeMakkerAvailabilityFilter(parsed.availability);
-  return { partnerCourtSide, playStyle, intents, intentMode, partnerLevel, availability };
+  const custom = customMakkerLevelBounds(parsed);
+  return {
+    partnerCourtSide,
+    playStyle,
+    intents,
+    intentMode,
+    partnerLevel,
+    availability,
+    ...(custom ? { levelMin: custom.min, levelMax: custom.max } : {}),
+  };
 }
