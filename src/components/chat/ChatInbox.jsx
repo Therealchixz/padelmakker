@@ -31,27 +31,30 @@ export function ChatInbox({
             type="button"
             className={`pm-chat-v2-inbox-compose${composeOpen ? ' pm-chat-v2-inbox-compose--active' : ''}`}
             onClick={onToggleCompose}
-            aria-label="Ny besked"
+            aria-label={composeOpen ? 'Luk ny besked' : 'Ny besked'}
+            aria-expanded={composeOpen}
           >
-            <SquarePen size={18} aria-hidden />
+            {composeOpen ? <X size={18} aria-hidden /> : <SquarePen size={18} aria-hidden />}
           </button>
         </div>
-        <div className="pm-chat-v2-inbox-search">
-          <Search size={16} aria-hidden />
-          <input
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Søg i beskeder…"
-          />
-          {searchQuery ? (
-            <button type="button" className="pm-chat-v2-inbox-search-clear" onClick={() => onSearchChange('')} aria-label="Ryd søgning">
-              <X size={14} aria-hidden />
-            </button>
-          ) : null}
-        </div>
+        {/* Ny besked erstatter søgefeltet, så der ikke står to søgefelter
+            under hinanden ("Søg i beskeder" og "Søg efter spiller"). */}
+        {composeOpen ? composeSlot : (
+          <div className="pm-chat-v2-inbox-search">
+            <Search size={16} aria-hidden />
+            <input
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Søg i beskeder…"
+            />
+            {searchQuery ? (
+              <button type="button" className="pm-chat-v2-inbox-search-clear" onClick={() => onSearchChange('')} aria-label="Ryd søgning">
+                <X size={14} aria-hidden />
+              </button>
+            ) : null}
+          </div>
+        )}
       </div>
-
-      {composeOpen ? composeSlot : null}
 
       {loading ? (
         <div className="pm-chat-v2-inbox-status">Indlæser samtaler…</div>

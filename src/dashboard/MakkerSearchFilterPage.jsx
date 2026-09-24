@@ -11,24 +11,20 @@ import {
   resolveMakkerFilterRegion,
   resolveMakkerFilterLevel,
   buildProfilePatchFromMakkerSearchPrefs,
-  LEVEL_WINDOW_CHOICES,
   DEFAULT_LEVEL_WINDOW,
-  MAKKER_PARTNER_COURT_SIDES,
-  MAKKER_INTENT_MODES,
-  MAKKER_PARTNER_LEVEL_FILTERS,
   PLAY_STYLES,
   AVAILABILITY,
 } from '../lib/makkerSearchFilterUtils';
 import {
   levelRangeForMakkerPartnerPref,
-  normalizeMakkerPartnerLevel,
   MAKKER_AVAILABILITY_FLEXIBLE,
   availabilityMeansAllTimeSlots,
 } from '../lib/makkerFilterMatch';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronLeft } from 'lucide-react';
+import { ToggleSwitch } from '../components/ToggleSwitch';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
 const labelStyle = {
@@ -51,20 +47,42 @@ function canonicalIntentKey(value) {
   return v.replace(/\s+/g, '_');
 }
 
-function effectivePartnerLevel(partnerLevel, profile) {
-  const raw = partnerLevel ?? '';
-  if (raw) return raw;
-  return normalizeMakkerPartnerLevel('', profile) || 'same';
-}
 
-function toleranceSectionTitle(partnerLevel) {
-  if (partnerLevel === 'stronger') return 'Hvor meget over dit niveau?';
-  if (partnerLevel === 'weaker') return 'Hvor meget under dit niveau?';
-  return 'Hvor tæt på dit niveau?';
+
+/**
+ * Ét samlet valg for makkerens niveau. Gemmes som de samme to felter som før
+ * (partnerLevel + levelWindow), så matchningen ikke ændres.
+ */
+const MAKKER_LEVEL_CHOICES = [
+  { key: 'close', label: 'Tæt på mit niveau', partnerLevel: 'same', levelWindow: 0.2 },
+  { key: 'broad', label: 'Omkring mit niveau, lidt bredere', partnerLevel: 'same', levelWindow: 0.5 },
+  { key: 'stronger', label: 'Lidt stærkere end mig', partnerLevel: 'stronger', levelWindow: 0.2 },
+  { key: 'weaker', label: 'Lidt svagere end mig', partnerLevel: 'weaker', levelWindow: 0.2 },
+  { key: 'wide', label: 'Alle niveauer', partnerLevel: 'wide', levelWindow: 0.2 },
+];
+
+const COURT_SIDE_CHOICES = [
+  { value: 'any', label: 'Ligegyldigt' },
+  { value: 'venstre', label: 'Venstre side' },
+  { value: 'hojre', label: 'Højre side' },
+];
+
+function levelChoiceKey(partnerLevel, levelWindow) {
+  const pref = partnerLevel || 'same';
+  if (pref === 'same') return (Number(levelWindow) || DEFAULT_LEVEL_WINDOW) > 0.3 ? 'broad' : 'close';
+  return pref;
 }
 
 function levelRangeSummary(min, max) {
   return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
+}
+
+function countMakkerFilterExtras(p) {
+  return [
+    (p.partnerCourtSide || 'any') !== 'any',
+    (p.playStyle || 'all') !== 'all',
+    normalizeStringArrayField(p.intents).length > 0,
+  ].filter(Boolean).length;
 }
 
 export function MakkerSearchFilterPage({ user, showToast }) {
@@ -79,6 +97,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   );
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState(false);
+  // Valgfrie felter foldes ud af sig selv, hvis noget af dem allerede er valgt.
+  const [moreOpen, setMoreOpen] = useState(() => countMakkerFilterExtras(initial) > 0);
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveMakkerFilterLevel(prefs, user);
@@ -115,16 +135,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   const description = describeMakkerFilter(prefs, user);
   const regionOk = Boolean(resolveMakkerFilterRegion(prefs, user) || prefs.region);
-  const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const partnerLevel = prefs.partnerLevel ?? '';
-  const effectivePref = effectivePartnerLevel(partnerLevel, user);
-  const showTolerance = partnerLevel !== 'wide';
-  const levelSpan = levelRangeForMakkerPartnerPref(
-    filterLevel,
-    levelWindow,
-    partnerLevel,
-    user,
-  );
+  const selectedLevelChoice = levelChoiceKey(prefs.partnerLevel, prefs.levelWindow);
 
   const handleSave = async () => {
     if (!isMakkerFilterConfigured(prefs, user) && !prefs.region) {
@@ -160,6 +171,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   };
 
   const selectedIntents = normalizeStringArrayField(prefs.intents);
+  const extrasCount = countMakkerFilterExtras(prefs);
 
   return (
     <div style={{ fontFamily: font }}>
@@ -184,8 +196,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
 
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 16 }}>
-        Dette styrer hvornår du får besked og hvilke makkere der matcher. Slå aktiv søgning til/fra på
-        Hjem eller Find makker — her finjusterer du region, niveau og spilletider.
+        Vælg hvilke makkere der passer til dig. Du slår søgningen til og fra på Hjem eller Find makker.
       </p>
 
       <div
@@ -197,6 +208,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
           marginBottom: 20,
           fontSize: 12,
           color: theme.textMid,
+          lineHeight: 1.45,
         }}
       >
         <strong style={{ color: theme.text, display: 'block', marginBottom: 4 }}>
@@ -206,290 +218,58 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       </div>
 
       <div style={labelStyle}>Region</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 20 }}>
         {REGIONS.map((r) => (
           <button
             key={r}
             type="button"
+            aria-pressed={prefs.region === r}
             onClick={() => set({ region: r })}
-            style={{
-              ...btn(prefs.region === r),
-              textAlign: 'left',
-              padding: '10px 14px',
-              fontSize: 13,
-            }}
+            style={{ ...btn(prefs.region === r), padding: '10px 8px', fontSize: 13 }}
           >
             {r}
           </button>
         ))}
       </div>
 
-      <div style={labelStyle}>Baneside på makker</div>
-      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Hvilken side skal din makker primært spille i double?
+      {/* Ét valg for niveau. Før skulle man først vælge retning (svagere/samme/
+          stærkere/fra profilen) og derefter en tolerance på ±0,1-0,5. */}
+      <div style={labelStyle}>Makkerens niveau</div>
+      <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Dit niveau er <strong style={{ color: theme.text }}>{formatPlaytomicLevel(profileLevel)}</strong>.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-        {MAKKER_PARTNER_COURT_SIDES.map(({ value, label, hint }) => {
-          const active = (prefs.partnerCourtSide || 'any') === value;
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+        {MAKKER_LEVEL_CHOICES.map((choice) => {
+          const active = choice.key === selectedLevelChoice;
+          const range = levelRangeForMakkerPartnerPref(filterLevel, choice.levelWindow, choice.partnerLevel, user);
           return (
             <button
-              key={value}
+              key={choice.key}
               type="button"
-              onClick={() => set({ partnerCourtSide: value })}
+              aria-pressed={active}
+              onClick={() => set({ partnerLevel: choice.partnerLevel, levelWindow: choice.levelWindow })}
               style={{
                 ...btn(active),
                 textAlign: 'left',
                 padding: '10px 12px',
-                fontSize: 12,
+                fontSize: 13,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 10,
               }}
             >
-              <span style={{ fontWeight: 600, display: 'block' }}>{label}</span>
-              {hint ? (
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 400,
-                    color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
-                  }}
-                >
-                  {hint}
-                </span>
-              ) : null}
+              <span style={{ fontWeight: 600 }}>{choice.label}</span>
+              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                {choice.partnerLevel === 'wide' ? 'Alle' : levelRangeSummary(range.min, range.max)}
+              </span>
             </button>
           );
         })}
-      </div>
-
-      <div style={labelStyle}>Spillestil</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
-        {[{ value: 'all', label: 'Alle' }, ...PLAY_STYLES.map((s) => ({ value: s, label: s }))].map(
-          ({ value, label }) => {
-            const active = (prefs.playStyle || 'all') === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => set({ playStyle: value })}
-                style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
-              >
-                {label}
-              </button>
-            );
-          },
-        )}
-      </div>
-
-      <div style={labelStyle}>Intention (valgfrit)</div>
-      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Tom = alle intentioner. Vælg én eller flere.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-        {INTENTS.map(({ value, label }) => {
-          const key = canonicalIntentKey(value);
-          const active = selectedIntents.some((x) => canonicalIntentKey(x) === key);
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => toggleIntent(value)}
-              style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      {selectedIntents.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-          {MAKKER_INTENT_MODES.map(({ value, label, hint }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => set({ intentMode: value })}
-              style={{
-                ...btn((prefs.intentMode || 'compatible') === value),
-                textAlign: 'left',
-                padding: '8px 12px',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{label}</span>
-              {hint ? <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span> : null}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div
-        style={{
-          background: theme.surfaceAlt,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 12,
-          padding: '14px',
-          marginBottom: 18,
-        }}
-      >
-        <div style={{ ...labelStyle, marginBottom: 6 }}>Makker-niveau</div>
-        <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 12px', lineHeight: 1.45 }}>
-          Dit niveau: <strong style={{ color: theme.text }}>{formatPlaytomicLevel(profileLevel)}</strong>
-          <span style={{ color: theme.textLight }}> · fra profilen</span>
-        </p>
-
-        <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 6 }}>
-          Hvad leder du efter?
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {MAKKER_PARTNER_LEVEL_FILTERS.map(({ value, label, hint }) => {
-            const active = partnerLevel === value;
-            const preview = levelRangeForMakkerPartnerPref(
-              filterLevel,
-              levelWindow,
-              value,
-              user,
-            );
-            const rangeText = levelRangeSummary(preview.min, preview.max);
-            return (
-              <button
-                key={value || 'profile'}
-                type="button"
-                onClick={() => set({ partnerLevel: value })}
-                style={{
-                  ...btn(active),
-                  textAlign: 'left',
-                  padding: '10px 12px',
-                  fontSize: 12,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ fontWeight: 600, display: 'block' }}>{label}</span>
-                  {hint ? (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 400,
-                        color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
-                      }}
-                    >
-                      {hint}
-                    </span>
-                  ) : null}
-                </span>
-                <span
-                  style={{
-                    flexShrink: 0,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: active ? theme.onAccent : theme.textMid,
-                  }}
-                >
-                  {rangeText}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {showTolerance ? (
-          <div
-            style={{
-              marginTop: 14,
-              paddingTop: 14,
-              borderTop: `1px solid ${theme.border}`,
-            }}
-          >
-            <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>
-              {toleranceSectionTitle(effectivePref)}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {LEVEL_WINDOW_CHOICES.map(({ value, label }) => {
-                const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
-                const tol = `±${String(value).replace('.', ',')}`;
-                const { min, max } = levelRangeForMakkerPartnerPref(
-                  filterLevel,
-                  value,
-                  partnerLevel,
-                  user,
-                );
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => set({ levelWindow: value })}
-                    title={`${label}: ${levelRangeSummary(min, max)}`}
-                    aria-label={`${label}: niveau ${levelRangeSummary(min, max)}`}
-                    style={{
-                      ...btn(active),
-                      padding: '8px 10px',
-                      fontSize: 11,
-                      lineHeight: 1.3,
-                      textAlign: 'center',
-                      minWidth: 72,
-                    }}
-                  >
-                    <span style={{ display: 'block', fontWeight: 700 }}>{tol}</span>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 10,
-                        fontWeight: 500,
-                        opacity: active ? 0.9 : 0.75,
-                        marginTop: 2,
-                      }}
-                    >
-                      {label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p
-              style={{
-                fontSize: 11,
-                color: theme.textMid,
-                margin: '8px 0 0',
-                lineHeight: 1.4,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              Resultat: niveau <strong style={{ color: theme.text }}>{levelRangeSummary(levelSpan.min, levelSpan.max)}</strong>
-            </p>
-          </div>
-        ) : null}
-
-        <p
-          style={{
-            fontSize: 11,
-            color: theme.textLight,
-            margin: '14px 0 0',
-            lineHeight: 1.45,
-            paddingTop: showTolerance ? 0 : 14,
-            borderTop: showTolerance ? 'none' : `1px solid ${theme.border}`,
-          }}
-        >
-          {partnerLevel === 'wide' ? (
-            <>
-              Vi matcher <strong>alle niveauer</strong> i regionen der søger makker.
-            </>
-          ) : (
-            <>
-              Vi matcher spillere mellem{' '}
-              <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
-              <strong>{formatPlaytomicLevel(levelSpan.max)}</strong> der søger makker.
-            </>
-          )}
-        </p>
       </div>
 
       <div style={labelStyle}>Hvornår kan du spille? (valgfrit)</div>
-      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vælg konkrete tidsrum, eller <strong>Flexibel</strong> / intet valg for alle tidsrum.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {AVAILABILITY.map((slot) => {
           const active =
             slot === MAKKER_AVAILABILITY_FLEXIBLE
@@ -499,26 +279,23 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             <button
               key={slot}
               type="button"
+              aria-pressed={active}
               onClick={() => toggleAvailability(slot)}
               style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
             >
-              {slot}
+              {slot === MAKKER_AVAILABILITY_FLEXIBLE ? 'Alle tider' : slot}
             </button>
           );
         })}
       </div>
-
-      <div style={labelStyle}>Ugedage du vil spille (valgfrit)</div>
-      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vi matcher kun spillere der har mindst én af disse dage i profilen. Tom = alle dage.
-      </p>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
         {DAYS_OF_WEEK.map(({ key, label }) => {
           const active = normalizeStringArrayField(prefs.days).includes(key);
           return (
             <button
               key={key}
               type="button"
+              aria-pressed={active}
               onClick={() => toggleDay(key)}
               style={{
                 flex: 1,
@@ -537,6 +314,122 @@ export function MakkerSearchFilterPage({ user, showToast }) {
           );
         })}
       </div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 20px', lineHeight: 1.45 }}>
+        Intet valgt = alle dage og tider.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => setMoreOpen((o) => !o)}
+        aria-expanded={moreOpen}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          minHeight: 44,
+          padding: '10px 0',
+          marginBottom: moreOpen ? 12 : 20,
+          background: 'none',
+          border: 'none',
+          borderTop: `1px solid ${theme.border}`,
+          color: theme.text,
+          fontFamily: font,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        <span>
+          Flere valg (valgfrit)
+          {extrasCount > 0 ? (
+            <span style={{ fontWeight: 500, color: theme.textMid }}> · {extrasCount} valgt</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          size={18}
+          aria-hidden
+          style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+        />
+      </button>
+
+      {moreOpen ? (
+        <>
+          <div style={labelStyle}>Makkerens side på banen</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+            {COURT_SIDE_CHOICES.map(({ value, label }) => {
+              const active = (prefs.partnerCourtSide || 'any') === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => set({ partnerCourtSide: value })}
+                  style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={labelStyle}>Spillestil</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+            {[{ value: 'all', label: 'Alle' }, ...PLAY_STYLES.map((s) => ({ value: s, label: s }))].map(
+              ({ value, label }) => {
+                const active = (prefs.playStyle || 'all') === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => set({ playStyle: value })}
+                    style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+                  >
+                    {label}
+                  </button>
+                );
+              },
+            )}
+          </div>
+
+          <div style={labelStyle}>Hvad vil du spille for?</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {INTENTS.map(({ value, label }) => {
+              const key = canonicalIntentKey(value);
+              const active = selectedIntents.some((x) => canonicalIntentKey(x) === key);
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => toggleIntent(value)}
+                  style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          {selectedIntents.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+              <span style={{ fontSize: 12, color: theme.textMid, lineHeight: 1.45 }}>
+                Kun spillere, der har valgt præcis det samme
+              </span>
+              <ToggleSwitch
+                checked={prefs.intentMode === 'exact'}
+                onChange={(on) => set({ intentMode: on ? 'exact' : 'compatible' })}
+                ariaLabel="Kun spillere, der har valgt præcis det samme"
+              />
+            </div>
+          ) : (
+            <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 18px', lineHeight: 1.45 }}>
+              Intet valgt = alle.
+            </p>
+          )}
+        </>
+      ) : null}
 
       <button
         type="button"
