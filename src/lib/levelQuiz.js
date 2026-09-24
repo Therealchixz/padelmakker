@@ -1,17 +1,21 @@
 /**
- * "Ikke sikker på dit niveau?" – 4 spørgsmål ved oprettelse.
+ * "Ikke sikker på dit niveau?" – 5 spørgsmål ved oprettelse.
  *
- * Research (24. sep. 2026, se PR): alle store padel-apps lader spilleren
- * vurdere sig selv, og folk gætter for højt (Playtomic typisk 0,5–1,0 over).
- * Det, der skiller niveauerne, er konkrete slag, ikke antal år:
- *   - kan man tage bolden af bagglasset under pres? ("sometimes, if it's
- *     slow" = under 3,0)
- *   - svarer man på en høj bold ved nettet med andet end et fladt smash?
- *     (bandeja = 4,0 og op; kun smash = under 4,0)
- * Erfaring fra tennis, squash og badminton trækker op fra start.
+ * Skalaen følger Dansk Padel Forbund ("Find/kend dit padelniveau", sendt af
+ * ejeren 24. sep. 2026):
+ *   1.0–1.9 Begynder    ny, eller rammer bolden uden kontrol
+ *   2.0–2.9 Let øvet    får dueller i gang; fra 2.5 rigtige padelslag
+ *   3.0–3.4 Øvet        3. division / DPF50
+ *   3.5–3.9             2. division / DPF100
+ *   4.0–4.4 Meget øvet  1. division / DPF200
+ *   4.5–4.9             Elitedivision / DPF400
+ *   5.0+    Elite
+ * Niveau 3.0 og op er altså divisions- og turneringsspillere. Derfor afgør
+ * spørgsmålet om division/turneringer loftet; slagene placerer én under det.
  *
- * Forslaget rundes NED til nærmeste halve, fordi folk overvurderer sig selv.
- * Man kan altid rette det bagefter.
+ * Research (Playtomic m.fl.): folk gætter for højt, og konkrete slag skiller
+ * bedre end antal år. Forslaget rundes NED til nærmeste halve. Det er kun et
+ * forslag – man kan altid skrive sit niveau selv.
  */
 
 export const LEVEL_QUIZ = [
@@ -45,9 +49,27 @@ export const LEVEL_QUIZ = [
       'Bandeja eller vibora – som jeg vælger',
     ],
   },
+  {
+    id: 'competition',
+    question: 'Spiller du holdturnering (division) eller DPF-turneringer?',
+    options: [
+      'Nej',
+      '3. division eller DPF25–50',
+      '2. division eller DPF100',
+      '1. division, DPF200 eller højere',
+    ],
+  },
 ];
 
-const WEIGHTS = { years: 0.25, racket: 0.2, glass: 0.5, overhead: 0.5 };
+const SKILL_WEIGHTS = { years: 0.25, racket: 0.2, glass: 0.35, overhead: 0.3 };
+
+/** Ramme pr. svar på division/turneringer (DPF-skalaen). */
+const COMPETITION_BANDS = [
+  { min: 1.0, max: 3.0 }, // ingen division: højst 3.0
+  { min: 3.0, max: 3.4 }, // 3. division / DPF50
+  { min: 3.5, max: 3.9 }, // 2. division / DPF100
+  { min: 4.0, max: 4.9 }, // 1. division / DPF200 og op
+];
 
 function answerIndex(answers, id) {
   const n = Number(answers?.[id]);
@@ -60,15 +82,16 @@ export function levelQuizComplete(answers) {
 
 /**
  * @param {Record<string, number>} answers id → valgt svar (0–3)
- * @returns {number | null} foreslået niveau (1,0–5,0 i halve), eller null hvis ikke alle er besvaret
+ * @returns {number | null} foreslået niveau (1,0–4,5 i halve), eller null hvis ikke alle er besvaret
  */
 export function suggestLevelFromQuiz(answers) {
   if (!levelQuizComplete(answers)) return null;
+  // Slagene: 1,0 (intet) til ca. 4,3 (alt på plads).
   let raw = 1;
-  for (const q of LEVEL_QUIZ) raw += WEIGHTS[q.id] * answerIndex(answers, q.id);
-  // Kan man ikke styre bagglasset, er man under 3,0; kun smash ved nettet er under 4,0.
+  for (const [id, w] of Object.entries(SKILL_WEIGHTS)) raw += w * answerIndex(answers, id);
+  // Kan man ikke styre bagglasset, er man under 3,0 (DPF: "mangler kontrol").
   if (answerIndex(answers, 'glass') <= 1) raw = Math.min(raw, 2.9);
-  if (answerIndex(answers, 'overhead') <= 1) raw = Math.min(raw, 3.9);
-  const rounded = Math.floor(raw * 2) / 2;
-  return Math.max(1, Math.min(5, rounded));
+  const band = COMPETITION_BANDS[answerIndex(answers, 'competition')];
+  raw = Math.max(band.min, Math.min(band.max, raw));
+  return Math.floor(raw * 2) / 2;
 }

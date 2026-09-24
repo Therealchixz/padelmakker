@@ -16,43 +16,68 @@ import { INTENTS } from '../../src/lib/platformConstants.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (rel) => readFileSync(join(root, rel), 'utf8');
-const q = (years, racket, glass, overhead) => ({ years, racket, glass, overhead });
+const q = (years, racket, glass, overhead, competition = 0) => ({ years, racket, glass, overhead, competition });
 
 // --- 1. Niveau-spørgsmål -------------------------------------------------------
+// Skalaen følger Dansk Padel Forbund (ejeren sendte den 24. sep. 2026):
+// 3.0 = 3. division/DPF50, 3.5 = 2. division/DPF100, 4.0 = 1. division/DPF200.
 
-test('fire spørgsmål med fire svar hver', () => {
-  assert.equal(LEVEL_QUIZ.length, 4);
+test('fem spørgsmål med fire svar hver, sidste om division/turneringer', () => {
+  assert.equal(LEVEL_QUIZ.length, 5);
   for (const x of LEVEL_QUIZ) assert.equal(x.options.length, 4);
+  assert.equal(LEVEL_QUIZ[4].id, 'competition');
 });
 
-test('forslaget følger slagene, ikke kun årene', () => {
+test('uden division eller turneringer foreslås højst 3.0 – uanset slag', () => {
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) {
+    assert.ok(suggestLevelFromQuiz(q(a, b, c, d, 0)) <= 3, `${a}${b}${c}${d}`);
+  }
+  assert.equal(suggestLevelFromQuiz(q(3, 3, 3, 3, 0)), 3);
+});
+
+test('division/turneringer placerer én i DPF-rammen', () => {
+  assert.equal(suggestLevelFromQuiz(q(3, 2, 2, 2, 1)), 3, '3. division / DPF50');
+  assert.equal(suggestLevelFromQuiz(q(3, 2, 2, 2, 2)), 3.5, '2. division / DPF100');
+  assert.equal(suggestLevelFromQuiz(q(3, 2, 2, 2, 3)), 4, '1. division / DPF200');
+  assert.ok(suggestLevelFromQuiz(q(3, 3, 3, 3, 3)) <= 4.5, 'aldrig Elite ud fra et spørgeskema');
+});
+
+test('slagene tæller: nybegynder, let øvet', () => {
   assert.equal(suggestLevelFromQuiz(q(0, 0, 0, 0)), 1);
   assert.equal(suggestLevelFromQuiz(q(0, 3, 0, 0)), 1.5, 'tennisspiller uden padel starter lidt højere');
-  assert.equal(suggestLevelFromQuiz(q(2, 1, 1, 1)), 2.5);
-  assert.equal(suggestLevelFromQuiz(q(3, 2, 2, 2)), 4);
-  assert.equal(suggestLevelFromQuiz(q(3, 3, 3, 3)), 5, 'højst 5 – derover er turneringsniveau');
-});
-
-test('uden kontrol over bagglasset: under 3; kun smash ved nettet: under 4', () => {
-  assert.ok(suggestLevelFromQuiz(q(3, 3, 1, 3)) < 3);
-  assert.ok(suggestLevelFromQuiz(q(3, 3, 3, 1)) < 4);
+  assert.equal(suggestLevelFromQuiz(q(3, 0, 2, 1)), 2.5, 'rigtige padelslag, ingen division');
+  assert.ok(suggestLevelFromQuiz(q(3, 3, 1, 3)) < 3, 'uden kontrol over bagglasset: under 3');
 });
 
 test('forslaget rundes ned til halve, fordi folk gætter for højt', () => {
-  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) {
-    const v = suggestLevelFromQuiz(q(a, b, c, d));
+  for (let a = 0; a < 4; a++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) for (let e = 0; e < 4; e++) {
+    const v = suggestLevelFromQuiz(q(a, 1, c, d, e));
     assert.equal(v * 2, Math.round(v * 2));
   }
 });
 
-test('intet forslag før alle fire er besvaret', () => {
-  assert.equal(suggestLevelFromQuiz({ years: 1, racket: 1, glass: 1 }), null);
-  assert.equal(levelQuizComplete({ years: 1, racket: 1, glass: 1, overhead: 9 }), false);
+test('niveau-kortene følger DPF-skalaen', () => {
+  const o = read('src/pages/OnboardingPage.jsx');
+  assert.match(o, /3\. division eller DPF50/);
+  assert.match(o, /1\. division eller DPF200/);
+  assert.doesNotMatch(o, /Taktisk spil, bandeja og kontrolleret tempo/);
+});
+
+test('man kan altid skrive sit niveau selv', () => {
+  const o = read('src/pages/OnboardingPage.jsx');
+  assert.match(o, /Kender du dit niveau\? Skriv det selv/);
+  assert.match(o, /onManual=\{\(\) => \{ setShowLevelQuiz\(false\); setShowFineTune\(true\); \}\}/);
+  assert.match(read('src/components/LevelQuiz.jsx'), /Jeg kender mit niveau – skriv det selv/);
+});
+
+test('intet forslag før alle fem er besvaret', () => {
+  assert.equal(suggestLevelFromQuiz({ years: 1, racket: 1, glass: 1, overhead: 1 }), null);
+  assert.equal(levelQuizComplete({ years: 1, racket: 1, glass: 1, overhead: 1, competition: 9 }), false);
 });
 
 test('oprettelsen viser "Ikke sikker?" og bruger forslaget', () => {
   const o = read('src/pages/OnboardingPage.jsx');
-  assert.match(o, /Ikke sikker\? Svar på 4 hurtige spørgsmål/);
+  assert.match(o, /Ikke sikker\? Svar på 5 hurtige spørgsmål/);
   assert.match(o, /onUse=\{\(lvl\) => \{ set\("levelNumeric", lvl\)/);
 });
 

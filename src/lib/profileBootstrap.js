@@ -63,7 +63,7 @@ export async function createProfileForNewUser(supabase, userRow, select = PROFIL
         email: email || '',
         name: displayName,
         full_name: displayName,
-        level: meta.level || 5,
+        level: meta.level || 3, // standard 3.0 – 5.0 er Elite på DPF-skalaen
         play_style: meta.play_style || 'Ved ikke endnu',
         area: regionFromMeta,
         city: meta.city || null,

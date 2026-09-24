@@ -141,7 +141,7 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
   const patch = {
     full_name: displayName,
     name: displayName,
-    level: !Number.isNaN(levelNum) ? levelNum : 5,
+    level: !Number.isNaN(levelNum) ? levelNum : 3, // standard 3.0 – 5.0 er Elite på DPF-skalaen
     play_style: String(meta.play_style || "Ved ikke endnu").trim() || "Ved ikke endnu",
     area: metaArea,
     city: metaCity || null,

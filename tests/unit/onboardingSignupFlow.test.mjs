@@ -17,7 +17,8 @@ test('onboarding explains the signup choices without adding an early profile pre
 
   assert.match(onboardingPage, /LEVEL_CARDS/);
   assert.match(onboardingPage, /vises ikke offentligt/i);
-  assert.match(onboardingPage, /Finjustér niveau/);
+  // Ejeren 24. sep. 2026: man skal selv kunne skrive sit niveau (fx 3.5).
+  assert.match(onboardingPage, /Kender du dit niveau\? Skriv det selv/);
   assert.match(onboardingPage, /Mangler før du kan fortsætte/);
   assert.match(onboardingPage, /stepTitles = \["Opret profil", "Dit niveau", "Dit område", "Din profil"\]/);
   assert.doesNotMatch(onboardingPage, /Forh[aå]ndsvisning af profil[\s\S]*step === 0/);

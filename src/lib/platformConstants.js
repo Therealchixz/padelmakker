@@ -11,7 +11,9 @@ export const LEVELS = [
 
 /**
  * Korte band-tekster (fallback). Detaljer pr. 0,5-trin: LEVEL_FINE_DESCS.
- * Niveau-skala inspireret af almindelig padel/Playtomic 1–7 (tekster er PadelMakkers egne).
+ * Niveau-skalaen følger Dansk Padel Forbund (1–7): 3.0 = 3. division/DPF50,
+ * 3.5 = 2. division/DPF100, 4.0 = 1. division/DPF200, 4.5 = Elitedivision/DPF400,
+ * 5.0+ = Elite (DPF1000, landshold, FIP-rangliste). Teksterne er PadelMakkers egne.
  */
 export const LEVEL_DESCS = {
   'Begynder (1.0–1.9)':
@@ -19,13 +21,13 @@ export const LEVEL_DESCS = {
   'Let øvet (2.0–2.9)':
     'Kan holde banespil i roligt tempo, bruger væggene mere og forstår enkle positioner.',
   'Øvet (3.0)':
-    'Jævnlig spiller med solid grundteknik. Længere dueller, men stadig mange uprovokerede fejl.',
+    'Spiller 3. division eller DPF50-turneringer. Solid grundteknik, men stadig en del uprovokerede fejl.',
   'Avanceret øvet (3.5)':
-    'Ugentlig spil med bedre boldvalg, taktik og kontrol i tempo. Klar til stærkere klubkampe.',
+    'Spiller 2. division eller DPF100-turneringer. Bedre boldvalg, taktik og kontrol i tempo.',
   'Meget øvet (4.0–4.9)':
-    'Stærk teknik og taktik i højt tempo. Svært at finde svage sider i almindelige klubkampe.',
+    'Spiller 1. division eller DPF200-turneringer og op. Stærk teknik og taktik i højt tempo.',
   'Elite (5.0–7.0)':
-    'Turnerings- eller professionelt niveau med konstant høj intensitet og få fejl.',
+    'Elitedivision, DPF1000, landshold eller professionel.',
 };
 
 /** Finere trin på slideren (0,5) — opdateres live når brugeren trækker. */
@@ -36,15 +38,15 @@ export const LEVEL_FINE_DESCS = {
   1.5: 'Du har spillet lidt og kender reglerne, men teknikken er ikke automatiseret endnu. Du kan returnere langsomme bolde og begynder at bruge glasvæggene, men dueller er korte og fejl kommer ofte under pres. Fair match: spillere omkring 1,0–2,0 der vil øve uden højt pres.',
   2: 'Du spiller med begyndende kontrol og kan deltage i hyggelige kampe i lavt tempo. Du rammer de fleste grundslag i ro, men har begrænset taktik og positionering. Serve og netspil er uforudsigelige under pres. Fair match: 1,5–2,5 — gerne hygge eller let træning.',
   2.5: 'Du har udviklet mere stabilt banespil og forstår hvornår du skal stå højt eller dybt. Du kan holde længere dueller i moderat tempo og bruger væggene bevidst. Stadig taktiske huller og fejl når tempoet stiger. Fair match: 2,0–3,0 i klubkampe eller sociale turneringer.',
-  3: 'Du spiller jævnligt med god sikkerhed i grundslagene og kan styre retning i normalt tempo. Du forstår double-positioner og simple taktikker (lob, drop, angreb på net). Du laver stadig mange uprovokerede fejl og kan blive for offensiv. Fair match: DPF 25/50-niveau eller stærk 3. division — typisk 2,5–3,5.',
-  3.5: 'Du spiller ugentligt med færre fejl, bedre boldkontrol og længere dueller. Du varierer tempo, bruger væggene taktisk og har styr på netspil i de fleste situationer. Du kan stadig miste fokus mod stærkere pres. Fair match: DPF 50/100 eller 2./3. division — typisk 3,0–4,0.',
-  4: 'Du mestrer de fleste slag med retningskontrol og kan spille fladt, med slice og i højere tempo. Du forstår kampens rytme, teamwork og hvornår du skal angribe eller forsvare. Du har svært ved at lukke point mod meget stærke modstandere. Fair match: erfarne klubspillere og regionale turneringer — typisk 3,5–4,5.',
-  4.5: 'Du har stærk teknik og taktik, god fysik og få lette fejl i normale kampe. Du spiller bandeja/vibora-lignende slag med rimelig sikkerhed og læser modstanderens spil. Du kan stadig blive presset af top-amatører. Fair match: stærke divisionshold og DPF200-klasser — typisk 4,0–5,0.',
-  5: 'Du har høj teknisk og taktisk standard, spiller hurtigt og konsekvent med få uprovokerede fejl. Du dominerer net og vægge i de fleste kampe og tænker flere slag frem. Fair match: landsholds- eller elite-amatørniveau i turneringer — typisk 4,5–5,5.',
-  5.5: 'Du er blandt de stærkeste amatører i regionen med turneringserfaring og høj intensitet hele kampen. Du har avancerede slag, mental styrke og fysisk kapacitet til lange kampe. Fair match: nationale turneringer og top divisionsniveau — typisk 5,0–6,0.',
-  6: 'Du spiller på meget højt amatør- eller semi-professionelt niveau med dyb taktisk forståelse, kraft og præcision. Du forsvares solidt på vægge og afslutter point ved nettet. Fair match: elite turneringer og erfarne pro-træningsgrupper — typisk 5,5–6,5.',
-  6.5: 'Du er tæt på professionelt niveau med konstant høj kvalitet under pres, få svage sider og stærk turneringserfaring. Fair match: nationale/elite turneringer og WPT-niveau træningskampe — typisk 6,0–7,0.',
-  7: 'Professionelt niveau (landshold, WPT eller tilsvarende). Du konkurrerer for resultater på højeste plan med fuld fysisk og mental kapacitet. Fair match: kun andre professionelle eller top 50 WPT.',
+  3: 'Du spiller jævnligt med god sikkerhed i grundslagene og kan styre retning i normalt tempo. Du forstår double-positioner og simple taktikker (lob, drop, angreb på net). Du laver stadig mange uprovokerede fejl og kan blive for offensiv. Typisk 3. division eller DPF50-turneringer. Fair match: 2,5–3,5.',
+  3.5: 'Du spiller ugentligt med færre fejl, bedre boldkontrol og længere dueller. Du varierer tempo, bruger væggene taktisk og har styr på netspil i de fleste situationer. Du kan stadig miste fokus mod stærkere pres. Typisk 2. division eller DPF100-turneringer. Fair match: 3,0–4,0.',
+  4: 'Du mestrer de fleste slag med retningskontrol og kan spille fladt, med slice og i højere tempo. Du forstår kampens rytme, teamwork og hvornår du skal angribe eller forsvare. Du har svært ved at lukke point mod meget stærke modstandere. Typisk 1. division eller DPF200-turneringer. Fair match: 3,5–4,5.',
+  4.5: 'Du har stærk teknik og taktik, god fysik og få lette fejl i normale kampe. Du spiller bandeja/vibora-lignende slag med rimelig sikkerhed og læser modstanderens spil. Du kan stadig blive presset af top-amatører. Typisk Elitedivision eller DPF400-turneringer. Fair match: 4,0–5,0.',
+  5: 'Du har høj teknisk og taktisk standard, spiller hurtigt og konsekvent med få uprovokerede fejl. Du dominerer net og vægge i de fleste kampe og tænker flere slag frem. Typisk Elitedivision og DPF1000, eller topseedet i DPF400. Fair match: 4,5–5,5.',
+  5.5: 'Du er blandt de stærkeste amatører i regionen med turneringserfaring og høj intensitet hele kampen. Du har avancerede slag, mental styrke og fysisk kapacitet til lange kampe. Typisk landsholdsniveau. Fair match: 5,0–6,0.',
+  6: 'Du spiller på meget højt amatør- eller semi-professionelt niveau med dyb taktisk forståelse, kraft og præcision. Du forsvares solidt på vægge og afslutter point ved nettet. Typisk professionel og top 500 på FIP-ranglisten. Fair match: 5,5–6,5.',
+  6.5: 'Du er tæt på professionelt niveau med konstant høj kvalitet under pres, få svage sider og stærk turneringserfaring. Typisk professionel og top 250 på FIP-ranglisten. Fair match: 6,0–7,0.',
+  7: 'Professionelt niveau, top 100 på FIP-ranglisten. Du konkurrerer for resultater på højeste plan med fuld fysisk og mental kapacitet. Fair match: kun andre professionelle.',
 };
 
 export function nearestFineLevelStep(num) {

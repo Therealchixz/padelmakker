@@ -457,7 +457,7 @@ export function AuthProvider({ children }) {
         email: email,
         name: displayName,
         full_name: displayName,
-        level: metadata.level || 5,
+        level: metadata.level || 3, // standard 3.0 – 5.0 er Elite på DPF-skalaen
         play_style: metadata.play_style || 'Ved ikke endnu',
         area: region,
         city: metadata.city || null,
@@ -522,7 +522,7 @@ export function AuthProvider({ children }) {
         email: normalizedEmail,
         name: displayName,
         full_name: displayName,
-        level: metadata.level || 5,
+        level: metadata.level || 3, // standard 3.0 – 5.0 er Elite på DPF-skalaen
         play_style: metadata.play_style || 'Ved ikke endnu',
         area: region,
         city: metadata.city || null,
