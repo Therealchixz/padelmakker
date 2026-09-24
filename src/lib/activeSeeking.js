@@ -17,7 +17,6 @@ import {
   resolveFilterRegion,
   resolveFilterLevel,
   isMatchFilterConfigured,
-  DEFAULT_LEVEL_WINDOW,
 } from './matchSearchFilterCore.js';
 import {
   isProfileMakkerFeedVisible,
@@ -34,7 +33,7 @@ import {
   DAYS_OF_WEEK,
   intentDisplayLabel,
 } from './platformConstants.js';
-import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
+import { formatPlaytomicLevel, matchFilterLevelLabel } from './padelLevelUtils.js';
 import {
   makkerFilterLevelBounds,
   partnerCourtSideLabel,
@@ -184,10 +183,7 @@ export function buildActiveSeekingFilterSummary(user, channel) {
     const parts = [];
     const region = resolveFilterRegion(prefs, user);
     if (region) parts.push(region.replace(/^Region /, ''));
-    const lvl = resolveFilterLevel(prefs, user);
-    const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-    const { min, max } = levelRangeForWindow(lvl, win);
-    parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
+    parts.push(matchFilterLevelLabel(prefs, resolveFilterLevel(prefs, user)));
     const days = formatSeekingDaysLine(prefs);
     if (days) parts.push(days);
     parts.push(seekingAvailabilitySummary(prefs));

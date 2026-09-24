@@ -78,7 +78,7 @@ test('filter-sider uden Kanaler-sektion; KampeFilterSheet uden søger-toggle', (
   assert.doesNotMatch(makkerPage, /Kanaler/);
   assert.doesNotMatch(matchPage, /Kanaler/);
   assert.match(makkerPage, /Mit makker-filter/);
-  assert.match(matchPage, /Dette styrer hvornår du får besked/);
+  assert.match(matchPage, /Vælg hvilke kampe du vil have besked om/);
   assert.doesNotMatch(sheet, /Søger kamp/);
   assert.doesNotMatch(sheet, /showSeekingToggle/);
 });

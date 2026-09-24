@@ -15,9 +15,9 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 157 |
-| ...med en identisk fil i `supabase/sql/` | 111 |
-| ...hvor ingen arkivfil matcher (alle er forældede) | 29 |
+| Funktioner i migrations (= i drift) | 160 |
+| ...med en identisk fil i `supabase/sql/` | 115 |
+| ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
@@ -87,6 +87,7 @@ kan efterprøves direkte mod den kørende database.
 | `dispatch_push_to_user` | `20260921074448_raise_pg_net_timeout_for_push_and_reminders.sql` | — | 2 |
 | `dm_message_preview` | `00000000000000_baseline_schema.sql` | `dm_chat_enhancements.sql` | — |
 | `dm_users_blocked` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
+| `elo_to_playtomic_level` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | — |
 | `email_unsub_token_for` | `20260922223032_email_unsubscribe_rpcs.sql` | — | — |
 | `email_unsubscribe_by_token` | `20260922223032_email_unsubscribe_rpcs.sql` | — | — |
 | `enforce_max_players` | `00000000000000_baseline_schema.sql` | — | — |
@@ -138,6 +139,8 @@ kan efterprøves direkte mod den kørende database.
 | `makker_filter_resolve_partner_court_side` | `00000000000000_baseline_schema.sql` | `makker_partner_court_side.sql` | — |
 | `match_filter_level_window_from_prefs` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `match_filter_prefs_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
+| `match_fits_watcher_level` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | — |
+| `match_level_bounds` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | — |
 | `match_players_fill_court_side` | `00000000000000_baseline_schema.sql` | `match_player_court_side.sql`<br>`match_player_court_side_join_fix.sql` | — |
 | `match_players_free_court_side` | `00000000000000_baseline_schema.sql` | `match_player_court_side.sql`<br>`match_player_court_side_join_fix.sql` | — |
 | `messages_enforce_dm_block` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
@@ -150,7 +153,7 @@ kan efterprøves direkte mod den kørende database.
 | `notify_league_invite_declined` | `00000000000000_baseline_schema.sql` | — | — |
 | `notify_makker_watchers` | `20260923100444_makker_watch_button_beats_stale_filter_default.sql` | — | 5 |
 | `notify_match_creator_on_join` | `20260923162656_match_join_notification_grouped.sql` | `match_join_notification_grouped.sql` | 3 |
-| `notify_match_watchers` | `20260922224422_match_discovery_reaches_lapsed_users.sql` | — | 6 |
+| `notify_match_watchers` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | 6 |
 | `padel_elo_to_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `padel_level_to_elo` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `parse_clock_time` | `00000000000000_baseline_schema.sql` | `play_intent_open_match_notify.sql`<br>`play_intent_pool.sql` | — |

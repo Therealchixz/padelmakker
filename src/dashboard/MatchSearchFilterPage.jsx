@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, AVAILABILITY, levelLabel } from '../lib/platformConstants';
+import { REGIONS, DAYS_OF_WEEK, AVAILABILITY } from '../lib/platformConstants';
 import {
   MAKKER_AVAILABILITY_FLEXIBLE,
   availabilityMeansAllTimeSlots,
@@ -15,11 +15,15 @@ import {
   resolveFilterRegion,
   resolveFilterLevel,
   buildProfilePatchFromMatchSearchPrefs,
-  LEVEL_WINDOW_CHOICES,
-  DEFAULT_LEVEL_WINDOW,
 } from '../lib/matchSearchFilterUtils';
-import { levelRangeForWindow } from '../lib/padelLevelUtils';
-import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
+import {
+  customFilterLevelBounds,
+  formatPlaytomicLevel,
+  formatPlaytomicLevelRange,
+  levelRangeForWindow,
+  profilePlaytomicLevel,
+} from '../lib/padelLevelUtils';
+import { LevelRangeSlider } from '../components/LevelRangeSlider';
 import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
@@ -48,7 +52,8 @@ export function MatchSearchFilterPage({ user, showToast }) {
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveFilterLevel(prefs, user);
-  const levelDisplay = levelLabel(filterLevel) || formatPlaytomicLevel(filterLevel);
+  // Selvvalgt spænd (levelMin/levelMax) eller "kampe for mit niveau".
+  const customLevel = customFilterLevelBounds(prefs);
 
   const set = (patch) => setPrefs((p) => ({ ...p, ...patch }));
 
@@ -74,8 +79,12 @@ export function MatchSearchFilterPage({ user, showToast }) {
 
   const description = describeMatchFilter(prefs, user);
   const regionOk = Boolean(resolveFilterRegion(prefs, user) || prefs.region);
-  const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const levelSpan = levelRangeForWindow(filterLevel, levelWindow);
+  const chooseOwnLevel = () => set({ levelMin: undefined, levelMax: undefined });
+  const chooseCustomLevel = () => {
+    if (customLevel) return;
+    const start = levelRangeForWindow(filterLevel, 0.2);
+    set({ levelMin: start.min, levelMax: start.max });
+  };
 
   const handleSave = async () => {
     if (!isMatchFilterConfigured(prefs, user) && !prefs.region) {
@@ -118,8 +127,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
       </div>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
-        Dette styrer hvornår du får besked og hvilke kampe der matcher. Slå aktiv søgning til/fra på
-        Hjem eller Kampe — her finjusterer du region, niveau og tid.
+        Vælg hvilke kampe du vil have besked om. Du slår beskederne til og fra på Hjem eller Kampe.
       </p>
 
       <div
@@ -131,6 +139,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
           marginBottom: 20,
           fontSize: 12,
           color: theme.textMid,
+          lineHeight: 1.45,
         }}
       >
         <strong style={{ color: theme.text, display: 'block', marginBottom: 4 }}>
@@ -140,103 +149,90 @@ export function MatchSearchFilterPage({ user, showToast }) {
       </div>
 
       <div style={labelStyle}>Region</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 20 }}>
         {REGIONS.map((r) => (
           <button
             key={r}
             type="button"
+            aria-pressed={prefs.region === r}
             onClick={() => set({ region: r })}
-            style={{
-              ...btn(prefs.region === r),
-              textAlign: 'left',
-              padding: '10px 14px',
-              fontSize: 13,
-            }}
+            style={{ ...btn(prefs.region === r), padding: '10px 8px', fontSize: 13 }}
           >
             {r}
           </button>
         ))}
       </div>
 
-      <div style={labelStyle}>Dit niveau</div>
-      <div
-        style={{
-          background: theme.surfaceAlt,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 10,
-          padding: '12px 14px',
-          marginBottom: 8,
-          fontSize: 13,
-          color: theme.text,
-        }}
-      >
-        <strong>{formatPlaytomicLevel(profileLevel)}</strong>
-        {levelDisplay ? (
-          <span style={{ color: theme.textMid, marginLeft: 8 }}>{levelDisplay}</span>
-        ) : null}
-        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
-          Hentes fra din profil. Under Profil → Rediger kan du finjustere (fx 3,3 i stedet for 3,0 eller 3,5).
-        </div>
-      </div>
-
-      <div style={labelStyle}>Hvor tæt på dit niveau skal kampe være?</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
-          const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
-          const tolLabel = `±${String(value).replace('.', ',')}`;
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => set({ levelWindow: value })}
+      {/* Samme regel som besked om nye kampe (match_fits_watcher_level i
+          databasen): kampens niveau skal passe inden for den ramme, du vælger. */}
+      <div style={labelStyle}>Kampens niveau</div>
+      <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Dit niveau er <strong style={{ color: theme.text }}>{formatPlaytomicLevel(profileLevel)}</strong>.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: customLevel ? 10 : 20 }}>
+        {[
+          {
+            key: 'own',
+            active: !customLevel,
+            onClick: chooseOwnLevel,
+            title: 'Kampe for mit niveau',
+            hint: `Kampe, hvor ${formatPlaytomicLevel(filterLevel)} er inden for kampens niveau`,
+          },
+          {
+            key: 'custom',
+            active: Boolean(customLevel),
+            onClick: chooseCustomLevel,
+            title: 'Vælg selv fra og til',
+            hint: 'Kampe, hvis niveau overlapper dit spænd',
+          },
+        ].map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={o.active}
+            onClick={o.onClick}
+            style={{
+              ...btn(o.active),
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 2,
+              textAlign: 'left',
+              padding: '10px 12px',
+              fontSize: 13,
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>{o.title}</span>
+            <span
               style={{
-                ...btn(active),
-                textAlign: 'left',
-                padding: '8px 12px',
-                fontSize: 12,
-                fontWeight: 500,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 8,
+                fontSize: 11,
+                fontWeight: 400,
+                color: o.active ? 'var(--pm-on-accent)' : theme.textLight,
+                opacity: o.active ? 0.85 : 1,
               }}
             >
-              <span style={{ minWidth: 0 }}>
-                <span style={{ fontWeight: 600, color: active ? theme.onAccent : theme.text }}>{label}</span>
-                {hint ? (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 400,
-                      marginLeft: 6,
-                      color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
-                    }}
-                  >
-                    {hint}
-                  </span>
-                ) : null}
-              </span>
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontVariantNumeric: 'tabular-nums',
-                  color: active ? theme.onAccent : theme.textMid,
-                }}
-              >
-                {tolLabel}
-              </span>
-            </button>
-          );
-        })}
+              {o.hint}
+            </span>
+          </button>
+        ))}
       </div>
-      <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
-        Med niveau {formatPlaytomicLevel(filterLevel)} matcher vi kampe mellem{' '}
-        <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
-        <strong>{formatPlaytomicLevel(levelSpan.max)}</strong>.
-        I padel er selv 0,3–0,4 en tydelig forskel — vælg snævert for de mest fair kampe.
-      </p>
+      {customLevel ? (
+        <>
+          <div className="pm-level-range-box">
+            <LevelRangeSlider
+              minVal={customLevel.min}
+              maxVal={customLevel.max}
+              step={0.1}
+              onMinChange={(v) => set({ levelMin: v, levelMax: customLevel.max })}
+              onMaxChange={(v) => set({ levelMin: customLevel.min, levelMax: v })}
+            />
+          </div>
+          <p className="pm-level-range-hint" style={{ marginBottom: 20 }}>
+            Du får besked om kampe, hvis niveau overlapper{' '}
+            {formatPlaytomicLevelRange(customLevel.min, customLevel.max)}.
+          </p>
+        </>
+      ) : null}
 
       <div style={labelStyle}>Hvornår søger du kamp? (valgfrit)</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>

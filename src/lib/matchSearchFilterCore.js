@@ -14,8 +14,8 @@ import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
   matchPassesLevelFilter,
-  formatPlaytomicLevel,
-  levelRangeForWindow,
+  customFilterLevelBounds,
+  matchFilterLevelLabel,
 } from './padelLevelUtils.js';
 
 export const MATCH_FILTER_PREFS_VERSION = 2;
@@ -102,6 +102,7 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     : null;
 
   const availability = normalizeMakkerAvailabilityFilter(parsed.availability);
+  const custom = customFilterLevelBounds(parsed);
 
   return {
     version: MATCH_FILTER_PREFS_VERSION,
@@ -114,6 +115,7 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     days,
     availability,
     openOnly: true,
+    ...(custom ? { levelMin: custom.min, levelMax: custom.max } : {}),
   };
 }
 
@@ -170,8 +172,7 @@ export function openMatchMatchesFilter(match, creatorProfile, prefs, profile, my
   }
 
   const myLevel = resolveFilterLevel(prefs, profile);
-  const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  if (!matchPassesLevelFilter(myLevel, levelWindow, creatorProfile, match)) {
+  if (!matchPassesLevelFilter(myLevel, prefs, creatorProfile, match)) {
     return false;
   }
 
@@ -191,10 +192,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   const parts = [];
   const region = resolveFilterRegion(prefs, profile);
   if (region) parts.push(region.replace(/^Region /, ''));
-  const lvl = resolveFilterLevel(prefs, profile);
-  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = levelRangeForWindow(lvl, win);
-  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  parts.push(matchFilterLevelLabel(prefs, resolveFilterLevel(prefs, profile)));
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const avail = normalizeStringArrayField(prefs.availability);
