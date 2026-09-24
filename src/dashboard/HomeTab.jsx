@@ -28,6 +28,7 @@ import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
 import { PlayIntentPanel } from '../components/PlayIntentPanel';
+import { LevelCheckCard } from '../components/LevelCheckCard';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -1136,6 +1137,9 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
 
       <GrowthCampaignBanner />
       <MonthMasterTeaser />
+
+      {/* "Passede niveauet?" efter de første 1-3 kampe */}
+      <LevelCheckCard user={user} showToast={showToast} />
 
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} deferred={deferOnboardingPrompt} /> : null}

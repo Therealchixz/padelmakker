@@ -6,7 +6,8 @@ import { resolveDisplayName, sanitizeText, displayUserText } from '../lib/platfo
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
-import { REGIONS, PLAY_STYLES, COURT_SIDES, AVAILABILITY, DAYS_OF_WEEK } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, COURT_SIDES, AVAILABILITY, DAYS_OF_WEEK, intentDisplayLabel } from '../lib/platformConstants';
+import { SIGNUP_INTENTS } from '../lib/signupIntents.js';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
@@ -606,6 +607,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
+        intent_now: form.intent_now || null,
         availability: form.availability || [],
         available_days: form.available_days || [],
         bio: sanitizeText(form.bio.trim()),
@@ -820,6 +822,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
               {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
+              {user.intent_now && <span style={tag(theme.blueBg, theme.blue)}>{intentDisplayLabel(user.intent_now)}</span>}
               {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
             </div>
           </div>
@@ -1548,6 +1551,18 @@ export function ProfilTab({ user, showToast, setTab }) {
           onChange={(id) => set("court_side", id)}
           ariaLabel="Foretrukken baneside"
           size="sm"
+          style={{ marginBottom: "14px" }}
+        />
+
+        {/* Hvad søger du mest? (intent_now: bruges af makker-filteret og matchningen) */}
+        <div style={labelStyle}>Hvad søger du mest?</div>
+        <PillTabs
+          tabs={SIGNUP_INTENTS.map((s) => ({ id: s.value, label: s.label }))}
+          value={SIGNUP_INTENTS.some((s) => s.value === form.intent_now) ? form.intent_now : ""}
+          onChange={(id) => set("intent_now", id)}
+          ariaLabel="Hvad søger du mest"
+          size="sm"
+          className="pm-pill-tabs--wrap"
           style={{ marginBottom: "14px" }}
         />
 

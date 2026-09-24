@@ -8,7 +8,7 @@ import { eloOf } from '../lib/matchDisplayUtils';
 import { MessageCircle, X } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
-import { DAYS_OF_WEEK } from '../lib/platformConstants';
+import { DAYS_OF_WEEK, intentDisplayLabel } from '../lib/platformConstants';
 import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -363,6 +363,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {pRef.court_side && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.court_side}</span>}
             {pRef.play_style && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.play_style}</span>}
+            {pRef.intent_now && <span style={tag(theme.navySoft, theme.onAccent)}>{intentDisplayLabel(pRef.intent_now)}</span>}
             {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
             {levelDisplay ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
