@@ -38,16 +38,16 @@ const makker = (n, id = `p${n}`) => ({ id: `n-${id}`, type: 'makker_suggestion',
 // --- Mailens indhold ----------------------------------------------------
 
 test('emnet siger hvad der er i mailen', () => {
-  assert.equal(digestSubject(2, 1), 'I dag på PadelMakker: 2 nye kampe og 1 makker, der passer til dig');
-  assert.equal(digestSubject(1, 0), 'I dag på PadelMakker: 1 ny kamp, der passer til dig');
-  assert.equal(digestSubject(0, 3), 'I dag på PadelMakker: 3 makkere, der passer til dig');
+  assert.equal(digestSubject(2, 1), '2 nye kampe og 1 makker på dit niveau');
+  assert.equal(digestSubject(1, 0), '1 ny kamp på dit niveau');
+  assert.equal(digestSubject(0, 3), '3 makkere på dit niveau');
 });
 
 test('kampe og makkere samles i én mail med links', () => {
   const mail = buildDigestEmail([match(1), match(2), makker(1)], opts);
   assert.ok(mail);
-  assert.match(mail.text, /Nye kampe nær dig/);
-  assert.match(mail.text, /Spiller der søger makker/);
+  assert.match(mail.text, /Kampe der passer til dig/);
+  assert.match(mail.text, /Spillere der søger makker/);
   assert.match(mail.text, /\/dashboard\/kampe\/2v2\/m1/);
   assert.match(mail.text, /\/dashboard\/makkere\?profile=p1/);
   assert.deepEqual(mail.itemIds, ['n-m1', 'n-m2', 'n-p1']);
@@ -55,7 +55,7 @@ test('kampe og makkere samles i én mail med links', () => {
 
 test('samme kamp eller spiller vises kun én gang', () => {
   const mail = buildDigestEmail([match(1, 'x'), match(2, 'x'), makker(1, 'y'), makker(2, 'y')], opts);
-  assert.equal(mail.subject, 'I dag på PadelMakker: 1 ny kamp og 1 makker, der passer til dig');
+  assert.equal(mail.subject, '1 ny kamp og 1 makker på dit niveau');
   // Begge rækker markeres som mailet, så dubletten ikke kommer i morgen.
   assert.equal(mail.itemIds.length, 4);
 });
@@ -64,7 +64,54 @@ test('lange lister afsluttes med "og N mere"', () => {
   const many = Array.from({ length: MAX_ITEMS_PER_SECTION + 3 }, (_, i) => match(i));
   const mail = buildDigestEmail(many, opts);
   assert.match(mail.text, /og 3 mere/);
-  assert.match(mail.html, /og 3 mere/);
+  assert.match(mail.html, /og 3 kampe mere/);
+});
+
+test('kort med detaljer: dato, tid, bane, niveau, ledige pladser og opretter', () => {
+  const details = {
+    recipientName: 'Kevin',
+    todayLabel: 'Torsdag 24. september',
+    matches: {
+      m1: { id: 'm1', date: '2026-09-28', time: '21:00', time_end: '23:30', court_name: '', court_id: null, level_range: 'elo:933-1000|booked:no', current_players: 1, max_players: 4, price_per_person: 0, creator_id: 'c1' },
+      m2: { id: 'm2', date: '2026-09-30', time: '18:00:00', time_end: '19:30', court_name: 'Skansen Padel', court_id: 'k1', level_range: 'elo:913-980|booked:yes', current_players: 3, max_players: 4, price_per_person: 60, creator_id: 'c2' },
+    },
+    players: {
+      c1: { id: 'c1', full_name: 'Mike Pedersen', name: null, level: 3.5, area: 'Region Hovedstaden', court_side: null },
+      c2: { id: 'c2', full_name: 'Anna Hansen', name: null, level: 3.2, area: 'Nordjylland', court_side: null },
+      p1: { id: 'p1', full_name: 'Mia Mogensen', name: null, level: 3.3, area: 'Nordjylland', court_side: 'Venstre side' },
+    },
+  };
+  const mail = buildDigestEmail([match(1, 'm1'), match(2, 'm2'), makker(1, 'p1')], opts, details);
+  assert.match(mail.html, /Hej Kevin/);
+  assert.match(mail.html, /Torsdag 24\. september/);
+  assert.match(mail.html, />MAN</);
+  assert.match(mail.html, /kl\. 21:00–23:30/);
+  assert.match(mail.html, /Bane ikke valgt endnu · Hovedstaden/);
+  assert.match(mail.html, /Niveau 3\.0–4\.0/);
+  assert.match(mail.html, /3 pladser tilbage/);
+  assert.match(mail.html, /Oprettet af Mike · gratis/);
+  assert.match(mail.html, /Skansen Padel · bane booket/);
+  assert.match(mail.html, /1 plads tilbage/);
+  assert.match(mail.html, /60 kr\. pr\. person/);
+  assert.match(mail.html, /Mia Mogensen/);
+  assert.match(mail.html, /Niveau 3\.3 · Nordjylland · spiller venstre/);
+  assert.match(mail.html, /Meld dig til/);
+  assert.match(mail.html, /icon-192-v2\.png/);
+  assert.equal(mail.preheader, 'Man 28. sep kl. 21:00–23:30: en kamp på dit niveau mangler 3 spillere.');
+  assert.match(mail.text, /MAN 28\. sep kl\. 21:00–23:30 · Bane ikke valgt endnu · Hovedstaden · Niveau 3\.0–4\.0 · 3 pladser tilbage/);
+});
+
+test('uden detaljer bruges beskedens tekst, og mailen virker stadig', () => {
+  const mail = buildDigestEmail([match(1), makker(1)], opts);
+  assert.match(mail.html, /Åben kamp 1/);
+  assert.match(mail.html, /Spiller 1 søger makker/);
+  assert.match(mail.html, />Hej 👋</);
+});
+
+test('mailfunktionen henter kampe og profiler til kortene', () => {
+  assert.match(digestFn, /\.from\("matches"\)[\s\S]{0,200}current_players, max_players, price_per_person, creator_id/);
+  assert.match(digestFn, /\.from\("profiles"\)[\s\S]{0,120}full_name, name, level, area, court_side/);
+  assert.match(digestFn, /recipientName: firstNameOf\(userId\)/);
 });
 
 test('ingen nyheder, ingen mail', () => {
