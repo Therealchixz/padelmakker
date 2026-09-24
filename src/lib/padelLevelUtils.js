@@ -77,11 +77,16 @@ export function formatMatchLevelRangeParts(eloMin, eloMax) {
   };
 }
 
-/** Én linje — bruges i opsummeringer og kvitteringer. */
+/**
+ * Én linje — bruges i opsummeringer og kvitteringer. Kun niveau: kampens
+ * niveau vælges i niveau og gemmes blot som ELO via en fast omregning. Vist
+ * som ELO lignede det spillernes rigtige ELO, som stiger med kampe (fx ELO
+ * 1075 på niveau 3,5, mens en 3,2–3,5-kamp stod som "947 – 974 ELO").
+ */
 export function formatMatchLevelRangeLabel(eloMin, eloMax) {
   const parts = formatMatchLevelRangeParts(eloMin, eloMax);
   if (!parts) return null;
-  return `${parts.elo} · ${parts.niveau}`;
+  return parts.niveau;
 }
 
 /** Visning af profilniveau: Playtomic-tal (fx 2,3), evt. med band-label i parentes. */

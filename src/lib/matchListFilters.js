@@ -33,7 +33,7 @@ export function buildKampeMatchLists({
   searchQuery = '',
   listFilter = null,
   profilesById = {},
-  userElo = null,
+  userLevel = null,
   courtFacilitiesById = {},
   completedSortMs = () => 0,
 } = {}) {
@@ -48,7 +48,7 @@ export function buildKampeMatchLists({
       if ((matchPlayers[match.id] || []).length === 0) return false;
       if (isMine && String(match.creator_id) !== currentUserKey) return false;
       if (!matchesSearch(match, searchIndex, searchQuery)) return false;
-      if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userElo, courtFacilitiesById })) return false;
+      if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userLevel, courtFacilitiesById })) return false;
       return true;
     })
     .sort((a, b) => {
@@ -62,7 +62,7 @@ export function buildKampeMatchLists({
     if (getMatchStatus(match) !== 'in_progress') return false;
     if (isMine && !joinedIds.has(String(match.id))) return false;
     if (!matchesSearch(match, searchIndex, searchQuery)) return false;
-    if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userElo, courtFacilitiesById })) return false;
+    if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userLevel, courtFacilitiesById })) return false;
     return true;
   });
 
@@ -71,7 +71,7 @@ export function buildKampeMatchLists({
       if (getMatchStatus(match) !== 'completed') return false;
       if (isMine && !joinedIds.has(String(match.id))) return false;
       if (!matchesSearch(match, searchIndex, searchQuery)) return false;
-      if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userElo, courtFacilitiesById })) return false;
+      if (!matchPassesKampeListFilter(match, listFilter, { profilesById, userLevel, courtFacilitiesById })) return false;
       return true;
     })
     .sort((a, b) => completedSortMs(b, matchResults) - completedSortMs(a, matchResults));

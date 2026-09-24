@@ -6,6 +6,7 @@ import {
   defaultKampeListFilter,
 } from '../../lib/kampeListFilterCore';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
+import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 
 import { COURT_FACILITY_CATALOG } from '../../lib/courtFacilities.jsx';
 
@@ -33,7 +34,7 @@ export function KampeFilterSheet({
   onScopeChange,
   listFilter,
   onListFilterChange,
-  myElo = null,
+  myLevel = null,
   resultCount,
   format = 'padel',
   showRegionFilter = true,
@@ -47,12 +48,13 @@ export function KampeFilterSheet({
 
   const filter = useMemo(() => normalizeKampeListFilter(listFilter), [listFilter]);
 
+  const n = resultCount ?? 0;
   const resultLabel =
     format === 'padel'
-      ? `${resultCount ?? 0} kampe`
+      ? `${n} ${n === 1 ? 'kamp' : 'kampe'}`
       : format === 'americano'
-        ? `${resultCount ?? 0} turneringer`
-        : `${resultCount ?? 0} ligaer`;
+        ? `${n} ${n === 1 ? 'turnering' : 'turneringer'}`
+        : `${n} ${n === 1 ? 'liga' : 'ligaer'}`;
 
   const setRegion = (regionId) => {
     onListFilterChange?.({ ...filter, regionId });
@@ -170,10 +172,10 @@ export function KampeFilterSheet({
 
         {showEloFilter ? (
           <div className="pm-kampe-v2-sheet-section">
-            <div className="pm-kampe-v2-sheet-label">ELO-niveau</div>
-            {myElo != null ? (
+            <div className="pm-kampe-v2-sheet-label">Niveau</div>
+            {myLevel != null ? (
               <p className="pm-kampe-v2-sheet-copy" style={{ marginTop: 0, marginBottom: 10 }}>
-                Din ELO <strong>{Math.round(Number(myElo) || 1000)}</strong> — vælg hvor tæt kampe skal matche dit niveau.
+                Dit niveau er <strong>{formatPlaytomicLevel(myLevel)}</strong>. Vælg hvor tæt kampene skal være på det.
               </p>
             ) : null}
             <div className="pm-kampe-v2-sheet-pills">
@@ -189,7 +191,7 @@ export function KampeFilterSheet({
               ))}
             </div>
             <p className="pm-kampe-v2-sheet-copy">
-              Viser kampe hvor kampens ELO-interval overlapper dit valgte spænd.
+              Viser kampe, hvis niveau overlapper dit valgte spænd.
             </p>
           </div>
         ) : null}

@@ -25,7 +25,6 @@ export function CreateMatchForm({
   setNewMatch,
   creating,
   createMatch,
-  myElo,
   defaultLevelElo,
   venueOptions,
   createVenueOptions,
@@ -101,7 +100,7 @@ export function CreateMatchForm({
             </div>
           )}
           <p style={{ fontSize: "13px", color: theme.textMid, margin: "0 0 16px" }}>
-            Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.
+            Du sættes automatisk på Hold 1.
           </p>
           <div className="pm-form-2col">
             <div style={{ gridColumn: "1 / -1" }}>

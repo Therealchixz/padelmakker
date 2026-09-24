@@ -48,10 +48,10 @@ test('knappens rettighedstjek foelger admin-PIN', () => {
   );
 });
 
-test('ELO-filterchippen viser den aktuelle ELO', () => {
-  // Etiketten skrives af getKampeListEloBandLabel(..., myElo); uden myElo i
+test('niveau-filterchippen viser det aktuelle niveau', () => {
+  // Etiketten skrives af getKampeListLevelBandLabel(..., myLevel); uden myLevel i
   // listen stod baandet fast paa vaerdien fra foerste rendering.
   const deps = depsEfter(kampe, 'const activeFilterChips = useMemo(');
-  assert.match(deps, /\bmyElo\b/);
+  assert.match(deps, /\bmyLevel\b/);
   assert.match(deps, /\bonListFilterChange\b/);
 });

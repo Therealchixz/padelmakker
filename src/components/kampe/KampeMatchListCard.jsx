@@ -208,7 +208,6 @@ export function KampeMatchListCard({
             </div>
             {!isCompleted && levelRangeParts ? (
               <div className="pm-kampe-v2-list-meta-levels">
-                <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--elo">{levelRangeParts.elo}</span>
                 <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--niveau">{levelRangeParts.niveau}</span>
               </div>
             ) : null}
