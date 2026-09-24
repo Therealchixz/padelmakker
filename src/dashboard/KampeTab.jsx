@@ -3051,7 +3051,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
           {kampeFormat === 'padel' && (
             <>
-              {/* Samme "Jeg vil spille" som på Hjem: dag + tidsrum → appen finder tre andre. */}
+              {/* Samme "Jeg vil spille" som på Hjem: dag + tidsrum → en åben kamp, og spillere på samme niveau får besked. */}
               <PlayIntentPanel
                 user={user}
                 showToast={showToast}
