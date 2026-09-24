@@ -3,8 +3,9 @@ import test from 'node:test';
 import { APP_REGIONS, canonicalAppRegion, isValidAppRegion } from '../../src/lib/appRegions.js';
 import {
   getKampeListRegionLabel,
-  kampeEloFilterRangeFromUser,
-  matchPassesKampeEloBandFilter,
+  kampeLevelFilterRangeFromUser,
+  matchPassesKampeLevelBandFilter,
+  getKampeListLevelBandLabel,
   matchPassesKampeRegionFilter,
   normalizeKampeListFilter,
   profileAreaMatchesKampeRegionFilter,
@@ -88,14 +89,18 @@ test('legacy elo-bånd migreres væk', () => {
   assert.equal(f.eloBandId, '');
 });
 
-test('ELO-filter beregnes omkring brugerens rating', () => {
-  assert.deepEqual(kampeEloFilterRangeFromUser('tight', 1250), { min: 1150, max: 1350 });
+// Siden 24. sep. 2026: filteret bruger profilens niveau, ikke ELO. En spiller
+// med ELO 1075 og niveau 3,5 fik før sine egne 3,2–3,5-kampe sorteret fra.
+test('niveau-filter beregnes omkring brugerens niveau', () => {
+  assert.deepEqual(kampeLevelFilterRangeFromUser('tight', 3.5), { min: 3, max: 4 });
+  assert.equal(getKampeListLevelBandLabel('tight', 3.5), '3.0–4.0');
 });
 
-test('ELO-filter overlapper kamp-interval relativt til bruger', () => {
-  const match = { level_range: 'elo:1200-1400|booked:yes' };
-  assert.equal(matchPassesKampeEloBandFilter(match, 'tight', 1250), true);
-  assert.equal(matchPassesKampeEloBandFilter(match, 'tight', 900), false);
+test('niveau-filter overlapper kampens niveau', () => {
+  const match = { level_range: 'elo:947-974|booked:no' }; // niveau 3.2–3.5
+  assert.equal(matchPassesKampeLevelBandFilter(match, 'tight', 3.5), true);
+  assert.equal(matchPassesKampeLevelBandFilter(match, 'tight', 5.0), false);
+  assert.equal(matchPassesKampeLevelBandFilter(match, '', 5.0), true);
 });
 
 test('turnering med bane filtreres på centerets region', () => {

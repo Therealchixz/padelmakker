@@ -4,6 +4,7 @@ import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { btn } from '../../lib/platformTheme';
+import { formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
@@ -85,7 +86,7 @@ export function KampeMatchDetailSheet({
           <span className="pm-kd-chip pm-kd-chip--light">2V2</span>
           {matchPrefs?.min != null && matchPrefs?.max != null ? (
             <span className="pm-kd-chip pm-kd-chip--amber">
-              ELO {matchPrefs.min}–{matchPrefs.max}
+              {formatMatchLevelRangeLabel(matchPrefs.min, matchPrefs.max)}
             </span>
           ) : null}
           <span className={`pm-kd-chip ${heroStatusChipClass(statusBadge.tone)}`}>

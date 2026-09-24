@@ -12,7 +12,7 @@ import { AppModal } from '../components/AppModal';
 
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
-import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
+import { formatPlaytomicLevel, formatMatchLevelRangeLabel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
@@ -1575,7 +1575,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               if (row.type === 'open_match') {
                 const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                 const timeStr = row.time ? matchTimeLabel({ time: row.time, time_end: row.timeEnd }) : '';
-                const eloStr = row.eloMin != null && row.eloMax != null ? `ELO ${row.eloMin}–${row.eloMax}` : '';
+                const eloStr = formatMatchLevelRangeLabel(row.eloMin, row.eloMax) || '';
                 const locLabel = openMatchLocationChipLabel(row.court, row.creatorArea);
                 const subtitleParts = [dateStr, timeStr, locLabel, eloStr].filter(Boolean);
                 const player = { id: row.creatorId, name: row.creatorName };
@@ -1946,7 +1946,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 ) : null}
                 {viewMatch.eloMin != null && viewMatch.eloMax != null ? (
                   <span style={{ fontSize: "11px", border: "1px solid " + theme.green + "33", borderRadius: "999px", padding: "4px 10px", color: theme.green, background: theme.greenBg || theme.surfaceAlt }}>
-                    ELO {viewMatch.eloMin}–{viewMatch.eloMax}
+                    {formatMatchLevelRangeLabel(viewMatch.eloMin, viewMatch.eloMax)}
                   </span>
                 ) : null}
                 {viewMatch.kind === "open" && viewMatch.booked != null ? (

@@ -52,12 +52,12 @@ import {
   normalizeKampeListFilter,
   kampeListFilterIsActive,
   getKampeListRegionLabel,
-  getKampeListEloBandLabel,
+  getKampeListLevelBandLabel,
 } from '../lib/kampeListFilterCore';
 import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, parseMatchLevelRange } from '../lib/matchLevelRange';
-import { defaultMatchLevelEloRange } from '../lib/padelLevelUtils';
+import { defaultMatchLevelEloRange, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   KAMPE_FORMAT_PADEL,
   KAMPE_FORMAT_AMERICANO,
@@ -140,6 +140,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const adminPinPendingChatMatchIdRef = useRef(null);
   const adminPinPendingExpandMatchIdRef = useRef(null);
   const myDisplayName                 = resolveDisplayName(user, authUser);
+  // Profilens niveau (sættes af spilleren) — ikke ELO, som stiger med kampe.
+  const myLevel = profilePlaytomicLevel(user);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
     useProfileEloBundle(user.id, eloSyncKeyKampe);
@@ -2050,10 +2052,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     searchQuery,
     listFilter: kampeListFilter,
     profilesById,
-    userElo: myElo,
+    userLevel: myLevel,
     courtFacilitiesById,
     completedSortMs: matchCompletedSortMs,
-  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo, courtFacilitiesById]);
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myLevel, courtFacilitiesById]);
 
   /* Deep-link: ?create=1 åbner opret-kamp-formularen direkte (fx fra "Opret ny kamp" i makker-invitation). */
   useEffect(() => {
@@ -2938,7 +2940,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (kampeListFilter.eloBandId && kampeFormat === "padel") {
       chips.push({
         id: "elo",
-        label: `ELO ${getKampeListEloBandLabel(kampeListFilter.eloBandId, myElo)} ×`,
+        label: `Niveau ${getKampeListLevelBandLabel(kampeListFilter.eloBandId, myLevel)} ×`,
         onClick: () => onListFilterChange({ ...kampeListFilter, eloBandId: "" }),
       });
     }
@@ -2963,7 +2965,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
     }
     return chips;
-  }, [kampeFormat, user, kampeListFilter, myElo, onListFilterChange]);
+  }, [kampeFormat, user, kampeListFilter, myLevel, onListFilterChange]);
   const showCreatePanel =
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||
@@ -3077,7 +3079,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         onScopeChange={onScopeChange}
         listFilter={kampeListFilter}
         onListFilterChange={onListFilterChange}
-        myElo={myElo}
+        myLevel={myLevel}
         format={kampeFormat}
         resultCount={
           kampeFormat === "padel"
@@ -3256,7 +3258,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           setNewMatch={setNewMatch}
           creating={creating}
           createMatch={createMatch}
-          myElo={myElo}
           venueOptions={venueOptions}
           createVenueOptions={createVenueOptions}
           courtBookedTabs={courtBookedTabs}

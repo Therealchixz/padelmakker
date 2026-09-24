@@ -5,7 +5,8 @@
 
 import { REGIONS } from './platformConstants.js';
 import { BANER_VENUES } from './banerVenues.js';
-import { clampElo, parseMatchLevelRange } from './matchLevelRange.js';
+import { parseMatchLevelRange } from './matchLevelRange.js';
+import { clampPlaytomicLevel, eloRangeToLevelRange, levelRangeForWindow, formatPlaytomicLevel } from './padelLevelUtils.js';
 import {
   canonicalAppRegion,
   LEGACY_CITY_ID_TO_APP_REGION,
@@ -131,25 +132,27 @@ export const KAMPE_LIST_REGION_OPTIONS = [
   })),
 ];
 
-/** Relative ELO-presets — samme som ved oprettelse af kamp. */
+/**
+ * Niveau-spænd omkring brugerens eget niveau (profilen). Før var det ±ELO om
+ * brugerens rating, men kampens niveau er valgt i niveau og kun gemt som ELO
+ * (fast omregning). ELO stiger med kampe, niveau sætter man selv, så en
+ * spiller med ELO 1075 og niveau 3,5 fik sine egne 3,2–3,5-kampe sorteret fra.
+ * Id'erne er de samme som før, så gemte filtre virker.
+ */
 export const KAMPE_LIST_ELO_BANDS = [
   { id: '', label: 'Alle', delta: null },
-  { id: 'tight', label: 'Tæt på mig (±100)', delta: 100 },
-  { id: 'flex', label: 'Fleksibel (±200)', delta: 200 },
-  { id: 'open', label: 'Åben (±350)', delta: 350 },
+  { id: 'tight', label: 'Tæt på mit niveau (±0,5)', delta: 0.5 },
+  { id: 'flex', label: 'Lidt bredere (±1,0)', delta: 1 },
+  { id: 'open', label: 'Bredt (±2,0)', delta: 2 },
 ];
 
 const LEGACY_ELO_BAND_IDS = new Set(['800-1100', '1100-1300', '1300-1500', '1500+']);
 
-/** Beregnet filter-interval omkring brugerens ELO. */
-export function kampeEloFilterRangeFromUser(eloBandId, userElo) {
+/** Niveau-interval omkring brugerens eget niveau. */
+export function kampeLevelFilterRangeFromUser(eloBandId, userLevel) {
   const band = KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId);
   if (!band?.delta) return { min: null, max: null };
-  const elo = clampElo(userElo, 1000);
-  return {
-    min: clampElo(elo - band.delta, elo),
-    max: clampElo(elo + band.delta, elo),
-  };
+  return levelRangeForWindow(clampPlaytomicLevel(userLevel), band.delta);
 }
 
 export function defaultKampeListFilter() {
@@ -190,13 +193,13 @@ export function getKampeListRegionLabel(regionId) {
   return regionShortLabel(canonical);
 }
 
-export function getKampeListEloBandLabel(eloBandId, userElo = null) {
+export function getKampeListLevelBandLabel(eloBandId, userLevel = null) {
   const band = KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId);
   if (!band?.delta) return band?.label || '';
-  const elo = Number(userElo);
-  if (Number.isFinite(elo)) {
-    const { min, max } = kampeEloFilterRangeFromUser(eloBandId, elo);
-    return `${min}–${max}`;
+  const lvl = Number(userLevel);
+  if (Number.isFinite(lvl)) {
+    const { min, max } = kampeLevelFilterRangeFromUser(eloBandId, lvl);
+    return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
   }
   return band.label;
 }
@@ -211,19 +214,16 @@ export function profileAreaMatchesKampeRegionFilter(area, regionId) {
   return fromProfile === target;
 }
 
-function eloRangesOverlap(aMin, aMax, bMin, bMax) {
-  if (aMin == null || aMax == null || bMin == null || bMax == null) return true;
-  return aMin <= bMax && bMin <= aMax;
-}
 
-/** 2v2-kamp: overlap mellem kampens ELO-interval og brugerens valgte spænd. */
-export function matchPassesKampeEloBandFilter(match, eloBandId, userElo = null) {
+/** 2v2-kamp: overlap mellem kampens niveau og brugerens valgte spænd. */
+export function matchPassesKampeLevelBandFilter(match, eloBandId, userLevel = null) {
   if (!eloBandId) return true;
-  const { min, max } = kampeEloFilterRangeFromUser(eloBandId, userElo ?? 1000);
+  const { min, max } = kampeLevelFilterRangeFromUser(eloBandId, userLevel ?? 3);
   if (min == null || max == null) return true;
-  const { min: matchMin, max: matchMax } = parseMatchLevelRange(match?.level_range);
-  if (matchMin == null || matchMax == null) return true;
-  return eloRangesOverlap(matchMin, matchMax, min, max);
+  const { min: eloMin, max: eloMax } = parseMatchLevelRange(match?.level_range);
+  const matchLevels = eloRangeToLevelRange(eloMin, eloMax);
+  if (!matchLevels) return true;
+  return matchLevels.min <= max && min <= matchLevels.max;
 }
 
 /** 2v2-kamp: bane-region slår opretter-region; uden bane → opretterens profil. */
@@ -241,10 +241,10 @@ export function matchPassesKampeFacilityFilter(match, facilities, courtFacilitie
   return facilities.every((f) => set.has(String(f)));
 }
 
-export function matchPassesKampeListFilter(match, filter, { profilesById, userElo, courtFacilitiesById } = {}) {
+export function matchPassesKampeListFilter(match, filter, { profilesById, userLevel, courtFacilitiesById } = {}) {
   const f = normalizeKampeListFilter(filter);
   if (!matchPassesKampeRegionFilter(match, f.regionId, profilesById)) return false;
-  if (!matchPassesKampeEloBandFilter(match, f.eloBandId, userElo)) return false;
+  if (!matchPassesKampeLevelBandFilter(match, f.eloBandId, userLevel)) return false;
   if (!matchPassesKampeFacilityFilter(match, f.facilities, courtFacilitiesById)) return false;
   if (f.onlyOpen && match?.status === 'full') return false;
   if (f.onlyBooked) {
