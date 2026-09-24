@@ -10,6 +10,7 @@ import { handleBookliSlots } from '../padelmakker-server/routes/bookliSlots.js';
 import { handleMatchiSlots } from '../padelmakker-server/routes/matchiSlots.js';
 import { handlePlaytomicSlots } from '../padelmakker-server/routes/playtomicSlots.js';
 import { handleCalendarIcs } from '../padelmakker-server/routes/calendarIcs.js';
+import { handleMatchPreview } from '../padelmakker-server/routes/matchPreview.js';
 
 export default async function handler(req, res) {
   const slug = typeof req.query?.slug === 'string' ? req.query.slug : '';
@@ -18,6 +19,8 @@ export default async function handler(req, res) {
     case 'calendar':
     case 'calendar.ics':
       return handleCalendarIcs(req, res);
+    case 'kamp-preview':
+      return handleMatchPreview(req, res);
     case 'halbooking-slots':
       return handleHalbookingSlots(req, res);
     case 'halbooking-skansen-padel':

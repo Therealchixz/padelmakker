@@ -326,10 +326,8 @@ export function AuthProvider({ children }) {
         const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) {
-          loadProfileRef.current(s.user)
-          void logPendingVisitSource()
-        } else setProfile(null)
+        if (s?.user) loadProfileRef.current(s.user)
+        else setProfile(null)
       } catch (e) {
         if (!cancelled) {
           console.error('Auth init error:', e)
@@ -353,10 +351,7 @@ export function AuthProvider({ children }) {
           // profileLoading true og hele appen erstattes af spinner (blink).
           const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
           loadProfileRef.current(s.user, { quiet: quietRefresh })
-          if (event === 'SIGNED_IN') {
-            void touchLastActiveRef.current(s.user.id)
-            void logPendingVisitSource()
-          }
+          if (event === 'SIGNED_IN') void touchLastActiveRef.current(s.user.id)
         } else {
           profileReqId.current += 1
           setProfile(null)
@@ -385,6 +380,14 @@ export function AuthProvider({ children }) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])
+
+  /**
+   * Kom personen fra et link i en mail eller en delt kamp (?kilde=...), gemmes
+   * det, når profilen findes. Også for nye brugere, der først opretter sig.
+   */
+  useEffect(() => {
+    if (profile?.id) void logPendingVisitSource()
+  }, [profile?.id])
 
   /**
    * Ægte online-presence: meld brugeren til den fælles presence-kanal mens

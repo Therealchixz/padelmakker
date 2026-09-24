@@ -80,6 +80,17 @@
   ],
   "rewrites": [
     {
+      "source": "/kamp/:matchId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterestbot|redditbot|Embedly).*"
+        }
+      ],
+      "destination": "/api/kamp-preview?id=:matchId"
+    },
+    {
       "source": "/kamp.ics",
       "destination": "/api/calendar"
     },

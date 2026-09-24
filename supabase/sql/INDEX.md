@@ -16,8 +16,8 @@ kan efterprøves direkte mod den kørende database.
 | | Antal |
 |---|---|
 | Funktioner i migrations (= i drift) | 164 |
-| ...med en identisk fil i `supabase/sql/` | 119 |
-| ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
+| ...med en identisk fil i `supabase/sql/` | 120 |
+| ...hvor ingen arkivfil matcher (alle er forældede) | 27 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
@@ -102,7 +102,7 @@ kan efterprøves direkte mod den kørende database.
 | `fetch_match_message_counts` | `00000000000000_baseline_schema.sql` | `fetch_match_message_counts_participants_only.sql`<br>`fetch_match_message_counts_rpc.sql` | — |
 | `format_padel_level` | `00000000000000_baseline_schema.sql` | `canonical_app_region_notify_fix.sql` | — |
 | `get_discovery_digest_candidates` | `20260923213710_discovery_daily_digest.sql` | `discovery_daily_digest.sql` | — |
-| `get_due_reactivation_nudges` | `20260923095114_reactivation_nudge_reaches_by_email_and_counts_makkere.sql` | — | 1 |
+| `get_due_reactivation_nudges` | `20260924173215_reactivation_only_when_new.sql` | `reactivation_only_when_new.sql` | 1 |
 | `get_due_reminders` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `get_growth_campaign_public` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | 1 |
 | `get_my_growth_campaign_status` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | 1 |

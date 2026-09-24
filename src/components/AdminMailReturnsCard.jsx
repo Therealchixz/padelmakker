@@ -28,9 +28,9 @@ export function AdminMailReturnsCard() {
 
   return (
     <div className="pm-ui-card" style={{ marginBottom: 16, padding: '16px 18px' }}>
-      <div className="pm-admin-section-title" style={{ marginBottom: 4 }}>Kommer folk tilbage fra mails?</div>
+      <div className="pm-admin-section-title" style={{ marginBottom: 4 }}>Hvor kommer folk ind fra?</div>
       <div style={{ fontSize: 13, color: theme.textMid, marginBottom: 10 }}>
-        Personer der trykkede på et link i en mail og var logget ind, de sidste {DAYS} dage.
+        Personer der trykkede på et link i en mail eller en delt kamp og derefter var logget ind, de sidste {DAYS} dage.
         {stats ? ` ${mailSentSummary(stats)}.` : ''}
       </div>
       {error ? <div className="pm-admin-error-msg">{error}</div> : null}

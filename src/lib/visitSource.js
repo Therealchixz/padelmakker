@@ -1,18 +1,19 @@
 /**
  * Hvilken mail kom personen fra?
  *
- * Links i mailene har et mærke, fx ?kilde=digest. Ved opstart gemmer appen
- * mærket i sessionStorage og fjerner det fra adressen. Når personen er logget
- * ind (evt. først efter login), sendes det til log_app_return. Så kan vi se,
- * om mailene får folk tilbage.
+ * Links i mailene og i delte kampe har et mærke, fx ?kilde=digest eller
+ * ?kilde=deling. Ved opstart gemmer appen mærket i localStorage og fjerner det
+ * fra adressen. Når personen har en profil (evt. først efter oprettelse, som
+ * ofte sker i en ny fane via bekræftelsesmailen), sendes det til
+ * log_app_return. Så kan vi se, om mails og delinger får folk ind i appen.
  *
  * Ingen supabase-import her, så filen kan testes direkte fra node.
  */
 
 export const VISIT_SOURCE_PARAM = 'kilde';
 export const VISIT_SOURCE_STORAGE_KEY = 'pm_visit_source';
-/** Logger man ikke ind inden for to timer, tæller besøget ikke. */
-export const VISIT_SOURCE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+/** Logger man ikke ind (eller opretter sig) inden for et døgn, tæller det ikke. */
+export const VISIT_SOURCE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function normalizeVisitSource(value) {
   const v = String(value ?? '').trim().toLowerCase();

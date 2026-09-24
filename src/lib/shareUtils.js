@@ -1,6 +1,7 @@
-import { absoluteUrl } from './siteMeta';
-import { formatMatchDateDa, matchTimeLabel } from './matchDisplayUtils';
-import { buildPublicMatchPath, buildPublicTournamentPath } from './publicShareRoutes.js';
+import { absoluteUrl, SITE_ORIGIN } from './siteMeta';
+import { buildMatchShareText, shareMatchUrl } from './matchShareText.js';
+import { formatMatchDateDa } from './matchDisplayUtils';
+import { buildPublicTournamentPath } from './publicShareRoutes.js';
 
 /**
  * @typedef {{ ok: boolean; method: 'share' | 'clipboard' | 'none'; error?: string }} ShareResult
@@ -61,30 +62,16 @@ export async function shareInviteFriendToApp() {
 /**
  * @param {object} options
  * @param {object} options.match
- * @param {string} [options.hostName]
  * @returns {Promise<ShareResult>}
  */
-export async function sharePadelMatch({ match, hostName }) {
+export async function sharePadelMatch({ match }) {
   if (!match?.id) {
     return { ok: false, method: 'none', error: 'Kamp mangler' };
   }
-
-  const dateTxt = match.date ? formatMatchDateDa(match.date) : '';
-  const timeTxt = match.time ? matchTimeLabel(match.time) : '';
-  const court = match.court_name || 'padel';
-  const when = [dateTxt, timeTxt].filter(Boolean).join(' kl. ');
-  const host = hostName?.trim() || 'En spiller';
-
-  const url = absoluteUrl(buildPublicMatchPath(String(match.id)));
-  const text = [
-    `${host} inviterer dig til en padel-kamp på ${court}${when ? ` (${when})` : ''}.`,
-    'Log ind eller opret gratis profil på PadelMakker for at se kampen og tilmelde dig:',
-  ].join('\n');
-
   return shareViaWebOrClipboard({
     title: 'Padel-kamp på PadelMakker',
-    text,
-    url,
+    text: buildMatchShareText(match),
+    url: shareMatchUrl(SITE_ORIGIN, match.id),
   });
 }
 

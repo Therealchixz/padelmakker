@@ -74,8 +74,9 @@ export function PrivacyPage() {
         reklame for andre produkter og videregiver den ikke til andre end de databehandlere, der er nævnt nedenfor.
       </p>
       <p style={p}>
-        Links i vores mails har et lille mærke, der fortæller hvilken slags mail de kom fra (fx den daglige mail). Når
-        du trykker på et link og er logget ind, gemmer vi, at du kom fra den mail, og hvornår. Vi bruger det kun til at
+        Links i vores mails og links til kampe, som spillere deler, har et lille mærke, der fortæller hvor de kom fra
+        (fx den daglige mail eller en delt kamp). Når du trykker på et link og er logget ind, gemmer vi, hvor du kom
+        fra, og hvornår. Vi bruger det kun til at
         se, om mailene er nyttige, så vi kan sende færre og bedre mails. Vi måler ikke, om du åbner mailen, og følger
         dig ikke rundt på andre sider. Oplysningen slettes sammen med din konto.
       </p>
