@@ -11,16 +11,16 @@ import {
   resolveMakkerFilterRegion,
   resolveMakkerFilterLevel,
   buildProfilePatchFromMakkerSearchPrefs,
-  DEFAULT_LEVEL_WINDOW,
   PLAY_STYLES,
   AVAILABILITY,
 } from '../lib/makkerSearchFilterUtils';
 import {
-  levelRangeForMakkerPartnerPref,
+  makkerFilterLevelBounds,
   MAKKER_AVAILABILITY_FLEXIBLE,
   availabilityMeansAllTimeSlots,
 } from '../lib/makkerFilterMatch';
-import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
+import { formatPlaytomicLevel, formatPlaytomicLevelRange, profilePlaytomicLevel } from '../lib/padelLevelUtils';
+import { LevelRangeSlider } from '../components/LevelRangeSlider';
 import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
@@ -49,33 +49,11 @@ function canonicalIntentKey(value) {
 
 
 
-/**
- * Ét samlet valg for makkerens niveau. Gemmes som de samme to felter som før
- * (partnerLevel + levelWindow), så matchningen ikke ændres.
- */
-const MAKKER_LEVEL_CHOICES = [
-  { key: 'close', label: 'Tæt på mit niveau', partnerLevel: 'same', levelWindow: 0.2 },
-  { key: 'broad', label: 'Omkring mit niveau, lidt bredere', partnerLevel: 'same', levelWindow: 0.5 },
-  { key: 'stronger', label: 'Lidt stærkere end mig', partnerLevel: 'stronger', levelWindow: 0.2 },
-  { key: 'weaker', label: 'Lidt svagere end mig', partnerLevel: 'weaker', levelWindow: 0.2 },
-  { key: 'wide', label: 'Alle niveauer', partnerLevel: 'wide', levelWindow: 0.2 },
-];
-
 const COURT_SIDE_CHOICES = [
   { value: 'any', label: 'Ligegyldigt' },
   { value: 'venstre', label: 'Venstre side' },
   { value: 'hojre', label: 'Højre side' },
 ];
-
-function levelChoiceKey(partnerLevel, levelWindow) {
-  const pref = partnerLevel || 'same';
-  if (pref === 'same') return (Number(levelWindow) || DEFAULT_LEVEL_WINDOW) > 0.3 ? 'broad' : 'close';
-  return pref;
-}
-
-function levelRangeSummary(min, max) {
-  return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
-}
 
 function countMakkerFilterExtras(p) {
   return [
@@ -135,7 +113,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   const description = describeMakkerFilter(prefs, user);
   const regionOk = Boolean(resolveMakkerFilterRegion(prefs, user) || prefs.region);
-  const selectedLevelChoice = levelChoiceKey(prefs.partnerLevel, prefs.levelWindow);
+  const levelBounds = makkerFilterLevelBounds(prefs, filterLevel, user);
 
   const handleSave = async () => {
     if (!isMakkerFilterConfigured(prefs, user) && !prefs.region) {
@@ -150,7 +128,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     try {
       const wasMakkerOn = isProfileMakkerFeedVisible(user);
       const patch = buildProfilePatchFromMakkerSearchPrefs(
-        { ...prefs, myLevel: profileLevel },
+        { ...prefs, myLevel: profileLevel, levelMin: levelBounds.min, levelMax: levelBounds.max },
         user,
       );
       await updateProfile(patch);
@@ -232,41 +210,28 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         ))}
       </div>
 
-      {/* Ét valg for niveau. Før skulle man først vælge retning (svagere/samme/
-          stærkere/fra profilen) og derefter en tolerance på ±0,1-0,5. */}
+      {/* Man vælger selv fra og til (samme skyder som Opret kamp). Færdige
+          spænd som "tæt på mit niveau" (±0,2) var for grove: 3,3 og 3,7 kan
+          være meget forskellige spillere. */}
       <div style={labelStyle}>Makkerens niveau</div>
       <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 8px', lineHeight: 1.45 }}>
         Dit niveau er <strong style={{ color: theme.text }}>{formatPlaytomicLevel(profileLevel)}</strong>.
+        Vælg selv, hvilket niveau din makker skal have.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-        {MAKKER_LEVEL_CHOICES.map((choice) => {
-          const active = choice.key === selectedLevelChoice;
-          const range = levelRangeForMakkerPartnerPref(filterLevel, choice.levelWindow, choice.partnerLevel, user);
-          return (
-            <button
-              key={choice.key}
-              type="button"
-              aria-pressed={active}
-              onClick={() => set({ partnerLevel: choice.partnerLevel, levelWindow: choice.levelWindow })}
-              style={{
-                ...btn(active),
-                textAlign: 'left',
-                padding: '10px 12px',
-                fontSize: 13,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 10,
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{choice.label}</span>
-              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                {choice.partnerLevel === 'wide' ? 'Alle' : levelRangeSummary(range.min, range.max)}
-              </span>
-            </button>
-          );
-        })}
+      <div className="pm-level-range-box">
+        <LevelRangeSlider
+          minVal={levelBounds.min}
+          maxVal={levelBounds.max}
+          step={0.1}
+          onMinChange={(v) => set({ levelMin: v, levelMax: levelBounds.max })}
+          onMaxChange={(v) => set({ levelMin: levelBounds.min, levelMax: v })}
+        />
       </div>
+      <p className="pm-level-range-hint" style={{ marginBottom: 20 }}>
+        {levelBounds.min <= 1 && levelBounds.max >= 7
+          ? 'Spillere på alle niveauer matcher.'
+          : `Spillere på niveau ${formatPlaytomicLevelRange(levelBounds.min, levelBounds.max)} matcher.`}
+      </p>
 
       <div style={labelStyle}>Hvornår kan du spille? (valgfrit)</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
