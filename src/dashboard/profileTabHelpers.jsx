@@ -23,6 +23,7 @@ export function profileFormState(p, authMeta = {}) {
     levelNumeric: profilePlaytomicLevel(p),
     play_style: p.play_style || "Ved ikke endnu",
     court_side: p.court_side || "",
+    intent_now: p.intent_now || "",
     bio: p.bio || "",
     avatar: p.avatar || "🎾",
     availability: normalizeStringArrayField(p.availability),

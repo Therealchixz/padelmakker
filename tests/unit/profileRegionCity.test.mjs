@@ -28,7 +28,10 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   const queries = readFileSync(join(dir, '../../src/lib/profileQueries.js'), 'utf8');
   assert.match(queries, /attachResolvedCityCoords/);
   assert.doesNotMatch(onboarding, /seeking_match/);
-  assert.doesNotMatch(onboarding, /intent_now/);
+  // intent_now blev taget ud af oprettelsen sammen med de andre matchmaking-
+  // felter. Ejeren valgte 24. sep. 2026 at spørge om netop den igen
+  // ("Hvad søger du mest?", valgfri), fordi kun 5 af 99 havde den.
+  assert.match(onboarding, /Hvad søger du mest\?/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);
   assert.match(profilTab, /Vi bruger din by til at vise ca\. afstand/);
   assert.match(profilTab, /Tips om åbne kampe nær dig/);

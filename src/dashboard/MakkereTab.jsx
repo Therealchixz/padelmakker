@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles, fetchMakkerePlayerProfileById } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, makkerMatchBadge } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, COURT_SIDES, intentDisplayLabel } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
@@ -935,6 +935,7 @@ export function MakkereTab({ user, showToast }) {
                       formatProfileLocationLine(user, p),
                       `${displayGames(p)} kampe`,
                       p.court_side,
+                      intentDisplayLabel(p.intent_now),
                     ].filter(Boolean).join(' · ')}
                   </div>
                   {p.bio && <PlayerBioPreview bio={p.bio} />}

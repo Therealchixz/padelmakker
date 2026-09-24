@@ -22,6 +22,8 @@ import {
 } from '../lib/onboardingStyles';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
+import { SIGNUP_INTENTS } from '../lib/signupIntents.js';
+import { LevelQuiz } from '../components/LevelQuiz';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
@@ -75,7 +77,8 @@ export function OnboardingPage() {
   const [err, setErr]             = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showFineTune, setShowFineTune] = useState(false);
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", latitude: null, longitude: null, cityLabel: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [showLevelQuiz, setShowLevelQuiz] = useState(false);
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", intent_now: "", area: "", city: "", latitude: null, longitude: null, cityLabel: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -402,6 +405,7 @@ export function OnboardingPage() {
         level: levelNum,
         play_style: form.style,
         court_side: form.court_side || null,
+        intent_now: form.intent_now || null,
         area: form.area,
         city: form.city.trim(),
         latitude: Number(form.latitude),
@@ -786,6 +790,32 @@ export function OnboardingPage() {
           </button>
         );
       })}
+      {showLevelQuiz ? (
+        <LevelQuiz
+          onUse={(lvl) => { set("levelNumeric", lvl); setShowLevelQuiz(false); }}
+          onClose={() => setShowLevelQuiz(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowLevelQuiz(true)}
+          style={{
+            width: "100%",
+            border: `1.5px dashed ${theme.accent}`,
+            background: "transparent",
+            color: theme.accent,
+            fontWeight: 700,
+            fontSize: "13.5px",
+            borderRadius: "12px",
+            padding: "11px 14px",
+            margin: "2px 0 10px",
+            cursor: "pointer",
+            fontFamily: font,
+          }}
+        >
+          Ikke sikker? Svar på 4 hurtige spørgsmål →
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setShowFineTune(v => !v)}
@@ -836,6 +866,23 @@ export function OnboardingPage() {
           </select>
         </div>
         <div style={fieldHint}>Spillestil og din foretrukne side på banen.</div>
+      </div>
+      <div style={{ marginTop: "14px" }}>
+        <label style={obLabel}>Hvad søger du mest? <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {SIGNUP_INTENTS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={form.intent_now === value}
+              onClick={() => set("intent_now", form.intent_now === value ? "" : value)}
+              style={chipStyle(form.intent_now === value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div style={fieldHint}>Så matcher vi dig med spillere, der vil det samme.</div>
       </div>
     </div>,
 
