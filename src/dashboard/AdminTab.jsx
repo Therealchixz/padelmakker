@@ -22,6 +22,7 @@ import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { AdminUserEditModal } from './AdminUserEditModal';
+import { AdminMailReturnsCard } from '../components/AdminMailReturnsCard';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { formatSignupDateDa } from '../lib/adminUserFormat';
 import { sortAdminUsers, nextSortConfig } from '../lib/adminUserSort';
@@ -1429,6 +1430,8 @@ export function AdminTab({ initialSubTab = null }) {
               </button>
             ))}
           </div>
+
+          <AdminMailReturnsCard />
 
           <div className="pm-ui-card" style={{ marginBottom: 16, padding: '16px 18px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>

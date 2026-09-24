@@ -96,6 +96,20 @@ export function copenhagenDateLabel(now: Date = new Date()): string {
   return `${WEEKDAYS[d.weekday]} ${d.day}. ${MONTHS[d.month - 1]}`;
 }
 
+/**
+ * Mærker et link med hvilken mail det kom fra, fx ?kilde=digest. Appen gemmer
+ * mærket, når personen er logget ind (log_app_return), så vi kan se, om
+ * mailene får folk tilbage. Framelding og privatlivspolitik mærkes ikke.
+ */
+export function withKilde(url: string, kilde: string | null | undefined): string {
+  const k = String(kilde || "").trim().toLowerCase();
+  if (!k || !/^[a-z0-9_-]{1,32}$/.test(k)) return url;
+  const hashAt = url.indexOf("#");
+  const base = hashAt >= 0 ? url.slice(0, hashAt) : url;
+  const hash = hashAt >= 0 ? url.slice(hashAt) : "";
+  return `${base}${base.includes("?") ? "&" : "?"}kilde=${encodeURIComponent(k)}${hash}`;
+}
+
 function escapeHtml(value: string) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -213,9 +227,12 @@ type PlayerCard = {
   fallback: string;
 };
 
-function buildMatchCard(it: DigestItem, details: DigestDetails, site: string): MatchCard {
+function buildMatchCard(it: DigestItem, details: DigestDetails, site: string, kilde: string): MatchCard {
   const m = it.match_id ? details.matches?.[it.match_id] : undefined;
-  const link = it.match_id ? `${site}/dashboard/kampe/2v2/${encodeURIComponent(it.match_id)}` : `${site}/dashboard/kampe`;
+  const link = withKilde(
+    it.match_id ? `${site}/dashboard/kampe/2v2/${encodeURIComponent(it.match_id)}` : `${site}/dashboard/kampe`,
+    kilde,
+  );
   const fallback = String(it.body || it.title || "").trim();
   if (!m) {
     return { dateShort: null, headline: fallback || "Ny kamp", place: "", level: "", spotsLeft: null, creator: "", price: "", link, fallback };
@@ -249,9 +266,12 @@ function buildMatchCard(it: DigestItem, details: DigestDetails, site: string): M
   };
 }
 
-function buildPlayerCard(it: DigestItem, details: DigestDetails, site: string): PlayerCard {
+function buildPlayerCard(it: DigestItem, details: DigestDetails, site: string, kilde: string): PlayerCard {
   const p = it.entity_id ? details.players?.[it.entity_id] : undefined;
-  const link = it.entity_id ? `${site}/dashboard/makkere?profile=${encodeURIComponent(it.entity_id)}` : `${site}/dashboard/makkere`;
+  const link = withKilde(
+    it.entity_id ? `${site}/dashboard/makkere?profile=${encodeURIComponent(it.entity_id)}` : `${site}/dashboard/makkere`,
+    kilde,
+  );
   const fallback = String(it.body || it.title || "").trim();
   const name = fullName(p);
   if (!p || !name) {
@@ -341,25 +361,87 @@ function preheaderFor(matchCards: MatchCard[], playerCards: PlayerCard[]) {
   return "Nye kampe og makkere, der passer til dig.";
 }
 
+type ShellParts = {
+  preheader: string;
+  logo: string;
+  todayLabel: string;
+  greeting: string;
+  /** Html: teksten under hilsenen i den blå top. */
+  summaryHtml: string;
+  /** Html: indholdet i det hvide kort. */
+  bodyHtml: string;
+  /** Html: linjerne i foden under kortet. */
+  footerHtml: string;
+};
+
+/** Mailens ramme: logo og dato, blå top med hilsen, hvidt kort og fod. */
+function emailShellHtml(v: ShellParts): string {
+  return `<!doctype html>
+<html lang="da">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:0;background:${PAGE_BG};font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${TEXT}">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(v.preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG}">
+<tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+  <tr><td style="padding:0 4px 14px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:middle">
+        <img src="${escapeHtml(v.logo)}" width="32" height="32" alt="" style="vertical-align:middle;border-radius:8px;border:0">
+        <span style="font-size:16px;font-weight:800;color:${NAVY};vertical-align:middle;margin-left:6px">PadelMakker</span>
+      </td>
+      <td align="right" style="font-size:12px;color:${TEXT_LIGHT}">${escapeHtml(v.todayLabel)}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="background:${NAVY};border-radius:16px 16px 0 0;padding:26px 24px 22px;color:#FFFFFF">
+    <div style="font-size:22px;font-weight:800;line-height:1.25;margin:0 0 6px;color:#FFFFFF">${escapeHtml(v.greeting)} 👋</div>
+    <div style="font-size:15px;line-height:1.5;color:#D6E0F5">${v.summaryHtml}</div>
+  </td></tr>
+  <tr><td style="background:#FFFFFF;border-radius:0 0 16px 16px;padding:8px 20px 22px">
+    ${v.bodyHtml}
+  </td></tr>
+  <tr><td style="padding:18px 12px 0;font-size:12px;line-height:1.55;color:${TEXT_LIGHT};text-align:center">
+    ${v.footerHtml}
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+function legalLineHtml(opts: { cvr: string }, site: string) {
+  return `<div style="margin-top:10px;font-size:11px;color:#8795AA">PadelMakker · CVR ${escapeHtml(opts.cvr)} · <a href="${escapeHtml(site)}/privatlivspolitik" style="color:#8795AA">Privatlivspolitik</a></div>`;
+}
+
+export type EmailOpts = {
+  siteUrl: string;
+  unsubLink: string;
+  cvr: string;
+  /** Mærket på links (withKilde). Standard: "digest". */
+  kilde?: string;
+};
+
 export function buildDigestEmail(
   items: DigestItem[],
-  opts: { siteUrl: string; unsubLink: string; cvr: string },
+  opts: EmailOpts,
   details: DigestDetails = {},
 ): DigestEmail | null {
   const { matches, makkere } = splitItems(items);
   if (matches.length === 0 && makkere.length === 0) return null;
 
   const site = opts.siteUrl.replace(/\/+$/, "");
-  const prefsLink = `${site}/dashboard/notifikationer`;
-  const kampeLink = `${site}/dashboard/kampe`;
-  const makkereLink = `${site}/dashboard/makkere`;
+  const kilde = opts.kilde ?? "digest";
+  const prefsLink = withKilde(`${site}/dashboard/notifikationer`, kilde);
+  const kampeLink = withKilde(`${site}/dashboard/kampe`, kilde);
+  const makkereLink = withKilde(`${site}/dashboard/makkere`, kilde);
   const logo = `${site}/icon-192-v2.png`;
   const name = String(details.recipientName || "").trim();
   const greeting = name ? `Hej ${name}` : "Hej";
   const todayLabel = details.todayLabel ?? copenhagenDateLabel();
 
-  const matchCards = matches.map((it) => buildMatchCard(it, details, site));
-  const playerCards = makkere.map((it) => buildPlayerCard(it, details, site));
+  const matchCards = matches.map((it) => buildMatchCard(it, details, site, kilde));
+  const playerCards = makkere.map((it) => buildPlayerCard(it, details, site, kilde));
   const shownMatches = matchCards.slice(0, MAX_ITEMS_PER_SECTION);
   const shownPlayers = playerCards.slice(0, MAX_ITEMS_PER_SECTION);
   const moreMatches = matchCards.length - shownMatches.length;
@@ -417,45 +499,183 @@ export function buildDigestEmail(
     if (morePlayers > 0) sectionsHtml += moreRowHtml(morePlayers, makkereLink, morePlayers === 1 ? "spiller" : "spillere");
   }
 
-  const html = `<!doctype html>
-<html lang="da">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"></head>
-<body style="margin:0;padding:0;background:${PAGE_BG};font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${TEXT}">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG}">
-<tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
-  <tr><td style="padding:0 4px 14px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td style="vertical-align:middle">
-        <img src="${escapeHtml(logo)}" width="32" height="32" alt="" style="vertical-align:middle;border-radius:8px;border:0">
-        <span style="font-size:16px;font-weight:800;color:${NAVY};vertical-align:middle;margin-left:6px">PadelMakker</span>
-      </td>
-      <td align="right" style="font-size:12px;color:${TEXT_LIGHT}">${escapeHtml(todayLabel)}</td>
-    </tr></table>
-  </td></tr>
-  <tr><td style="background:${NAVY};border-radius:16px 16px 0 0;padding:26px 24px 22px;color:#FFFFFF">
-    <div style="font-size:22px;font-weight:800;line-height:1.25;margin:0 0 6px;color:#FFFFFF">${escapeHtml(greeting)} 👋</div>
-    <div style="font-size:15px;line-height:1.5;color:#D6E0F5">${summaryHtml}</div>
-  </td></tr>
-  <tr><td style="background:#FFFFFF;border-radius:0 0 16px 16px;padding:8px 20px 22px">
-    ${sectionsHtml}
+  const html = emailShellHtml({
+    preheader,
+    logo,
+    todayLabel,
+    greeting,
+    summaryHtml,
+    bodyHtml: `${sectionsHtml}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td align="center">
       <a href="${escapeHtml(kampeLink)}" style="display:block;background:${NAVY_BG};color:${NAVY};text-decoration:none;font-size:14px;font-weight:700;border-radius:12px;padding:13px 16px">Se alle kampe i appen →</a>
-    </td></tr></table>
-  </td></tr>
-  <tr><td style="padding:18px 12px 0;font-size:12px;line-height:1.55;color:${TEXT_LIGHT};text-align:center">
-    Du får denne mail, fordi du har slået besked om nye kampe og makkere til.<br>
+    </td></tr></table>`,
+    footerHtml: `Du får denne mail, fordi du har slået besked om nye kampe og makkere til.<br>
     Vi samler nyhederne i én mail om dagen kl. 17.<br>
     <a href="${escapeHtml(prefsLink)}" style="color:${NAVY}">Skift hvad du får besked om</a> · <a href="${escapeHtml(opts.unsubLink)}" style="color:${NAVY}">Afmeld mails</a>
-    <div style="margin-top:10px;font-size:11px;color:#8795AA">PadelMakker · CVR ${escapeHtml(opts.cvr)} · <a href="${escapeHtml(site)}/privatlivspolitik" style="color:#8795AA">Privatlivspolitik</a></div>
-  </td></tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
+    ${legalLineHtml(opts, site)}`,
+  });
 
   const itemIds = (items || []).map((it) => it.id).filter(Boolean);
   return { subject, preheader, text, html, itemIds };
+}
+
+// --- Engangsmail til inaktive (send-winback) ------------------------------
+
+export type WinbackEmail = {
+  subject: string;
+  preheader: string;
+  text: string;
+  html: string;
+  matchCount: number;
+  playerCount: number;
+};
+
+/** Det nye i appen, som den inaktive ikke har set. */
+export const WINBACK_NEWS: { title: string; body: string }[] = [
+  {
+    title: "Jeg vil spille",
+    body: "Vælg dag og tidsrum. Vi opretter kampen og giver besked til spillere på dit niveau i nærheden – du skal bare have tre til at sige ja.",
+  },
+  {
+    title: "Vælg selv dit niveau",
+    body: "Sæt selv fra og til, fx 3,0 til 3,6, så du kun hører om kampe og makkere, der passer til dig.",
+  },
+  {
+    title: "Højst én mail om dagen",
+    body: "Kl. 17, og kun når der er noget nyt til dig. Du kan altid slå det fra.",
+  },
+];
+
+function capitalizeName(name: string) {
+  const n = String(name || "").trim();
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+}
+
+/**
+ * Engangsmailen til dem, der ikke har været inde i 30 dage. Samme udseende
+ * som den daglige mail. Har personen kampe eller spillere i nærheden, vises
+ * de som kort; ellers kun det nye i appen og knappen "Jeg vil spille".
+ */
+export function buildWinbackEmail(
+  input: { matchIds: string[]; playerIds: string[] },
+  opts: EmailOpts,
+  details: DigestDetails = {},
+): WinbackEmail {
+  const site = opts.siteUrl.replace(/\/+$/, "");
+  const kilde = opts.kilde ?? "winback";
+  const prefsLink = withKilde(`${site}/dashboard/notifikationer`, kilde);
+  const kampeLink = withKilde(`${site}/dashboard/kampe`, kilde);
+  const playLink = withKilde(`${site}/dashboard`, kilde);
+  const logo = `${site}/icon-192-v2.png`;
+  const name = capitalizeName(String(details.recipientName || ""));
+  const greeting = name ? `Hej ${name}` : "Hej";
+  const todayLabel = details.todayLabel ?? copenhagenDateLabel();
+
+  // Kun kampe og spillere, vi faktisk har detaljerne på. En kamp der er
+  // slettet siden, skal ikke stå som et tomt kort.
+  const matchCards = (input.matchIds || [])
+    .filter((id) => details.matches?.[id])
+    .slice(0, MAX_ITEMS_PER_SECTION)
+    .map((id) => buildMatchCard(
+      { id, type: "match_watch_match", title: null, body: null, match_id: id, entity_id: null, created_at: "" },
+      details, site, kilde,
+    ));
+  const playerCards = (input.playerIds || [])
+    .filter((id) => fullName(details.players?.[id]))
+    .slice(0, MAX_ITEMS_PER_SECTION)
+    .map((id) => buildPlayerCard(
+      { id, type: "makker_suggestion", title: null, body: null, match_id: null, entity_id: id, created_at: "" },
+      details, site, kilde,
+    ));
+
+  const hasItems = matchCards.length > 0 || playerCards.length > 0;
+  const whatParts: string[] = [];
+  if (matchCards.length) whatParts.push(plural(matchCards.length, "åben kamp", "åbne kampe"));
+  if (playerCards.length) whatParts.push(plural(playerCards.length, "spiller der søger makker", "spillere der søger makker"));
+  const what = whatParts.join(" og ");
+
+  const intro = "Det er et stykke tid siden, du var inde på PadelMakker.";
+  const summaryHtml = hasItems
+    ? `${intro} Lige nu er der <b style="color:#FFFFFF">${escapeHtml(what)}</b> på dit niveau tæt på dig.`
+    : `${intro} Siden da er det blevet meget nemmere at komme ud og spille.`;
+  const summaryText = summaryHtml.replace(/<[^>]+>/g, "");
+
+  const shortParts: string[] = [];
+  if (matchCards.length) shortParts.push(plural(matchCards.length, "kamp", "kampe"));
+  if (playerCards.length) shortParts.push(plural(playerCards.length, "makker", "makkere"));
+  const subjectCore = hasItems
+    ? `${shortParts.join(" og ")} på dit niveau nær dig`
+    : "nu er det nemmere at finde nogen at spille padel med";
+  const subject = name ? `${name}, ${subjectCore}` : subjectCore.replace(/^./, (c) => c.toUpperCase());
+  const preheader = hasItems
+    ? preheaderFor(matchCards, playerCards)
+    : "Vælg dag og tid – så finder vi de andre tre.";
+
+  let bodyHtml = "";
+  if (matchCards.length) {
+    bodyHtml += sectionHeadingHtml("Kampe der passer til dig", true);
+    bodyHtml += matchCards.map(matchCardHtml).join("");
+  }
+  if (playerCards.length) {
+    bodyHtml += sectionHeadingHtml("Spillere der søger makker", !matchCards.length);
+    bodyHtml += playerCards.map(playerCardHtml).join("");
+  }
+  bodyHtml += sectionHeadingHtml("Nyt i PadelMakker", !hasItems);
+  bodyHtml += `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${NAVY_BG};border-radius:14px">`
+    + WINBACK_NEWS.map((n, i) => `
+      <tr><td style="padding:${i === 0 ? 14 : 4}px 16px ${i === WINBACK_NEWS.length - 1 ? 14 : 8}px">
+        <div style="font-size:14px;font-weight:700;color:${NAVY}">${escapeHtml(n.title)}</div>
+        <div style="font-size:13px;line-height:1.5;color:${TEXT_MID}">${escapeHtml(n.body)}</div>
+      </td></tr>`).join("")
+    + `</table>`;
+  bodyHtml += `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td align="center">
+      <a href="${escapeHtml(playLink)}" style="display:block;background:${NAVY};color:#FFFFFF;text-decoration:none;font-size:15px;font-weight:700;border-radius:12px;padding:14px 16px">Jeg vil spille →</a>
+    </td></tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px"><tr><td align="center">
+      <a href="${escapeHtml(kampeLink)}" style="display:block;background:${NAVY_BG};color:${NAVY};text-decoration:none;font-size:14px;font-weight:700;border-radius:12px;padding:13px 16px">Se alle kampe i appen</a>
+    </td></tr></table>`;
+
+  const html = emailShellHtml({
+    preheader,
+    logo,
+    todayLabel,
+    greeting,
+    summaryHtml,
+    bodyHtml,
+    footerHtml: `Du får denne mail én gang, fordi du har en profil på PadelMakker og har slået besked om nye kampe og makkere til.<br>
+    <a href="${escapeHtml(prefsLink)}" style="color:${NAVY}">Skift hvad du får besked om</a> · <a href="${escapeHtml(opts.unsubLink)}" style="color:${NAVY}">Afmeld mails</a>
+    ${legalLineHtml(opts, site)}`,
+  });
+
+  const textSections: string[] = [];
+  if (matchCards.length) {
+    textSections.push([
+      "Kampe der passer til dig",
+      ...matchCards.map((c) => {
+        const date = c.dateShort ? `${c.dateShort.weekday} ${c.dateShort.day}. ${c.dateShort.month} ` : "";
+        const line = [`${date}${c.headline}`, c.place, c.level, c.spotsLeft != null ? plural(c.spotsLeft, "plads tilbage", "pladser tilbage") : ""]
+          .filter(Boolean).join(" · ");
+        return `- ${line}\n  Meld dig til: ${c.link}`;
+      }),
+    ].join("\n"));
+  }
+  if (playerCards.length) {
+    textSections.push([
+      "Spillere der søger makker",
+      ...playerCards.map((c) => `- ${[c.name, c.meta].filter(Boolean).join(" · ")}\n  Se profil: ${c.link}`),
+    ].join("\n"));
+  }
+  textSections.push([
+    "Nyt i PadelMakker",
+    ...WINBACK_NEWS.map((n) => `- ${n.title}: ${n.body}`),
+  ].join("\n"));
+  const text = `${greeting}\n\n${summaryText}\n\n${textSections.join("\n\n")}\n\n`
+    + `Jeg vil spille: ${playLink}\nSe alle kampe i appen: ${kampeLink}\n\n`
+    + `Du får denne mail én gang, fordi du har en profil på PadelMakker og har slået besked om nye kampe og makkere til.\n`
+    + `Skift hvad du får besked om: ${prefsLink}\n`
+    + `Afmeld mails med ét klik: ${opts.unsubLink}\n\n`
+    + `PadelMakker · CVR ${opts.cvr} · ${site}/privatlivspolitik`;
+
+  return { subject, preheader, text, html, matchCount: matchCards.length, playerCount: playerCards.length };
 }
