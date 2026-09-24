@@ -125,29 +125,60 @@ export function eloRangeToLevelRange(eloMin, eloMax) {
 }
 
 /**
+ * Selvvalgt niveau fra-til i et filter (levelMin/levelMax). Null, hvis det
+ * ikke er sat (eller kun det ene er sat).
+ */
+export function customFilterLevelBounds(prefs = {}) {
+  const lo = parsePlaytomicLevelField(prefs?.levelMin);
+  const hi = parsePlaytomicLevelField(prefs?.levelMax);
+  if (lo == null || hi == null) return null;
+  return { min: Math.min(lo, hi), max: Math.max(lo, hi) };
+}
+
+/**
+ * Kampens niveau, som opretteren valgte det (level_range "elo:913-980"). Har
+ * kampen intet niveau, bruges opretterens niveau ±0,5 (standarden i Opret kamp).
+ * Samme regel som match_level_bounds i databasen.
+ */
+export function matchLevelBounds(match, creatorProfile) {
+  const range = parseMatchLevelRange(match?.level_range);
+  if (range.min != null && range.max != null) {
+    return eloRangeToLevelRange(range.min, range.max);
+  }
+  return levelRangeForWindow(profilePlaytomicLevel(creatorProfile), MATCH_DEFAULT_LEVEL_WINDOW);
+}
+
+/** Modtagerens ramme i kamp-filteret: selvvalgt spænd, ellers eget niveau. */
+export function matchWatcherLevelBounds(prefs, myLevel) {
+  const custom = customFilterLevelBounds(prefs);
+  if (custom) return custom;
+  const lvl = clampPlaytomicLevel(myLevel);
+  return { min: lvl, max: lvl };
+}
+
+/** Kort tekst om kamp-filterets niveau, fx "Niveau 3.3–3.6" eller "Kampe for niveau 3.2". */
+export function matchFilterLevelLabel(prefs, myLevel) {
+  const custom = customFilterLevelBounds(prefs);
+  if (!custom) return `Kampe for niveau ${formatPlaytomicLevel(myLevel)}`;
+  if (custom.min <= PLAYTOMIC_LEVEL_MIN && custom.max >= PLAYTOMIC_LEVEL_MAX) return 'Alle niveauer';
+  return `Niveau ${formatPlaytomicLevel(custom.min)}–${formatPlaytomicLevel(custom.max)}`;
+}
+
+/**
+ * Passer kampen inden for den ramme, brugeren har valgt? Er der valgt et
+ * spænd i kamp-filteret, skal det overlappe kampens niveau; ellers skal ens
+ * eget niveau ligge inden for kampens niveau. Samme regel som
+ * match_fits_watcher_level i databasen (besked om nye kampe).
+ *
  * @param {number} myLevel
- * @param {number} levelWindow
+ * @param {object} prefs kamp-filteret (levelMin/levelMax)
  * @param {object|null} creatorProfile
  * @param {object} match
  */
-export function matchPassesLevelFilter(myLevel, levelWindow, creatorProfile, match) {
-  const center = clampPlaytomicLevel(myLevel);
-  const { min: filtMin, max: filtMax } = levelRangeForWindow(center, levelWindow);
-  const creatorLevel = profilePlaytomicLevel(creatorProfile);
-
-  if (!levelsOverlap(filtMin, filtMax, creatorLevel, creatorLevel)) {
-    return false;
-  }
-
-  const range = parseMatchLevelRange(match?.level_range);
-  if (range.min != null && range.max != null) {
-    const matchLevels = eloRangeToLevelRange(range.min, range.max);
-    if (matchLevels && !levelsOverlap(filtMin, filtMax, matchLevels.min, matchLevels.max)) {
-      return false;
-    }
-  }
-
-  return true;
+export function matchPassesLevelFilter(myLevel, prefs, creatorProfile, match) {
+  const watcher = matchWatcherLevelBounds(prefs, myLevel);
+  const matchRange = matchLevelBounds(match, creatorProfile);
+  return levelsOverlap(watcher.min, watcher.max, matchRange.min, matchRange.max);
 }
 
 /** Om en spillers profilniveau ligger inden for filterets tolerance. */

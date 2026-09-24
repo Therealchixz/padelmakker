@@ -9,7 +9,7 @@ import {
   profilePlaytomicLevel,
   clampPlaytomicLevel,
   levelRangeForWindow,
-  parsePlaytomicLevelField,
+  customFilterLevelBounds,
 } from './padelLevelUtils.js';
 
 /** @deprecated Legacy modes — brug partnerCourtSide */
@@ -155,10 +155,7 @@ export function levelRangeForMakkerPartnerPref(center, levelWindow, partnerLevel
  * levelWindow). Samme regel i SQL: makker_filter_level_bounds.
  */
 export function customMakkerLevelBounds(prefs = {}) {
-  const lo = parsePlaytomicLevelField(prefs?.levelMin);
-  const hi = parsePlaytomicLevelField(prefs?.levelMax);
-  if (lo == null || hi == null) return null;
-  return { min: Math.min(lo, hi), max: Math.max(lo, hi) };
+  return customFilterLevelBounds(prefs);
 }
 
 /** Niveauspændet et makker-filter matcher. */

@@ -23,8 +23,7 @@ import {
   resolveMakkerFilterRegion,
   resolveMakkerFilterLevel,
 } from './makkerSearchFilterCore.js';
-import { DEFAULT_LEVEL_WINDOW } from './matchSearchFilterCore.js';
-import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
+import { formatPlaytomicLevel, matchWatcherLevelBounds } from './padelLevelUtils.js';
 import {
   makkerFilterLevelBounds,
   partnerCourtSideLabel,
@@ -144,13 +143,6 @@ function formatLevelRange(min, max) {
   return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
 }
 
-function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
-  const lvl = levelResolver(prefs, profile);
-  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = rangeFn(lvl, win, prefs, profile);
-  return formatLevelRange(min, max);
-}
-
 /** Niveau-interval som andre ser ved søger makker (kun tal, ikke «Samme niveau» osv.). */
 export function compactMakkerSeekingLevelDetail(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
@@ -208,12 +200,10 @@ export function compactMatchSeekingDetails(prefs, profile = {}) {
   const lines = [];
   const region = compactRegionLine(resolveFilterRegion(normalized, profile), profile.city);
   pushSeekingDetail(lines, 'Område', region);
-  pushSeekingDetail(lines, 'Niveau', compactLevelLine(
-    normalized,
-    profile,
-    resolveFilterLevel,
-    (lvl, win) => levelRangeForWindow(lvl, win),
-  ));
+  // Selvvalgt spænd i kamp-filteret, ellers spillerens eget niveau (samme
+  // regel som bestemmer, hvilke kampe de får besked om).
+  const { min, max } = matchWatcherLevelBounds(normalized, resolveFilterLevel(normalized, profile));
+  pushSeekingDetail(lines, 'Niveau', min === max ? formatPlaytomicLevel(min) : formatLevelRange(min, max));
   const days = formatSeekingDayKeys(normalized.days);
   if (days) pushSeekingDetail(lines, 'Spilledage', days);
   pushSeekingDetail(lines, 'Tidsrum', seekingAvailabilitySummary(normalized));

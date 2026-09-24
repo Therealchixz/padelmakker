@@ -89,7 +89,10 @@ test('spam-spaerrerne er uroerte', () => {
   assert.match(m.sql, /v_max_per_match constant integer := 8/, 'graensen per kamp skal vaere 8');
   assert.match(m.sql, /v_max_per_day constant integer := 5/, 'dagsgraensen skal vaere 5');
   assert.match(m.sql, /interval '7 days'/, '7-dages gentagelsesspaerren skal bestaa');
-  assert.match(m.sql, /v_elo_window constant integer := 250/, 'ELO-vinduet skal vaere uaendret');
+  // ELO-vinduet paa 250 (ca. 3,75 niveauer om opretterens ELO) er erstattet af
+  // kampens eget niveau og modtagerens ramme - ejerens beslutning 24. sep. 2026.
+  assert.match(m.sql, /match_fits_watcher_level\(p\.match_search_prefs, p\.level::numeric, v_match_min, v_match_max\)/,
+    'modtagere skal filtreres paa niveau');
 });
 
 test('naboregionerne haenger sammen begge veje', () => {

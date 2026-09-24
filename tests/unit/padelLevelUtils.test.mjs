@@ -15,12 +15,13 @@ test('padelLevelUtils maps niveau 1 and 7 to expected ELO band', () => {
 });
 
 test('match filter UI uses niveau not ELO window', () => {
+  // Siden 24. sep. 2026: kampe for mit niveau, eller selvvalgt fra-til.
   const page = readFileSync(join(root, 'src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
-  assert.match(page, /LEVEL_WINDOW_CHOICES/);
-  assert.match(page, /tolLabel/);
-  assert.match(page, /Dit niveau/);
+  assert.match(page, /<LevelRangeSlider/);
+  assert.match(page, /Kampe for mit niveau/);
+  assert.match(page, /Dit niveau er/);
   assert.doesNotMatch(page, /ELO-vindue/);
-  assert.match(page, /Dette styrer hvornår du får besked/);
+  assert.match(page, /Vælg hvilke kampe du vil have besked om/);
 });
 
 test('match filter core stores myLevel and levelWindow', () => {
