@@ -12,8 +12,8 @@ import { CalendarDays, CalendarPlus, ArrowRight, Share2, Copy, Check, MapPin } f
 import { parseMatchLevelRange } from '../../lib/matchLevelRange';
 import { formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
-import { absoluteUrl } from '../../lib/siteMeta';
-import { buildPublicMatchPath } from '../../lib/publicShareRoutes';
+import { SITE_ORIGIN } from '../../lib/siteMeta';
+import { shareMatchUrl } from '../../lib/matchShareText.js';
 
 export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCalendar, onShare }) {
   // "Kopieret!"-kvitteringen hoerer kun til denne boks; den laa foer som
@@ -28,7 +28,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
   const datePart = m.date ? formatMatchDateDa(m.date) : '';
   const timePart = matchTimeLabel(m);
   const timeStr = timePart && timePart !== '—' ? `Kl. ${timePart}` : '';
-  const matchUrl = absoluteUrl(buildPublicMatchPath(m.id));
+  const matchUrl = shareMatchUrl(SITE_ORIGIN, m.id);
   const handleCopy = () => {
     if (!matchUrl) return;
     navigator.clipboard?.writeText(matchUrl).then(() => {
@@ -117,9 +117,22 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           </div>
         </div>
 
-        {/* Share section */}
+        {/* Share section: det hurtigste sted at finde de sidste tre er ens egne venner */}
         <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
           Del kamp
+        </div>
+        <div style={{ margin: '0 18px 10px', fontSize: 13, color: theme.textMid, lineHeight: 1.5 }}>
+          Send kampen til venner på WhatsApp, Messenger eller SMS. De kan se den og melde sig til med det samme.
+        </div>
+        <div style={{ margin: '0 18px 10px' }}>
+          <button
+            type="button"
+            onClick={() => void onShare(m)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+          >
+            <Share2 size={16} />
+            Send til venner
+          </button>
         </div>
         <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
           <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -137,14 +150,6 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
 
         {/* Action buttons */}
         <div style={{ padding: '0 18px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-          <button
-            type="button"
-            onClick={() => void onShare(m)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
-          >
-            <Share2 size={15} />
-            Send invitation til venner
-          </button>
           <button
             type="button"
             onClick={() => onAddToCalendar(m)}

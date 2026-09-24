@@ -14,11 +14,12 @@ import { captureVisitSource } from './lib/visitSource.js'
 
 initSentry()
 
-// ?kilde=... fra et link i en mail: husk det, og fjern det fra adressen.
+// ?kilde=... fra et link i en mail eller en delt kamp: husk det, og fjern det
+// fra adressen.
 try {
-  captureVisitSource(window.location, window.sessionStorage, window.history)
+  captureVisitSource(window.location, window.localStorage, window.history)
 } catch {
-  /* sessionStorage kan være blokeret */
+  /* lageret kan være blokeret */
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

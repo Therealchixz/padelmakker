@@ -5,13 +5,13 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { formatMatchLevelRangeLabel } from '../lib/padelLevelUtils';
 import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes';
 import { buildPublicMatchPath } from '../lib/publicShareRoutes';
 import { authReturnSignupUrl } from '../lib/authReturnPath';
 import { applyPublicShareMeta } from '../lib/publicShareMeta';
+import { matchPreviewMeta, shareCourtLabel, shareSpotsLeft, shareWhenLabel } from '../lib/matchShareText.js';
 
 function matchStatusLabel(status) {
   if (status === 'in_progress') return { text: 'I gang', tone: theme.warm };
@@ -61,13 +61,11 @@ export function PublicMatchPage() {
 
   useEffect(() => {
     if (!row) return;
-    const prefs = parseMatchLevelRange(row.level_range);
-    const levelLabel = formatMatchLevelRangeLabel(prefs?.min, prefs?.max) || 'Alle niveauer';
-    const when = [row.date ? formatMatchDateDa(row.date) : '', row.time ? matchTimeLabel(row.time) : ''].filter(Boolean).join(' · ');
+    const meta = matchPreviewMeta(row);
     applyPublicShareMeta({
       pathname: buildPublicMatchPath(row.id),
-      title: `Padel-kamp${when ? ` · ${when}` : ''} | PadelMakker`,
-      description: `${row.creator_first_name || 'En spiller'} mangler makker (${row.current_players}/${row.max_players} pladser). ${levelLabel}. Opret gratis profil og tilmeld dig.`,
+      title: `${meta.title} | PadelMakker`,
+      description: meta.description,
     });
   }, [row]);
 
@@ -120,8 +118,9 @@ export function PublicMatchPage() {
           const prefs = parseMatchLevelRange(row.level_range);
           const levelLabel = formatMatchLevelRangeLabel(prefs?.min, prefs?.max) || 'Alle niveauer';
           const st = matchStatusLabel(row.status);
-          const when = row.date ? formatMatchDateDa(row.date) : '';
-          const time = row.time ? matchTimeLabel(row.time) : '';
+          const whenLabel = shareWhenLabel(row);
+          const court = shareCourtLabel(row);
+          const left = shareSpotsLeft(row);
           return (
             <>
               <div style={{ background: theme.surface, borderRadius: '14px', border: `1px solid ${theme.border}`, boxShadow: theme.shadow, padding: 'clamp(22px, 5vw, 32px)', marginBottom: '16px' }}>
@@ -129,22 +128,22 @@ export function PublicMatchPage() {
                   Padel-kamp · 2v2
                 </p>
                 <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-                  {row.court_name}
+                  {left > 0 ? `Mangler ${left} ${left === 1 ? 'spiller' : 'spillere'}` : 'Kampen er fuld'}
                 </h1>
                 <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.6, margin: '0 0 18px' }}>
                   {row.creator_first_name || 'En spiller'} leder efter spillere til en padel-kamp på PadelMakker.
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-                  {(when || time) && (
+                  {whenLabel && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: theme.text }}>
                       <CalendarDays size={18} color={theme.accent} aria-hidden />
-                      <span>{[when, time && `kl. ${time}`].filter(Boolean).join(' ')}</span>
+                      <span>{whenLabel.charAt(0).toUpperCase() + whenLabel.slice(1)}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: theme.text }}>
                     <MapPin size={18} color={theme.accent} aria-hidden />
-                    <span>{row.court_name}</span>
+                    <span>{court || 'Bane ikke valgt endnu'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: theme.text }}>
                     <Users size={18} color={theme.accent} aria-hidden />
@@ -162,7 +161,7 @@ export function PublicMatchPage() {
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   <button type="button" onClick={ctaPrimary} style={{ ...btn(true), padding: '12px 20px', fontSize: '14px' }}>
-                    {user && profile ? 'Gå til kampen' : 'Opret profil og tilmeld dig'}
+                    {user && profile ? 'Gå til kampen' : 'Opret gratis profil og meld dig til'}
                   </button>
                   {!(user && profile) && (
                     <button type="button" onClick={ctaSecondary} style={{ ...btn(false), padding: '12px 20px', fontSize: '14px' }}>

@@ -1603,7 +1603,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   };
 
   const shareMatch = async (match) => {
-    const result = await sharePadelMatch({ match, hostName: myDisplayName });
+    const result = await sharePadelMatch({ match });
     const msg = shareResultToastMessage(result);
     if (msg) showToast(msg);
   };

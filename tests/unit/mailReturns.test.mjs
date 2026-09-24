@@ -123,10 +123,14 @@ test('lager der kaster fejl (privat vindue) vælter ikke appen', () => {
   assert.equal(readPendingVisitSource(broken), null);
 });
 
-test('appen sender mærket efter login og ved opstart', () => {
+test('appen sender mærket, når profilen findes (også nye brugere)', () => {
   const auth = read('src/lib/AuthContext.jsx');
-  assert.equal(auth.split('logPendingVisitSource()').length - 1, 2);
-  assert.match(read('src/main.jsx'), /captureVisitSource\(window\.location, window\.sessionStorage, window\.history\)/);
+  assert.match(auth, /if \(profile\?\.id\) void logPendingVisitSource\(\)\n {2}\}, \[profile\?\.id\]\)/);
+  // localStorage: bekræftelsesmailen åbner ofte en ny fane, og sessionStorage er pr. fane.
+  assert.match(read('src/main.jsx'), /captureVisitSource\(window\.location, window\.localStorage, window\.history\)/);
+  const log = read('src/lib/visitSourceLog.js');
+  assert.match(log, /window\.localStorage/);
+  assert.match(log, /data === true/, 'ryddes kun, når det er gemt');
 });
 
 // --- Databasen ----------------------------------------------------------------
@@ -209,12 +213,12 @@ test('send-winback kører ikke af sig selv og holder alle spærrer', () => {
 
 test('admin-kortet viser alle mail-slags, også dem med 0', () => {
   const rows = mailReturnRows({ returns: [{ kilde: 'digest', personer: 3, besoeg: 5 }, { kilde: 'ny', personer: 1, besoeg: 1 }], sent: { discovery: 25 } });
-  assert.deepEqual(rows.map((r) => [r.kilde, r.personer]), [['digest', 3], ['opdagelse', 0], ['paamindelse', 0], ['winback', 0], ['ny', 1]]);
+  assert.deepEqual(rows.map((r) => [r.kilde, r.personer]), [['digest', 3], ['opdagelse', 0], ['paamindelse', 0], ['winback', 0], ['deling', 0], ['ny', 1]]);
   assert.equal(mailSentSummary({ sent: { discovery: 25 } }), 'Sendt: 25 almindelige mails');
   assert.equal(mailSentSummary({ sent: { discovery: 1, winback: 30 } }), 'Sendt: 1 almindelig mail og 30 engangsmails');
-  assert.equal(mailReturnRows(null).length, 4);
+  assert.equal(mailReturnRows(null).length, 5);
 });
 
 test('privatlivspolitikken fortæller om mærket', () => {
-  assert.match(read('src/pages/PrivacyPage.jsx'), /Links i vores mails har et lille mærke/);
+  assert.match(read('src/pages/PrivacyPage.jsx'), /Links i vores mails og links til kampe, som spillere deler/);
 });

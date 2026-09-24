@@ -8,6 +8,7 @@ export const MAIL_SOURCES = [
   { kilde: 'opdagelse', label: 'Mail om kamp i dag/i morgen' },
   { kilde: 'paamindelse', label: 'Ugentlig påmindelse' },
   { kilde: 'winback', label: 'Engangsmail til inaktive' },
+  { kilde: 'deling', label: 'Delte kampe (WhatsApp, SMS …)' },
 ];
 
 /**
