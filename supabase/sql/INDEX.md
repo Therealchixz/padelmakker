@@ -15,8 +15,8 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 160 |
-| ...med en identisk fil i `supabase/sql/` | 115 |
+| Funktioner i migrations (= i drift) | 161 |
+| ...med en identisk fil i `supabase/sql/` | 116 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 28 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
@@ -143,6 +143,7 @@ kan efterprøves direkte mod den kørende database.
 | `match_level_bounds` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | — |
 | `match_players_fill_court_side` | `00000000000000_baseline_schema.sql` | `match_player_court_side.sql`<br>`match_player_court_side_join_fix.sql` | — |
 | `match_players_free_court_side` | `00000000000000_baseline_schema.sql` | `match_player_court_side.sql`<br>`match_player_court_side_join_fix.sql` | — |
+| `match_watcher_region` | `20260924112052_match_notify_uses_filter_region.sql` | `match_notify_uses_filter_region.sql` | — |
 | `messages_enforce_dm_block` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
 | `notifications_dispatch_match_proposal` | `00000000000000_baseline_schema.sql` | `dispatch_push_on_match_proposal.sql` | — |
 | `notify_auto_confirmed_match_result` | `00000000000000_baseline_schema.sql` | — | — |
@@ -153,7 +154,7 @@ kan efterprøves direkte mod den kørende database.
 | `notify_league_invite_declined` | `00000000000000_baseline_schema.sql` | — | — |
 | `notify_makker_watchers` | `20260923100444_makker_watch_button_beats_stale_filter_default.sql` | — | 5 |
 | `notify_match_creator_on_join` | `20260923162656_match_join_notification_grouped.sql` | `match_join_notification_grouped.sql` | 3 |
-| `notify_match_watchers` | `20260924085756_match_notify_follows_level.sql` | `match_notify_follows_level.sql` | 6 |
+| `notify_match_watchers` | `20260924112052_match_notify_uses_filter_region.sql` | `match_notify_uses_filter_region.sql` | 7 |
 | `padel_elo_to_level` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `padel_level_to_elo` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `parse_clock_time` | `00000000000000_baseline_schema.sql` | `play_intent_open_match_notify.sql`<br>`play_intent_pool.sql` | — |

@@ -77,7 +77,8 @@ test('naermeste modtagere kommer foerst, saa graensen paa 8 ikke spildes', () =>
   const m = sidsteMigrationMed(/FUNCTION public\.notify_match_watchers/i);
   assert.match(
     m.sql,
-    /ORDER BY[\s\S]{0,400}canonical_app_region\(p\.area\) = v_creator_region THEN 1 ELSE 0 END\) DESC/,
+    // Siden 24. sep. 2026 er modtagerens region filterets (match_watcher_region), ellers profilens.
+    /ORDER BY[\s\S]{0,400}(canonical_app_region\(p\.area\)|match_watcher_region\(p\.match_search_prefs, p\.area\)) = v_creator_region THEN 1 ELSE 0 END\) DESC/,
     `${m.f}: egen region skal sorteres foerst`,
   );
 });
