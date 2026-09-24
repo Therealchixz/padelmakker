@@ -15,9 +15,9 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 164 |
-| ...med en identisk fil i `supabase/sql/` | 120 |
-| ...hvor ingen arkivfil matcher (alle er forældede) | 27 |
+| Funktioner i migrations (= i drift) | 165 |
+| ...med en identisk fil i `supabase/sql/` | 122 |
+| ...hvor ingen arkivfil matcher (alle er forældede) | 26 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
@@ -35,7 +35,7 @@ kan efterprøves direkte mod den kørende database.
 | `_skip_duplicate_entity_notification` | `00000000000000_baseline_schema.sql` | — | — |
 | `_skip_duplicate_match_notification` | `00000000000000_baseline_schema.sql` | — | — |
 | `admin_adjust_americano_elo` | `00000000000000_baseline_schema.sql` | `admin_adjust_americano_elo.sql` | — |
-| `admin_adjust_elo` | `00000000000000_baseline_schema.sql` | — | 7 |
+| `admin_adjust_elo` | `20260924215817_security_audit_sep2026.sql` | `security_audit_sep2026.sql` | 7 |
 | `admin_audit_log_recent` | `00000000000000_baseline_schema.sql` | `_p3a.sql`<br>`admin_security_phase3.sql`<br>`admin_security_phase3_deploy.sql` | — |
 | `admin_clear_pin_session` | `00000000000000_baseline_schema.sql` | `admin_pin_guard.sql` | — |
 | `admin_correct_americano_tournament` | `00000000000000_baseline_schema.sql` | — | 3 |
@@ -148,6 +148,7 @@ kan efterprøves direkte mod den kørende database.
 | `match_players_free_court_side` | `00000000000000_baseline_schema.sql` | `match_player_court_side.sql`<br>`match_player_court_side_join_fix.sql` | — |
 | `match_watcher_region` | `20260924112052_match_notify_uses_filter_region.sql` | `match_notify_uses_filter_region.sql` | — |
 | `messages_enforce_dm_block` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
+| `messages_guard_client_update` | `20260924215817_security_audit_sep2026.sql` | `security_audit_sep2026.sql` | — |
 | `notifications_dispatch_match_proposal` | `00000000000000_baseline_schema.sql` | `dispatch_push_on_match_proposal.sql` | — |
 | `notify_auto_confirmed_match_result` | `00000000000000_baseline_schema.sql` | — | — |
 | `notify_creator_join_request` | `00000000000000_baseline_schema.sql` | — | 1 |
@@ -162,7 +163,7 @@ kan efterprøves direkte mod den kørende database.
 | `padel_level_to_elo` | `00000000000000_baseline_schema.sql` | `match_filter_niveau.sql` | — |
 | `parse_clock_time` | `00000000000000_baseline_schema.sql` | `play_intent_open_match_notify.sql`<br>`play_intent_pool.sql` | — |
 | `play_intent_overlaps_match_time` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | 1 |
-| `protect_elo_fields` | `00000000000000_baseline_schema.sql` | `phone_verification_exempt_hardening.sql` | 5 |
+| `protect_elo_fields` | `20260924215817_security_audit_sep2026.sql` | `security_audit_sep2026.sql` | 6 |
 | `public_americano_preview` | `00000000000000_baseline_schema.sql` | `public_share_pages.sql` | — |
 | `public_match_preview` | `00000000000000_baseline_schema.sql` | `public_share_pages.sql` | — |
 | `public_platform_stats` | `00000000000000_baseline_schema.sql` | `public_platform_stats_rpc.sql` | — |
