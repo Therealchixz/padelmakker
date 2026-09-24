@@ -17,7 +17,15 @@
 //                 { "force": true }  ignorerer klokkeslæt-tjekket (manuel kørsel).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildDigestEmail, copenhagenHour, DIGEST_LOCAL_HOUR, type DigestItem } from "./content.ts";
+import {
+  buildDigestEmail,
+  copenhagenDateLabel,
+  copenhagenHour,
+  DIGEST_LOCAL_HOUR,
+  type DigestItem,
+  type DigestMatch,
+  type DigestPlayer,
+} from "./content.ts";
 
 const CVR = "46403193";
 // Lidt under et døgn, så cron-kørslen kl. 17 i morgen ikke rammer spærren med
@@ -84,6 +92,45 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Detaljer til kortene i mailen: kampene, deres opretter, spillerne der
+  // søger makker og modtagernes fornavn. Hentes samlet, ikke pr. mail.
+  const matchIds = new Set<string>();
+  const profileIds = new Set<string>();
+  for (const row of rows) {
+    profileIds.add(row.user_id);
+    for (const it of row.items || []) {
+      if (it.type === "match_watch_match" && it.match_id) matchIds.add(it.match_id);
+      if (it.type === "makker_suggestion" && it.entity_id) profileIds.add(it.entity_id);
+    }
+  }
+  const matchesById: Record<string, DigestMatch> = {};
+  if (matchIds.size) {
+    const { data: matchRows, error: matchErr } = await admin
+      .from("matches")
+      .select("id, date, time, time_end, court_name, court_id, level_range, current_players, max_players, price_per_person, creator_id")
+      .in("id", [...matchIds]);
+    if (matchErr) console.error("send-discovery-digest matches:", matchErr.message);
+    for (const m of (matchRows || []) as DigestMatch[]) {
+      matchesById[m.id] = m;
+      if (m.creator_id) profileIds.add(m.creator_id);
+    }
+  }
+  const playersById: Record<string, DigestPlayer> = {};
+  if (profileIds.size) {
+    const { data: profileRows, error: profileErr } = await admin
+      .from("profiles")
+      .select("id, full_name, name, level, area, court_side")
+      .in("id", [...profileIds]);
+    if (profileErr) console.error("send-discovery-digest profiles:", profileErr.message);
+    for (const p of (profileRows || []) as DigestPlayer[]) playersById[p.id] = p;
+  }
+  const todayLabel = copenhagenDateLabel();
+  const firstNameOf = (id: string) => {
+    const p = playersById[id];
+    const n = String(p?.full_name || p?.name || "").trim();
+    return n ? n.split(/\s+/)[0] : "";
+  };
+
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   if (!resendApiKey) {
     return jsonResponse({ error: "RESEND_API_KEY mangler" }, 500);
@@ -111,7 +158,12 @@ Deno.serve(async (req: Request) => {
     }
     const unsubLink = `${unsubBase}?t=${encodeURIComponent(String(unsubToken))}`;
 
-    const email = buildDigestEmail(row.items || [], { siteUrl, unsubLink, cvr: CVR });
+    const email = buildDigestEmail(row.items || [], { siteUrl, unsubLink, cvr: CVR }, {
+      recipientName: firstNameOf(userId),
+      matches: matchesById,
+      players: playersById,
+      todayLabel,
+    });
     if (!email) continue;
 
     // Samme daglige spærre som alle andre mails (nøglen "discovery"). Har
