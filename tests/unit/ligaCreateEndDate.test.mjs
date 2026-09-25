@@ -46,3 +46,10 @@ test('opret-guiden har et felt til sæsonslut (ejeren: "hvor længe skal den lø
   assert.match(src, /end_date: e\.target\.value/);
   assert.match(src, /Sæsonslut skal være efter sæsonstart\./);
 });
+
+test('opret-guiden har et felt til maks. antal hold (hvornår ligaen er fyldt)', () => {
+  const src = readFileSync(join(root, 'src/dashboard/LigaTab.jsx'), 'utf8');
+  assert.match(src, /<label>Maks\. antal hold<\/label>/);
+  assert.match(src, /max_teams: e\.target\.value/);
+  assert.match(src, /<option value="">Ingen grænse<\/option>/);
+});

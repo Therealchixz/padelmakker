@@ -985,6 +985,8 @@ export function LigaTab({
         const ligaStartDateError = fieldValidationMessage(createFieldError, 'start_date');
         const ligaEndDateError = fieldValidationMessage(createFieldError, 'end_date');
         const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
+        /** Valg til "Maks. antal hold" i opret-guiden (tom = ingen grænse). */
+        const LIGA_MAX_TEAMS_OPTIONS = [4, 6, 8, 10, 12, 16, 20, 24, 32];
         const MATCH_SYSTEMS = [
           { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Alle hold mødes én gang. Hele kampprogrammet genereres ved start.' },
           { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling hver runde — færre kampe, jævnbyrdigt.' },
@@ -1060,6 +1062,19 @@ export function LigaTab({
                   <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.min(8, (f.num_divisions || 1) + 1) }))}>+</button>
                 </div>
                 <div className="pm-field-hint">Hold inddeles automatisk i divisioner efter niveau, når ligaen starter.</div>
+              </div>
+              <div className="pm-field">
+                <label>Maks. antal hold</label>
+                <select
+                  value={createForm.max_teams}
+                  onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
+                  style={ligaInputStyle}
+                  aria-label="Maks. antal hold"
+                >
+                  <option value="">Ingen grænse</option>
+                  {LIGA_MAX_TEAMS_OPTIONS.map(n => <option key={n} value={String(n)}>{n} hold</option>)}
+                </select>
+                <div className="pm-field-hint">Når så mange hold er tilmeldt, er ligaen fyldt, og der kan ikke tilmeldes flere.</div>
               </div>
               <div className="pm-field" ref={ligaCreateStartDateFieldRef}>
                 <label>Tilmeldingsfrist &amp; sæsonstart</label>
@@ -1201,6 +1216,7 @@ export function LigaTab({
                 <SummaryRow label="Navn" value={createForm.name || '—'} />
                 <SummaryRow label="Region" value={createForm.region || '—'} />
                 <SummaryRow label="Antal divisioner" value={createForm.num_divisions || 1} />
+                <SummaryRow label="Maks. antal hold" value={createForm.max_teams ? `${createForm.max_teams} hold` : 'Ingen grænse'} />
                 <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline ? formatMatchDateDa(createForm.registration_deadline) : '—'} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
                   <span style={{ fontSize: 12, color: theme.textLight }}>Sæson</span>
