@@ -5,6 +5,7 @@ import '../index.css';
 import '../styles/variables.css';
 import '../responsive.css';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
+import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet';
 import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet';
 import { AmericanoListCard } from '../features/americano/AmericanoListCard';
 import { LigaListCard } from '../dashboard/LigaListCard';
@@ -167,6 +168,45 @@ function AmericanoDetailPreview() {
   );
 }
 
+/* 2v2- og Americano-detaljen side om side — de bruger samme top (EventDetailHero) */
+function DetailComparePreview() {
+  const frame = { width: 390, height: 1000, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--pm-bg)', border: '1px solid var(--pm-border)', borderRadius: 16 };
+  const tournament = {
+    id: 't2', name: 'Fredags Americano', format: 'americano',
+    court_id: 'c1', time_slot: '13:30', tournament_date: '2026-09-25', duration_minutes: 120,
+    price_per_person: 0, payment_method: 'free',
+    level_min: 3.0, level_max: 4.0, player_slots: 8, points_per_match: 16,
+  };
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="pm-dash-main--kampe-detail" style={frame}>
+        <KampeMatchDetailSheet
+          open
+          presentation="page"
+          onClose={noop}
+          match={{ ...baseMatch, id: 'd1', court_name: 'Skansen Padel', date: '2026-09-30', time: '19:00', time_end: '21:00' }}
+          profilesById={profilesById}
+          matchPrefs={prefs}
+          status="open" left={3} isFull={false}
+          teamStats={{ t1: [p(1)], t2: [] }}
+        />
+      </div>
+      <div className="pm-dash-main--kampe-detail" style={frame}>
+        <AmericanoDetailSheet
+          open
+          presentation="page"
+          onClose={noop}
+          tournament={tournament}
+          courts={[{ id: 'c1', name: 'Skansen Padel' }]}
+          dateLabel="25.09.2026 kl. 13:30"
+          status="registration"
+          participants={[{ id: 'x', user_id: '1', name: 'Mads Jensen', avatar: '🎾', elo: 1046, isCreator: true }]}
+        />
+      </div>
+    </div>
+  );
+}
+
 /* Liste-kort på tværs af de tre formater — til visuel konsistens-sammenligning */
 function ListsPreview() {
   const amTournament = {
@@ -238,7 +278,8 @@ function CourtPreview() {
 }
 
 createRoot(document.getElementById('root')).render(
-  view === 'court' ? <CourtPreview />
+  view === 'detail-compare' ? <DetailComparePreview />
+    : view === 'court' ? <CourtPreview />
     : view === 'americano-detail' ? <AmericanoDetailPreview />
       : view === 'lists' ? <ListsPreview /> : <Preview />,
 );

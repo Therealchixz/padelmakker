@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { ArrowUpRight, CalendarDays, MapPin, Plus, Wallet, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import '../../styles/kampdetalje.css'
 import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
-import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import { KampeCreateHeader } from '../../components/kampe/KampeRedesignToolbar'
 import { CreatorTag } from '../../components/kampe/CreatorTag'
-import { PadelCourtArt } from '../../components/kampe/PadelCourtArt'
+import { EventDetailHero } from '../../components/kampe/EventDetailHero'
+import { formatMatchDateHeadlineDa } from '../../lib/matchDisplayUtils'
 import {
   formatAmericanoLiveRoundLabel,
   formatCourtsBenchDetail,
@@ -17,6 +17,7 @@ import {
   getTournamentFormatLabel,
   playerInitials,
   resolveAmericanoCourtName,
+  tournamentTimeLabel,
 } from './americanoDisplayUtils'
 import { AmericanoCompletedCard } from './AmericanoCompletedCard'
 import type { AmericanoTournament } from './types'
@@ -237,61 +238,33 @@ export function AmericanoDetailSheet({
   const paymentSub = isFree
     ? null
     : `pr. person${tournament.payment_method === 'cash' ? ' · betales ved fremmøde' : tournament.payment_method === 'mobilepay' ? ' · MobilePay' : ''}`
+  const priceTag = paymentSub ? `${priceText} ${paymentSub}` : priceText
+
+  // Samme mærke øverst til højre som på 2v2: "7 ledige", "Fuld", LIVE …
+  const heroStatus =
+    badgeTone === 'live'
+      ? { label: `LIVE · ${badgeLabel}`, tone: 'live' }
+      : badgeTone === 'open'
+        ? { label: emptySlots > 0 ? `${emptySlots} ledig${emptySlots === 1 ? '' : 'e'}` : 'Åben', tone: 'open' }
+        : { label: badgeLabel, tone: badgeTone }
 
   const detailScroll = (
         <div className="pm-americano-v2-detail-scroll">
-        {/* Court hero visual */}
-        <div className="pm-kd-hero" style={{ marginBottom: 0, borderRadius: 0 }} aria-hidden="true">
-          <PadelCourtArt className="pm-kd-hero-court" />
-          <div className="pm-kd-hero-badges">
-            <span className={`pm-kd-chip ${badgeTone === 'live' ? 'pm-kd-chip--amber' : 'pm-kd-chip--navy'}`}>
-              {getTournamentFormatLabel(tournament.format).toUpperCase()}
-            </span>
-            {tournament.level_min != null && tournament.level_max != null ? (
-              <span className="pm-kd-chip pm-kd-chip--light">
-                Niveau {Number(tournament.level_min).toFixed(1)}–{Number(tournament.level_max).toFixed(1)}
-              </span>
-            ) : null}
-            {badgeTone === 'live' ? (
-              <span className="pm-kd-chip pm-kd-chip--live">LIVE · {badgeLabel}</span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Samme ikon-info-kort som 2v2-detaljen: dato/tid, sted (med kort-link) og pris */}
-        <div className="pm-kd-card pm-kd-price-card" style={{ marginBottom: 4 }}>
-          <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
-            <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
-            <div>
-              <b>{dateLabel}</b>
-              {tournament.time_slot ? <span className="pm-kd-info-sub">Kl. {String(tournament.time_slot).slice(0, 5)}</span> : null}
-            </div>
-          </div>
-          <div className="pm-kd-info-row">
-            <div className="pm-kd-info-ic"><MapPin size={18} aria-hidden /></div>
-            <div>
-              <b>{courtName}</b>
-              {directionsQuery ? (
-                <a
-                  className="pm-kd-maplink"
-                  href={banerMapsDirectionsUrl(directionsQuery)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  Vis på kort <ArrowUpRight size={11} aria-hidden />
-                </a>
-              ) : null}
-            </div>
-          </div>
-          <div className="pm-kd-info-row">
-            <div className="pm-kd-info-ic"><Wallet size={18} aria-hidden /></div>
-            <div>
-              <b>{priceText}</b>
-              {paymentSub ? <span className="pm-kd-info-sub">{paymentSub}</span> : null}
-            </div>
-          </div>
-        </div>
+        {/* Samme top som 2v2-detaljen (EventDetailHero) */}
+        <EventDetailHero
+          typeLabel={getTournamentFormatLabel(tournament.format)}
+          levelLabel={
+            tournament.level_min != null && tournament.level_max != null
+              ? `Niveau ${Number(tournament.level_min).toFixed(1)} – ${Number(tournament.level_max).toFixed(1)}`
+              : null
+          }
+          status={heroStatus}
+          venue={courtName}
+          directionsQuery={directionsQuery}
+          tags={[{ label: priceTag, tone: isFree ? 'green' : 'navy' }]}
+          dateHeadline={tournament.tournament_date ? formatMatchDateHeadlineDa(tournament.tournament_date) : dateLabel}
+          timeLabel={tournamentTimeLabel(tournament.time_slot, tournament.duration_minutes)}
+        />
 
         <div className="pm-americano-v2-detail-stats">
           <div className="pm-americano-v2-detail-stat">
@@ -299,7 +272,7 @@ export function AmericanoDetailSheet({
             <span className="pm-americano-v2-detail-stat-value">{totalRounds}</span>
           </div>
           <div className="pm-americano-v2-detail-stat">
-            <span className="pm-americano-v2-detail-stat-label">Varighed</span>
+            <span className="pm-americano-v2-detail-stat-label">Spilletid</span>
             <span className="pm-americano-v2-detail-stat-value">{durationLabel}</span>
           </div>
           <div

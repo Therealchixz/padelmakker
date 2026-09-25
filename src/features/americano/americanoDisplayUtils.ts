@@ -180,6 +180,19 @@ export function resolveAmericanoCourtName(
   return courtId ? 'Padelbane' : 'Bane ikke valgt'
 }
 
+/** "13:30–15:30" ud fra starttid og varighed — samme tidsrum som på 2v2-kampe. */
+export function tournamentTimeLabel(timeSlot?: string | null, durationMinutes?: number | null): string | null {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(timeSlot || ''))
+  if (!m) return null
+  const start = Number(m[1]) * 60 + Number(m[2])
+  const startLabel = `${m[1].padStart(2, '0')}:${m[2]}`
+  const dur = Number(durationMinutes)
+  if (!Number.isFinite(dur) || dur <= 0) return `Kl. ${startLabel}`
+  const end = start + dur
+  const endLabel = `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+  return `${startLabel}–${endLabel}`
+}
+
 export function playerInitials(name: string) {
   return (
     name

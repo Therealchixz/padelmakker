@@ -1,21 +1,16 @@
-import { X, CalendarDays, ArrowUpRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
-import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { btn } from '../../lib/platformTheme';
 import { formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
+import { EventDetailHero } from './EventDetailHero';
 import { KampeCreateHeader } from './KampeRedesignToolbar';
 import '../../styles/kampdetalje.css';
-
-function heroStatusChipClass(tone) {
-  if (tone === 'live') return 'pm-kd-chip--live';
-  return 'pm-kd-chip--light pm-kd-hero-status';
-}
 
 export function KampeMatchDetailSheet({
   open,
@@ -81,57 +76,25 @@ export function KampeMatchDetailSheet({
 
   const detailBody = (
     <>
-      <div className="pm-kd-hero">
-        <div className="pm-kd-hero-badges">
-          <span className="pm-kd-chip pm-kd-chip--light">2V2</span>
-          {matchPrefs?.min != null && matchPrefs?.max != null ? (
-            <span className="pm-kd-chip pm-kd-chip--amber">
-              {formatMatchLevelRangeLabel(matchPrefs.min, matchPrefs.max)}
-            </span>
-          ) : null}
-          <span className={`pm-kd-chip ${heroStatusChipClass(statusBadge.tone)}`}>
-            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-            {statusBadge.label}
-          </span>
-        </div>
-        <div className="pm-kd-hero-court" aria-hidden />
-      </div>
-
-      <div className="pm-kd-card pm-kd-price-card">
-        <div className="pm-kd-title-block">
-          <h2 className="pm-kd-title">{venue}</h2>
-          {directionsQuery ? (
-            <a
-              className="pm-kd-maplink pm-kd-maplink--under-title"
-              href={banerMapsDirectionsUrl(directionsQuery)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(event) => event.stopPropagation()}
-            >
-              Vis på kort <ArrowUpRight size={11} aria-hidden />
-            </a>
-          ) : null}
-        </div>
-        {showBooked || unreadCount > 0 ? (
-          <div className="pm-kd-price-meta">
-            {showBooked ? (
-              <span className={`pm-kd-tag ${matchPrefs.booked ? 'pm-kd-tag--green' : 'pm-kd-tag--amber'}`}>
-                {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-              </span>
-            ) : null}
-            {unreadCount > 0 ? (
-              <span className="pm-kd-tag pm-kd-tag--amber">{unreadCount} ulæst i chat</span>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="pm-kd-info-row">
-          <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
-          <div>
-            <b>{formatMatchDateHeadlineDa(match.date)}</b>
-            <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
-          </div>
-        </div>
-      </div>
+      <EventDetailHero
+        typeLabel="2v2"
+        levelLabel={
+          matchPrefs?.min != null && matchPrefs?.max != null
+            ? formatMatchLevelRangeLabel(matchPrefs.min, matchPrefs.max)
+            : null
+        }
+        status={statusBadge}
+        venue={venue}
+        directionsQuery={directionsQuery}
+        tags={[
+          showBooked
+            ? { label: matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket', tone: matchPrefs.booked ? 'green' : 'amber' }
+            : null,
+          unreadCount > 0 ? { label: `${unreadCount} ulæst i chat`, tone: 'amber' } : null,
+        ]}
+        dateHeadline={formatMatchDateHeadlineDa(match.date)}
+        timeLabel={matchTimeLabel(match)}
+      />
 
       {description ? (
         <>
