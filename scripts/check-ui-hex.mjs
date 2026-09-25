@@ -13,7 +13,7 @@ const HEX_RE = /#[0-9A-Fa-f]{3,8}\b/g;
  *  farver der ikke kan være CSS-variabler. Se docs/UI_GUIDELINES.md (Farver). */
 const ALLOWED_FILES = new Set([
   'src/components/OAuthButtons.jsx',
-  'src/components/kampe/PadelCourtArt.jsx',
+  'src/components/kampe/PadelCourtTopView.jsx',
 ]);
 
 async function walk(dir, out = []) {
