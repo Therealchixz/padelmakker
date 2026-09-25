@@ -33,6 +33,7 @@ import { scrollFormFieldIntoView, fieldValidationErrorStyle, fieldValidationMess
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { DateInputField } from '../components/DateInputField';
+import { resolveLeagueEndDate } from '../lib/ligaCreateDefaults.js';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 import { buildAdminChatPath } from '../lib/adminContactUtils';
@@ -645,12 +646,14 @@ export function LigaTab({
     setBusyId('create');
     try {
       const maxT = createForm.max_teams !== '' ? parseInt(createForm.max_teams, 10) : null;
+      // Formularen spørger ikke om slutdato, men databasen kræver én.
+      const endDate = resolveLeagueEndDate(createForm.start_date, createForm.end_date, createForm.season_type);
       const { data: created, error } = await supabase.from('leagues').insert({
         name: createForm.name.trim(),
         description: createForm.description.trim() || null,
         season_type: createForm.season_type,
         start_date: createForm.start_date,
-        end_date: createForm.end_date || null,
+        end_date: endDate,
         max_teams: maxT && maxT > 0 ? maxT : null,
         region: createForm.region || null,
         num_divisions: createForm.num_divisions || 1,
@@ -668,7 +671,7 @@ export function LigaTab({
       setCreateOpen(false);
       setCreateStep(1);
       setCreateFieldError(null);
-      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
+      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: endDate, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
       setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
@@ -1168,10 +1171,14 @@ export function LigaTab({
                 <SummaryRow label="Navn" value={createForm.name || '—'} />
                 <SummaryRow label="Region" value={createForm.region || '—'} />
                 <SummaryRow label="Antal divisioner" value={createForm.num_divisions || 1} />
-                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline || '—'} />
+                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline ? formatMatchDateDa(createForm.registration_deadline) : '—'} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæsonstart</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.start_date || '—'}</span>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæson</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>
+                    {createForm.start_date
+                      ? `${formatMatchDateDa(createForm.start_date)} – ${formatMatchDateDa(resolveLeagueEndDate(createForm.start_date, createForm.end_date, createForm.season_type))}`
+                      : '—'}
+                  </span>
                 </div>
               </div>
               {/* Regler & kampsystem */}
