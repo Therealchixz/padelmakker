@@ -121,3 +121,9 @@ export function matchEditChatMessage(patch) {
   const where = court ? `${court}${booked ? ' (booket)' : ''}` : 'Bane ikke valgt endnu';
   return `📅 Kampen er ændret: ${when} · ${where}`;
 }
+
+/** Teksten i notifikationen, fx "Mike har flyttet kampen: torsdag 1. okt kl. 20:00–21:30 · Skansen Padel (booket)". */
+export function matchEditNotificationBody(patch, creatorName) {
+  const who = String(creatorName || '').trim().split(/\s+/)[0] || 'Opretteren';
+  return `${who} har ændret kampen: ${matchEditChatMessage(patch).replace(/^📅 Kampen er ændret: /, '')}`;
+}

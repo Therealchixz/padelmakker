@@ -41,6 +41,7 @@ export function isKampeNotificationRelevantForStatus(type, status) {
       'match_invite',
       'match_full',
       'match_cancelled',
+      'match_updated',
       'seeking_player',
     ].includes(type);
   }

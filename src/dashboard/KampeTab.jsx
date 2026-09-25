@@ -34,7 +34,7 @@ import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard
 import { CreateMatchForm } from '../components/kampe/CreateMatchForm';
 import { CreatedMatchReceipt } from '../components/kampe/CreatedMatchReceipt';
 import { EditMatchModal } from '../components/kampe/EditMatchModal';
-import { canEditMatch, matchEditChatMessage } from '../lib/matchEdit.js';
+import { canEditMatch, matchEditChatMessage, matchEditNotificationBody } from '../lib/matchEdit.js';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import { openPlayerChat } from '../lib/playerChat';
 import {
@@ -1834,6 +1834,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
       if (error) throw error;
       const content = matchEditChatMessage(patch);
+      // Beskeden står i kamp-chatten, så den kan findes igen ...
       try {
         await sendMatchMessage({
           matchId: match.id,
@@ -1842,9 +1843,29 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           senderAvatar: user.avatar || "🎾",
           content,
         });
-        void notifyMatchChatParticipants(match.id, content);
       } catch (chatErr) {
         console.warn("match edit chat:", chatErr?.message || chatErr);
+      }
+      // ... og de andre får deres egen notifikation (ikke en stille chat-push,
+      // der drukner blandt andre beskeder).
+      let roster = matchPlayers[match.id] || [];
+      if (!roster.length) {
+        const { data: rows } = await supabase.from("match_players").select("user_id").eq("match_id", match.id);
+        roster = rows || [];
+      }
+      const recipients = [...new Set(roster
+        .map((p) => p?.user_id)
+        .filter((uid) => uid && String(uid) !== String(user.id))
+        .map(String))];
+      if (recipients.length) {
+        const notifyErr = await createNotificationsForUsers(
+          recipients,
+          "match_updated",
+          "Kampen er ændret 📅",
+          matchEditNotificationBody(patch, myDisplayName),
+          match.id,
+        );
+        if (notifyErr) console.warn("match edit notify:", notifyErr.message || notifyErr);
       }
       setEditMatchTarget(null);
       showToast("Kampen er opdateret.");

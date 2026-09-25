@@ -46,6 +46,16 @@ const TYPE_POLICIES = Object.freeze({
     cooldownSeconds: 20,
     renotify: true,
   },
+  // Opretteren har rettet bane, dato eller tid (update_match_details).
+  match_updated: {
+    channel: "kampe",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 60,
+    renotify: true,
+  },
   result_submitted: {
     channel: "resultat",
     level: "critical",

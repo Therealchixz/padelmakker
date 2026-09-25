@@ -16,6 +16,7 @@ import {
   canEditMatch,
   initialMatchEditForm,
   matchEditChatMessage,
+  matchEditNotificationBody,
 } from '../../src/lib/matchEdit.js';
 import { MATCH_VENUE_TBD } from '../../src/lib/matchVenueOptions.js';
 
@@ -92,4 +93,23 @@ test('appen gemmer via update_match_details og skriver i kamp-chatten', () => {
   assert.match(k, /supabase\.rpc\("update_match_details"/);
   assert.match(k, /matchEditChatMessage\(patch\)/);
   assert.match(k, /Ret bane, dato og tid/);
+});
+
+test('de andre får deres egen notifikation "Kampen er ændret" (ikke en stille chat-push)', () => {
+  // Ejeren 25. sep. 2026: en chat-besked kan hurtigt blive væk.
+  const k = read('src/dashboard/KampeTab.jsx');
+  const fn = k.slice(k.indexOf('const saveMatchEdit = async'), k.indexOf('const submitMatchChat = async'));
+  assert.match(fn, /"match_updated",\s*"Kampen er ændret 📅"/);
+  assert.doesNotMatch(fn, /notifyMatchChatParticipants/);
+  for (const f of ['supabase/functions/send-push/index.ts', 'src/lib/notificationPolicy.js']) {
+    const src = read(f);
+    const block = src.slice(src.indexOf('match_updated: {'), src.indexOf('match_updated: {') + 200);
+    assert.match(block, /channel: "kampe"/, f);
+    assert.match(block, /silent: false/, f);
+  }
+  assert.match(read('src/lib/kampeNotificationTypes.js'), /'match_updated'/);
+  assert.equal(
+    matchEditNotificationBody({ date: '2026-10-01', time: '20:00', time_end: '21:30', court_name: 'Skansen Padel', court_booked: true }, 'Mike Pedersen'),
+    'Mike har ændret kampen: torsdag 1. okt kl. 20:00–21:30 · Skansen Padel (booket)',
+  );
 });
