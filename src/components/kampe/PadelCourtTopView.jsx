@@ -96,7 +96,6 @@ function Court({ x, y, s, positions, idBase }) {
   ];
   return (
     <g>
-      <rect x={x - s * 0.6} y={y - s * 0.6} width={L + s * 1.2} height={W + s * 1.2} rx={s * 0.4} fill="#0A1F3F" opacity="0.55" />
       <rect x={x} y={y} width={L} height={W} fill="#2E6BC4" />
       <rect x={net - svc} y={y} width={svc * 2} height={W} fill="#3478D2" />
       <g stroke="#fff" strokeWidth={Math.max(1.1, s * 0.14)} fill="none" strokeLinecap="round">
