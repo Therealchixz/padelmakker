@@ -2,13 +2,13 @@
  * Fælles top på detaljesiden for 2v2-kampe og Americano/Mexicano
  * (ejeren 25. sep. 2026: "2v2 og americano kamp kortet er lidt forskellige").
  *
- * Bane-billede med mærker (type · niveau · ledige pladser), og derunder et
- * kort med banens navn, "Vis på kort", små mærker (booket/pris/ulæst) og
- * dato + tidsrum.
+ * Banen set oppefra med spillernes profilbilleder på deres pladser og mærker
+ * (type · niveau · ledige pladser). Derunder et kort med banens navn,
+ * "Vis på kort", små mærker (booket/pris/ulæst) og dato + tidsrum.
  */
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
-import { PadelCourtArt } from './PadelCourtArt';
+import { PadelCourtTopView } from './PadelCourtTopView';
 
 /**
  * @param {{
@@ -20,6 +20,8 @@ import { PadelCourtArt } from './PadelCourtArt';
  *   tags?: { label: string, tone?: 'green' | 'amber' | 'navy' | 'red' }[],
  *   dateHeadline: string,
  *   timeLabel?: string | null,
+ *   courts?: number,
+ *   players?: ({ name?: string, avatar?: string | null } | null)[] | null,
  * }} props
  */
 export function EventDetailHero({
@@ -31,13 +33,15 @@ export function EventDetailHero({
   tags = [],
   dateHeadline,
   timeLabel = null,
+  courts = 1,
+  players = null,
 }) {
   const isLive = status?.tone === 'live';
   const visibleTags = tags.filter((t) => t && t.label);
   return (
     <>
-      <div className="pm-kd-hero">
-        <PadelCourtArt className="pm-kd-hero-court" />
+      <div className="pm-kd-hero pm-kd-hero--court">
+        <PadelCourtTopView className="pm-kd-hero-court" courts={courts} players={players} />
         <div className="pm-kd-hero-badges">
           <span className="pm-kd-chip pm-kd-chip--navy">{typeLabel}</span>
           {levelLabel ? <span className="pm-kd-chip pm-kd-chip--amber">{levelLabel}</span> : null}

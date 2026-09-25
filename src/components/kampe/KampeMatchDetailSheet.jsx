@@ -9,6 +9,7 @@ import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
 import { EventDetailHero } from './EventDetailHero';
+import { teamSlotsBySide } from '../../lib/matchPlayerCourtSide';
 import { KampeCreateHeader } from './KampeRedesignToolbar';
 import '../../styles/kampdetalje.css';
 
@@ -74,6 +75,17 @@ export function KampeMatchDetailSheet({
     myTeam,
   });
 
+  // Pladserne på banen set oppefra: hold 1 til venstre (vender mod højre, så
+  // dets venstre side er øverst), hold 2 til højre (dets venstre er nederst).
+  const courtPlayer = (player) => {
+    if (!player) return null;
+    const prof = profilesById[String(player.user_id)] || {};
+    return { name: prof.full_name || prof.name || '', avatar: prof.avatar || null };
+  };
+  const [t1Left, t1Right] = teamSlotsBySide(teamStats?.t1).map((x) => courtPlayer(x.player));
+  const [t2Left, t2Right] = teamSlotsBySide(teamStats?.t2).map((x) => courtPlayer(x.player));
+  const courtPlayers = [t1Left, t1Right, t2Right, t2Left];
+
   const detailBody = (
     <>
       <EventDetailHero
@@ -94,6 +106,7 @@ export function KampeMatchDetailSheet({
         ]}
         dateHeadline={formatMatchDateHeadlineDa(match.date)}
         timeLabel={matchTimeLabel(match)}
+        players={courtPlayers}
       />
 
       {description ? (
