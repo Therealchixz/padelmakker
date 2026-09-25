@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, ArrowRight, MapPin } from 'lucide-react'
+import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, ArrowRight, MapPin, Pencil } from 'lucide-react'
 import { EmptyStateIcon } from '../../components/EmptyStateIcon'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
@@ -10,6 +10,11 @@ import { fetchProfilesByIdMap } from '../../lib/profileQueries'
 import { fetchRowsInChunks } from '../../lib/supabaseChunkFetch'
 import { CreateAmericanoTournamentForm, type CreatedTournamentInfo } from './CreateAmericanoTournamentForm'
 import { AmericanoChatPanel } from './AmericanoChatPanel'
+import { EditAmericanoModal } from './EditAmericanoModal'
+import { canEditTournament, tournamentEditChatMessage, tournamentEditNotificationBody } from '../../lib/americanoEdit.js'
+import { getMatchVenueOptions } from '../../lib/matchVenueOptions'
+import { sendAmericanoMessage } from '../../lib/americanoChatUtils'
+import { createNotificationsForUsers } from '../../lib/notifications'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
 import { AmericanoDetailSheet, type AmericanoDetailPlayer } from './AmericanoDetailSheet'
@@ -63,6 +68,15 @@ type ProfileLike = {
 }
 
 type AmericanoSubTab = 'open' | 'playing' | 'completed'
+
+/** Fra EditAmericanoModal (buildTournamentEditPatch). */
+type TournamentEditPatch = {
+  date: string
+  time_slot: string
+  duration_minutes: number
+  court_id: string | null
+  court_name: string
+}
 
 type Props = {
   profile?: ProfileLike | null
@@ -423,6 +437,9 @@ export function AmericanoTab({
   }, [showCreate])
 
   const [createdTournamentReceipt, setCreatedTournamentReceipt] = useState<CreatedTournamentInfo | null>(null)
+  const [editTournament, setEditTournament] = useState<AmericanoTournament | null>(null)
+  const [savingTournamentEdit, setSavingTournamentEdit] = useState(false)
+  const editVenueOptions = useMemo(() => getMatchVenueOptions(courts), [courts])
   const [receiptUrlCopied, setReceiptUrlCopied] = useState(false)
 
   const load = useCallback(async () => {
@@ -803,7 +820,7 @@ export function AmericanoTab({
       if (t.is_public === false && String(t.creator_id) !== String(profileId) && !joinedIds.has(t.id)) return false
       if (listRegionFilter) {
         const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
-        const courtName = resolveAmericanoCourtName(t.court_id, courts)
+        const courtName = resolveAmericanoCourtName(t.court_id, courts, t.court_name)
         if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
       }
       if (searchQuery && searchQuery.trim()) {
@@ -1055,6 +1072,59 @@ export function AmericanoTab({
       showToast('Kunne ikke fjerne spiller: ' + msg)
     } finally {
       setBusyId(null)
+    }
+  }
+
+  /** Opretteren retter bane, dato og tid. De tilmeldte får notifikation + besked i chatten. */
+  const saveTournamentEdit = async (t: AmericanoTournament, patch: TournamentEditPatch) => {
+    setSavingTournamentEdit(true)
+    try {
+      const { error } = await supabase.rpc('update_americano_details', {
+        p_tournament_id: t.id,
+        p_date: patch.date,
+        p_time_slot: patch.time_slot,
+        p_duration_minutes: patch.duration_minutes,
+        p_court_id: patch.court_id,
+        p_court_name: patch.court_name,
+      })
+      if (error) throw error
+      const myName = String(profile?.full_name || profile?.name || displayName || '')
+      try {
+        await sendAmericanoMessage({
+          tournamentId: t.id,
+          senderId: profileId,
+          senderName: myName || 'Spiller',
+          senderAvatar: profile?.avatar || null,
+          content: tournamentEditChatMessage(patch),
+        })
+      } catch (chatErr) {
+        console.warn('americano edit chat:', chatErr)
+      }
+      const recipients = [...new Set(
+        (participantsByTournament[t.id] || [])
+          .map((p) => String(p.user_id))
+          .filter((uid) => uid && uid !== String(profileId)),
+      )]
+      if (recipients.length) {
+        const formatLabel = isMexicanoFormat(t.format || '') ? 'Mexicano' : 'Americano'
+        const notifyErr = await createNotificationsForUsers(
+          recipients,
+          'match_updated',
+          `${formatLabel} er ændret 📅`,
+          tournamentEditNotificationBody(patch, myName, formatLabel),
+          null,
+          { entityType: 'americano', entityId: t.id },
+        )
+        if (notifyErr) console.warn('americano edit notify:', notifyErr)
+      }
+      setEditTournament(null)
+      showToast('Turneringen er opdateret.', 'success')
+      await load()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String((e as { message?: string })?.message || e)
+      showToast('Kunne ikke gemme: ' + msg, 'error')
+    } finally {
+      setSavingTournamentEdit(false)
     }
   }
 
@@ -1344,7 +1414,7 @@ export function AmericanoTab({
               <AmericanoListCard
                 key={t.id}
                 tournament={t}
-                courtName={resolveAmericanoCourtName(t.court_id, courts)}
+                courtName={resolveAmericanoCourtName(t.court_id, courts, t.court_name)}
                 participants={listParticipants}
                 status={cardStatus}
                 joined={joinedIds.has(t.id)}
@@ -1556,6 +1626,16 @@ export function AmericanoTab({
                     ⚡ Gennemtving start (Admin)
                   </button>
                 )}
+                {canEditTournament({ isCreator, status: t.status }) && (
+                  <button
+                    type="button"
+                    onClick={() => setEditTournament(t)}
+                    style={{ ...btn(false), fontSize: 13, padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Pencil size={14} aria-hidden />
+                    Ret bane, dato og tid
+                  </button>
+                )}
                 {isCreator && (
                   <button
                     type="button"
@@ -1675,6 +1755,16 @@ export function AmericanoTab({
           onClose={() => setParticipantStatsPick(null)}
         />
       )}
+
+      {editTournament ? (
+        <EditAmericanoModal
+          tournament={editTournament}
+          venueOptions={editVenueOptions}
+          saving={savingTournamentEdit}
+          onSave={(patch: TournamentEditPatch) => { void saveTournamentEdit(editTournament, patch) }}
+          onClose={() => setEditTournament(null)}
+        />
+      ) : null}
 
       {/* Turnering oprettet kvittering */}
       {createdTournamentReceipt && (() => {

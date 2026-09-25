@@ -197,7 +197,7 @@ export function AmericanoDetailSheet({
 
   if (!open || !tournament) return null
 
-  const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
+  const courtName = resolveAmericanoCourtName(tournament.court_id, courts, tournament.court_name)
   const directionsQuery = resolveCourtNameDirectionsQuery(courtName)
   const { maxPlayers, totalRounds: metaTotalRounds, estMinutes, courts: courtsPerRound, bench } =
     getAmericanoTournamentMeta(tournament)

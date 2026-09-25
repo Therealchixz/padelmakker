@@ -15,6 +15,8 @@ export type AmericanoTournament = {
   tournament_date: string
   time_slot: string
   court_id: string | null
+  /** Navnet, når banen ikke er i courts (fx skrevet selv). */
+  court_name?: string | null
   player_slots: AmericanoPlayerSlots
   courts_per_round?: number | null
   points_per_match: AmericanoPoints

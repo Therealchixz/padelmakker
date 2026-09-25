@@ -170,11 +170,14 @@ export function getTournamentFormatLabel(
 
 export function resolveAmericanoCourtName(
   courtId: string | null | undefined,
-  courts: { id: string; name: string }[]
+  courts: { id: string; name: string }[],
+  /** Navnet, når banen ikke er i courts (center fra listen eller skrevet selv). */
+  courtName?: string | null
 ) {
-  if (!courtId) return 'Bane ikke valgt'
-  const hit = courts.find((c) => String(c.id) === String(courtId))
-  return hit?.name?.trim() || 'Padelbane'
+  const hit = courtId ? courts.find((c) => String(c.id) === String(courtId)) : null
+  const name = hit?.name?.trim() || String(courtName || '').trim()
+  if (name) return name
+  return courtId ? 'Padelbane' : 'Bane ikke valgt'
 }
 
 export function playerInitials(name: string) {
