@@ -1377,6 +1377,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       } else {
         showToast("Du er afmeldt.");
       }
+      // Står man på kampens side, så gå tilbage til listen. Ellers viste siden
+      // "Kampen blev ikke fundet", når kampen var slettet.
+      if (String(detailMatchId) === String(matchId)) close2v2Detail();
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
