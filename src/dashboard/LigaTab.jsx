@@ -213,6 +213,7 @@ export function LigaTab({
   const [createFieldError, setCreateFieldError] = useState(null);
   const ligaCreateNameFieldRef = useRef(null);
   const ligaCreateStartDateFieldRef = useRef(null);
+  const ligaCreateEndDateFieldRef = useRef(null);
 
   // Scroll til toppen ved skift mellem trin i opret-wizarden
   useEffect(() => {
@@ -643,6 +644,12 @@ export function LigaTab({
       scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
       return;
     }
+    if (createForm.end_date && createForm.end_date < createForm.start_date) {
+      setCreateStep(1);
+      setCreateFieldError({ field: 'end_date', message: 'Sæsonslut skal være efter sæsonstart.' });
+      scrollFormFieldIntoView(ligaCreateEndDateFieldRef.current);
+      return;
+    }
     setBusyId('create');
     try {
       const maxT = createForm.max_teams !== '' ? parseInt(createForm.max_teams, 10) : null;
@@ -976,6 +983,7 @@ export function LigaTab({
         const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
         const ligaNameError = fieldValidationMessage(createFieldError, 'name');
         const ligaStartDateError = fieldValidationMessage(createFieldError, 'start_date');
+        const ligaEndDateError = fieldValidationMessage(createFieldError, 'end_date');
         const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
         const MATCH_SYSTEMS = [
           { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Alle hold mødes én gang. Hele kampprogrammet genereres ved start.' },
@@ -1079,6 +1087,28 @@ export function LigaTab({
                 {ligaStartDateError && (
                   <div id="liga-create-start-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
                     {ligaStartDateError}
+                  </div>
+                )}
+              </div>
+              <div className="pm-field" ref={ligaCreateEndDateFieldRef}>
+                <label>Sæsonslut</label>
+                <DateInputField
+                  value={createForm.end_date}
+                  min={createForm.start_date || undefined}
+                  onChange={e => {
+                    setCreateForm(f => ({ ...f, end_date: e.target.value }));
+                    if (createFieldError?.field === 'end_date') setCreateFieldError(null);
+                  }}
+                  inputStyle={{ ...ligaInputStyle, ...fieldValidationErrorStyle(Boolean(ligaEndDateError)) }}
+                />
+                {ligaEndDateError ? (
+                  <div role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>{ligaEndDateError}</div>
+                ) : (
+                  <div className="pm-field-hint">
+                    Hvor længe ligaen løber, og hvornår alle kampe skal være spillet.
+                    {!createForm.end_date && createForm.start_date
+                      ? ` Vælger du ikke en dato, slutter den ${formatMatchDateDa(resolveLeagueEndDate(createForm.start_date, '', createForm.season_type))}.`
+                      : ''}
                   </div>
                 )}
               </div>
