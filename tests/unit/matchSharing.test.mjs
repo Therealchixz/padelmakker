@@ -62,6 +62,14 @@ test('kvitteringen efter oprettelse har en tydelig "Send til venner"-knap', () =
   assert.match(r, /WhatsApp, Messenger eller SMS/);
 });
 
+test('kvitteringen tæller opretteren med (ikke "Vi mangler 4 spillere")', () => {
+  // Ejeren delte en ny kamp 25. sep. 2026, og der stod "mangler 4", selvom
+  // opretteren allerede var meldt til.
+  const k = read('src/dashboard/KampeTab.jsx');
+  assert.match(k, /setCreatedMatchReceipt\(\{ \.\.\.created, current_players: Math\.max\(1,/);
+  assert.match(buildMatchShareText({ date: '2026-09-30', time: '20:00', max_players: 4, current_players: 1 }), /Vi mangler 3 spillere/);
+});
+
 test('kortet i WhatsApp: titel og tekst ud fra kampen', () => {
   const meta = matchPreviewMeta({ ...QUICK, court_name: 'Padel', creator_first_name: 'Mike' });
   assert.equal(meta.title, 'Padel mandag 28. sep kl. 21:00–23:30 · mangler 3 spillere');
