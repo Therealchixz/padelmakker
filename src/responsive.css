@@ -8955,7 +8955,7 @@ button,
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
-  padding-top: 2px;
+  padding-top: 8px;
 }
 
 .pm-americano-v2-detail-head {

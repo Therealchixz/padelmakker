@@ -103,6 +103,11 @@
   margin-bottom: 4px;
 }
 
+/* Americano/Mexicano: samme luft under top-kortet som på 2v2 (EventDetailHero) */
+.pm-americano-v2-detail-scroll .pm-kd-price-card + .pm-americano-v2-detail-stats {
+  margin-top: 14px;
+}
+
 .pm-kd-hero-status {
   margin-left: auto;
 }
