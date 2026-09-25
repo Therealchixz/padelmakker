@@ -33,6 +33,8 @@ import { openCalendarInvite } from '../lib/calendarExport';
 import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard';
 import { CreateMatchForm } from '../components/kampe/CreateMatchForm';
 import { CreatedMatchReceipt } from '../components/kampe/CreatedMatchReceipt';
+import { EditMatchModal } from '../components/kampe/EditMatchModal';
+import { canEditMatch, matchEditChatMessage } from '../lib/matchEdit.js';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import { openPlayerChat } from '../lib/playerChat';
 import {
@@ -70,7 +72,7 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw } from 'lucide-react';
+import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -151,6 +153,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [showLigaCreate, setShowLigaCreate] = useState(false);
   const [createdMatchReceipt, setCreatedMatchReceipt] = useState(null); // match row after creation
+  const [editMatchTarget, setEditMatchTarget] = useState(null); // kamp der rettes (bane, dato, tid)
+  const [savingMatchEdit, setSavingMatchEdit] = useState(false);
   const padelCreateFormRef = useRef(null);
   const padelCreateVenueFieldRef = useRef(null);
   const padelCreateDateFieldRef = useRef(null);
@@ -1812,6 +1816,46 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     if (notifyError) console.warn("match chat notification:", notifyError.message || notifyError);
   }, [matchPlayers, myDisplayName, user.id]);
 
+  // Opretteren retter bane, dato og tid. De andre får besked i kamp-chatten.
+  const saveMatchEdit = async (match, patch) => {
+    if (!match?.id || !patch) return;
+    setSavingMatchEdit(true);
+    try {
+      // Appen må ikke selv skrive dato/tid/bane i matches; det sker i
+      // update_match_details, der tjekker opretter og status.
+      const { error } = await supabase.rpc("update_match_details", {
+        p_match_id: match.id,
+        p_date: patch.date,
+        p_time: patch.time,
+        p_time_end: patch.time_end,
+        p_court_id: patch.court_id,
+        p_court_name: patch.court_name,
+        p_court_booked: patch.court_booked,
+      });
+      if (error) throw error;
+      const content = matchEditChatMessage(patch);
+      try {
+        await sendMatchMessage({
+          matchId: match.id,
+          senderId: user.id,
+          senderName: myDisplayName,
+          senderAvatar: user.avatar || "🎾",
+          content,
+        });
+        void notifyMatchChatParticipants(match.id, content);
+      } catch (chatErr) {
+        console.warn("match edit chat:", chatErr?.message || chatErr);
+      }
+      setEditMatchTarget(null);
+      showToast("Kampen er opdateret.");
+      await loadData();
+    } catch (e) {
+      showToast(mapUserFacingError(e), 'error');
+    } finally {
+      setSavingMatchEdit(false);
+    }
+  };
+
   const submitMatchChat = async (matchId, canWrite = false) => {
     if (!canWrite) {
       showToast("Kun tilmeldte spillere kan skrive i kamp-chat.");
@@ -2575,11 +2619,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         ? mp.filter((p) => String(p.user_id) !== String(user.id))
         : [];
     const canKickPlayers = kickablePlayers.length > 0;
+    const canEditThisMatch = canEditMatch({ isCreator, status });
     const needsAdminPinUnlock =
       isAdmin && !adminCanAct && !isCreator && status !== "completed" && status !== "in_progress";
     const needsAdminPinForPage = isAdmin && !adminCanAct && !isPlayerInMatch;
     const showToolsAccordion =
-      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
+      canEditThisMatch || adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
     // Afsluttet kamp: fejlindberetning (samme flow som Americano/liga) og revanche.
     const completedActions = completedMatchActions({
       status,
@@ -2765,6 +2810,15 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             </button>
             {adminActionsOpen ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                {canEditThisMatch ? (
+                  <button
+                    type="button"
+                    onClick={() => setEditMatchTarget(m)}
+                    style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px" }}
+                  >
+                    <Pencil size={14} /> Ret bane, dato og tid
+                  </button>
+                ) : null}
                 {canKickPlayers ? (
                   <div className="pm-kampe-v2-kick-players">
                     <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
@@ -3469,6 +3523,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             adminPinPendingExpandMatchIdRef.current = null;
             setAdminPinGateOpen(false);
           }}
+        />
+      ) : null}
+
+      {editMatchTarget ? (
+        <EditMatchModal
+          match={editMatchTarget}
+          venueOptions={venueOptions}
+          saving={savingMatchEdit}
+          onSave={(patch) => { void saveMatchEdit(editMatchTarget, patch); }}
+          onClose={() => setEditMatchTarget(null)}
         />
       ) : null}
 
