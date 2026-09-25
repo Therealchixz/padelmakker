@@ -34,7 +34,7 @@ import { MatchDetailActionCard } from '../components/kampe/MatchDetailActionCard
 import { CreateMatchForm } from '../components/kampe/CreateMatchForm';
 import { CreatedMatchReceipt } from '../components/kampe/CreatedMatchReceipt';
 import { EditMatchModal } from '../components/kampe/EditMatchModal';
-import { canEditMatch, matchEditChatMessage } from '../lib/matchEdit.js';
+import { canEditMatch, matchEditChatMessage, matchEditNotificationBody } from '../lib/matchEdit.js';
 import { rpcJoinOpenMatch, rpcLeaveMatch, rpcKickPlayer } from '../lib/matchJoinUtils';
 import { openPlayerChat } from '../lib/playerChat';
 import {
@@ -105,6 +105,9 @@ import {
   courtIdFromVenueSelection,
   courtNameFromVenueSelection,
   isMatchVenueTbd,
+  isMatchVenueCustom,
+  cleanCustomCourtName,
+  CUSTOM_VENUE_OPTION,
   MATCH_VENUE_TBD,
 } from '../lib/matchVenueOptions';
 
@@ -245,6 +248,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
     court_id: MATCH_VENUE_TBD,
+    custom_court: "", // navn, når banen ikke er på listen ("Anden bane – skriv selv")
     date: new Date().toISOString().split("T")[0],
     time: nearestHalfHour(),
     duration: "120",
@@ -266,9 +270,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const myUidStr = String(user.id);
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts]);
   const createVenueOptions = useMemo(() => {
-    if (newMatch.court_booked) return venueOptions;
+    if (newMatch.court_booked) return [CUSTOM_VENUE_OPTION, ...venueOptions];
     return [
       { id: MATCH_VENUE_TBD, label: 'Ikke valgt endnu', courtId: null },
+      CUSTOM_VENUE_OPTION,
       ...venueOptions,
     ];
   }, [venueOptions, newMatch.court_booked]);
@@ -343,6 +348,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (vOpts.length > 0) {
         setNewMatch((m) => {
           if (m.court_id === MATCH_VENUE_TBD && !m.court_booked) return m;
+          if (isMatchVenueCustom(m.court_id)) return m;
           if (m.court_id && vOpts.some((o) => o.id === m.court_id)) return m;
           const defaultId = m.court_booked ? vOpts[0].id : MATCH_VENUE_TBD;
           return { ...m, court_id: defaultId };
@@ -995,6 +1001,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       scrollPadelCreateField("venue");
       return;
     }
+    if (isMatchVenueCustom(newMatch.court_id) && !cleanCustomCourtName(newMatch.custom_court)) {
+      setPadelCreateStep(1);
+      setPadelCreateFieldError({ field: 'venue', message: 'Skriv navnet på banen.' });
+      scrollPadelCreateField("venue");
+      return;
+    }
     if (!newMatch.date) {
       setPadelCreateStep(1);
       setPadelCreateFieldError({ field: 'date', message: 'Angiv en dato.' });
@@ -1022,7 +1034,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     setCreating(true);
     try {
       const cid = courtIdFromVenueSelection(newMatch.court_id, createVenueOptions);
-      const cname = courtNameFromVenueSelection(newMatch.court_id, createVenueOptions);
+      const cname = isMatchVenueCustom(newMatch.court_id)
+        ? cleanCustomCourtName(newMatch.custom_court)
+        : courtNameFromVenueSelection(newMatch.court_id, createVenueOptions);
       const row = {
         creator_id: user.id, court_id: cid, court_name: cname || '',
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
@@ -1085,6 +1099,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (venueOptions.length === 0) return { message: "Ingen baner tilgængelige i dit område endnu.", field: "general" };
       if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
         return { message: "Vælg hvilken bane der er booket.", field: "venue" };
+      }
+      if (isMatchVenueCustom(newMatch.court_id) && !cleanCustomCourtName(newMatch.custom_court)) {
+        return { message: "Skriv navnet på banen.", field: "venue" };
       }
       if (!newMatch.date) return { message: "Angiv en dato.", field: "date" };
       const startM = timeToMinutes(newMatch.time);
@@ -1834,6 +1851,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
       if (error) throw error;
       const content = matchEditChatMessage(patch);
+      // Beskeden står i kamp-chatten, så den kan findes igen ...
       try {
         await sendMatchMessage({
           matchId: match.id,
@@ -1842,9 +1860,29 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           senderAvatar: user.avatar || "🎾",
           content,
         });
-        void notifyMatchChatParticipants(match.id, content);
       } catch (chatErr) {
         console.warn("match edit chat:", chatErr?.message || chatErr);
+      }
+      // ... og de andre får deres egen notifikation (ikke en stille chat-push,
+      // der drukner blandt andre beskeder).
+      let roster = matchPlayers[match.id] || [];
+      if (!roster.length) {
+        const { data: rows } = await supabase.from("match_players").select("user_id").eq("match_id", match.id);
+        roster = rows || [];
+      }
+      const recipients = [...new Set(roster
+        .map((p) => p?.user_id)
+        .filter((uid) => uid && String(uid) !== String(user.id))
+        .map(String))];
+      if (recipients.length) {
+        const notifyErr = await createNotificationsForUsers(
+          recipients,
+          "match_updated",
+          "Kampen er ændret 📅",
+          matchEditNotificationBody(patch, myDisplayName),
+          match.id,
+        );
+        if (notifyErr) console.warn("match edit notify:", notifyErr.message || notifyErr);
       }
       setEditMatchTarget(null);
       showToast("Kampen er opdateret.");
@@ -2541,12 +2579,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const handleRematch = (m) => {
     if (!m) return;
     const prefs = parseMatchLevelRange(m.level_range);
-    const booked = !!m.court_id;
+    // Selvskrevet bane (navn uden court_id) følger med som "Anden bane".
+    const customName = !m.court_id ? cleanCustomCourtName(m.court_name) : '';
+    const hasCustom = Boolean(customName) && customName.toLowerCase() !== 'padel';
+    const booked = !!m.court_id || hasCustom;
     close2v2Detail();
     setKampeFormat('padel');
     setNewMatch((prev) => ({
       ...prev,
-      court_id: m.court_id || MATCH_VENUE_TBD,
+      court_id: m.court_id || (hasCustom ? CUSTOM_VENUE_OPTION.id : MATCH_VENUE_TBD),
+      custom_court: hasCustom ? customName : '',
       court_booked: booked,
       level_min: prefs.min != null ? String(prefs.min) : '',
       level_max: prefs.max != null ? String(prefs.max) : '',

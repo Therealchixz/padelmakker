@@ -5,6 +5,7 @@ export const KAMPE_NON_CHAT_NOTIFICATION_TYPES = Object.freeze([
   'match_invite',
   'match_full',
   'match_cancelled',
+  'match_updated',
   'result_submitted',
   'result_confirmed',
   'seeking_player',

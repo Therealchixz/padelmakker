@@ -9,7 +9,28 @@ export const MATCH_VENUE_TBD = '__venue_tbd__'
 /** Turnering: bane ikke valgt / anden bane */
 export const AMERICANO_VENUE_NONE = '__none'
 
-const SPECIAL_VENUE_OPTION_IDS = new Set([MATCH_VENUE_TBD, AMERICANO_VENUE_NONE])
+/**
+ * Kamp: en bane, der ikke er på listen - navnet skrives selv (court_id null).
+ * Ejeren 25. sep. 2026: "det kan jo være appen ikke har alle baner med".
+ */
+export const MATCH_VENUE_CUSTOM = '__venue_custom__'
+export const CUSTOM_VENUE_OPTION = Object.freeze({
+  id: MATCH_VENUE_CUSTOM,
+  label: 'Anden bane – skriv selv',
+  courtId: null,
+})
+export const CUSTOM_COURT_NAME_MAX = 60
+
+export function isMatchVenueCustom(selectedId) {
+  return selectedId === MATCH_VENUE_CUSTOM
+}
+
+/** Selvskrevet banenavn: trimmet, ét mellemrum ad gangen, højst 60 tegn. */
+export function cleanCustomCourtName(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, CUSTOM_COURT_NAME_MAX)
+}
+
+const SPECIAL_VENUE_OPTION_IDS = new Set([MATCH_VENUE_TBD, AMERICANO_VENUE_NONE, MATCH_VENUE_CUSTOM])
 
 export function isSpecialVenueOption(id) {
   return SPECIAL_VENUE_OPTION_IDS.has(String(id || ''))
@@ -77,7 +98,7 @@ export function courtIdFromVenueSelection(selectedId, options) {
 }
 
 export function courtNameFromVenueSelection(selectedId, options) {
-  if (selectedId === MATCH_VENUE_TBD) return ''
+  if (selectedId === MATCH_VENUE_TBD || selectedId === MATCH_VENUE_CUSTOM) return ''
   const o = (options || []).find((x) => x.id === selectedId)
   return o?.label ?? ''
 }

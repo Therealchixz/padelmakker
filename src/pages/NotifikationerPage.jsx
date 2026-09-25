@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X, CalendarClock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { theme, font, btn } from '../lib/platformTheme';
@@ -48,6 +48,8 @@ function NotifIcon({ type }) {
     case 'match_cancelled':
     case 'americano_cancelled':
       return wrap(theme.redBg, theme.red, <X style={iconStyle} />);
+    case 'match_updated':
+      return wrap(theme.amberBg, theme.amberText, <CalendarClock style={iconStyle} />);
     case 'elo_change':
     case 'americano_completed':
     case 'league_completed':

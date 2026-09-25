@@ -1,31 +1,29 @@
 /**
  * "Ret bane, dato og tid" for opretteren af en kamp (før den er startet).
- * Samme felter som i opret-guiden. Selve gemningen sker i KampeTab.
+ * Man vælger bare banen, man skal spille på (eller skriver den selv, hvis
+ * den ikke er på listen). Selve gemningen sker i KampeTab.
  */
 import { useMemo, useState } from 'react';
 import { AppModal } from '../AppModal';
 import { DateInputField } from '../DateInputField';
-import { PillTabs } from '../PillTabs';
 import { VenueRegionPicker } from '../VenueRegionPicker';
 import { btn, inputStyle, labelStyle, theme } from '../../lib/platformTheme';
 import { TIME_OPTIONS } from '../../lib/timeSlotOptions';
-import { MATCH_VENUE_TBD, isMatchVenueTbd } from '../../lib/matchVenueOptions';
+import {
+  CUSTOM_COURT_NAME_MAX,
+  CUSTOM_VENUE_OPTION,
+  MATCH_VENUE_TBD,
+  isMatchVenueCustom,
+} from '../../lib/matchVenueOptions';
 import { buildMatchEditPatch, initialMatchEditForm } from '../../lib/matchEdit.js';
-
-const BOOKED_TABS = [
-  { id: 'yes', label: 'Ja, booket' },
-  { id: 'no', label: 'Nej, ikke endnu' },
-];
 
 export function EditMatchModal({ match, venueOptions, saving = false, onSave, onClose }) {
   const [form, setForm] = useState(() => initialMatchEditForm(match, venueOptions));
   const [error, setError] = useState('');
 
   const pickerOptions = useMemo(
-    () => (form.court_booked
-      ? venueOptions
-      : [{ id: MATCH_VENUE_TBD, label: 'Ikke valgt endnu', courtId: null }, ...venueOptions]),
-    [form.court_booked, venueOptions],
+    () => [{ id: MATCH_VENUE_TBD, label: 'Ikke valgt endnu', courtId: null }, CUSTOM_VENUE_OPTION, ...venueOptions],
+    [venueOptions],
   );
   // Tidspunkter uden for listen (fx 18:15) bevares som valgmulighed.
   const timeOptions = TIME_OPTIONS.includes(form.time) ? TIME_OPTIONS : [form.time, ...TIME_OPTIONS];
@@ -49,32 +47,29 @@ export function EditMatchModal({ match, venueOptions, saving = false, onSave, on
       <div style={{ padding: '18px 18px 16px' }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 4px', color: theme.text }}>Ret bane, dato og tid</h2>
         <p style={{ fontSize: 13, color: theme.textMid, margin: '0 0 16px', lineHeight: 1.45 }}>
-          De andre spillere får en besked i kamp-chatten om ændringen.
+          De andre spillere får besked om ændringen.
         </p>
 
-        <label style={labelStyle}>Har du booket en bane?</label>
-        <PillTabs
-          tabs={BOOKED_TABS}
-          value={form.court_booked ? 'yes' : 'no'}
-          onChange={(id) => {
-            const booked = id === 'yes';
-            let venue = form.venue;
-            if (booked && isMatchVenueTbd(venue)) venue = venueOptions[0]?.id ?? MATCH_VENUE_TBD;
-            set({ court_booked: booked, venue });
-          }}
-          ariaLabel="Bane booket"
-          size="sm"
-          style={{ margin: '4px 0 14px' }}
-        />
-
-        <label style={labelStyle}>{form.court_booked ? 'Hvilken bane er booket?' : 'Hvor vil du helst spille? (valgfrit)'}</label>
+        <label style={labelStyle}>Hvor skal I spille?</label>
         <VenueRegionPicker
           value={form.venue}
           onChange={(id) => set({ venue: id })}
           options={pickerOptions}
-          placeholder={form.court_booked ? 'Vælg booket center' : 'Ikke valgt endnu'}
-          ariaLabel={form.court_booked ? 'Vælg booket bane' : 'Vælg foretrukket center'}
+          placeholder="Ikke valgt endnu"
+          ariaLabel="Vælg bane"
         />
+        {isMatchVenueCustom(form.venue) ? (
+          <input
+            type="text"
+            value={form.custom_court}
+            onChange={(e) => set({ custom_court: e.target.value.slice(0, CUSTOM_COURT_NAME_MAX) })}
+            placeholder="Fx Padelhallen Køge"
+            aria-label="Banens navn"
+            maxLength={CUSTOM_COURT_NAME_MAX}
+            autoFocus
+            style={{ ...inputStyle, fontSize: '13px', marginTop: 8 }}
+          />
+        ) : null}
 
         <div className="pm-form-2col" style={{ marginTop: 14 }}>
           <div style={{ minWidth: 0 }}>

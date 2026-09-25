@@ -352,6 +352,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       case "result_confirmed": return "\uD83C\uDFC6";
       case "elo_change": return "\uD83D\uDCC8";
       case "match_cancelled": return "\u274C";
+      case "match_updated": return "\uD83D\uDCC5";
       case "welcome": return "\uD83D\uDC4B";
       case "team_invite": return "\uD83C\uDFBE";
       case "team_invite_accepted": return "\u2705";
