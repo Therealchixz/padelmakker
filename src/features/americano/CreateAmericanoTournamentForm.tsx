@@ -24,6 +24,10 @@ import {
   courtIdFromVenueSelection,
   courtNameFromVenueSelection,
   AMERICANO_VENUE_NONE,
+  CUSTOM_VENUE_OPTION,
+  CUSTOM_COURT_NAME_MAX,
+  cleanCustomCourtName,
+  isMatchVenueCustom,
 } from '../../lib/matchVenueOptions'
 import { VenueRegionPicker } from '../../components/VenueRegionPicker'
 import { DateInputField } from '../../components/DateInputField'
@@ -107,12 +111,20 @@ export function CreateAmericanoTournamentForm({
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts])
   const selectOptions = useMemo(
     () => [
-      { id: AMERICANO_COURT_NONE, label: 'Ikke valgt / anden bane', courtId: null as string | null },
+      { id: AMERICANO_COURT_NONE, label: 'Ikke valgt endnu', courtId: null as string | null },
+      { ...CUSTOM_VENUE_OPTION },
       ...venueOptions,
     ],
     [venueOptions]
   )
   const [courtId, setCourtId] = useState(AMERICANO_COURT_NONE)
+  const [customCourt, setCustomCourt] = useState('')
+  // Banens navn: fra listen, skrevet selv, eller ingen ("Ikke valgt endnu").
+  const chosenCourtName = isMatchVenueCustom(courtId)
+    ? cleanCustomCourtName(customCourt)
+    : courtId === AMERICANO_COURT_NONE
+      ? ''
+      : courtNameFromVenueSelection(courtId, selectOptions)
   const [playerSlots, setPlayerSlots] = useState(8)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [levelMin, setLevelMin] = useState(3.0)
@@ -189,6 +201,7 @@ export function CreateAmericanoTournamentForm({
     setError(null)
     const n = name.trim()
     if (!n) { setError('Angiv et navn.'); return }
+    if (isMatchVenueCustom(courtId) && !chosenCourtName) { setError('Skriv navnet på banen.'); return }
     setSubmitting(true)
     try {
       const { data: row, error: insErr } = await supabase
@@ -199,6 +212,7 @@ export function CreateAmericanoTournamentForm({
           tournament_date: date,
           time_slot: timeSlot,
           court_id: courtIdFromVenueSelection(courtId, selectOptions),
+          court_name: chosenCourtName || null,
           player_slots: playerSlots,
           courts_per_round: courtsPerRound,
           points_per_match: pointsPerMatch,
@@ -231,7 +245,7 @@ export function CreateAmericanoTournamentForm({
         id: row.id, name: n, format: tournamentFormat,
         tournament_date: date, time_slot: timeSlot,
         player_slots: playerSlots, points_per_match: pointsPerMatch,
-        court_name: courtNameFromVenueSelection(courtId, selectOptions) || null,
+        court_name: chosenCourtName || null,
       })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -252,7 +266,7 @@ export function CreateAmericanoTournamentForm({
     p === 0 ? 'Gratis' : (p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`)
 
   const formatLabel = tournamentFormat === 'mexicano' ? 'Mexicano' : 'Americano'
-  const courtLabel = courtNameFromVenueSelection(courtId, selectOptions)
+  const courtLabel = chosenCourtName
   const paymentLabel = PAYMENT_OPTIONS.find(p => p.id === paymentMethod)?.label ?? paymentMethod
 
   const endTime = (() => {
@@ -316,9 +330,20 @@ export function CreateAmericanoTournamentForm({
               value={courtId}
               onChange={setCourtId}
               options={selectOptions}
-              placeholder="Ikke valgt / anden bane"
+              placeholder="Ikke valgt endnu"
               ariaLabel="Vælg bane til turnering"
             />
+            {isMatchVenueCustom(courtId) ? (
+              <input
+                type="text"
+                value={customCourt}
+                onChange={(e) => setCustomCourt(e.target.value.slice(0, CUSTOM_COURT_NAME_MAX))}
+                placeholder="Skriv banens navn, fx Padelhallen Køge"
+                aria-label="Banens navn"
+                maxLength={CUSTOM_COURT_NAME_MAX}
+                style={{ ...inputStyle, marginTop: 8 }}
+              />
+            ) : null}
           </div>
 
           <div className="pm-field">

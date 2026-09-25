@@ -15,8 +15,8 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 166 |
-| ...med en identisk fil i `supabase/sql/` | 123 |
+| Funktioner i migrations (= i drift) | 167 |
+| ...med en identisk fil i `supabase/sql/` | 124 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 26 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
@@ -164,7 +164,7 @@ kan efterprøves direkte mod den kørende database.
 | `parse_clock_time` | `00000000000000_baseline_schema.sql` | `play_intent_open_match_notify.sql`<br>`play_intent_pool.sql` | — |
 | `play_intent_overlaps_match_time` | `00000000000000_baseline_schema.sql` | `play_intent_pool.sql` | 1 |
 | `protect_elo_fields` | `20260924215817_security_audit_sep2026.sql` | `security_audit_sep2026.sql` | 6 |
-| `public_americano_preview` | `00000000000000_baseline_schema.sql` | `public_share_pages.sql` | — |
+| `public_americano_preview` | `20260925100420_americano_edit_details.sql` | `americano_edit_details.sql` | 1 |
 | `public_match_preview` | `00000000000000_baseline_schema.sql` | `public_share_pages.sql` | — |
 | `public_platform_stats` | `00000000000000_baseline_schema.sql` | `public_platform_stats_rpc.sql` | — |
 | `public_upcoming_americano_events` | `00000000000000_baseline_schema.sql` | `_alle_fixes.sql` | 1 |
@@ -189,6 +189,7 @@ kan efterprøves direkte mod den kørende database.
 | `trg_set_elo_history_engine_meta` | `00000000000000_baseline_schema.sql` | `elo_guardrails_admin_flags.sql` | — |
 | `try_form_match_proposal` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `unblock_user` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
+| `update_americano_details` | `20260925100420_americano_edit_details.sql` | `americano_edit_details.sql` | — |
 | `update_match_details` | `20260925093306_update_match_details.sql` | `update_match_details.sql` | — |
 | `user_is_phone_verification_exempt` | `00000000000000_baseline_schema.sql` | `user_phone_verification_exempt_rpc.sql` | — |
 

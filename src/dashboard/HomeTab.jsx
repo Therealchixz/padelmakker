@@ -444,7 +444,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           .select('id, creator_id, date, time, time_end, court_name, level_range, description, created_at').eq('status', 'open')
           .gte('date', today).order('created_at', { ascending: false }).limit(5),
         supabase.from('americano_tournaments')
-          .select('id, name, tournament_date, time_slot, player_slots, court_id, creator_id, created_at, format').eq('status', 'registration')
+          .select('id, name, tournament_date, time_slot, player_slots, court_id, court_name, creator_id, created_at, format').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
           .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at, match_search_prefs, makker_search_prefs')
@@ -682,7 +682,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       const courtsForAm = courtsList.map((c) => ({ id: String(c.id), name: String(c.name || 'Bane') }));
       const americanoRegFeed_ = regAm.map(t => {
         const creatorArea = pMap[t.creator_id]?.area || '';
-        const courtName = resolveAmericanoCourtName(t.court_id, courtsForAm);
+        const courtName = resolveAmericanoCourtName(t.court_id, courtsForAm, t.court_name);
         const location = activityLocationLabel(courtName, creatorArea);
         return {
           type: 'americano_registration',
