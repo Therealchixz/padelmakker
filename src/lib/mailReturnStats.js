@@ -10,6 +10,8 @@ export const MAIL_SOURCES = [
   { kilde: 'winback', label: 'Engangsmail til inaktive' },
   { kilde: 'deling', label: 'Delte kampe (WhatsApp, SMS …)' },
   { kilde: 'plakat', label: 'Plakat (QR-kode i padelcenter)' },
+  { kilde: 'facebook', label: 'Facebook/Instagram-annoncer' },
+  { kilde: 'google', label: 'Google-annoncer' },
 ];
 
 /**

@@ -1054,7 +1054,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       setShowCreate(false);
       setPadelCreateStep(1);
       setPadelCreateFieldError(null);
-      setCreatedMatchReceipt(created);
+      // Opretteren er lige meldt til (join_open_match), men `created` er fra før.
+      // Uden dette stod der "Vi mangler 4 spillere" i delingsteksten.
+      setCreatedMatchReceipt({ ...created, current_players: Math.max(1, Number(created.current_players) || 0) });
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setCreating(false); }
