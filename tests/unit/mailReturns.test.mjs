@@ -213,10 +213,10 @@ test('send-winback kører ikke af sig selv og holder alle spærrer', () => {
 
 test('admin-kortet viser alle mail-slags, også dem med 0', () => {
   const rows = mailReturnRows({ returns: [{ kilde: 'digest', personer: 3, besoeg: 5 }, { kilde: 'ny', personer: 1, besoeg: 1 }], sent: { discovery: 25 } });
-  assert.deepEqual(rows.map((r) => [r.kilde, r.personer]), [['digest', 3], ['opdagelse', 0], ['paamindelse', 0], ['winback', 0], ['deling', 0], ['ny', 1]]);
+  assert.deepEqual(rows.map((r) => [r.kilde, r.personer]), [['digest', 3], ['opdagelse', 0], ['paamindelse', 0], ['winback', 0], ['deling', 0], ['plakat', 0], ['ny', 1]]);
   assert.equal(mailSentSummary({ sent: { discovery: 25 } }), 'Sendt: 25 almindelige mails');
   assert.equal(mailSentSummary({ sent: { discovery: 1, winback: 30 } }), 'Sendt: 1 almindelig mail og 30 engangsmails');
-  assert.equal(mailReturnRows(null).length, 5);
+  assert.equal(mailReturnRows(null).length, 6);
 });
 
 test('privatlivspolitikken fortæller om mærket', () => {
