@@ -248,6 +248,15 @@ export function AmericanoDetailSheet({
         ? { label: emptySlots > 0 ? `${emptySlots} ledig${emptySlots === 1 ? '' : 'e'}` : 'Åben', tone: 'open' }
         : { label: badgeLabel, tone: badgeTone }
 
+  // Profilbilleder på banerne: 1. spiller på venstre hold, 2. på højre osv.
+  const courtCount = Math.max(1, Math.min(4, courtsPerRound || 1))
+  const courtPlayers: ({ name: string; avatar?: string | null } | null)[] = Array(courtCount * 4).fill(null)
+  participants.slice(0, courtCount * 4).forEach((p, i) => {
+    const court = Math.floor(i / 4)
+    const slot = [0, 2, 1, 3][i % 4]
+    courtPlayers[court * 4 + slot] = { name: p.name, avatar: p.avatar ?? null }
+  })
+
   const detailScroll = (
         <div className="pm-americano-v2-detail-scroll">
         {/* Samme top som 2v2-detaljen (EventDetailHero) */}
@@ -264,6 +273,8 @@ export function AmericanoDetailSheet({
           tags={[{ label: priceTag, tone: isFree ? 'green' : 'navy' }]}
           dateHeadline={tournament.tournament_date ? formatMatchDateHeadlineDa(tournament.tournament_date) : dateLabel}
           timeLabel={tournamentTimeLabel(tournament.time_slot, tournament.duration_minutes)}
+          courts={courtCount}
+          players={courtPlayers}
         />
 
         <div className="pm-americano-v2-detail-stats">

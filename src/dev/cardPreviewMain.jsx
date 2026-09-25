@@ -9,7 +9,7 @@ import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet
 import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet';
 import { AmericanoListCard } from '../features/americano/AmericanoListCard';
 import { LigaListCard } from '../dashboard/LigaListCard';
-import { PadelCourtArt } from '../components/kampe/PadelCourtArt';
+import { PadelCourtTopView } from '../components/kampe/PadelCourtTopView';
 import '../styles/kampdetalje.css';
 
 const params = new URLSearchParams(window.location.search);
@@ -22,6 +22,7 @@ const profilesById = {
   2: { name: 'Sofie Holm', avatar: '👩' },
   3: { name: 'Jonas Berg', avatar: '🧔' },
   4: { name: 'Emma Friis', avatar: '👱‍♀️' },
+  5: { name: 'Lars Holm', avatar: `${window.location.origin}/icon-192.png` },
 };
 const p = (id) => ({ user_id: String(id) });
 const baseMatch = {
@@ -188,7 +189,7 @@ function DetailComparePreview() {
           profilesById={profilesById}
           matchPrefs={prefs}
           status="open" left={3} isFull={false}
-          teamStats={{ t1: [p(1)], t2: [] }}
+          teamStats={{ t1: [p(1)], t2: [p(5)] }}
         />
       </div>
       <div className="pm-dash-main--kampe-detail" style={frame}>
@@ -200,7 +201,11 @@ function DetailComparePreview() {
           courts={[{ id: 'c1', name: 'Skansen Padel' }]}
           dateLabel="25.09.2026 kl. 13:30"
           status="registration"
-          participants={[{ id: 'x', user_id: '1', name: 'Mads Jensen', avatar: '🎾', elo: 1046, isCreator: true }]}
+          participants={[
+            { id: 'x', user_id: '1', name: 'Mads Jensen', avatar: '🎾', elo: 1046, isCreator: true },
+            { id: 'y', user_id: '5', name: 'Lars Holm', avatar: `${window.location.origin}/icon-192.png`, elo: 1010 },
+            { id: 'z', user_id: '2', name: 'Sofie Holm', avatar: null, elo: 990 },
+          ]}
         />
       </div>
     </div>
@@ -266,8 +271,8 @@ function CourtPreview() {
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', padding: 16 }}>
       <h1 style={{ fontSize: 15, fontWeight: 800 }}>Bane-hero — {theme}</h1>
-      <div className="pm-kd-hero" aria-hidden="true">
-        <PadelCourtArt className="pm-kd-hero-court" />
+      <div className="pm-kd-hero pm-kd-hero--court" aria-hidden="true">
+        <PadelCourtTopView className="pm-kd-hero-court" players={[{ name: 'Mads Jensen', avatar: '🎾' }, null, { name: 'Sofie Holm' }, null]} />
         <div className="pm-kd-hero-badges">
           <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
           <span className="pm-kd-chip pm-kd-chip--light">Niveau 3.0–4.0</span>

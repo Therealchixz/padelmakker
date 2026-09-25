@@ -21,7 +21,7 @@ test('begge detaljesider bruger EventDetailHero', () => {
 
 test('toppen har bane-billede, banens navn som overskrift og dato + tidsrum', () => {
   const hero = read('src/components/kampe/EventDetailHero.jsx');
-  assert.match(hero, /<PadelCourtArt/);
+  assert.match(hero, /<PadelCourtTopView/);
   assert.match(hero, /<h2 className="pm-kd-title">\{venue\}<\/h2>/);
   assert.match(hero, /Vis på kort/);
   assert.match(hero, /CalendarDays/);
@@ -33,4 +33,13 @@ test('Americano viser tidsrum ud fra varighed, og "7 ledige" som på 2v2', () =>
   const sheet = read('src/features/americano/AmericanoDetailSheet.tsx');
   assert.match(sheet, /ledig\$\{emptySlots === 1 \? '' : 'e'\}/);
   assert.match(sheet, /formatMatchDateHeadlineDa\(tournament\.tournament_date\)/);
+});
+
+test('baggrunden er banen set oppefra med spillernes pladser', () => {
+  const art = read('src/components/kampe/PadelCourtTopView.jsx');
+  assert.match(art, /6\.95 \* s/); // servelinjen 6,95 m fra nettet
+  assert.match(art, /isAvatarUrl\(avatar\)/); // profilbillede
+  assert.match(art, /strokeDasharray/); // stiplet = ledig plads
+  assert.match(read('src/components/kampe/KampeMatchDetailSheet.jsx'), /players=\{courtPlayers\}/);
+  assert.match(read('src/features/americano/AmericanoDetailSheet.tsx'), /courts=\{courtCount\}/);
 });

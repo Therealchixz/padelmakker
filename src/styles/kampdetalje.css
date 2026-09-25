@@ -33,6 +33,11 @@
   background: #0D2850;
 }
 
+/* Banen set oppefra (PadelCourtTopView) skal have plads over kortet */
+.pm-kd-hero--court {
+  height: 176px;
+}
+
 /* Stiliseret padelbane (SVG) fylder hele hero'en */
 .pm-kd-hero-court {
   position: absolute;
