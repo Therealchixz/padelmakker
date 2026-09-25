@@ -65,7 +65,8 @@ export function shareMatchUrl(origin, matchId) {
 }
 
 /**
- * Beskeden, der sendes med linket.
+ * Beskeden, der sendes sammen med linket (linket sendes for sig, så
+ * Messenger laver et kort ud fra det).
  * Fx "Vi mangler 3 spillere til padel mandag 28. sep kl. 21:00–23:30 🎾"
  */
 export function buildMatchShareText(match) {
@@ -75,7 +76,7 @@ export function buildMatchShareText(match) {
     ? `Vi mangler ${left} ${left === 1 ? 'spiller' : 'spillere'} til padel${when ? ` ${when}` : ''} 🎾`
     : `Padel${when ? ` ${when}` : ''} 🎾`;
   const details = [shareLevelLabel(match), shareCourtLabel(match)].filter(Boolean).join(' · ');
-  return [first, details, 'Meld dig til her (gratis):'].filter(Boolean).join('\n');
+  return [first, details, 'Meld dig til gratis på PadelMakker.'].filter(Boolean).join('\n');
 }
 
 /**

@@ -1,7 +1,6 @@
 import { absoluteUrl, SITE_ORIGIN } from './siteMeta';
 import { buildMatchShareText, shareMatchUrl } from './matchShareText.js';
-import { formatMatchDateDa } from './matchDisplayUtils';
-import { buildPublicTournamentPath } from './publicShareRoutes.js';
+import { buildTournamentShareText, shareTournamentUrl, tournamentFormatLabel } from './tournamentShareText.js';
 
 /**
  * @typedef {{ ok: boolean; method: 'share' | 'clipboard' | 'none'; error?: string }} ShareResult
@@ -68,41 +67,29 @@ export async function sharePadelMatch({ match }) {
   if (!match?.id) {
     return { ok: false, method: 'none', error: 'Kamp mangler' };
   }
-  // Linket står i selve teksten, ikke som et separat link-felt. Messenger (og
-  // WhatsApp) sendte ellers linket og teksten som to beskeder – linket først.
-  // Ejeren testede det i Messenger 24. sep. 2026.
+  // Tekst og link hver for sig: så laver Messenger et kort med kampens dato,
+  // niveau og ledige pladser (api/kamp-preview) og lægger teksten under.
+  // 24. sep. stod linket i teksten, fordi Vercels robotværn blokerede
+  // Facebook, så kortet var tomt. Værnet er slået fra 25. sep. 2026.
   return shareViaWebOrClipboard({
     title: 'Padel-kamp på PadelMakker',
-    text: `${buildMatchShareText(match)}\n${shareMatchUrl(SITE_ORIGIN, match.id)}`,
+    text: buildMatchShareText(match),
+    url: shareMatchUrl(SITE_ORIGIN, match.id),
   });
 }
 
 /**
- * @param {{ tournament: { id: string, name?: string, tournament_date?: string, time_slot?: string, court_name?: string | null }, hostName?: string }} options
+ * @param {{ tournament: object, hostName?: string, participantCount?: number }} options
  * @returns {Promise<ShareResult>}
  */
-export async function shareAmericanoTournament({ tournament, hostName }) {
+export async function shareAmericanoTournament({ tournament, hostName, participantCount }) {
   if (!tournament?.id) {
     return { ok: false, method: 'none', error: 'Turnering mangler' };
   }
-
-  const dateTxt = tournament.tournament_date ? formatMatchDateDa(tournament.tournament_date) : '';
-  const timeTxt = tournament.time_slot ? String(tournament.time_slot).trim() : '';
-  const court = tournament.court_name || 'padel';
-  const when = [dateTxt, timeTxt ? `kl. ${timeTxt}` : ''].filter(Boolean).join(' ');
-  const host = hostName?.trim() || 'En spiller';
-  const title = tournament.name?.trim() || 'Americano/Mexicano';
-
-  const url = absoluteUrl(buildPublicTournamentPath(String(tournament.id)));
-  const text = [
-    `${host} inviterer dig til "${title}"${when ? ` (${when})` : ''} på ${court}.`,
-    'Opret gratis profil på PadelMakker for at tilmelde dig:',
-  ].join('\n');
-
   return shareViaWebOrClipboard({
-    title: `${title} · PadelMakker`,
-    text,
-    url,
+    title: `${tournamentFormatLabel(tournament)} på PadelMakker`,
+    text: buildTournamentShareText(tournament, { hostName, participantCount }),
+    url: shareTournamentUrl(SITE_ORIGIN, tournament.id),
   });
 }
 

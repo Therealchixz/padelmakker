@@ -91,6 +91,17 @@
       "destination": "/api/kamp-preview?id=:matchId"
     },
     {
+      "source": "/turnering/:tournamentId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterestbot|redditbot|Embedly).*"
+        }
+      ],
+      "destination": "/api/turnering-preview?id=:tournamentId"
+    },
+    {
       "source": "/kamp.ics",
       "destination": "/api/calendar"
     },

@@ -30,7 +30,7 @@ const QUICK = {
 test('delingsteksten siger hvornår, niveau og hvor mange der mangler', () => {
   assert.equal(
     buildMatchShareText(QUICK),
-    'Vi mangler 3 spillere til padel mandag 28. sep kl. 21:00–23:30 🎾\nNiveau 3.0 – 4.0\nMeld dig til her (gratis):',
+    'Vi mangler 3 spillere til padel mandag 28. sep kl. 21:00–23:30 🎾\nNiveau 3.0 – 4.0\nMeld dig til gratis på PadelMakker.',
   );
   const booked = { ...QUICK, court_name: 'Skansen Padel', current_players: 3 };
   assert.match(buildMatchShareText(booked), /^Vi mangler 1 spiller til padel/);
@@ -49,10 +49,12 @@ test('delt link har ?kilde=deling, så admin-kortet kan tælle det', () => {
   const utils = read('src/lib/shareUtils.js');
   assert.match(utils, /buildMatchShareText\(match\)/);
   assert.match(utils, /shareMatchUrl\(SITE_ORIGIN, match\.id\)/);
-  // Én samlet besked: linket står i teksten, ikke som separat url (Messenger
-  // sendte ellers to beskeder med linket først).
+  // Tekst og link hver for sig, så Messenger laver et kort ud fra linket
+  // (ejeren sammenlignede 25. sep. 2026: Americano-delingen gav kort + tekst).
   const fn = utils.slice(utils.indexOf('export async function sharePadelMatch'));
-  assert.doesNotMatch(fn.slice(0, fn.indexOf('\n}\n')), /\burl:/);
+  const body = fn.slice(0, fn.indexOf('\n}\n'));
+  assert.match(body, /text: buildMatchShareText\(match\),/);
+  assert.match(body, /url: shareMatchUrl\(SITE_ORIGIN, match\.id\),/);
   assert.match(read('src/components/kampe/CreatedMatchReceipt.jsx'), /shareMatchUrl\(SITE_ORIGIN, m\.id\)/);
 });
 
