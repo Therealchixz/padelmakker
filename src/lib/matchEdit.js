@@ -4,12 +4,23 @@
  * Ejeren 25. sep. 2026: "Hvis man starter en kamp uden at have valgt en bane,
  * har man ikke mulighed for at gå tilbage og ændre det, hvis man finder en
  * bane, eller man vil ændre tiden." Kun opretteren, og kun før kampen er
- * startet. De andre spillere får besked i kamp-chatten.
+ * startet. De andre spillere får besked (notifikation + kamp-chatten).
+ *
+ * Ingen "Har du booket?"-knap her: man vælger bare banen, man skal spille på
+ * (valgt bane = booket). Findes banen ikke på listen, kan navnet skrives selv.
  *
  * Ren logik uden supabase, så den kan testes fra node.
  */
 
-import { MATCH_VENUE_TBD, courtIdFromVenueSelection, courtNameFromVenueSelection, isMatchVenueTbd } from './matchVenueOptions.js';
+import {
+  MATCH_VENUE_CUSTOM,
+  MATCH_VENUE_TBD,
+  cleanCustomCourtName,
+  courtIdFromVenueSelection,
+  courtNameFromVenueSelection,
+  isMatchVenueCustom,
+  isMatchVenueTbd,
+} from './matchVenueOptions.js';
 import { parseMatchLevelRange } from './matchLevelRange.js';
 import { shareWhenLabel } from './matchShareText.js';
 
@@ -38,12 +49,14 @@ export function canEditMatch({ isCreator, status }) {
  * @param {{ id: string, label: string, courtId: string | null }[]} venueOptions
  */
 export function initialMatchEditForm(match, venueOptions = []) {
-  const booked = parseMatchLevelRange(match?.level_range).booked === true;
   const courtId = match?.court_id ? String(match.court_id) : '';
   const courtName = String(match?.court_name || '').trim().toLowerCase();
   const byId = courtId ? venueOptions.find((o) => String(o.courtId || '') === courtId) : null;
   const byName = !byId && courtName ? venueOptions.find((o) => String(o.label || '').trim().toLowerCase() === courtName) : null;
-  const venue = (byId || byName)?.id || MATCH_VENUE_TBD;
+  const rawName = String(match?.court_name || '').trim();
+  const known = (byId || byName)?.id;
+  // Et navn uden match på listen er en selvskrevet bane.
+  const venue = known || (rawName && rawName.toLowerCase() !== 'padel' ? MATCH_VENUE_CUSTOM : MATCH_VENUE_TBD);
   const start = minutes(match?.time);
   const end = minutes(match?.time_end);
   let duration = 120;
@@ -52,8 +65,8 @@ export function initialMatchEditForm(match, venueOptions = []) {
     if (EDIT_DURATIONS.includes(d)) duration = d;
   }
   return {
-    court_booked: booked && !isMatchVenueTbd(venue),
     venue,
+    custom_court: isMatchVenueCustom(venue) ? rawName : '',
     date: String(match?.date || '').slice(0, 10),
     time: clock(match?.time) || '18:00',
     duration: String(duration),
@@ -80,17 +93,18 @@ export function buildMatchEditPatch(form, match, venueOptions = [], now = new Da
     return { patch: null, error: 'Tidspunktet er allerede passeret. Vælg et senere tidspunkt.', field: 'time' };
   }
 
-  const booked = form?.court_booked === true;
   const venue = form?.venue || MATCH_VENUE_TBD;
-  if (booked && isMatchVenueTbd(venue)) {
-    return { patch: null, error: 'Vælg det center, hvor banen er booket.', field: 'venue' };
+  const custom = isMatchVenueCustom(venue) ? cleanCustomCourtName(form?.custom_court) : '';
+  if (isMatchVenueCustom(venue) && !custom) {
+    return { patch: null, error: 'Skriv navnet på banen.', field: 'venue' };
   }
+  const booked = !isMatchVenueTbd(venue);
 
   const endM = startM + dur;
   const time = clock(form.time);
   const timeEnd = `${String(Math.floor(endM / 60) % 24).padStart(2, '0')}:${String(endM % 60).padStart(2, '0')}`;
-  const courtId = isMatchVenueTbd(venue) ? null : courtIdFromVenueSelection(venue, venueOptions);
-  const courtName = isMatchVenueTbd(venue) ? '' : courtNameFromVenueSelection(venue, venueOptions);
+  const courtId = booked && !custom ? courtIdFromVenueSelection(venue, venueOptions) : null;
+  const courtName = custom || (booked ? courtNameFromVenueSelection(venue, venueOptions) : '');
 
   const patch = {
     date,

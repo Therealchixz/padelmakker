@@ -16,7 +16,7 @@ import { LevelRangeSlider } from '../LevelRangeSlider';
 import { VenueRegionPicker } from '../VenueRegionPicker';
 import { fieldValidationErrorStyle, fieldValidationMessage } from '../../lib/formValidationScroll';
 import { TIME_OPTIONS } from '../../lib/timeSlotOptions';
-import { isMatchVenueTbd, MATCH_VENUE_TBD, courtNameFromVenueSelection } from '../../lib/matchVenueOptions';
+import { isMatchVenueTbd, isMatchVenueCustom, cleanCustomCourtName, CUSTOM_COURT_NAME_MAX, MATCH_VENUE_TBD, courtNameFromVenueSelection } from '../../lib/matchVenueOptions';
 import { timeToMinutes } from '../../lib/matchDisplayUtils';
 import { eloToLevel, levelToElo, formatPlaytomicLevelRange, formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 
@@ -142,6 +142,20 @@ export function CreateMatchForm({
                 emptyLabel="Indlæser centre…"
                 ariaLabel={newMatch.court_booked ? "Vælg booket bane" : "Vælg foretrukket center"}
               />
+              {isMatchVenueCustom(newMatch.court_id) ? (
+                <input
+                  type="text"
+                  value={newMatch.custom_court || ""}
+                  onChange={(e) => {
+                    setNewMatch((m) => ({ ...m, custom_court: e.target.value.slice(0, CUSTOM_COURT_NAME_MAX) }));
+                    if (padelCreateFieldError?.field === 'venue') setPadelCreateFieldError(null);
+                  }}
+                  placeholder="Skriv banens navn, fx Padelhallen Køge"
+                  aria-label="Banens navn"
+                  maxLength={CUSTOM_COURT_NAME_MAX}
+                  style={{ ...inputStyle, fontSize: "13px", marginTop: "8px" }}
+                />
+              ) : null}
               <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
                 {newMatch.court_booked
                   ? "Vælg det center, hvor du har booket tid."
@@ -327,7 +341,9 @@ export function CreateMatchForm({
       })()}
 
       {padelCreateStep === 2 && (() => {
-        const courtLabel = courtNameFromVenueSelection(newMatch.court_id, createVenueOptions) || "Ikke valgt endnu";
+        const courtLabel = (isMatchVenueCustom(newMatch.court_id)
+          ? cleanCustomCourtName(newMatch.custom_court)
+          : courtNameFromVenueSelection(newMatch.court_id, createVenueOptions)) || "Ikke valgt endnu";
         const lvlMin = eloToLevel(Number(newMatch.level_min) || defaultLevelElo.min);
         const lvlMax = eloToLevel(Number(newMatch.level_max) || defaultLevelElo.max);
         const startM = timeToMinutes(newMatch.time);
