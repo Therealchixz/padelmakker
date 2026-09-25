@@ -1532,7 +1532,7 @@ export function AmericanoTab({
                 gap: 6,
               }}
             >
-              <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+              <span>{`${manageToolsOpen ? 'Skjul' : 'Vis'} ${isCreator ? 'opretter-værktøjer (slet m.m.)' : 'admin-værktøjer'}`}</span>
               {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {manageToolsOpen && (
@@ -1676,7 +1676,12 @@ export function AmericanoTab({
           }).catch(() => showToast('Kopiering mislykkedes'))
         }
         const handleShare = async () => {
-          const result = await shareAmericanoTournament({ tournament: t })
+          const result = await shareAmericanoTournament({
+            tournament: t,
+            hostName: String(profile?.full_name || profile?.name || ''),
+            // Opretteren er meldt til ved oprettelse.
+            participantCount: Math.max(1, (participantsByTournament[t.id] || []).length),
+          })
           const msg = shareResultToastMessage(result)
           if (msg) showToast(msg, result.ok ? 'success' : 'error')
         }
