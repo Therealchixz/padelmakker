@@ -15,8 +15,8 @@ kan efterprøves direkte mod den kørende database.
 
 | | Antal |
 |---|---|
-| Funktioner i migrations (= i drift) | 165 |
-| ...med en identisk fil i `supabase/sql/` | 122 |
+| Funktioner i migrations (= i drift) | 166 |
+| ...med en identisk fil i `supabase/sql/` | 123 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 26 |
 | ...som slet ikke findes i arkivet | 17 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
@@ -189,6 +189,7 @@ kan efterprøves direkte mod den kørende database.
 | `trg_set_elo_history_engine_meta` | `00000000000000_baseline_schema.sql` | `elo_guardrails_admin_flags.sql` | — |
 | `try_form_match_proposal` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `unblock_user` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
+| `update_match_details` | `20260925093306_update_match_details.sql` | `update_match_details.sql` | — |
 | `user_is_phone_verification_exempt` | `00000000000000_baseline_schema.sql` | `user_phone_verification_exempt_rpc.sql` | — |
 
 ## I databasen, men i ingen migration
