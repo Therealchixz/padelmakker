@@ -9,6 +9,7 @@ import { fetchCourtsCached } from '../../lib/courtsCache'
 import { fetchProfilesByIdMap } from '../../lib/profileQueries'
 import { fetchRowsInChunks } from '../../lib/supabaseChunkFetch'
 import { CreateAmericanoTournamentForm, type CreatedTournamentInfo } from './CreateAmericanoTournamentForm'
+import { AmericanoChatPanel } from './AmericanoChatPanel'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
 import { AmericanoDetailSheet, type AmericanoDetailPlayer } from './AmericanoDetailSheet'
@@ -58,6 +59,7 @@ type ProfileLike = {
   name?: string | null
   email?: string | null
   role?: string | null
+  avatar?: string | null
 }
 
 type AmericanoSubTab = 'open' | 'playing' | 'completed'
@@ -1622,6 +1624,19 @@ export function AmericanoTab({
               <>
                 {registrationActions}
                 {playingPrimaryAction}
+                {joined || isCreator ? (
+                  <AmericanoChatPanel
+                    tournamentId={t.id}
+                    userId={profileId}
+                    userName={displayName}
+                    userAvatar={profile?.avatar || null}
+                    recipientIds={[
+                      ...(participantsByTournament[t.id] || []).map((p) => String(p.user_id)),
+                      String(t.creator_id),
+                    ]}
+                    showToast={showToast}
+                  />
+                ) : null}
               </>
             }
             joinedNote={joinedNote}
