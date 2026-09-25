@@ -39,3 +39,17 @@ test('bekræft-trinnet viser datoerne på dansk (dd.mm.åååå), ikke 2026-09-2
   assert.match(src, /label="Tilmeldingsfrist" value=\{createForm\.registration_deadline \? formatMatchDateDa\(/);
   assert.doesNotMatch(src, /\{createForm\.start_date \|\| '—'\}/);
 });
+
+test('opret-guiden har et felt til sæsonslut (ejeren: "hvor længe skal den løbe")', () => {
+  const src = readFileSync(join(root, 'src/dashboard/LigaTab.jsx'), 'utf8');
+  assert.match(src, /<label>Sæsonslut<\/label>/);
+  assert.match(src, /end_date: e\.target\.value/);
+  assert.match(src, /Sæsonslut skal være efter sæsonstart\./);
+});
+
+test('opret-guiden har et felt til maks. antal hold (hvornår ligaen er fyldt)', () => {
+  const src = readFileSync(join(root, 'src/dashboard/LigaTab.jsx'), 'utf8');
+  assert.match(src, /<label>Maks\. antal hold<\/label>/);
+  assert.match(src, /max_teams: e\.target\.value/);
+  assert.match(src, /<option value="">Ingen grænse<\/option>/);
+});
