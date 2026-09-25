@@ -1171,10 +1171,14 @@ export function LigaTab({
                 <SummaryRow label="Navn" value={createForm.name || '—'} />
                 <SummaryRow label="Region" value={createForm.region || '—'} />
                 <SummaryRow label="Antal divisioner" value={createForm.num_divisions || 1} />
-                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline || '—'} />
+                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline ? formatMatchDateDa(createForm.registration_deadline) : '—'} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæsonstart</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.start_date || '—'}</span>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæson</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>
+                    {createForm.start_date
+                      ? `${formatMatchDateDa(createForm.start_date)} – ${formatMatchDateDa(resolveLeagueEndDate(createForm.start_date, createForm.end_date, createForm.season_type))}`
+                      : '—'}
+                  </span>
                 </div>
               </div>
               {/* Regler & kampsystem */}

@@ -33,3 +33,9 @@ test('LigaTab sender altid en slutdato med', () => {
   assert.match(src, /end_date: endDate,/);
   assert.doesNotMatch(src, /end_date: createForm\.end_date \|\| null/);
 });
+
+test('bekræft-trinnet viser datoerne på dansk (dd.mm.åååå), ikke 2026-09-25', () => {
+  const src = readFileSync(join(root, 'src/dashboard/LigaTab.jsx'), 'utf8');
+  assert.match(src, /label="Tilmeldingsfrist" value=\{createForm\.registration_deadline \? formatMatchDateDa\(/);
+  assert.doesNotMatch(src, /\{createForm\.start_date \|\| '—'\}/);
+});
