@@ -70,6 +70,8 @@ export function syncMobileChatViewportVars(
   vv = typeof window !== 'undefined' ? window.visualViewport : null,
 ) {
   if (!vv || typeof window === 'undefined') return;
+  // Brugt som event-handler får vi et event i stedet for et element (Sentry JAVASCRIPT-REACT-9).
+  if (!root?.style) root = document.documentElement;
   const layoutHeight = window.innerHeight;
   const kbOffset = Math.max(0, layoutHeight - vv.height - vv.offsetTop);
   root.style.setProperty('--vvh', `${vv.height}px`);
@@ -121,6 +123,7 @@ export function resetMobileDocumentScroll() {
  */
 export function nudgeMobileChatViewportAfterKeyboard(root = document.documentElement) {
   if (typeof window === 'undefined') return;
+  if (!root?.style) root = document.documentElement;
   const vv = window.visualViewport;
   if (!vv) return;
 
