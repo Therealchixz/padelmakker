@@ -1,6 +1,7 @@
 import React from "react";
 import * as Sentry from "@sentry/react";
 import { btn } from "./lib/platformTheme";
+import { reloadOnceForStaleChunk } from "./lib/staleChunkReload.js";
 
 function debugMode() {
   try {
@@ -25,6 +26,14 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(err, info) {
+    // Gammel kodefil efter en opdatering: genindlæs én gang i stedet for fejlsiden.
+    let storage = null;
+    try {
+      storage = window.sessionStorage;
+    } catch {
+      /* lageret kan være blokeret */
+    }
+    if (reloadOnceForStaleChunk(err, { storage, reload: () => window.location.reload() })) return;
     console.error("PadelMakker render error:", err, info?.componentStack);
     const eventId = Sentry.captureException(err, {
       extra: {

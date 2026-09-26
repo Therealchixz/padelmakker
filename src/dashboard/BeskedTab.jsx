@@ -1070,7 +1070,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         onChange={handleInputChange}
         onSend={handleSend}
         onKeyDown={handleKeyDown}
-        onBlur={mobileChatActive ? nudgeMobileChatViewportAfterKeyboard : undefined}
+        onBlur={mobileChatActive ? () => nudgeMobileChatViewportAfterKeyboard() : undefined}
         enableQuickActions={!chatIsBlocked}
         onInviteMatch={() => void openMatchPicker()}
         onShareVenue={() => void openVenuePicker()}
