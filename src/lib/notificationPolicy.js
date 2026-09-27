@@ -268,6 +268,15 @@ const TYPE_POLICIES = Object.freeze({
     urgency: "normal",
     cooldownSeconds: 60,
   },
+  league_cancelled: {
+    channel: "liga",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 60,
+    renotify: true,
+  },
   league_completed: {
     channel: "liga",
     level: "normal",

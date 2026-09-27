@@ -57,7 +57,8 @@ export function ligaIsKnockout(league) {
  */
 export function getLigaBadge(league, { regTeamCount = 0, maxTeams = 0, totalRounds = null } = {}) {
   const filled = regTeamCount;
-  const max = maxTeams || filled;
+  // Uden holdgrænse (max_teams tom) er ligaen aldrig "Fuld".
+  const max = Number(league?.max_teams) > 0 ? Number(maxTeams) || Number(league.max_teams) : 0;
   const rounds = totalRounds || league.total_rounds;
 
   if (league.status === 'completed') {

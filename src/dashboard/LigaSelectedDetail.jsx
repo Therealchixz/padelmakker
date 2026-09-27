@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Play, Plus, Search, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Play, Plus, Search, Check, Trash2 } from 'lucide-react';
 import { eloToLevel, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
@@ -282,6 +282,20 @@ function teamColor(teamId) {
   return TEAM_COLORS[hashStr(String(teamId || 'x')) % TEAM_COLORS.length];
 }
 
+/** "Slet liga" i admin-værktøjerne (opretter under tilmelding, admin altid). */
+function DeleteLeagueButton({ onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{ ...btn(false), padding: '7px 12px', fontSize: 12, color: theme.red, borderColor: theme.red, background: theme.redBg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+    >
+      <Trash2 size={13} /> Slet liga
+    </button>
+  );
+}
+
 function RegistrationDetail({
   league,
   regTeams,
@@ -306,6 +320,7 @@ function RegistrationDetail({
   manageToolsOpen,
   toggleManageTools,
   onStartLeague,
+  onDeleteLeague,
 }) {
   const emptySlots = Math.max(0, maxTeams - filled);
   const fillPct = maxTeams > 0 ? Math.min(100, Math.round((filled / maxTeams) * 100)) : 0;
@@ -330,6 +345,7 @@ function RegistrationDetail({
         </div>
       </div>
 
+      {league.max_teams ? (
       <div className="pm-americano-v2-list-progress-row" style={{ marginBottom: 16 }}>
         <div
           className={`pm-americano-v2-list-progress${filled >= maxTeams ? ' pm-americano-v2-list-progress--full' : ''}`}
@@ -348,6 +364,7 @@ function RegistrationDetail({
           {filled}/{maxTeams}
         </span>
       </div>
+      ) : null}
 
       {league.description ? (
         <p style={{ fontSize: 13, color: theme.textMid, margin: '0 0 14px', lineHeight: 1.45 }}>{league.description}</p>
@@ -520,6 +537,9 @@ function RegistrationDetail({
               <Play size={13} /> Start liga
             </button>
           ) : null}
+          {canManageTeams && manageToolsOpen && onDeleteLeague ? (
+            <DeleteLeagueButton onClick={onDeleteLeague} disabled={busy} />
+          ) : null}
         </div>
       ) : null}
     </>
@@ -553,6 +573,7 @@ function ActiveDetail({
   onCompleteLeague,
   busy,
   matchesByLeague,
+  onDeleteLeague,
 }) {
   const currentRoundMatches = matches.filter((m) => m.round_number === league.current_round);
   const myMatch = myTeam ? currentRoundMatches.find((m) => m.team1_id === myTeam.id || m.team2_id === myTeam.id) : null;
@@ -787,6 +808,7 @@ function ActiveDetail({
                   Afslut liga
                 </button>
               </div>
+              {onDeleteLeague ? <DeleteLeagueButton onClick={onDeleteLeague} disabled={busy} /> : null}
             </div>
           ) : null}
         </div>

@@ -23,6 +23,7 @@ export const KAMPE_ENTITY_NOTIFICATION_TYPES = Object.freeze([
   'league_full',
   'league_started',
   'league_completed',
+  'league_cancelled',
   'team_invite',
   'team_invite_accepted',
   'team_invite_declined',

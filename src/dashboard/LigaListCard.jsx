@@ -135,9 +135,10 @@ export function LigaListCard({
           <>
             <div className="pm-americano-v2-list-venue">
               <MapPin size={12} aria-hidden />
-              {regionLabel || 'Danmark'} · {maxTeams} hold max
+              {regionLabel || 'Danmark'} · {league.max_teams ? `${league.max_teams} hold max` : `${filled} hold tilmeldt`}
             </div>
 
+            {league.max_teams ? (
             <div className="pm-americano-v2-list-progress-row">
               <div
                 className={`pm-americano-v2-list-progress${isFull ? ' pm-americano-v2-list-progress--full' : ''}`}
@@ -156,6 +157,7 @@ export function LigaListCard({
                 {filled}/{maxTeams}
               </span>
             </div>
+            ) : null}
 
             <div className="pm-americano-v2-list-footer">
               <div className="pm-americano-v2-list-meta">
@@ -166,7 +168,7 @@ export function LigaListCard({
                   </span>
                 ) : null}
                 <span className="pm-americano-v2-list-meta-pill">
-                  Frist {shortDateLabel(league.end_date)}
+                  Frist {shortDateLabel(league.registration_deadline || league.end_date)}
                 </span>
                 <span className="pm-americano-v2-list-meta-pill">2 spillere pr. hold</span>
               </div>
