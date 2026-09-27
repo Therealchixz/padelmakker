@@ -1,6 +1,7 @@
 /* Dev-only preview af KampeMatchListCard med mock-data — gør det muligt at se
    og justere kortdesignet uden login. Åbn /card-preview.html (?theme=dark). */
 import { createRoot } from 'react-dom/client';
+import { useState } from 'react';
 import '../index.css';
 import '../styles/variables.css';
 import '../responsive.css';
@@ -10,6 +11,8 @@ import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet
 import { AmericanoListCard } from '../features/americano/AmericanoListCard';
 import { LigaListCard } from '../dashboard/LigaListCard';
 import { PadelCourtTopView } from '../components/kampe/PadelCourtTopView';
+import { LigaSchedulePicker } from '../dashboard/LigaSchedulePicker';
+import { inputStyle } from '../lib/platformTheme';
 import '../styles/kampdetalje.css';
 
 const params = new URLSearchParams(window.location.search);
@@ -212,6 +215,24 @@ function DetailComparePreview() {
   );
 }
 
+/* Tidsplan i "Opret liga" (frist → start → slut) */
+function LigaSchedulePreview() {
+  const filled = params.get('filled') === '1';
+  const [form, setForm] = useState(filled
+    ? { registration_deadline: '2026-10-05', start_date: '2026-10-08', end_date: '2026-11-19', season_type: 'monthly' }
+    : { registration_deadline: '', start_date: '', end_date: '', season_type: 'monthly' });
+  return (
+    <div style={{ maxWidth: 420, margin: '0 auto', padding: '16px 0' }}>
+      <LigaSchedulePicker
+        form={form}
+        onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+        inputStyle={{ ...inputStyle, marginBottom: 0 }}
+        errorStyle={() => ({})}
+      />
+    </div>
+  );
+}
+
 /* Liste-kort på tværs af de tre formater — til visuel konsistens-sammenligning */
 function ListsPreview() {
   const amTournament = {
@@ -283,7 +304,8 @@ function CourtPreview() {
 }
 
 createRoot(document.getElementById('root')).render(
-  view === 'detail-compare' ? <DetailComparePreview />
+  view === 'liga-schedule' ? <LigaSchedulePreview />
+    : view === 'detail-compare' ? <DetailComparePreview />
     : view === 'court' ? <CourtPreview />
     : view === 'americano-detail' ? <AmericanoDetailPreview />
       : view === 'lists' ? <ListsPreview /> : <Preview />,

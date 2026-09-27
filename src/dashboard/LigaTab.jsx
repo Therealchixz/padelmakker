@@ -32,8 +32,8 @@ import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { scrollFormFieldIntoView, fieldValidationErrorStyle, fieldValidationMessage } from '../lib/formValidationScroll';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
-import { DateInputField } from '../components/DateInputField';
-import { resolveLeagueEndDate } from '../lib/ligaCreateDefaults.js';
+import { leagueScheduleError, resolveLeagueEndDate } from '../lib/ligaCreateDefaults.js';
+import { LigaSchedulePicker } from './LigaSchedulePicker';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 import { buildAdminChatPath } from '../lib/adminContactUtils';
@@ -644,10 +644,13 @@ export function LigaTab({
       scrollFormFieldIntoView(ligaCreateStartDateFieldRef.current);
       return;
     }
-    if (createForm.end_date && createForm.end_date < createForm.start_date) {
+    const scheduleError = leagueScheduleError(createForm);
+    if (scheduleError) {
       setCreateStep(1);
-      setCreateFieldError({ field: 'end_date', message: 'Sæsonslut skal være efter sæsonstart.' });
-      scrollFormFieldIntoView(ligaCreateEndDateFieldRef.current);
+      setCreateFieldError(scheduleError);
+      scrollFormFieldIntoView(
+        scheduleError.field === 'end_date' ? ligaCreateEndDateFieldRef.current : ligaCreateStartDateFieldRef.current,
+      );
       return;
     }
     setBusyId('create');
@@ -1013,6 +1016,7 @@ export function LigaTab({
         const ligaNameError = fieldValidationMessage(createFieldError, 'name');
         const ligaStartDateError = fieldValidationMessage(createFieldError, 'start_date');
         const ligaEndDateError = fieldValidationMessage(createFieldError, 'end_date');
+        const ligaDeadlineError = fieldValidationMessage(createFieldError, 'registration_deadline');
         const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
         /** Valg til "Maks. antal hold" i opret-guiden (tom = ingen grænse). */
         const LIGA_MAX_TEAMS_OPTIONS = [4, 6, 8, 10, 12, 16, 20, 24, 32];
@@ -1105,57 +1109,22 @@ export function LigaTab({
                 </select>
                 <div className="pm-field-hint">Når så mange hold er tilmeldt, er ligaen fyldt, og der kan ikke tilmeldes flere.</div>
               </div>
-              <div className="pm-field" ref={ligaCreateStartDateFieldRef}>
-                <label>Tilmeldingsfrist &amp; sæsonstart</label>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Frist</div>
-                    <DateInputField
-                      value={createForm.registration_deadline}
-                      onChange={e => setCreateForm(f => ({ ...f, registration_deadline: e.target.value }))}
-                      inputStyle={ligaInputStyle}
-                    />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Start</div>
-                    <DateInputField
-                      value={createForm.start_date}
-                      onChange={e => {
-                        setCreateForm(f => ({ ...f, start_date: e.target.value }));
-                        if (createFieldError?.field === 'start_date') setCreateFieldError(null);
-                      }}
-                      inputStyle={{ ...ligaInputStyle, ...fieldValidationErrorStyle(Boolean(ligaStartDateError)) }}
-                    />
-                  </div>
-                </div>
-                {ligaStartDateError && (
-                  <div id="liga-create-start-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
-                    {ligaStartDateError}
-                  </div>
-                )}
-              </div>
-              <div className="pm-field" ref={ligaCreateEndDateFieldRef}>
-                <label>Sæsonslut</label>
-                <DateInputField
-                  value={createForm.end_date}
-                  min={createForm.start_date || undefined}
-                  onChange={e => {
-                    setCreateForm(f => ({ ...f, end_date: e.target.value }));
-                    if (createFieldError?.field === 'end_date') setCreateFieldError(null);
-                  }}
-                  inputStyle={{ ...ligaInputStyle, ...fieldValidationErrorStyle(Boolean(ligaEndDateError)) }}
-                />
-                {ligaEndDateError ? (
-                  <div role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>{ligaEndDateError}</div>
-                ) : (
-                  <div className="pm-field-hint">
-                    Hvor længe ligaen løber, og hvornår alle kampe skal være spillet.
-                    {!createForm.end_date && createForm.start_date
-                      ? ` Vælger du ikke en dato, slutter den ${formatMatchDateDa(resolveLeagueEndDate(createForm.start_date, '', createForm.season_type))}.`
-                      : ''}
-                  </div>
-                )}
-              </div>
+              <LigaSchedulePicker
+                form={createForm}
+                onChange={(patch) => {
+                  setCreateForm(f => ({ ...f, ...patch }));
+                  if (createFieldError && Object.keys(patch).includes(createFieldError.field)) setCreateFieldError(null);
+                }}
+                errors={{
+                  registration_deadline: ligaDeadlineError,
+                  start_date: ligaStartDateError,
+                  end_date: ligaEndDateError,
+                }}
+                inputStyle={ligaInputStyle}
+                errorStyle={fieldValidationErrorStyle}
+                startRef={ligaCreateStartDateFieldRef}
+                endRef={ligaCreateEndDateFieldRef}
+              />
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                 <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.55 }}>Du kan konfigurere specifikke regler og kampsystem i de næste trin.</span>

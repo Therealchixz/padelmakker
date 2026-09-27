@@ -11720,6 +11720,110 @@ button,
   line-height: 1.5;
 }
 
+/* Tidsplan i "Opret liga": frist → start → slut som en lodret tidslinje */
+.pm-liga-schedule {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 14px;
+  padding: 14px 14px 4px;
+}
+
+.pm-liga-schedule-step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.pm-liga-schedule-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Linjen mellem prikkerne */
+.pm-liga-schedule-rail::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--pm-border);
+  border-radius: 2px;
+}
+
+.pm-liga-schedule-step--last .pm-liga-schedule-rail::after {
+  display: none;
+}
+
+.pm-liga-schedule-dot {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pm-navy);
+  color: var(--pm-on-accent);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pm-liga-schedule-body {
+  min-width: 0;
+  padding-bottom: 12px;
+}
+
+.pm-liga-schedule-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--pm-text);
+  line-height: 26px;
+}
+
+.pm-liga-schedule-hint {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  margin: -2px 0 8px;
+  line-height: 1.4;
+}
+
+.pm-liga-schedule-error {
+  color: var(--pm-red);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.pm-liga-schedule-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.pm-liga-schedule-chip {
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pm-liga-schedule-chip--on {
+  background: var(--pm-navy);
+  border-color: var(--pm-navy);
+  color: var(--pm-on-accent);
+}
+
+.pm-liga-schedule-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .pm-level-range-box {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
