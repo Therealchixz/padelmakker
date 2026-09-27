@@ -4421,7 +4421,11 @@ button,
 @media (hover: none) and (pointer: coarse) {
   input,
   select,
-  textarea {
+  textarea,
+  /* Dato-/tidsfeltets synlige tekst (DateInputField) er en div ovenpå et usynligt
+     input — samme størrelse som de andre felter, ellers ser datoen mindre ud
+     end fx starttid og varighed (ejeren 27. sep. 2026). */
+  .pm-date-field__facade {
     font-size: 16px !important;
   }
 }
