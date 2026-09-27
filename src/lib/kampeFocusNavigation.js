@@ -57,6 +57,7 @@ export function kampeFocusFooterLabel(format, notifType) {
   if (format === KAMPE_FORMAT_LIGA) {
     if (type === 'league_completed') return 'Tryk for at åbne Liga → Afsluttede →';
     if (type === 'league_started') return 'Tryk for at åbne Liga → I gang →';
+    if (type === 'league_cancelled') return 'Tryk for at åbne Liga →';
     return 'Tryk for at åbne Liga → Åbne →';
   }
   if (kampeFocusOpensChat(type)) return 'Tryk for at åbne chatten →';

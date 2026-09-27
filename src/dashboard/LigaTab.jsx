@@ -819,6 +819,35 @@ export function LigaTab({
     finally { setBusyId(null); }
   };
 
+  /** Slet liga: opretteren under tilmelding, admin altid. Holdene får besked først. */
+  const deleteLeague = async (league) => {
+    const teamCount = (allTeamsByLeague[league.id] || teamsByLeague[league.id] || []).length;
+    const ok = await ask({
+      message: teamCount > 0
+        ? `Slet "${league.name}"? ${teamCount} hold er tilmeldt og får besked om, at ligaen er aflyst. Det kan ikke fortrydes.`
+        : `Slet "${league.name}"? Det kan ikke fortrydes.`,
+      confirmLabel: 'Ja, slet liga',
+      danger: true,
+    });
+    if (!ok) return;
+    setBusyId(league.id + '-delete');
+    try {
+      const { data: teamRows } = await supabase
+        .from('league_teams')
+        .select('player1_id, player2_id')
+        .eq('league_id', league.id);
+      const playerIds = (teamRows || []).flatMap((t) => [t.player1_id, t.player2_id]);
+      const { notifyLeagueCancelled } = await import('../lib/notifyKampeEntityRoster');
+      await notifyLeagueCancelled(league, user.id, playerIds);
+      const { error } = await supabase.from('leagues').delete().eq('id', league.id);
+      if (error) throw error;
+      closeDetailSheet();
+      showToast('Ligaen er slettet.');
+      await load();
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
+    finally { setBusyId(null); }
+  };
+
   const toggleManageTools = (id) => setOpenManageTools((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const closeDetailSheet = () => {
@@ -1634,6 +1663,7 @@ export function LigaTab({
               onStartLeague={() => startLeague(selectedLeague)}
               onNextRound={() => nextRound(selectedLeague)}
               onCompleteLeague={() => completeLeague(selectedLeague)}
+              onDeleteLeague={isAdmin || (isCreator && selectedLeague.status === 'registration') ? () => deleteLeague(selectedLeague) : undefined}
               reportingMatch={reportingMatch}
               setReportingMatch={setReportingMatch}
               scoreText={scoreText}

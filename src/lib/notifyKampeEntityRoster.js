@@ -57,3 +57,24 @@ export async function notifyAmericanoSpotOpened(
     { entityType: 'americano', entityId: tournament.id },
   );
 }
+
+/**
+ * Underret holdenes spillere, når en liga slettes (ejeren 27. sep. 2026).
+ * Skal kaldes, før ligaen slettes, mens holdene stadig findes.
+ */
+export async function notifyLeagueCancelled(league, actorUserId, playerUserIds) {
+  if (!league?.id) return;
+  const name = String(league.name || 'Liga').trim() || 'Liga';
+  const ids = [...new Set((playerUserIds || []).filter(Boolean))]
+    .filter((id) => String(id) !== String(actorUserId));
+  if (!ids.length) return;
+  const err = await createNotificationsForUsers(
+    ids,
+    'league_cancelled',
+    'Liga aflyst',
+    `"${name}" er slettet. Jeres tilmelding er annulleret.`,
+    null,
+    { entityType: 'league', entityId: league.id },
+  );
+  if (err) console.warn('notifyLeague cancelled:', err.message || err);
+}

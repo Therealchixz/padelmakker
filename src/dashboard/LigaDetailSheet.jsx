@@ -55,7 +55,9 @@ export function LigaDetailSheet({
           <MapPin size={12} aria-hidden />
           {regionLabel || 'Danmark'}
           {' · '}
-          {isRegistration ? `${league.max_teams || teamCount} hold max` : `${teamCount} hold`}
+          {isRegistration
+            ? (league.max_teams ? `${league.max_teams} hold max` : `${teamCount} hold tilmeldt`)
+            : `${teamCount} hold`}
           {rounds ? ` · ${rounds} runder` : ''}
           {showCreatorInMeta ? (
             <>
