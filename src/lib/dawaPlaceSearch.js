@@ -1,115 +1,171 @@
 import { parseGeoCoords } from './geoDistance.js';
 
-const STEDNAVNE_URL = 'https://api.dataforsyningen.dk/stednavne/autocomplete';
-const POSTNUMRE_URL = 'https://api.dataforsyningen.dk/postnumre/autocomplete';
+/*
+ * Bysøgning og bynavn → placering.
+ *
+ * Før slog vi op i DAWA (api.dataforsyningen.dk). Den tjeneste lukkede
+ * 1. okt. 2026 og svarer nu "410 Gone", så ingen kunne vælge by ved oprettelse
+ * (ejeren 2. okt. 2026: Jakob kunne ikke blive færdig). Nu ligger listen over
+ * danske byer og postnumre i appen selv (dkPlacesData.js) og hentes først, når
+ * der faktisk søges — ingen ekstern tjeneste, der kan lukke igen.
+ * Navnene på funktionerne er beholdt, så resten af appen ikke skal ændres.
+ */
 
-/** Kræver https://api.dataforsyningen.dk i CSP connect-src (vercel.json) på produktion. */
+const POSTAL_RANK = 1.5; // postby (fx "8000 Aarhus C") efter rigtige byer, før landsbyer
+
+let indexPromise = null;
+
+/** Små/store bogstaver, å/aa, æ/ae, ø/oe og accenter tæller ens. */
+export function normalizePlaceName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^kgs\.?\s*/, 'kongens ')
+    .replace(/å/g, 'aa')
+    .replace(/æ/g, 'ae')
+    .replace(/ø/g, 'oe')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/** Løsere nøgle, så "Ronne" finder Rønne og "Arhus" finder Århus. */
+function looseKey(normalized) {
+  return normalized.replace(/aa/g, 'a').replace(/ae/g, 'a').replace(/oe/g, 'o');
+}
+
+function buildIndex({ DK_TOWNS, DK_PLACES, DK_POSTAL }) {
+  const places = DK_PLACES.map(([name, lat, lon, rank, pop, near], i) => {
+    const key = normalizePlaceName(name);
+    return {
+      i,
+      name,
+      lat,
+      lon,
+      rank,
+      pop,
+      near: near >= 0 ? DK_TOWNS[near] : '',
+      key,
+      loose: looseKey(key),
+      words: key.split(/[\s-]+/),
+    };
+  });
+  const postal = DK_POSTAL.map(([nr, by, lat, lon]) => {
+    const key = normalizePlaceName(by);
+    return { nr, by, lat, lon, rank: POSTAL_RANK, pop: 0, key, loose: looseKey(key) };
+  });
+  return { places, postal };
+}
+
+function loadIndex() {
+  if (!indexPromise) {
+    indexPromise = import('./dkPlacesData.js').then(buildIndex).catch((err) => {
+      indexPromise = null;
+      throw err;
+    });
+  }
+  return indexPromise;
+}
+
+function placeResult(p) {
+  // Landsbyer får nærmeste by med, så fx de mange "Svenstrup" kan skelnes.
+  const label = p.rank >= 2 && p.near ? `${p.name}, ved ${p.near}` : p.name;
+  return {
+    id: `sted-${p.i}`,
+    label,
+    city: p.name,
+    latitude: p.lat,
+    longitude: p.lon,
+    source: 'stednavn',
+    rank: p.rank,
+  };
+}
+
+function postalResult(z) {
+  return {
+    id: `postnr-${z.nr}`,
+    label: `${z.nr} ${z.by}`,
+    city: z.by,
+    latitude: z.lat,
+    longitude: z.lon,
+    source: 'postnummer',
+    rank: z.rank,
+  };
+}
 
 function normalizeQuery(q) {
   return String(q || '').trim();
 }
 
-/** Postnummer-søgning (9310, 9400) — stednavne med fuzzy giver støj (fx "10, Aabenraa"). */
+/** Postnummer-søgning (9310, 9400). */
 function isPostnummerQuery(q) {
   return /^\d{2,4}$/.test(normalizeQuery(q));
 }
 
-function kommuneLabel(item) {
-  const k = item?.kommuner?.[0]?.navn;
-  return k ? String(k).trim() : '';
+function matchScore(entry, nq, lq) {
+  if (entry.key === nq || entry.loose === lq) return 0;
+  if (entry.key.startsWith(nq) || entry.loose.startsWith(lq)) return 1;
+  if (entry.words && entry.words.some((w) => w.startsWith(nq) || looseKey(w).startsWith(lq))) return 2;
+  return -1;
 }
 
-function mapStednavn(item) {
-  const hovedtype = String(item?.hovedtype || '').trim();
-  if (hovedtype !== 'Bebyggelse') return null;
-
-  const center = item?.visueltcenter;
-  if (!Array.isArray(center) || center.length < 2) return null;
-  const city = String(item?.navn || '').trim();
-  if (!city) return null;
-  const kommune = kommuneLabel(item);
-  const label = kommune ? `${city}, ${kommune}` : city;
-  return {
-    id: String(item.id || item.href || label),
-    label,
-    city,
-    latitude: Number(center[1]),
-    longitude: Number(center[0]),
-    source: 'stednavn',
-    rank: 0,
-  };
+/** Byer og købstæder først (Kongens Lyngby før landsbyen Lyngby), så bedste navne-match. */
+function byBest(a, b) {
+  const tierA = a.entry.rank <= 1 ? 0 : 1;
+  const tierB = b.entry.rank <= 1 ? 0 : 1;
+  return (
+    tierA - tierB ||
+    a.score - b.score ||
+    a.entry.rank - b.entry.rank ||
+    b.entry.pop - a.entry.pop ||
+    String(a.entry.name || a.entry.by).localeCompare(String(b.entry.name || b.entry.by), 'da')
+  );
 }
 
-function mapPostnummer(item) {
-  const pn = item?.postnummer;
-  if (!pn) return null;
-  const lat = Number(pn.visueltcenter_y);
-  const lng = Number(pn.visueltcenter_x);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const city = String(pn.navn || '').trim();
-  const nr = String(pn.nr || '').trim();
-  const label = String(item.tekst || (nr && city ? `${nr} ${city}` : city || nr)).trim();
-  if (!label) return null;
-  return {
-    id: `postnr-${nr || label}`,
-    label,
-    city: city || label,
-    latitude: lat,
-    longitude: lng,
-    source: 'postnummer',
-    rank: 0,
-  };
-}
-
-function dedupePlaces(places) {
-  const seen = new Set();
-  const out = [];
-  for (const p of places) {
-    if (!p || !Number.isFinite(p.latitude) || !Number.isFinite(p.longitude)) continue;
-    const key = `${p.city.toLowerCase()}|${p.latitude.toFixed(3)}|${p.longitude.toFixed(3)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(p);
-  }
-  return out;
+function sameSpot(a, b) {
+  return Math.abs(a.lat - b.lat) < 0.01 && Math.abs(a.lon - b.lon) < 0.015;
 }
 
 /**
- * Søg danske steder via DAWA (stednavne + postnumre).
+ * Søg danske byer, landsbyer, bydele og postnumre.
  * Returnerer { city, latitude, longitude, label, id, source }[].
  */
-export async function searchDawaPlaces(query, { limit = 8, fetchImpl = fetch } = {}) {
+export async function searchDawaPlaces(query, { limit = 8 } = {}) {
   const q = normalizeQuery(query);
   if (q.length < 2) return [];
+  const { places, postal } = await loadIndex();
 
-  const enc = encodeURIComponent(q);
-  const postnummerMode = isPostnummerQuery(q);
+  if (isPostnummerQuery(q)) {
+    return postal
+      .filter((z) => z.nr.startsWith(q))
+      .sort((a, b) => a.nr.localeCompare(b.nr))
+      .slice(0, limit)
+      .map(postalResult);
+  }
 
-  const postPromise = fetchImpl(`${POSTNUMRE_URL}?q=${enc}`, { headers: { Accept: 'application/json' } }).then((r) => {
-    if (!r.ok) throw new Error(`DAWA postnumre ${r.status}`);
-    return r.json();
-  });
-
-  const stedPromise = postnummerMode
-    ? Promise.resolve([])
-    : fetchImpl(`${STEDNAVNE_URL}?q=${enc}&fuzzy=`, { headers: { Accept: 'application/json' } }).then((r) => {
-      if (!r.ok) throw new Error(`DAWA stednavne ${r.status}`);
-      return r.json();
-    });
-
-  const [stedRaw, postRaw] = await Promise.all([stedPromise, postPromise]);
-
-  const mapped = [
-    ...(Array.isArray(stedRaw) ? stedRaw.map(mapStednavn).filter(Boolean) : []),
-    ...(Array.isArray(postRaw) ? postRaw.map(mapPostnummer).filter(Boolean) : []),
-  ];
-
-  return dedupePlaces(mapped)
-    .sort((a, b) => (a.rank ?? 9) - (b.rank ?? 9) || a.label.localeCompare(b.label, 'da'))
-    .slice(0, limit);
+  const nq = normalizePlaceName(q);
+  const lq = looseKey(nq);
+  const hits = [];
+  for (const p of places) {
+    const score = matchScore(p, nq, lq);
+    if (score >= 0) hits.push({ score, entry: p, kind: 'place' });
+  }
+  const postalNames = new Set();
+  for (const z of postal) {
+    const score = matchScore(z, nq, lq);
+    if (score < 0 || score > 1) continue;
+    // København K har mange postnumre — vis navnet én gang.
+    if (postalNames.has(z.key)) continue;
+    // "6600 Vejen" ligger oven i byen Vejen — vis kun byen én gang.
+    if (hits.some((h) => h.kind === 'place' && h.entry.key === z.key && sameSpot(h.entry, z))) continue;
+    postalNames.add(z.key);
+    hits.push({ score, entry: z, kind: 'postal' });
+  }
+  hits.sort(byBest);
+  return hits.slice(0, limit).map((h) => (h.kind === 'postal' ? postalResult(h.entry) : placeResult(h.entry)));
 }
 
-/** Er by valgt med gyldige koordinater fra DAWA? */
+/** Er by valgt med gyldige koordinater? */
 export function isValidCityPlace(place) {
   if (!place || typeof place !== 'object') return false;
   const city = String(place.city || '').trim();
@@ -117,14 +173,14 @@ export function isValidCityPlace(place) {
   return city.length > 0 && Boolean(parseGeoCoords(place.latitude, place.longitude));
 }
 
-/** Bynavn gemt uden koordinater — km kan ikke vises før DAWA-valg. */
+/** Bynavn gemt uden koordinater — km kan ikke vises før byen er valgt fra listen. */
 export function hasIncompleteCityProfile(profile) {
   if (!profile) return false;
   if (isValidCityPlace(profile)) return false;
   return String(profile.city || '').trim().length > 0;
 }
 
-/** Kandidater til DAWA-opslag (fx "Aarhus, Hadsten" → Aarhus + Hadsten). */
+/** Kandidater til opslag (fx "Aarhus, Hadsten" → Aarhus + Hadsten). */
 export function cityNameCandidates(name) {
   const raw = normalizeQuery(name);
   if (!raw) return [];
@@ -144,60 +200,57 @@ export function cityNameCandidates(name) {
   return out;
 }
 
-/**
- * Slå eksisterende bynavn op i DAWA (backfill når kun city-tekst er gemt).
- * Foretrækker præcis bynavn-match og bebyggelse frem for postnummer.
- */
-export async function resolveCityPlaceFromName(name, { fetchImpl = fetch } = {}) {
-  const candidates = cityNameCandidates(name);
-  if (!candidates.length) return null;
-
-  for (const q of candidates) {
-    const places = await searchDawaPlaces(q, { limit: 12, fetchImpl });
-    if (!places.length) continue;
-
-    const qLower = q.toLowerCase();
-    const exactCity = places.filter((p) => p.city.toLowerCase() === qLower);
-    if (exactCity.length) {
-      // Postnummer-centrum er mere pålideligt end små bebyggelser med samme navn.
-      const post = exactCity.find((p) => p.source === 'postnummer');
-      if (post) return preferDisplayCity(post, q);
-      const mainTown = exactCity.find((p) => {
-        const label = String(p.label || '').toLowerCase();
-        return label === `${qLower}, ${qLower}` || label.startsWith(`${qLower}, ${qLower}`);
-      });
-      if (mainTown) return preferDisplayCity(mainTown, q);
-      return preferDisplayCity(exactCity[0], q);
-    }
-
-    // Prefix-match: "København" → "København K" (postdistrikt).
-    const prefixCity = places.filter((p) => p.city.toLowerCase().startsWith(qLower));
-    if (prefixCity.length) {
-      const post = prefixCity.find((p) => p.source === 'postnummer');
-      return preferDisplayCity(post || prefixCity[0], q);
-    }
-
-    // Kun fuzzy fallback når der kun er ét kandidatnavn — ellers prøv næste kandidat.
-    if (candidates.length === 1) {
-      const labelStarts = places.filter((p) => p.label.toLowerCase().startsWith(qLower));
-      if (labelStarts.length) return preferDisplayCity(labelStarts[0], q);
-      return preferDisplayCity(places[0], q);
-    }
-  }
-
-  return null;
-}
-
-/** Behold søgenavn som by når DAWA returnerer distrikt (fx København → København K). */
+/** Behold søgenavnet som by, når fundet er et længere navn (fx København → København K). */
 function preferDisplayCity(place, query) {
   if (!place) return null;
   const q = normalizeQuery(query);
   if (!q) return place;
   const city = String(place.city || '');
-  if (city.toLowerCase().startsWith(q.toLowerCase()) && q.length >= 4 && city.length > q.length) {
+  if (normalizePlaceName(city).startsWith(normalizePlaceName(q)) && q.length >= 4 && city.length > q.length) {
     return { ...place, city: q, label: q };
   }
   return place;
+}
+
+function bestOf(entries) {
+  return [...entries].sort((a, b) => a.rank - b.rank || b.pop - a.pop)[0] || null;
+}
+
+/**
+ * Slå et gemt bynavn op (når kun bynavnet er gemt, uden placering).
+ * Foretrækker præcist navn og den største by med det navn.
+ */
+export async function resolveCityPlaceFromName(name) {
+  const candidates = cityNameCandidates(name);
+  if (!candidates.length) return null;
+  const { places, postal } = await loadIndex();
+
+  for (const q of candidates) {
+    const nq = normalizePlaceName(q);
+
+    const exactPlace = bestOf(places.filter((p) => p.key === nq));
+    if (exactPlace && exactPlace.rank <= 2) return placeResult(exactPlace);
+    const exactPostal = postal.find((z) => z.key === nq);
+    if (exactPostal) return postalResult(exactPostal);
+    if (exactPlace) return placeResult(exactPlace);
+
+    // Prefix: "København" → "København K".
+    const prefix = bestOf([
+      ...places.filter((p) => p.key.startsWith(nq)),
+      ...postal.filter((z) => z.key.startsWith(nq)),
+    ]);
+    if (prefix) {
+      return preferDisplayCity(prefix.by ? postalResult(prefix) : placeResult(prefix), q);
+    }
+
+    // Løsere match kun når der er ét kandidatnavn — ellers prøv næste kandidat.
+    if (candidates.length === 1) {
+      const loose = bestOf(places.filter((p) => p.words.some((w) => w.startsWith(nq))));
+      if (loose) return placeResult(loose);
+    }
+  }
+
+  return null;
 }
 
 /** Byg place-objekt fra profil-række (onboarding/profil). */
@@ -214,7 +267,7 @@ export function cityPlaceFromProfile(profile) {
  * Tilføj lat/lng på profiler der kun har bynavn, så Makkere kan vise ca. km.
  * Skriver ikke til databasen — kun visning/matchmaking i klienten.
  */
-export async function attachResolvedCityCoords(profiles, { fetchImpl = fetch } = {}) {
+export async function attachResolvedCityCoords(profiles) {
   const list = Array.isArray(profiles) ? profiles : [];
   const cache = new Map();
   const out = [];
@@ -231,7 +284,7 @@ export async function attachResolvedCityCoords(profiles, { fetchImpl = fetch } =
     const key = city.toLowerCase();
     if (!cache.has(key)) {
       try {
-        cache.set(key, await resolveCityPlaceFromName(city, { fetchImpl }));
+        cache.set(key, await resolveCityPlaceFromName(city));
       } catch {
         cache.set(key, null);
       }

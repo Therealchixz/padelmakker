@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   searchDawaPlaces,
   isValidCityPlace,
@@ -7,6 +10,8 @@ import {
   resolveCityPlaceFromName,
   cityNameCandidates,
 } from '../../src/lib/dawaPlaceSearch.js';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 test('isValidCityPlace requires city and coordinates', () => {
   assert.equal(isValidCityPlace(null), false);
@@ -22,78 +27,27 @@ test('hasIncompleteCityProfile detects city text without coordinates', () => {
   assert.equal(hasIncompleteCityProfile({ city: 'Aalborg', latitude: 57.05, longitude: 9.92 }), false);
 });
 
-test('resolveCityPlaceFromName prefers exact city match', async () => {
-  const fetchImpl = async (url) => {
-    if (String(url).includes('stednavne')) {
-      return {
-        ok: true,
-        json: async () => [{
-          id: 'aalborg',
-          hovedtype: 'Bebyggelse',
-          undertype: 'by',
-          navn: 'Aalborg',
-          visueltcenter: [9.92, 57.05],
-          kommuner: [{ navn: 'Aalborg' }],
-        }],
-      };
-    }
-    return {
-      ok: true,
-      json: async () => [{
-        tekst: '9000 Aalborg',
-        postnummer: {
-          nr: '9000',
-          navn: 'Aalborg',
-          visueltcenter_x: 9.93,
-          visueltcenter_y: 57.04,
-        },
-      }],
-    };
-  };
-
-  const place = await resolveCityPlaceFromName('Aalborg', { fetchImpl });
+test('resolveCityPlaceFromName finder byen i appens egen liste', async () => {
+  const place = await resolveCityPlaceFromName('Aalborg');
   assert.equal(place.city, 'Aalborg');
-  assert.ok(Number.isFinite(place.latitude));
+  assert.ok(Math.abs(place.latitude - 57.05) < 0.05);
+  assert.ok(Math.abs(place.longitude - 9.92) < 0.05);
 });
 
-test('resolveCityPlaceFromName prefers postnummer over same-named villages', async () => {
-  const fetchImpl = async (url) => {
-    if (String(url).includes('stednavne')) {
-      return {
-        ok: true,
-        json: async () => [{
-          id: 'wrong',
-          hovedtype: 'Bebyggelse',
-          navn: 'Vejen',
-          visueltcenter: [10.43, 57.48],
-          kommuner: [{ navn: 'Frederikshavn' }],
-        }, {
-          id: 'right',
-          hovedtype: 'Bebyggelse',
-          navn: 'Vejen',
-          visueltcenter: [9.13, 55.47],
-          kommuner: [{ navn: 'Vejen' }],
-        }],
-      };
-    }
-    return {
-      ok: true,
-      json: async () => [{
-        tekst: '6600 Vejen',
-        postnummer: {
-          nr: '6600',
-          navn: 'Vejen',
-          visueltcenter_x: 9.11,
-          visueltcenter_y: 55.48,
-        },
-      }],
-    };
-  };
-
-  const place = await resolveCityPlaceFromName('Vejen', { fetchImpl });
+test('resolveCityPlaceFromName vælger byen frem for landsbyer med samme navn', async () => {
+  const place = await resolveCityPlaceFromName('Vejen');
   assert.equal(place.city, 'Vejen');
-  assert.equal(place.source, 'postnummer');
-  assert.ok(place.latitude < 56);
+  assert.ok(place.latitude < 56, 'Vejen ved Kolding, ikke landsbyen i Nordjylland');
+});
+
+test('resolveCityPlaceFromName: Holbæk (gemt uden placering) får koordinater', async () => {
+  const place = await resolveCityPlaceFromName('Holbæk');
+  assert.equal(place.city, 'Holbæk');
+  assert.ok(Math.abs(place.latitude - 55.72) < 0.05);
+});
+
+test('resolveCityPlaceFromName giver null for ukendt navn', async () => {
+  assert.equal(await resolveCityPlaceFromName('Xyzzyqq'), null);
 });
 
 test('cityNameCandidates splits comma cities and normalizes Århus', () => {
@@ -103,105 +57,58 @@ test('cityNameCandidates splits comma cities and normalizes Århus', () => {
   assert.ok(cityNameCandidates('Århus').includes('Aarhus'));
 });
 
-test('searchDawaPlaces maps stednavn and postnummer results', async () => {
-  const fetchImpl = async (url) => {
-    if (String(url).includes('stednavne')) {
-      return {
-        ok: true,
-        json: async () => [{
-          id: 'abc',
-          hovedtype: 'Bebyggelse',
-          undertype: 'by',
-          navn: 'Langholt',
-          visueltcenter: [9.93, 57.06],
-          kommuner: [{ navn: 'Aalborg' }],
-        }],
-      };
-    }
-    return {
-      ok: true,
-      json: async () => [{
-        tekst: '9220 Aalborg Øst',
-        postnummer: {
-          nr: '9220',
-          navn: 'Aalborg Øst',
-          visueltcenter_x: 10.01,
-          visueltcenter_y: 57.05,
-        },
-      }],
-    };
-  };
-
-  const places = await searchDawaPlaces('lang', { fetchImpl });
-  assert.ok(places.some((p) => p.city === 'Langholt'));
-  assert.ok(places.some((p) => p.city === 'Aalborg Øst'));
+test('searchDawaPlaces finder landsbyer med nærmeste by og postbyer', async () => {
+  const lang = await searchDawaPlaces('langh');
+  assert.ok(lang.some((p) => p.city === 'Langholt' && /ved /.test(p.label)));
+  const aalb = await searchDawaPlaces('aalb');
+  assert.equal(aalb[0].city, 'Aalborg');
+  assert.ok(aalb.some((p) => p.label === '9220 Aalborg Øst'));
 });
 
-test('searchDawaPlaces uses postnumre only for digit queries (no stednavne noise)', async () => {
-  let stednavneCalled = false;
-  const fetchImpl = async (url) => {
-    if (String(url).includes('stednavne')) {
-      stednavneCalled = true;
-      return {
-        ok: true,
-        json: async () => [{
-          id: 'noise',
-          hovedtype: 'Andentopografi punkt',
-          navn: '10',
-          visueltcenter: [9.5, 55.5],
-          kommuner: [{ navn: 'Aabenraa' }],
-        }],
-      };
-    }
-    return {
-      ok: true,
-      json: async () => [{
-        tekst: '9310 Vodskov',
-        postnummer: {
-          nr: '9310',
-          navn: 'Vodskov',
-          visueltcenter_x: 9.95,
-          visueltcenter_y: 57.1,
-        },
-      }],
-    };
-  };
-
-  const places = await searchDawaPlaces('9310', { fetchImpl });
-  assert.equal(stednavneCalled, false);
+test('searchDawaPlaces: postnummer giver postbyen', async () => {
+  const places = await searchDawaPlaces('9310');
   assert.equal(places.length, 1);
   assert.equal(places[0].label, '9310 Vodskov');
+  assert.equal(places[0].source, 'postnummer');
+});
+
+test('searchDawaPlaces tåler Århus/Aarhus, Ronne/Rønne og Kgs. Lyngby', async () => {
+  assert.equal((await searchDawaPlaces('Århus'))[0].city, 'Aarhus');
+  assert.equal((await searchDawaPlaces('ronne'))[0].city, 'Rønne');
+  assert.equal((await searchDawaPlaces('Kgs. Lyngby'))[0].city, 'Kongens Lyngby');
+  assert.equal((await searchDawaPlaces('Lyngby'))[0].city, 'Kongens Lyngby');
+});
+
+test('searchDawaPlaces viser København K kun én gang', async () => {
+  const places = await searchDawaPlaces('københavn k');
+  assert.equal(places.filter((p) => p.city === 'København K').length, 1);
+});
+
+test('alle steder har gyldige danske koordinater', async () => {
+  const { DK_PLACES, DK_POSTAL } = await import('../../src/lib/dkPlacesData.js');
+  assert.ok(DK_PLACES.length > 8000);
+  assert.ok(DK_POSTAL.length > 1000);
+  for (const [name, lat, lon] of DK_PLACES) {
+    assert.ok(lat > 54.5 && lat < 57.8 && lon > 8 && lon < 15.2, `${name} ligger uden for Danmark`);
+  }
+});
+
+test('bysøgningen kalder ikke længere den lukkede DAWA-tjeneste', () => {
+  const src = readFileSync(join(root, 'src/lib/dawaPlaceSearch.js'), 'utf8');
+  assert.ok(!src.includes('api.dataforsyningen.dk/'), 'DAWA svarer 410 Gone siden okt. 2026');
 });
 
 test('attachResolvedCityCoords slår by op når lat/lng mangler', async () => {
   const { attachResolvedCityCoords } = await import('../../src/lib/dawaPlaceSearch.js');
-  const fetchImpl = async (url) => {
-    if (String(url).includes('stednavne')) {
-      return { ok: true, json: async () => [] };
-    }
-    return {
-      ok: true,
-      json: async () => [{
-        tekst: '8000 Aarhus C',
-        postnummer: {
-          nr: '8000',
-          navn: 'Aarhus C',
-          visueltcenter_x: 10.2,
-          visueltcenter_y: 56.15,
-        },
-      }],
-    };
-  };
-
   const [withCoords, filled, empty] = await attachResolvedCityCoords([
     { id: '1', city: 'Nørresundby', latitude: 57.08, longitude: 9.93 },
     { id: '2', city: 'Aarhus', latitude: null, longitude: null },
     { id: '3', city: null, latitude: null, longitude: null },
-  ], { fetchImpl });
+  ]);
 
   assert.equal(withCoords.latitude, 57.08);
   assert.equal(filled.city, 'Aarhus');
-  assert.equal(filled.latitude, 56.15);
-  assert.equal(filled.longitude, 10.2);
+  assert.ok(Math.abs(filled.latitude - 56.15) < 0.05);
+  assert.ok(Math.abs(filled.longitude - 10.2) < 0.05);
   assert.equal(empty.latitude, null);
 });

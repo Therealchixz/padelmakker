@@ -35,7 +35,7 @@ const itemBtnStyle = {
 };
 
 /**
- * DAWA-baseret bysøgning. value = { city, latitude, longitude, label } | null.
+ * Bysøgning i appens egen liste over danske byer og postnumre (DAWA lukkede okt. 2026). value = { city, latitude, longitude, label } | null.
  */
 export function CityPlaceSearchField({
   id,
@@ -60,6 +60,7 @@ export function CityPlaceSearchField({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [noResults, setNoResults] = useState(false);
 
   useEffect(() => {
     if (isValidCityPlace(value)) {
@@ -88,6 +89,7 @@ export function CityPlaceSearchField({
       setSuggestions([]);
       setLoading(false);
       setSearchError('');
+      setNoResults(false);
       return undefined;
     }
 
@@ -99,11 +101,13 @@ export function CityPlaceSearchField({
         .then((items) => {
           if (cancelled) return;
           setSuggestions(items);
+          setNoResults(items.length === 0);
           setLoading(false);
         })
         .catch(() => {
           if (cancelled) return;
           setSuggestions([]);
+          setNoResults(false);
           setLoading(false);
           setSearchError('Kunne ikke hente byforslag. Prøv igen.');
         });
@@ -171,6 +175,11 @@ export function CityPlaceSearchField({
       {loading ? (
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>Søger…</div>
       ) : null}
+      {open && noResults && !loading && !searchError ? (
+        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
+          Ingen by fundet. Prøv en større by i nærheden eller dit postnummer.
+        </div>
+      ) : null}
       {searchError ? (
         <div style={{ fontSize: 11, color: theme.red, marginTop: 6 }} role="alert">{searchError}</div>
       ) : null}
@@ -189,6 +198,9 @@ export function CityPlaceSearchField({
               </button>
             </li>
           ))}
+          <li role="presentation" style={{ fontSize: 10, color: theme.textLight, padding: '6px 14px 2px' }}>
+            Bydata © OpenStreetMap-bidragydere
+          </li>
         </ul>
       ) : null}
     </div>
