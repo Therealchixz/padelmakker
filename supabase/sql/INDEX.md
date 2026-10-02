@@ -16,9 +16,9 @@ kan efterprøves direkte mod den kørende database.
 | | Antal |
 |---|---|
 | Funktioner i migrations (= i drift) | 167 |
-| ...med en identisk fil i `supabase/sql/` | 125 |
+| ...med en identisk fil i `supabase/sql/` | 126 |
 | ...hvor ingen arkivfil matcher (alle er forældede) | 25 |
-| ...som slet ikke findes i arkivet | 17 |
+| ...som slet ikke findes i arkivet | 16 |
 | Funktioner kun i arkivet (aldrig deployet herfra) | 0 |
 
 ## Funktioner i drift
@@ -42,7 +42,7 @@ kan efterprøves direkte mod den kørende database.
 | `admin_correct_league_match` | `00000000000000_baseline_schema.sql` | `_p3b.sql`<br>`admin_security_phase3_deploy.sql` | 1 |
 | `admin_correct_match_result_and_recalc_elo` | `00000000000000_baseline_schema.sql` | — | 3 |
 | `admin_delete_match` | `00000000000000_baseline_schema.sql` | `admin_delete_match.sql` | — |
-| `admin_delete_user` | `20261002204946_admin_delete_user_audit_fix.sql` | `admin_delete_user_audit_fix.sql` | 3 |
+| `admin_delete_user` | `20261002205748_gdpr_deleted_player_minimal.sql` | `gdpr_deleted_player_minimal.sql` | 4 |
 | `admin_draw_growth_campaign` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | — |
 | `admin_get_dm_messages_between` | `00000000000000_baseline_schema.sql` | `admin_dm_report_context.sql` | — |
 | `admin_get_growth_campaign_draw_status` | `00000000000000_baseline_schema.sql` | `growth_campaign_admin_draw.sql` | — |
@@ -69,7 +69,7 @@ kan efterprøves direkte mod den kørende database.
 | `apply_elo_for_match_system` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `apply_glicko2_shadow_for_match` | `00000000000000_baseline_schema.sql` | `elo_v2_glicko2_shadow.sql` | — |
 | `approve_match_join_request` | `00000000000000_baseline_schema.sql` | `approve_match_join_request_rpc.sql`<br>`join_request_team_race_fix.sql` | 1 |
-| `archive_profile_before_delete` | `00000000000000_baseline_schema.sql` | — | — |
+| `archive_profile_before_delete` | `20261002205748_gdpr_deleted_player_minimal.sql` | `gdpr_deleted_player_minimal.sql` | — |
 | `auto_confirm_expired_match_results` | `00000000000000_baseline_schema.sql` | — | 1 |
 | `block_user` | `00000000000000_baseline_schema.sql` | `user_blocks_and_reports.sql` | — |
 | `can_confirm_match_result` | `00000000000000_baseline_schema.sql` | `security_hardening_match_writes_and_admin_pin.sql` | 2 |
@@ -219,7 +219,7 @@ Listen staar tilbage som optegnelse over hvad der manglede.
 | `admin_correct_americano_tournament` | `00000000000000_baseline_schema.sql` |
 | `admin_correct_league_match` | `00000000000000_baseline_schema.sql` |
 | `admin_correct_match_result_and_recalc_elo` | `00000000000000_baseline_schema.sql` |
-| `admin_delete_user` | `20261002204946_admin_delete_user_audit_fix.sql` |
+| `admin_delete_user` | `20261002205748_gdpr_deleted_player_minimal.sql` |
 | `admin_get_dm_messages_between` | `00000000000000_baseline_schema.sql` |
 | `admin_list_admin_ids` | `00000000000000_baseline_schema.sql` |
 | `admin_open_result_error_reports_count` | `00000000000000_baseline_schema.sql` |
@@ -229,7 +229,7 @@ Listen staar tilbage som optegnelse over hvad der manglede.
 | `apply_elo_for_match_core` | `00000000000000_baseline_schema.sql` |
 | `apply_elo_for_match_system` | `00000000000000_baseline_schema.sql` |
 | `apply_glicko2_shadow_for_match` | `00000000000000_baseline_schema.sql` |
-| `archive_profile_before_delete` | `00000000000000_baseline_schema.sql` |
+| `archive_profile_before_delete` | `20261002205748_gdpr_deleted_player_minimal.sql` |
 | `block_user` | `00000000000000_baseline_schema.sql` |
 | `check_rate_limit` | `00000000000000_baseline_schema.sql` |
 | `complete_americano_tournament` | `00000000000000_baseline_schema.sql` |
