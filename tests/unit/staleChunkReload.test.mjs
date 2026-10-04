@@ -60,3 +60,24 @@ test('beskeder: onBlur sender ikke eventet videre som element', () => {
   assert.match(src, /onBlur=\{mobileChatActive \? \(\) => nudgeMobileChatViewportAfterKeyboard\(\) : undefined\}/);
   assert.match(read('src/lib/mobileChatViewport.js'), /if \(!root\?\.style\) root = document\.documentElement;/);
 });
+
+test('følgefejl mens siden genindlæses meldes ikke (Sentry JAVASCRIPT-REACT-C)', async () => {
+  const mod = await import('../../src/lib/staleChunkReload.js');
+  assert.equal(mod.isStaleChunkReloadPending(), mod.isStaleChunkReloadPending());
+  let reloaded = 0;
+  const did = mod.reloadOnceForStaleChunk(new TypeError('Importing a module script failed.'), {
+    storage: memoryStorage(),
+    reload: () => { reloaded += 1; },
+    now: 1_000_000,
+  });
+  assert.equal(did, true);
+  assert.equal(reloaded, 1);
+  assert.equal(mod.isStaleChunkReloadPending(), true);
+
+  const eb = read('src/ErrorBoundary.jsx');
+  const catchAt = eb.indexOf('componentDidCatch');
+  const guardAt = eb.indexOf('if (isStaleChunkReloadPending()) return;', catchAt);
+  const captureAt = eb.indexOf('Sentry.captureException', catchAt);
+  assert.ok(guardAt > catchAt && guardAt < captureAt, 'fejlen må ikke sendes til Sentry, mens siden genindlæses');
+  assert.match(eb, /Henter ny version…/);
+});
