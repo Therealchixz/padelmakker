@@ -1,7 +1,7 @@
 import React from "react";
 import * as Sentry from "@sentry/react";
 import { btn } from "./lib/platformTheme";
-import { reloadOnceForStaleChunk } from "./lib/staleChunkReload.js";
+import { isStaleChunkReloadPending, reloadOnceForStaleChunk } from "./lib/staleChunkReload.js";
 
 function debugMode() {
   try {
@@ -34,6 +34,8 @@ export class ErrorBoundary extends React.Component {
       /* lageret kan være blokeret */
     }
     if (reloadOnceForStaleChunk(err, { storage, reload: () => window.location.reload() })) return;
+    // Siden genindlæses allerede (ny version) — følgefejl er støj.
+    if (isStaleChunkReloadPending()) return;
     console.error("PadelMakker render error:", err, info?.componentStack);
     const eventId = Sentry.captureException(err, {
       extra: {
@@ -44,6 +46,14 @@ export class ErrorBoundary extends React.Component {
   }
 
   render() {
+    if (this.state.err && isStaleChunkReloadPending()) {
+      return (
+        <div className="pm-error-boundary">
+          <div className="pm-spinner" />
+          <p style={{ fontSize: 14, color: "var(--pm-text-mid)", marginTop: 12 }}>Henter ny version…</p>
+        </div>
+      );
+    }
     if (this.state.err) {
       const showDetail = debugMode();
       const msg = this.state.err?.message || String(this.state.err);

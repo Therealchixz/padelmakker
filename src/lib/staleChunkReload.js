@@ -19,6 +19,19 @@ export const STALE_CHUNK_RELOAD_KEY = 'pm_stale_chunk_reload_at';
 /** Højst én automatisk genindlæsning pr. 30 sek., så vi aldrig ender i et loop. */
 export const STALE_CHUNK_RELOAD_COOLDOWN_MS = 30_000;
 
+/*
+ * Sat når siden er ved at blive genindlæst pga. en gammel kodefil. Vite giver
+ * så den manglende fil videre som `undefined`, og koden der ventede på den
+ * fejler med fx "undefined is not an object (evaluating 'e.LandingRoadmap')"
+ * (Sentry JAVASCRIPT-REACT-C, 4. okt. 2026). Den fejl er ufarlig — siden
+ * genindlæses lige bagefter — så den skal hverken vises eller meldes.
+ */
+let reloadPending = false;
+
+export function isStaleChunkReloadPending() {
+  return reloadPending;
+}
+
 export function isStaleChunkError(err) {
   const msg = String(err?.message ?? err ?? '');
   return STALE_CHUNK_PATTERNS.some((re) => re.test(msg));
@@ -42,6 +55,7 @@ export function reloadOnceForStaleChunk(err, { storage, reload, now = Date.now()
   } catch {
     return false; // uden lager kan vi ikke garantere, at det ikke looper
   }
+  reloadPending = true;
   reload?.();
   return true;
 }
