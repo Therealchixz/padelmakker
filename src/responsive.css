@@ -12193,23 +12193,35 @@ button,
   white-space: nowrap;
 }
 
-.pm-rankedin-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
+.pm-rankedin-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pm-rankedin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.pm-rankedin-tab {
   flex: none;
+  padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
-  color: var(--pm-text);
+  color: var(--pm-text-mid);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.pm-rankedin-icon:disabled {
-  opacity: 0.35;
-  cursor: default;
+.pm-rankedin-tab--active {
+  background: var(--pm-accent);
+  border-color: var(--pm-accent);
+  color: var(--pm-surface);
 }
 
 .pm-rankedin-close {
