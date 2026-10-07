@@ -24,6 +24,7 @@ import { LevelRangeSlider } from '../components/LevelRangeSlider';
 import { notifyMakkerWatchersForProfile, makkerMatchToast } from '../lib/makkerWatchUtils';
 import { isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import { RegionPickerRow } from '../components/RegionPickerRow';
+import { notifyReachLabel } from '../lib/appRegions';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
@@ -200,7 +201,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       <RegionPickerRow
         value={prefs.region || resolveMakkerFilterRegion(prefs, user)}
         onChange={(r) => set({ region: r })}
-        sheetHint="Du får også besked om makkere i nabo-regionerne."
+        sheetHint="Vælger du din egen landsdel, får du besked om spillere inden for ca. 50 km af din by. Vælger du en anden landsdel, får du besked om hele den."
+        subtitle={notifyReachLabel(prefs.region || resolveMakkerFilterRegion(prefs, user), user)}
       />
 
       {/* Man vælger selv fra og til (samme skyder som Opret kamp). Færdige

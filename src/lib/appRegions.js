@@ -23,8 +23,9 @@ export const LEGACY_ADMIN_REGION_TO_APP = {
 };
 
 /**
- * Nabo-regioner: besked om nye kampe og makkere når også dem. Skal holdes i
- * sync med public.app_region_neighbours() i Supabase.
+ * Nabo-regioner. Skal holdes i sync med public.app_region_neighbours() i
+ * Supabase. Beskeder om nye kampe og makkere bruger dem ikke længere (de går
+ * til spillere inden for 50 km, se notifyReachLabel).
  */
 export const APP_REGION_NEIGHBOURS = {
   Nordjylland: ['Vestjylland', 'Østjylland'],
@@ -78,4 +79,27 @@ export function isValidAppRegion(area) {
 
 export function regionDisplayLabel(region) {
   return String(region || '').replace(/^Region\s+/i, '').trim() || region;
+}
+
+/** Afstanden beskeder om nye makkere og kampe når ud (public.notify_within_reach). */
+export const NOTIFY_REACH_KM = 50;
+
+/**
+ * Hvem man får besked om med den valgte landsdel i filteret — samme regel som
+ * public.notify_within_reach i databasen (ejeren 7. okt. 2026):
+ * egen landsdel + kendt by → inden for 50 km; ellers hele den valgte landsdel.
+ */
+export function notifyReachLabel(selectedRegion, profile) {
+  const selected = canonicalAppRegion(selectedRegion);
+  const home = canonicalAppRegion(profile?.area);
+  const lat = Number(profile?.latitude);
+  const lng = Number(profile?.longitude);
+  const hasCity = profile?.latitude != null && profile?.longitude != null
+    && Number.isFinite(lat) && Number.isFinite(lng) && !(Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01);
+  if (!selected) return '';
+  if (hasCity && (!home || selected === home)) {
+    const city = String(profile?.city || '').trim();
+    return `Besked om spillere inden for ca. ${NOTIFY_REACH_KM} km${city ? ` af ${city}` : ''}`;
+  }
+  return `Besked om spillere i ${selected}`;
 }

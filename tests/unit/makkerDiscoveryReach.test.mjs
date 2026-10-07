@@ -207,17 +207,16 @@ test('backfillen rammer kun dem der aldrig har taget stilling', () => {
   );
 });
 
-test('makker-discovery naar naboregioner, ikke kun sin egen', () => {
+test('makker-discovery naar spillere inden for 50 km, ikke hele nabo-landsdele', () => {
+  // Ejeren 7. okt. 2026 fik "I matcher som makkere" om en i Herning, ca.
+  // 120 km vaek, fordi Vestjylland er nabo til Nordjylland. Nu afgoer
+  // afstanden (50 km), og uden by kun samme landsdel.
   const m = sidsteMigrationMed(/FUNCTION public\.notify_makker_watchers/i);
   assert.ok(m, 'ingen migration definerer notify_makker_watchers');
-  assert.match(
-    m.sql,
-    /v_regions := public\.app_region_neighbours\(v_subject_region\);/,
-    `${m.f}: regionen skal udvides med naboerne`,
-  );
-  // Begge loekker skal bruge den udvidede liste - ikke kun den ene.
-  const antal = (m.sql.match(/v_watcher_region = ANY \(v_regions\)/g) || []).length;
-  assert.equal(antal, 2, `${m.f}: begge loekker skal bruge nabolisten, fandt ${antal}`);
+  assert.doesNotMatch(m.sql, /app_region_neighbours/, `${m.f}: nabo-landsdele maa ikke bruges`);
+  // Begge loekker skal bruge afstanden - ikke kun den ene.
+  const antal = (m.sql.match(/AND public\.notify_within_reach\(\s*v_subject\.latitude, v_subject\.longitude, v_subject_region/g) || []).length;
+  assert.equal(antal, 2, `${m.f}: begge loekker skal bruge afstanden, fandt ${antal}`);
 });
 
 test('knappen taeller ogsaa for dem der har aabnet filteret', () => {
@@ -262,8 +261,8 @@ test('naermeste modtagere kommer foerst, saa graensen paa 8 ikke spildes', () =>
   const m = sidsteMigrationMed(/FUNCTION public\.notify_makker_watchers/i);
   assert.match(
     m.sql,
-    /ORDER BY[\s\S]{0,400}= v_subject_region THEN 1 ELSE 0 END\) DESC/,
-    `${m.f}: egen region skal sorteres foerst`,
+    /ORDER BY[\s\S]{0,200}public\.notify_distance_km\(v_subject\.latitude, v_subject\.longitude, p\.latitude, p\.longitude\) ASC NULLS LAST/,
+    `${m.f}: dem der bor taettest skal sorteres foerst`,
   );
 });
 

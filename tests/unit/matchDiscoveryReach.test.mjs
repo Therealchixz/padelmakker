@@ -58,28 +58,22 @@ test('backfillen rammer kun dem der aldrig har taget stilling', () => {
   );
 });
 
-test('kamp-discovery naar naboregioner, ikke kun sin egen', () => {
+test('kamp-discovery naar spillere inden for 50 km, ikke hele nabo-landsdele', () => {
+  // Ejeren 7. okt. 2026: nabo-landsdele gav beskeder om kampe 100+ km vaek.
+  // Nu afgoer afstanden (50 km), og uden by kun samme landsdel.
   const m = sidsteMigrationMed(/FUNCTION public\.notify_match_watchers/i);
   assert.ok(m, 'ingen migration definerer notify_match_watchers');
-  assert.match(
-    m.sql,
-    /app_region_neighbours\(v_creator_region\)/,
-    `${m.f}: regionen skal udvides med naboerne`,
-  );
-  assert.doesNotMatch(
-    m.sql,
-    /canonical_app_region\(p\.area\) = v_creator_region\s*$/m,
-    `${m.f}: den gamle praecise regions-sammenligning maa ikke staa tilbage som filter`,
-  );
+  assert.match(m.sql, /public\.notify_within_reach\(\s*v_creator\.latitude, v_creator\.longitude, v_creator_region/,
+    `${m.f}: modtagere skal filtreres paa afstand fra opretteren`);
+  assert.doesNotMatch(m.sql, /app_region_neighbours\(v_creator_region\)/, `${m.f}: nabo-landsdele maa ikke bruges`);
 });
 
 test('naermeste modtagere kommer foerst, saa graensen paa 8 ikke spildes', () => {
   const m = sidsteMigrationMed(/FUNCTION public\.notify_match_watchers/i);
   assert.match(
     m.sql,
-    // Siden 24. sep. 2026 er modtagerens region filterets (match_watcher_region), ellers profilens.
-    /ORDER BY[\s\S]{0,400}(canonical_app_region\(p\.area\)|match_watcher_region\(p\.match_search_prefs, p\.area\)) = v_creator_region THEN 1 ELSE 0 END\) DESC/,
-    `${m.f}: egen region skal sorteres foerst`,
+    /ORDER BY[\s\S]{0,200}public\.notify_distance_km\(v_creator\.latitude, v_creator\.longitude, p\.latitude, p\.longitude\) ASC NULLS LAST/,
+    `${m.f}: dem der bor taettest skal sorteres foerst`,
   );
 });
 
