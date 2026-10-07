@@ -25,6 +25,7 @@ import {
 } from '../lib/padelLevelUtils';
 import { LevelRangeSlider } from '../components/LevelRangeSlider';
 import { RegionPickerRow } from '../components/RegionPickerRow';
+import { notifyReachLabel } from '../lib/appRegions';
 import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
@@ -153,7 +154,8 @@ export function MatchSearchFilterPage({ user, showToast }) {
       <RegionPickerRow
         value={prefs.region || resolveFilterRegion(prefs, user)}
         onChange={(r) => set({ region: r })}
-        sheetHint="Du får også besked om kampe i nabo-regionerne."
+        sheetHint="Vælger du din egen landsdel, får du besked om spillere inden for ca. 50 km af din by. Vælger du en anden landsdel, får du besked om hele den."
+        subtitle={notifyReachLabel(prefs.region || resolveFilterRegion(prefs, user), user)}
       />
 
       {/* Samme regel som besked om nye kampe (match_fits_watcher_level i
