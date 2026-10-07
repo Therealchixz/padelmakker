@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
+import { parseRankedinId } from '../lib/rankedin.js';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
@@ -244,6 +246,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   const { ligaRelationStats, ligaRelationLoading } = useLigaPartnerOpponentStats(user?.id, !!user?.id);
 
   const [form, setForm] = useState(() => profileFormState(user, authUser?.user_metadata));
+  const [rankedinOpen, setRankedinOpen] = useState(false);
   const [quickCityPlace, setQuickCityPlace] = useState(() => (
     isValidCityPlace(user) ? {
       city: user.city,
@@ -552,6 +555,12 @@ export function ProfilTab({ user, showToast, setTab }) {
   }, [user?.id]);
 
   const handleSave = async () => {
+    const rankedinInput = String(form.rankedin || '').trim();
+    const rankedinId = parseRankedinId(rankedinInput);
+    if (rankedinInput && !rankedinId) {
+      showToast('Rankedin-linket ser forkert ud. Kopiér linket til din spillerside på rankedin.com.', 'error');
+      return;
+    }
     const region = canonicalRegionForForm(form.area) || form.area;
     if (!isValidProfileRegion(region)) {
       showToast('Vælg din region — by er valgfri.');
@@ -611,6 +620,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         availability: form.availability || [],
         available_days: form.available_days || [],
         bio: sanitizeText(form.bio.trim()),
+        rankedin_id: rankedinId,
         avatar: avatarValue,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
         // Tomme felter udelades: måned/dag kan ikke læses tilbage, så null ville
@@ -858,6 +868,10 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           <div style={{ padding: '0 18px' }}>
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{displayUserText(user.bio)}&rdquo;</p>}
+          {!editing ? <RankedinButton rankedinId={user.rankedin_id} onOpen={() => setRankedinOpen(true)} /> : null}
+          {rankedinOpen ? (
+            <RankedinSheet rankedinId={user.rankedin_id} playerName="Din profil" onClose={() => setRankedinOpen(false)} />
+          ) : null}
 
           {!editing && !isValidProfileRegion(user.area) ? (
             <div style={profilePromptCardStyle}>
@@ -1599,6 +1613,22 @@ export function ProfilTab({ user, showToast, setTab }) {
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
+
+        {/* Rankedin (valgfri) — andre kan se dine turneringskampe og resultater. */}
+        <label htmlFor="profil-rankedin" style={labelStyle}>Rankedin-profil <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>
+        <input
+          id="profil-rankedin"
+          type="url"
+          inputMode="url"
+          autoComplete="off"
+          value={form.rankedin}
+          onChange={e => set("rankedin", e.target.value)}
+          placeholder="Indsæt link til din spillerside på rankedin.com"
+          style={{ ...inputStyle, marginBottom: "6px" }}
+        />
+        <p style={{ fontSize: "12px", color: theme.textLight, lineHeight: 1.45, margin: "0 0 20px" }}>
+          Find dig selv på rankedin.com, kopiér linket og sæt det ind her. Så kan andre se dine kampe og resultater fra Rankedin.
+        </p>
 
         <div
           data-tour="blocked-users-section"

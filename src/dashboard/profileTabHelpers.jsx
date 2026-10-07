@@ -25,6 +25,7 @@ export function profileFormState(p, authMeta = {}) {
     court_side: p.court_side || "",
     intent_now: p.intent_now || "",
     bio: p.bio || "",
+    rankedin: p.rankedin_id || "",
     avatar: p.avatar || "🎾",
     availability: normalizeStringArrayField(p.availability),
     available_days: normalizeStringArrayField(p.available_days),
