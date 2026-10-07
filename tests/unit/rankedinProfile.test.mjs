@@ -67,3 +67,14 @@ test('profilen gemmer og viser Rankedin', () => {
   assert.match(read('src/dashboard/PlayerProfileModal.jsx'), /<RankedinButton rankedinId=\{pRef\.rankedin_id\}/);
   assert.match(read('src/pages/PrivacyPage.jsx'), /Rankedin/);
 });
+
+test('tilbage-knappen går kun tilbage inde i Rankedin-vinduet', () => {
+  // Ejeren 8. okt. 2026: "man kan ikke gå frem eller tilbage". history.back()
+  // går tilbage i rammen, men kun så mange skridt, som rammen selv har lagt
+  // til — ellers ville "Tilbage" forlade PadelMakker.
+  const sheet = read('src/components/RankedinSheet.jsx');
+  assert.match(sheet, /if \(steps <= 0\) return;\s*setSteps\(\(n\) => n - 1\);\s*window\.history\.back\(\);/);
+  assert.match(sheet, /disabled=\{!canGoBack\}/);
+  assert.match(sheet, /aria-label="Tilbage til spillerens forside på Rankedin"/);
+  assert.match(sheet, /key=\{frameKey\}/, 'forside-knappen skal genindlæse rammen');
+});
