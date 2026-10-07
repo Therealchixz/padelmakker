@@ -12193,7 +12193,27 @@ button,
   white-space: nowrap;
 }
 
+.pm-rankedin-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  cursor: pointer;
+}
+
+.pm-rankedin-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .pm-rankedin-close {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -12222,7 +12242,7 @@ button,
   width: 100%;
   min-height: 46px;
   padding: 10px 14px;
-  margin-bottom: 16px;
+  margin: 14px 0 16px;
   border-radius: 10px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
@@ -12245,6 +12265,11 @@ button,
   color: var(--pm-surface);
   font-size: 13px;
   font-weight: 800;
+}
+
+.pm-rankedin-button-chevron {
+  flex: none;
+  color: var(--pm-text-light);
 }
 
 .pm-rankedin-button-sub {
