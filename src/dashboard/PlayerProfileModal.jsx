@@ -19,6 +19,7 @@ import { useAuth } from '../lib/AuthContext';
 import { BeskedChatActions } from '../components/BeskedChatActions';
 import { fetchUsersIBlocked } from '../lib/userModeration';
 import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
+import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
 import {
   prefetchBeskedTabChunk,
   prefetchDmThread,
@@ -44,6 +45,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   const [profileRow, setProfileRow] = useState(null);
   const [ligaStats, setLigaStats] = useState(null);
   const [sharedHistory, setSharedHistory] = useState(null);
+  const [rankedinOpen, setRankedinOpen] = useState(false);
 
   const loadProfileData = useCallback(async () => {
     if (!player?.id) {
@@ -557,6 +559,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </p>
         )}
 
+        <RankedinButton rankedinId={pRef.rankedin_id} onOpen={() => setRankedinOpen(true)} />
+
         {sharedHistory && sharedHistory.count > 0 && (
           <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
@@ -606,6 +610,9 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
         )}
       </div>
+      {rankedinOpen ? (
+        <RankedinSheet rankedinId={pRef.rankedin_id} playerName={playerName} onClose={() => setRankedinOpen(false)} />
+      ) : null}
     </>,
     document.body,
   );

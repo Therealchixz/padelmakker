@@ -134,6 +134,7 @@ const TREDJEPARTER = {
   'api.twilio.com': 'Twilio',
   'api.dataforsyningen.dk': 'Dataforsyningen',
   'api.pwnedpasswords.com': 'Have I Been Pwned',
+  'www.rankedin.com': 'Rankedin',
 };
 
 /** Vaerter der ikke er databehandlere: vores egne, og links brugeren klikker. */

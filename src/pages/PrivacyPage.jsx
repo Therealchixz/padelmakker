@@ -32,7 +32,8 @@ export function PrivacyPage() {
         </li>
         <li style={li}>
           <strong style={{ color: theme.text }}>Profil:</strong> navn, region, by, niveau, spillestil, bane-side,
-          tilgængelighed, bio, valgt avatar (emoji eller uploadet billede) og andre felter du selv udfylder.
+          tilgængelighed, bio, valgt avatar (emoji eller uploadet billede), et valgfrit link til din Rankedin-profil og
+          andre felter du selv udfylder.
         </li>
         <li style={li}>
           <strong style={{ color: theme.text }}>Aktivitet:</strong> kampe, resultater, ranking/ELO-historik,
@@ -113,15 +114,16 @@ export function PrivacyPage() {
 
       <h2 style={h2}>Opslag din browser foretager</h2>
       <p style={p}>
-        To opslag sker direkte fra din browser, når du opretter dig. De to tjenester ser derfor din IP-adresse:
+        To tjenester hentes direkte fra din browser og ser derfor din IP-adresse:
       </p>
       <ul style={{ margin: '0 0 12px', paddingLeft: '1.25rem', color: theme.textMid }}>
         <li style={li}>
-          <strong style={{ color: theme.text }}>Dataforsyningen</strong> (Styrelsen for Dataforsyning og Infrastruktur) —
-          forslag til by og postnummer, mens du skriver. Vi sender kun den tekst, du taster i by-feltet.
+          <strong style={{ color: theme.text }}>Rankedin</strong> — kun når du selv trykker “Se Rankedin-profil” på en
+          spillers profil. Så vises spillerens side fra rankedin.com i appen, og Rankedin behandler besøget efter deres
+          egne vilkår. Vi sender ikke dine oplysninger til Rankedin.
         </li>
         <li style={li}>
-          <strong style={{ color: theme.text }}>Have I Been Pwned</strong> — kontrol af, om den adgangskode du vælger er
+          <strong style={{ color: theme.text }}>Have I Been Pwned</strong> — når du opretter dig: kontrol af, om den adgangskode du vælger er
           dukket op i et kendt datalæk. Din adgangskode forlader <em>ikke</em> din enhed: vi sender kun de første fem
           tegn af et tjeksum af den og sammenligner svaret lokalt. Tjenesten kan hverken se adgangskoden eller hvem du er.
         </li>

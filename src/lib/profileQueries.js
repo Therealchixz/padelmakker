@@ -57,6 +57,7 @@ export const PROFILE_SAFE_SELECT = [
   'makker_watch_enabled',
   'makker_watch_at',
   'match_search_prefs',
+  'rankedin_id',
 ].join(', ');
 
 /** Kolonner til Find makker — undgår select('*') på hele profiles. */
