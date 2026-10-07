@@ -37,24 +37,46 @@ function sidsteMigrationMed(udtryk) {
 
 // --- 1. GET maa aldrig afmelde ------------------------------------------
 
-test('GET viser en knap i stedet for at afmelde', () => {
+test('GET sender videre til siden paa padelmakker.dk i stedet for at afmelde', () => {
   // Mailscannere, link-previews og "beskyt mod ondsindede links" henter GET
   // automatisk. Afmeldte GET, ville folk blive afmeldt uden at roere linket.
+  // Supabase viser ikke HTML fra supabase.co som en side (ejeren 7. okt. 2026:
+  // en bruger saa raa kode), saa siden ligger paa vores eget domaene.
   const getBlok = unsubFn.slice(
     unsubFn.indexOf('if (req.method === "GET")'),
     unsubFn.indexOf('if (req.method !== "POST")'),
   );
   assert.ok(getBlok.length > 0, 'GET-grenen skal findes');
-  assert.match(getBlok, /confirmPage\(token\)/, 'GET skal vise bekraeftelsessiden');
+  assert.match(getBlok, /status: 303/, 'GET skal sende videre');
+  assert.match(getBlok, /Location: afmeldPage\(token\)/, 'GET skal sende videre til /afmeld');
+  assert.match(unsubFn, /\$\{siteUrl\(\)\}\/afmeld/, 'siden skal ligge paa vores eget domaene');
   assert.doesNotMatch(
     getBlok,
     /email_unsubscribe_by_token|\.rpc\(/,
     'GET maa ikke kalde afmeldingen',
   );
+  assert.doesNotMatch(unsubFn, /text\/html/, 'ingen HTML fra supabase.co - den vises som raa kode');
 });
 
-test('bekraeftelsessiden sender et POST, ikke et link', () => {
-  assert.match(unsubFn, /<form method="POST">/, 'knappen skal sende POST');
+test('siden afmelder foerst, naar man trykker paa knappen (POST)', () => {
+  const page = readFileSync(join(root, 'src/pages/EmailUnsubscribePage.jsx'), 'utf8');
+  const lib = readFileSync(join(root, 'src/lib/emailUnsubscribe.js'), 'utf8');
+  const routes = readFileSync(join(root, 'src/padelmakker-platform.jsx'), 'utf8');
+  assert.match(routes, /path="\/afmeld" element=\{<EmailUnsubscribePageLazy \/>\}/, '/afmeld skal findes');
+  assert.match(page, /onClick=\{\(\) => \{ void unsubscribe\(\); \}\}/, 'knappen skal afmelde');
+  assert.doesNotMatch(page, /useEffect/, 'siden maa ikke afmelde af sig selv ved indlaesning');
+  assert.match(lib, /method: 'POST'/, 'afmeldingen skal vaere et POST');
+});
+
+test('siden viser rigtigt svar for afmeldt, ukendt link og fejl', async () => {
+  const { postEmailUnsubscribe } = await import('../../src/lib/emailUnsubscribe.js');
+  const token = '19e09cfa-b7e8-4ce5-ae9e-8928a51477a8';
+  const svar = (status, body) => async () => ({ ok: status < 300, status, json: async () => body });
+  assert.equal(await postEmailUnsubscribe(token, { url: 'x', fetchImpl: svar(200, { ok: true }) }), 'done');
+  assert.equal(await postEmailUnsubscribe(token, { url: 'x', fetchImpl: svar(404, { ok: false, error: 'unknown_token' }) }), 'invalid');
+  assert.equal(await postEmailUnsubscribe(token, { url: 'x', fetchImpl: svar(500, { ok: false, error: 'server' }) }), 'error');
+  assert.equal(await postEmailUnsubscribe(token, { url: 'x', fetchImpl: async () => { throw new Error('net'); } }), 'error');
+  assert.equal(await postEmailUnsubscribe('ikke-et-token', { url: 'x', fetchImpl: svar(200, { ok: true }) }), 'invalid');
 });
 
 test('kun POST afmelder', () => {
@@ -188,4 +210,5 @@ test('en fejl bliver ikke til et stille "det gik fint"', () => {
   const blok = unsubFn.slice(unsubFn.indexOf('if (error) {'), unsubFn.indexOf('if (!data?.ok)'));
   assert.match(blok, /console\.error\("email-unsubscribe rpc:"/, 'fejlen skal logges');
   assert.match(blok, /\n\s*500,\n/, 'svaret skal vaere 500, ikke 200');
+  assert.match(blok, /false,/, 'svaret skal sige, at det mislykkedes');
 });

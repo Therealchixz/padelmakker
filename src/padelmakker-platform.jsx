@@ -42,6 +42,7 @@ const PublicEventsPageLazy = lazy(() => import("./pages/PublicEventsPage").then(
 const PublicMatchPageLazy = lazy(() => import("./pages/PublicMatchPage").then((m) => ({ default: m.PublicMatchPage })));
 const PublicTournamentPageLazy = lazy(() => import("./pages/PublicTournamentPage").then((m) => ({ default: m.PublicTournamentPage })));
 const DashboardPageLazy = lazy(() => import("./dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const EmailUnsubscribePageLazy = lazy(() => import("./pages/EmailUnsubscribePage").then((m) => ({ default: m.EmailUnsubscribePage })));
 const HelpContactPageLazy = lazy(() => import("./pages/HelpContactPage").then((m) => ({ default: m.HelpContactPage })));
 const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) => ({ default: m.InstallAppPage })));
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
@@ -254,6 +255,7 @@ export default function PadelMakker() {
             <Route path="/kamp/:matchId" element={<PublicMatchPageLazy />} />
             <Route path="/turnering/:tournamentId" element={<PublicTournamentPageLazy />} />
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
+            <Route path="/afmeld" element={<EmailUnsubscribePageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />
             <Route path="/design/kampforslag" element={<ProposalDesignPreviewPageLazy />} />
             <Route
