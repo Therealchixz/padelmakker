@@ -54,7 +54,7 @@ test('vinduet må vise rankedin.com, og intet andet nyt', () => {
   const csp = read('vercel.json');
   assert.match(csp, /frame-src 'self' https:\/\/challenges\.cloudflare\.com https:\/\/www\.rankedin\.com;/);
   const sheet = read('src/components/RankedinSheet.jsx');
-  assert.match(sheet, /src=\{url\}/);
+  assert.match(sheet, /const frameUrl = rankedinProfileUrl\(rankedinId, tab\)/);
   assert.match(sheet, /const url = rankedinProfileUrl\(rankedinId\)/);
   assert.doesNotMatch(sheet, /allow-top-navigation/, 'Rankedin må ikke kunne skifte vores side ud');
   assert.match(sheet, /Åbn på Rankedin/, 'reserve-link, hvis Rankedin slår visning i apps fra');
@@ -68,13 +68,15 @@ test('profilen gemmer og viser Rankedin', () => {
   assert.match(read('src/pages/PrivacyPage.jsx'), /Rankedin/);
 });
 
-test('tilbage-knappen går kun tilbage inde i Rankedin-vinduet', () => {
-  // Ejeren 8. okt. 2026: "man kan ikke gå frem eller tilbage". history.back()
-  // går tilbage i rammen, men kun så mange skridt, som rammen selv har lagt
-  // til — ellers ville "Tilbage" forlade PadelMakker.
+test('faner i vinduet åbner Rankedin-siderne direkte (virker også på iPhone)', () => {
+  // Ejeren 8. okt. 2026: "Tilbage knappen virker ikke". Browserens historik
+  // kan ikke styres i en ramme fra et andet domæne på iPhone, så vinduet har
+  // faste faner, som selv sætter adressen.
   const sheet = read('src/components/RankedinSheet.jsx');
-  assert.match(sheet, /if \(steps <= 0\) return;\s*setSteps\(\(n\) => n - 1\);\s*window\.history\.back\(\);/);
-  assert.match(sheet, /disabled=\{!canGoBack\}/);
-  assert.match(sheet, /aria-label="Tilbage til spillerens forside på Rankedin"/);
-  assert.match(sheet, /key=\{frameKey\}/, 'forside-knappen skal genindlæse rammen');
+  assert.match(sheet, /src=\{frameUrl\}/);
+  assert.match(sheet, /RANKEDIN_TABS\.map/);
+  assert.doesNotMatch(sheet, /history\.back/, 'browserens tilbage virker ikke i rammen på iPhone');
+  assert.equal(rankedinProfileUrl('R000123456', 'matches'), 'https://www.rankedin.com/dk/player/R000123456/spiller/matches');
+  assert.equal(rankedinProfileUrl('R000123456', 'info'), 'https://www.rankedin.com/dk/player/R000123456/spiller/info');
+  assert.equal(rankedinProfileUrl('R000123456', 'ukendt'), 'https://www.rankedin.com/dk/player/R000123456');
 });

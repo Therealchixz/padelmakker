@@ -33,8 +33,22 @@ export function parseRankedinId(input) {
   return isRankedinId(id) ? id : null;
 }
 
-/** Rankedins spillerside på dansk (Rankedin bruger "dk", ikke "da" — "da" findes ikke og hænger). */
-export function rankedinProfileUrl(id) {
+/** Faner på Rankedins spillerside, som appen selv kan åbne direkte. */
+export const RANKEDIN_TABS = [
+  { key: 'info', label: 'Info' },
+  { key: 'matches', label: 'Kampe' },
+  { key: 'skill', label: 'Skill' },
+  { key: 'rankings', label: 'Rangliste' },
+];
+
+/**
+ * Rankedins spillerside på dansk ("dk" — "da" findes ikke og hænger).
+ * Med en fane går adressen direkte til den side; navnet i adressen er
+ * ligegyldigt for Rankedin, så vi bruger "spiller".
+ */
+export function rankedinProfileUrl(id, tab = '') {
   if (!isRankedinId(id)) return null;
-  return `https://www.rankedin.com/dk/player/${id}`;
+  const base = `https://www.rankedin.com/dk/player/${id}`;
+  const t = RANKEDIN_TABS.find((x) => x.key === tab);
+  return t ? `${base}/spiller/${t.key}` : base;
 }
