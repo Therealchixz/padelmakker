@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { theme } from '../lib/platformTheme';
 
+/* Ingen '·'-skilletegn: på mobil endte de alene forrest på en linje (QA 14. okt. 2026). Afstanden (gap) skiller linkene. */
 /** @param {{ tone?: 'light' | 'dark' }} [props] */
 export function PublicLegalFooter({ tone = 'light' } = {}) {
   const dark = tone === 'dark'
@@ -28,55 +29,30 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
       <span style={{ color: muted }}>
         {LEGAL_INFO.legalName} · CVR-nr. {LEGAL_INFO.cvr}
       </span>
-      <span aria-hidden style={{ color: sep }}>·</span>
       <Link to="/privatlivspolitik" style={linkStyle}>
         Privatlivspolitik
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/handelsbetingelser" style={linkStyle}>
         Handelsbetingelser
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/cookies" style={linkStyle}>
         Cookies
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/om" style={linkStyle}>
         Om PadelMakker
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/faq" style={linkStyle}>
         FAQ
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/elo" style={linkStyle}>
         ELO
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/events" style={linkStyle}>
         Events
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/hjaelp" style={linkStyle}>
         Hjælp
       </Link>
-      <span aria-hidden style={{ color: sep }}>
-        ·
-      </span>
       <Link to="/app" style={linkStyle}>
         Installér app
       </Link>

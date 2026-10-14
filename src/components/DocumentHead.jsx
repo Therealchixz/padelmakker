@@ -70,6 +70,41 @@ const ROUTE_META = {
     title: 'Installér PadelMakker på telefonen | PadelMakker',
     description: 'Sådan tilføjer du PadelMakker til hjemmeskærmen på iPhone og Android (PWA).',
   },
+  '/kampagne/forste-200': {
+    title: 'Kampagne for de første 200 | PadelMakker',
+    description: 'Regler for PadelMakkers kampagne for de første 200 spillere.',
+  },
+  '/afmeld': {
+    title: 'Afmeld mails | PadelMakker',
+    description: 'Afmeld mails fra PadelMakker med ét klik.',
+  },
+  '/profil/fuldfoer': {
+    title: 'Færdiggør din profil | PadelMakker',
+    description: 'Udfyld det, der mangler på din PadelMakker-profil.',
+  },
+}
+
+/*
+ * Sider med et id i adressen (/kamp/123) og selve appen. Kamp- og turneringssiden
+ * sætter selv en mere præcis titel, når data er hentet.
+ */
+const PREFIX_META = [
+  ['/kamp/', { title: 'Padelkamp | PadelMakker', description: 'Se kampen og find med på PadelMakker.' }],
+  ['/turnering/', { title: 'Padelturnering | PadelMakker', description: 'Se turneringen og tilmeld dig på PadelMakker.' }],
+  ['/dashboard', { title: 'PadelMakker' }],
+]
+
+/** Ukendte adresser skal ikke ligne forsiden (ellers indekseres de som den). */
+const NOT_FOUND_META = {
+  title: 'Siden findes ikke | PadelMakker',
+  description: 'Siden findes ikke. Gå til forsiden af PadelMakker.',
+}
+
+export function metaForPath(pathname) {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  if (ROUTE_META[path]) return ROUTE_META[path]
+  const hit = PREFIX_META.find(([prefix]) => path === prefix || path.startsWith(prefix.endsWith('/') ? prefix : `${prefix}/`))
+  return hit ? hit[1] : NOT_FOUND_META
 }
 
 function setMetaByName(name, content) {
@@ -160,7 +195,7 @@ function buildStructuredData() {
  */
 export function DocumentHead() {
   const { pathname } = useLocation()
-  const meta = ROUTE_META[pathname] || ROUTE_META['/']
+  const meta = metaForPath(pathname)
   const description = meta.description || DEFAULT_DESC
   const url = absoluteUrl(pathname)
 
