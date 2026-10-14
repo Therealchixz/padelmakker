@@ -52,3 +52,8 @@ test('funktioner der kræver login kan ikke kaldes uden login', () => {
   }
   assert.match(sql, /consent_log_select_own[\s\S]*FOR SELECT TO authenticated[\s\S]*USING \(user_id = \(select auth\.uid\(\)\)\)/);
 });
+
+test('testsiden /design/kampforslag er fjernet (ejeren 14. okt. 2026)', () => {
+  assert.doesNotMatch(read('src/padelmakker-platform.jsx'), /design\/kampforslag|ProposalDesignPreview/);
+  assert.ok(!readdirSync(join(root, 'src/pages')).includes('ProposalDesignPreviewPage.jsx'));
+});

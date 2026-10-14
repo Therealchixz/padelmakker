@@ -50,9 +50,6 @@ const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage")
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
 const CompleteProfilePageLazy = lazy(() => import("./pages/CompleteProfilePage").then((m) => ({ default: m.CompleteProfilePage })));
 const CampaignRulesPageLazy = lazy(() => import("./pages/CampaignRulesPage").then((m) => ({ default: m.CampaignRulesPage })));
-const ProposalDesignPreviewPageLazy = lazy(() =>
-  import("./pages/ProposalDesignPreviewPage").then((m) => ({ default: m.ProposalDesignPreviewPage }))
-);
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, profileLoadError, phoneVerificationExempt, refreshProfile, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
@@ -257,7 +254,6 @@ export default function PadelMakker() {
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
             <Route path="/afmeld" element={<EmailUnsubscribePageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />
-            <Route path="/design/kampforslag" element={<ProposalDesignPreviewPageLazy />} />
             <Route
               path="/dashboard/*"
               element={
