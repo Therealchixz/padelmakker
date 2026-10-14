@@ -76,6 +76,8 @@ export function TurnstileWidget({ siteKey, onTokenChange, resetNonce = 0 }) {
         widgetIdRef.current = window.turnstile.render(mountRef.current, {
           sitekey: siteKey,
           theme: turnstileTheme,
+          // Ellers følger sproget telefonens sprog, og mange danskere har engelsk telefon.
+          language: 'da',
           callback: (token) => {
             if (active) onTokenChange(token || '');
           },

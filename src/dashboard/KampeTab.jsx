@@ -64,6 +64,7 @@ import {
   KAMPE_FORMAT_PADEL,
   KAMPE_FORMAT_AMERICANO,
   KAMPE_FORMAT_LIGA,
+  normalizeKampeFormat,
 } from '../lib/kampeFocusNavigation';
 import {
   parseKampeDetailRoute,
@@ -2144,13 +2145,32 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     completedSortMs: matchCompletedSortMs,
   }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myLevel, courtFacilitiesById]);
 
-  /* Deep-link: ?create=1 åbner opret-kamp-formularen direkte (fx fra "Opret ny kamp" i makker-invitation). */
+  /*
+   * ?format=liga|americano i adressen vælger formatet. Før blev det kun læst fra
+   * sessionen, så "Mine ligaer" på profilen og gamle /dashboard/liga-links viste
+   * det format, man sidst havde kigget på (QA 14. okt. 2026).
+   */
+  useEffect(() => {
+    if (!tabActive || kampeDetailRoute) return;
+    const raw = new URLSearchParams(location.search).get("format");
+    if (raw) setKampeFormat(normalizeKampeFormat(raw));
+  }, [tabActive, kampeDetailRoute, location.search]);
+
+  /*
+   * Deep-link: ?create=1 åbner opret-formularen direkte (fx "Opret ny kamp" i makker-invitation).
+   * Med format=americano er det turnerings-formularen (turnerings-knappen på Hjem).
+   */
   useEffect(() => {
     if (!tabActive) return;
     const params = new URLSearchParams(location.search);
     if (params.get("create") !== "1") return;
-    setKampeFormat("padel");
-    setShowCreate(true);
+    if (normalizeKampeFormat(params.get("format")) === KAMPE_FORMAT_AMERICANO) {
+      setKampeFormat(KAMPE_FORMAT_AMERICANO);
+      setShowAmericanoCreate(true);
+    } else {
+      setKampeFormat(KAMPE_FORMAT_PADEL);
+      setShowCreate(true);
+    }
     params.delete("create");
     const q = params.toString();
     navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
