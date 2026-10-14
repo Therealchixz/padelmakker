@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { dismissCookieNotice, getPlaywrightAuthEnv, seedPlaywrightAuth } from './helpers/supabaseAuth'
+import { dismissCookieNotice, getPlaywrightAuthEnv, seedPlaywrightAuth, signOutPlaywrightAuth } from './helpers/supabaseAuth'
 
 const authEnv = getPlaywrightAuthEnv()
 
@@ -28,6 +28,10 @@ test.describe('Logged-in dashboard flows', () => {
       }
     })
     await seedPlaywrightAuth(page, authEnv)
+  })
+
+  test.afterEach(async ({ page }) => {
+    await signOutPlaywrightAuth(page)
   })
 
   test('dashboard viser hjem med hurtig-handlinger', async ({ page }) => {

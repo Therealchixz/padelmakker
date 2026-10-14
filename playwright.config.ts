@@ -5,6 +5,9 @@ const playwrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim()
 const baseURL = playwrightBaseUrl || 'http://127.0.0.1:4173'
 const useCiPreview = Boolean(process.env.CI) && !playwrightBaseUrl
 
+// Samme grund: fejlrapporter i CI må ikke indeholde en tekst-kopi af den side, testen stod på.
+if (process.env.CI) process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1'
+
 const hasAuthE2E = Boolean(
   process.env.VITE_SUPABASE_URL?.trim() &&
     process.env.VITE_SUPABASE_ANON_KEY?.trim() &&
@@ -59,7 +62,10 @@ export default defineConfig({
           {
             name: 'authenticated',
             testMatch: '**/logged-in.spec.ts',
-            use: { ...devices['Desktop Chrome'] },
+            // Repoet er offentligt, og CI's rapporter kan hentes af alle med en GitHub-konto.
+            // Spor (trace) indeholder login-nøgler, og video/skærmbilleder viser andre spilleres
+            // data, så logget-ind-testene optager ingenting (14. okt. 2026).
+            use: { ...devices['Desktop Chrome'], trace: 'off', video: 'off', screenshot: 'off' },
           },
         ]
       : []),

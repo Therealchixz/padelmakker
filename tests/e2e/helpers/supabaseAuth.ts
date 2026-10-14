@@ -47,6 +47,33 @@ function supabaseStorageKey(supabaseUrl: string): string {
   return `sb-${projectRef}-auth-token`
 }
 
+/**
+ * Sessioner som testene selv har oprettet (magic link / password), så de kan logges
+ * ud bagefter. Testbrugeren er en rigtig admin-konto; uden udlogning lå der 2.078
+ * gyldige logins fra CI (14. okt. 2026). Refresh-token-vejen logges ikke ud, for
+ * næste test genbruger samme session.
+ */
+const ownedSessions = new WeakMap<Page, { supabaseUrl: string; anonKey: string; accessToken: string }>()
+
+function rememberOwnedSession(page: Page, env: PlaywrightAuthEnv, accessToken: string | undefined): void {
+  if (accessToken) ownedSessions.set(page, { supabaseUrl: env.supabaseUrl, anonKey: env.anonKey, accessToken })
+}
+
+/** Log testens egen session ud (kaldes i afterEach). Fejler aldrig testen. */
+export async function signOutPlaywrightAuth(page: Page): Promise<void> {
+  const owned = ownedSessions.get(page)
+  if (!owned) return
+  ownedSessions.delete(page)
+  try {
+    await fetch(`${owned.supabaseUrl}/auth/v1/logout?scope=local`, {
+      method: 'POST',
+      headers: { apikey: owned.anonKey, Authorization: `Bearer ${owned.accessToken}` },
+    })
+  } catch {
+    /* oprydning må ikke vælte testen */
+  }
+}
+
 function authErrorMessage(body: AuthTokenResponse, status: number): string {
   return body.error_description || body.msg || body.error_code || `Auth failed (${status})`
 }
@@ -129,6 +156,7 @@ async function seedFromPassword(page: Page, env: PlaywrightAuthEnv): Promise<voi
     token_type: body.token_type || 'bearer',
     user: body.user,
   })
+  rememberOwnedSession(page, env, body.access_token)
 }
 
 /** Admin magic link — virker i CI uden captcha og uden manuel refresh-token rotation. */
@@ -183,6 +211,7 @@ async function seedFromServiceRoleMagicLink(page: Page, env: PlaywrightAuthEnv):
     token_type: session.token_type || 'bearer',
     user: session.user,
   })
+  rememberOwnedSession(page, env, session.access_token)
 }
 
 /** Log ind til E2E: service role (CI) → refresh-token → email/password (lokalt). */
