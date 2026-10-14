@@ -538,7 +538,7 @@ export function OnboardingPage() {
     <div key={0}>
       <div style={{ textAlign: "center", padding: "0 8px 18px" }}>
         <div style={screenHeading}>Lad os lære dig at kende</div>
-        <div style={screenSub}>Tre trin: profil → SMS → e-mail — derefter logger du ind</div>
+        <div style={screenSub}>Fire korte trin — bagefter bekræfter du med SMS og e-mail</div>
       </div>
       {oauthSession ? (
         <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
@@ -1145,7 +1145,7 @@ export function OnboardingPage() {
           >
             <ArrowLeft size={18} strokeWidth={2.2} />
           </button>
-          <h2 style={topbarTitle}>{stepTitles[step]}</h2>
+          <h1 style={topbarTitle}>{stepTitles[step]}</h1>
           <button
             type="button"
             onClick={cancelOnboarding}

@@ -122,7 +122,7 @@ export const circleBtn = {
   padding: 0,
 };
 
-/** .topbar h2 — 19px/600/-0.3px */
+/** .topbar h1 — 19px/600/-0.3px (sidens eneste overskrift på øverste niveau) */
 export const topbarTitle = {
   flex: 1,
   fontSize: 19,
