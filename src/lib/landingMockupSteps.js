@@ -38,7 +38,7 @@ export const landingMockupScreens = [
     metric: '4 pladser',
     tone: 'amber',
     cards: [
-      { label: 'Bane', value: 'Skansen Padel', detail: '28.04.2026 kl. 19:00' },
+      { label: 'Bane', value: 'Skansen Padel', detail: 'Torsdag kl. 19:00' },
       { label: 'Hold', value: '2v2 kamp', detail: 'Spillere kan tilmelde sig direkte' },
       { label: 'Status', value: '1 plads ledig', detail: 'Klar når sidste spiller joiner' },
     ],
