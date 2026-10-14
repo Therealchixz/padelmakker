@@ -32,7 +32,8 @@ test.describe('Logged-in dashboard flows', () => {
 
   test('dashboard viser hjem med hurtig-handlinger', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page.getByRole('button', { name: 'Hjem' }).first()).toBeVisible()
+    // Første test efter login: appen kan bruge mere end standardens 5 sek. på at starte i CI.
+    await expect(page.getByRole('button', { name: 'Hjem' }).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText('Book Bane').first()).toBeVisible({ timeout: 20_000 })
   })
 
