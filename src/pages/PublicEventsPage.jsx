@@ -64,6 +64,18 @@ export function PublicEventsPage() {
     navigate('/login');
   };
 
+  const loggedIn = Boolean(user && profile);
+  const hasEvents = !loading && rows.length > 0;
+
+  /** Tom liste: log ind/opret og land direkte i opret-turnering-formularen. */
+  const ctaStartTournament = () => {
+    if (loggedIn) {
+      navigate('/dashboard/kampe?format=americano&create=1');
+      return;
+    }
+    navigate(authReturnSignupUrl('/dashboard/kampe'));
+  };
+
   return (
     <div
       className="pm-root"
@@ -94,55 +106,25 @@ export function PublicEventsPage() {
             marginBottom: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '12px' }}>
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: theme.accentBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-              aria-hidden
-            >
-              <CalendarDays size={24} color={theme.accent} strokeWidth={2} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: theme.accent,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  margin: '0 0 6px',
-                }}
-              >
-                Kommende på PadelMakker
-              </p>
-              <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), margin: 0, letterSpacing: '-0.02em' }}>
-                Turneringer & events
-              </h1>
-              <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.6, margin: '12px 0 0' }}>
-                Åben oversigt over turneringer med tilmelding eller i gang. Log ind for at tilmelde dig — vi viser ikke navne på
-                deltagere her.
-              </p>
-            </div>
-          </div>
+          <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), margin: 0, letterSpacing: '-0.02em' }}>
+            Turneringer & events
+          </h1>
+          <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.6, margin: '12px 0 0', maxWidth: '60ch' }}>
+            Americano- og Mexicano-turneringer med åben tilmelding eller i gang lige nu. Vi viser ikke deltagernes navne her.
+          </p>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '22px' }}>
-            <button type="button" onClick={ctaPrimary} style={{ ...btn(true), padding: '12px 20px', fontSize: '14px' }}>
-              {user && profile ? 'Gå til Kampe' : 'Opret profil og tilmeld dig'}
-            </button>
-            {!(user && profile) && (
-              <button type="button" onClick={ctaSecondary} style={{ ...btn(false), padding: '12px 20px', fontSize: '14px' }}>
-                Har du allerede en konto? Log ind
+          {hasEvents && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '22px' }}>
+              <button type="button" onClick={ctaPrimary} style={{ ...btn(true), padding: '12px 20px', fontSize: '14px' }}>
+                {loggedIn ? 'Gå til Kampe' : 'Opret profil og tilmeld dig'}
               </button>
-            )}
-          </div>
+              {!loggedIn && (
+                <button type="button" onClick={ctaSecondary} style={{ ...btn(false), padding: '12px 20px', fontSize: '14px' }}>
+                  Har du allerede en konto? Log ind
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {loading && (
@@ -154,7 +136,7 @@ export function PublicEventsPage() {
 
         {!loading && error === 'konfiguration' && (
           <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.6, padding: '8px 4px 0' }}>
-            Supabase er ikke konfigureret i denne miljø — events kan ikke vises her.
+            Turneringer kan ikke vises lige nu. Prøv igen senere.
           </p>
         )}
 
@@ -181,10 +163,35 @@ export function PublicEventsPage() {
         )}
 
         {!loading && !error && rows.length === 0 && (
-          <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.65, padding: '12px 4px 0' }}>
-            Der er ingen kommende turneringer lige nu. Opret en selv under{' '}
-            <strong style={{ color: theme.text }}>Kampe → Turnering</strong>, når du er logget ind.
-          </p>
+          <section
+            aria-labelledby="pm-events-empty-title"
+            style={{
+              background: theme.surface,
+              borderRadius: '14px',
+              border: `1px solid ${theme.border}`,
+              padding: 'clamp(22px, 5vw, 32px)',
+              marginTop: '16px',
+            }}
+          >
+            <CalendarDays size={28} color={theme.accent} strokeWidth={1.75} aria-hidden />
+            <h2 id="pm-events-empty-title" style={{ ...heading('19px'), margin: '12px 0 0' }}>
+              Ingen turneringer lige nu
+            </h2>
+            <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.65, margin: '8px 0 0', maxWidth: '60ch' }}>
+              Når en spiller eller et center åbner for tilmelding, kommer turneringen her. Du kan også selv starte en Americano
+              og invitere dine makkere. Det tager et par minutter.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
+              <button type="button" onClick={ctaStartTournament} style={{ ...btn(true), padding: '12px 20px', fontSize: '14px' }}>
+                {loggedIn ? 'Start en turnering' : 'Opret profil og start en turnering'}
+              </button>
+              {!loggedIn && (
+                <button type="button" onClick={ctaSecondary} style={{ ...btn(false), padding: '12px 20px', fontSize: '14px' }}>
+                  Log ind
+                </button>
+              )}
+            </div>
+          </section>
         )}
 
         {!loading && rows.length > 0 && (

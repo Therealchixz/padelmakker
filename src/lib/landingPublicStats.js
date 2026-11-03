@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { normalizeLandingPublicStats } from './landingStatsDisplay';
 
-export { formatLandingStatCount, normalizeLandingPublicStats } from './landingStatsDisplay';
+export { formatLandingStatCount, normalizeLandingPublicStats, buildLandingStatsItems } from './landingStatsDisplay';
 
 /**
  * Hent offentlige tal til forsiden. Returnerer null ved fejl eller manglende RPC.
