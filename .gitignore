@@ -20,3 +20,9 @@ tests/example.spec.ts
 
 # Supabase CLI scratch
 supabase/.temp/
+
+# Impeccable (designværktøj): lokale midlertidige filer
+**/.impeccable/hook.cache.json
+.impeccable/live/
+.impeccable/history/
+.impeccable/config.local.json
