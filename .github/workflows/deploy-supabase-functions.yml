@@ -59,10 +59,10 @@ jobs:
               #                        domaenets mails i filteret - ogsaa kodeord-mails.
               case "${fn_name}" in
                 report-feedback|email-unsubscribe)
-                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --no-verify-jwt
+                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --no-verify-jwt --yes
                   ;;
                 *)
-                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}"
+                  npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --yes
                   ;;
               esac
             fi
