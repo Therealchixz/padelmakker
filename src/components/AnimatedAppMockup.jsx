@@ -116,8 +116,7 @@ export function AnimatedAppMockup({ className = '' }) {
             <small>{landingMockupBrand.tagline}</small>
           </span>
           <span className="pm-app-mockup-live">
-            <span className="pm-app-mockup-live-dot" />
-            Live
+            Eksempel
           </span>
         </div>
 

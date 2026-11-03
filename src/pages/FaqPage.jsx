@@ -13,8 +13,8 @@ function Q({ title, children }) {
 
 export function FaqPage() {
   return (
-    <LegalPageLayout title="Ofte stillede spørgsmål">
-      <p style={{ marginTop: 0, color: theme.textMid }}>
+    <LegalPageLayout title="Ofte stillede spørgsmål" showUpdated={false} showSignupCta>
+      <p style={{ marginTop: 0, marginBottom: '24px', color: theme.textMid }}>
         Her er svar på det, mange spørger om første gang. Finder du ikke det, du leder efter, så skriv til{' '}
         <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600 }}>
           kontakt@padelmakker.dk
@@ -93,10 +93,10 @@ export function FaqPage() {
 
       <Q title="Får jeg notifikationer?">
         <p style={{ margin: 0 }}>
-          Ja. Du kan få in-app-notifikationer og push (hvis du tillader det i browseren eller har installeret appen
-          som PWA), fx om kampinvitationer, beskeder og resultatbekræftelse. Under notifikationer kan du også slå
-          e-mail til for nye makkere/kampe der passer — praktisk hvis du ikke bruger PWA. Du styrer præferencerne i
-          notifikationsklokken.
+          Ja. Du får notifikationer i appen, og push-beskeder på telefonen, hvis du tillader det i browseren eller har
+          lagt PadelMakker på din hjemmeskærm. Det gælder fx kampinvitationer, beskeder og resultater, der skal
+          bekræftes. Du kan også få en e-mail om nye makkere og kampe, der passer dig. Det er praktisk, hvis du ikke har
+          appen på hjemmeskærmen. Du styrer det hele under notifikationsklokken.
         </p>
       </Q>
 

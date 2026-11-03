@@ -4,7 +4,7 @@ import { theme } from '../lib/platformTheme';
 
 export function HelpContactPage() {
   return (
-    <LegalPageLayout title="Hjælp og kontakt">
+    <LegalPageLayout title="Hjælp og kontakt" showUpdated={false}>
       <p style={{ marginTop: 0, color: theme.textMid }}>
         Har du spørgsmål, problemer med login eller forslag til PadelMakker? Vi hjælper gerne.
       </p>

@@ -91,7 +91,6 @@ export function LandingEloExplainer() {
     <section className="pm-landing-elo-section" aria-labelledby="landing-elo-heading">
       <div className="pm-landing-elo-inner">
         <div className="pm-landing-elo-copy pm-reveal-left">
-          <p className="pm-landing-kicker">2v2-ELO</p>
           <h2 id="landing-elo-heading" style={{ ...heading('clamp(26px,5.5vw,38px)'), margin: 0 }}>
             Hver kamp gør din næste kamp mere fair
           </h2>

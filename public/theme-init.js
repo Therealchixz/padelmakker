@@ -1,5 +1,7 @@
 try {
   var t = localStorage.getItem('pm-theme')
+  // Intet eget valg endnu: følg enhedens lys/mørk-indstilling.
+  if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark'
   if (t) document.documentElement.setAttribute('data-theme', t)
 } catch {
   // Ignore storage errors in private/incognito contexts.

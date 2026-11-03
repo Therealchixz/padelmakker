@@ -9,7 +9,17 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
   const linkColor = dark ? theme.infoBorder : theme.accent
   const muted = theme.textLight
   const sep = dark ? 'rgba(148, 163, 184, 0.35)' : theme.border
-  const linkStyle = { color: linkColor, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }
+  // Min. 44 px høj, så linket er nemt at ramme med tommelfingeren.
+  const linkStyle = {
+    color: linkColor,
+    fontSize: '13px',
+    fontWeight: 500,
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '44px',
+    padding: '0 4px',
+  }
   return (
     <footer
       className="pm-public-legal-footer"
@@ -19,7 +29,7 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
         borderTop: `1px solid ${sep}`,
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '12px 20px',
+        gap: '0 14px',
         justifyContent: 'center',
         alignItems: 'center',
         fontSize: '13px',

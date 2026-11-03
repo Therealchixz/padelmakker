@@ -58,7 +58,9 @@ export function CookieNoticeBar() {
         bottom: 0,
         zIndex: 10000,
         padding: 'max(12px, env(safe-area-inset-bottom)) clamp(12px, 3vw, 20px) max(14px, env(safe-area-inset-bottom))',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(240,244,248,0.92) 12%, rgba(255,255,255,0.98) 100%)',
+        // Følger temaet (lys/mørk). Kan browseren ikke color-mix, bliver baggrunden blot gennemsigtig.
+        background:
+          'linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--pm-bg) 92%, transparent) 12%, color-mix(in srgb, var(--pm-surface) 98%, transparent) 100%)',
         pointerEvents: 'none',
       }}
     >
