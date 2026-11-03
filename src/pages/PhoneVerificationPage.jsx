@@ -12,6 +12,7 @@ import { writePendingSignupEmail } from '../lib/signupEmailPending'
 import { readPrefillPhone, clearPrefillPhone } from '../lib/profileCompleteness'
 import { tryAutoEnrollGrowthCampaign } from '../lib/growthCampaign'
 import { scrollToFieldById } from '../lib/formValidationScroll'
+import { shouldUseLegacyPhoneChangeFlow } from '../lib/phoneVerifyMode'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -132,17 +133,6 @@ function clearPendingSignup() {
   }
 }
 
-function hasPendingSignupMetadata(user) {
-  const meta = user?.user_metadata || {}
-  return meta.phone_first_signup === true || !!meta.pending_email
-}
-
-function shouldUseLegacyPhoneChangeFlow(user) {
-  if (!user || user.phone_confirmed_at) return false
-  if (hasPendingSignupMetadata(user)) return false
-  return true
-}
-
 export function PhoneVerificationPage() {
   const { user, signOut } = useAuth()
   const location = useLocation()
@@ -178,6 +168,22 @@ export function PhoneVerificationPage() {
   )
 
   useEffect(() => {
+    const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
+    // Google-brugere: onboarding har allerede sendt koden som telefonskift.
+    // Skal tjekkes før phoneFromState, ellers bliver koden afvist ("User not found").
+    if (shouldUseLegacyPhoneChangeFlow(user)) {
+      setMode('phone_change')
+      const phone = phoneFromState || prefillPhone || metaPhone || ''
+      setPhoneInput((prev) => prev || phone)
+      setPendingPhone((prev) => prev || phone)
+      setPendingEmail(String(user?.email || '').trim())
+      if (phoneFromState) {
+        setOtpSent(true)
+        setInfo(`SMS-kode blev sendt til ${maskPhone(phoneFromState)}.`)
+      }
+      return
+    }
+
     if (phoneFromState) {
       const next = { phone: phoneFromState, email: emailFromState }
       writePendingSignup(next)
@@ -187,15 +193,6 @@ export function PhoneVerificationPage() {
       setPendingEmail(emailFromState)
       setOtpSent(true)
       setInfo(`SMS-kode blev sendt til ${maskPhone(phoneFromState)}.`)
-      return
-    }
-
-    const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
-    if (shouldUseLegacyPhoneChangeFlow(user)) {
-      setMode('phone_change')
-      setPhoneInput((prev) => prev || prefillPhone || metaPhone || '')
-      setPendingPhone((prev) => prev || prefillPhone || metaPhone || '')
-      setPendingEmail(String(user?.email || '').trim())
       return
     }
 
@@ -278,8 +275,13 @@ export function PhoneVerificationPage() {
     }
   }
 
-  const verifyCode = async () => {
-    const token = cleanOtp(otpCode)
+  // Ét tjek ad gangen: auto-tjek ved 6. ciffer og knappen må ikke sende koden to gange.
+  const verifyingRef = useRef(false)
+
+  /** @param {string} [codeArg] koden fra OtpBoxes; state er ikke opdateret endnu, når 6. ciffer tastes */
+  const verifyCode = async (codeArg) => {
+    if (verifyingRef.current) return
+    const token = cleanOtp(typeof codeArg === 'string' ? codeArg : otpCode)
     if (!pendingPhone) {
       setErr('Send en SMS-kode først.')
       scrollToFieldById('verify-phone')
@@ -291,6 +293,7 @@ export function PhoneVerificationPage() {
       return
     }
 
+    verifyingRef.current = true
     setSubmitting(true)
     setErr('')
     setInfo('')
@@ -364,6 +367,7 @@ export function PhoneVerificationPage() {
     } catch (e) {
       setErr(mapPhoneAuthErrorMessage(e?.message))
     } finally {
+      verifyingRef.current = false
       setSubmitting(false)
     }
   }
@@ -472,7 +476,7 @@ export function PhoneVerificationPage() {
               value={otpCode}
               disabled={submitting}
               onChange={(v) => { setOtpCode(v); setErr('') }}
-              onComplete={() => { void verifyCode() }}
+              onComplete={(code) => { void verifyCode(code) }}
             />
             <button
               type="submit"
