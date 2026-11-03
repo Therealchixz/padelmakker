@@ -18,7 +18,10 @@ import {
   withKilde,
 } from "../send-discovery-digest/content.ts";
 
-export type RescueGroup = "google_sms" | "phone_email" | "email_sms" | "profile" | "city";
+// Kun dem, en fejl forhindrede i at komme ind (ejeren 3. nov. 2026: "Det var kun
+// dem som var forhindret i at logge ind"). Mangler man bare by eller felter i
+// profilen, kan man stadig logge ind, og så får man ingen mail.
+export type RescueGroup = "google_sms" | "phone_email" | "email_sms";
 
 export type RescueUser = {
   id: string;
@@ -39,6 +42,7 @@ export type RescueProfile = {
   city?: string | null;
   latitude?: number | null;
   phone_verification_exempt?: boolean | null;
+  availability?: string[] | null;
   is_banned?: boolean | null;
   role?: string | null;
   notification_prefs?: { email?: Record<string, unknown> } | null;
@@ -70,11 +74,19 @@ export function rescueGroupFor(user: RescueUser, profile: RescueProfile | null):
   if (String(profile.notification_prefs?.email?.opdagelse ?? "") === "false") return null;
 
   const onboardingOk = profile.birth_year != null && Boolean(String(profile.play_style || "").trim());
-  if (!onboardingOk) return "profile";
+  if (!onboardingOk) return null;
   const prov = provider(user);
+  // Telefon-konto uden bekræftet mail: kunne slet ikke logge ind igen (rettet i #449).
   if (prov === "phone" && !user.email_confirmed_at) return "phone_email";
-  if (!user.phone_confirmed_at && !profile.phone_verification_exempt) return prov === "google" ? "google_sms" : "email_sms";
-  if (!String(profile.city || "").trim() || profile.latitude == null) return "city";
+  if (!user.phone_confirmed_at && !profile.phone_verification_exempt) {
+    // Google: SMS-koden blev afvist (rettet i #447).
+    if (prov === "google") return "google_sms";
+    // Mail-konto fra før SMS-kravet: SMS virkede, men "Ved ikke endnu" eller ingen
+    // tidspunkter sendte dem tilbage til start (rettet i #448). Kun dem.
+    const style = String(profile.play_style || "").trim();
+    const noTimes = !Array.isArray(profile.availability) || profile.availability.length === 0;
+    return style === "Ved ikke endnu" || noTimes ? "email_sms" : null;
+  }
   return null;
 }
 
@@ -101,22 +113,6 @@ const STEPS: Record<RescueGroup, { how: string; steps: string[] }> = {
       "Gå ind på padelmakker.dk og tryk «Log ind».",
       "Log ind med din mail og adgangskode.",
       "Tryk «Send SMS-kode», og skriv koden fra SMS’en.",
-    ],
-  },
-  profile: {
-    how: "Du mangler kun de sidste felter i din profil.",
-    steps: [
-      "Gå ind på padelmakker.dk og tryk «Log ind».",
-      "Log ind, som da du oprettede dig (Google, mail eller telefonnummer).",
-      "Udfyld de felter, appen beder om – det tager et par minutter.",
-    ],
-  },
-  city: {
-    how: "Du mangler kun at vælge din by, så spillere i nærheden kan finde dig.",
-    steps: [
-      "Gå ind på padelmakker.dk og tryk «Log ind».",
-      "Log ind, som da du oprettede dig (Google, mail eller telefonnummer).",
-      "Vælg din by fra listen.",
     ],
   },
 };

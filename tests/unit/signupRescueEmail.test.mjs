@@ -9,12 +9,18 @@ const done = { id: 'p', full_name: 'Anna Hansen', birth_year: 1990, play_style: 
 const google = { id: 'u', email: 'a@gmail.com', email_confirmed_at: 'x', phone_confirmed_at: null, app_metadata: { providers: ['google'] } };
 const phone = { id: 'u', email: '', new_email: 'b@mail.dk', email_confirmed_at: null, phone_confirmed_at: 'x', app_metadata: { providers: ['phone'] } };
 
-test('hver gruppe får sin egen besked', () => {
+test('kun dem, en fejl forhindrede i at logge ind', () => {
   assert.equal(rescueGroupFor(google, done), 'google_sms');
   assert.equal(rescueGroupFor(phone, done), 'phone_email');
-  assert.equal(rescueGroupFor({ ...google, app_metadata: { providers: ['email'] } }, done), 'email_sms');
-  assert.equal(rescueGroupFor({ ...google, phone_confirmed_at: 'x' }, { ...done, birth_year: null }), 'profile');
-  assert.equal(rescueGroupFor({ ...google, phone_confirmed_at: 'x' }, { ...done, city: null }), 'city');
+  const mailUser = { ...google, app_metadata: { providers: ['email'] } };
+  // "Ved ikke endnu" / ingen tidspunkter sendte dem tilbage til start
+  assert.equal(rescueGroupFor(mailUser, done), 'email_sms');
+  assert.equal(rescueGroupFor(mailUser, { ...done, play_style: 'Allround', availability: [] }), 'email_sms');
+  // SMS virkede, ingen fejl → ingen mail
+  assert.equal(rescueGroupFor(mailUser, { ...done, play_style: 'Allround', availability: ['Aftener'] }), null);
+  // Kan godt logge ind: mangler bare by eller profilfelter → ingen mail
+  assert.equal(rescueGroupFor({ ...google, phone_confirmed_at: 'x' }, { ...done, birth_year: null }), null);
+  assert.equal(rescueGroupFor({ ...google, phone_confirmed_at: 'x' }, { ...done, city: null }), null);
 });
 
 test('færdige, afmeldte, admins, bannede og konti uden profil eller mail får intet', () => {
