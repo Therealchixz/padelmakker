@@ -41,6 +41,7 @@ export function shouldRequirePhoneVerification(user, profile, serverExempt) {
 export function shouldRequireEmailVerification(user, options = {}) {
   if (!user) return false
   if (user.email_confirmed_at) return false
-  if (String(user.email || '').trim()) return true
+  // new_email: telefon-konti, hvor mailen venter på bekræftelse.
+  if (String(user.email || user.new_email || '').trim()) return true
   return Boolean(String(options.pendingEmail || '').trim())
 }

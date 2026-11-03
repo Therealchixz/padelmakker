@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { pendingAccountEmail } from '../lib/loginIdentifier.js';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { font, theme, btn } from '../lib/platformTheme';
@@ -23,7 +24,7 @@ export function SignupEmailSentPage() {
   const pending = readPendingSignupEmail();
   const stateEmail = typeof location.state?.email === 'string' ? location.state.email.trim() : '';
   const statePhone = typeof location.state?.phone === 'string' ? location.state.phone.trim() : '';
-  const authEmail = user?.email ? String(user.email).trim() : '';
+  const authEmail = pendingAccountEmail(user);
   const email = (
     stateEmail
     || pending?.email

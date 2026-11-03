@@ -3,7 +3,7 @@ import { isValidCityPlace } from './dawaPlaceSearch.js';
 const PREFILL_PHONE_KEY = 'pm_login_prefill_phone';
 
 export function hasEnteredEmail(user, pendingEmail = '') {
-  if (String(user?.email || '').trim()) return true;
+  if (String(user?.email || user?.new_email || '').trim()) return true;
   return Boolean(String(pendingEmail || '').trim());
 }
 
