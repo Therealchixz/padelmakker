@@ -531,7 +531,7 @@ export function LandingPage() {
         <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
           {steps.map((s, i) => (
             <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
-              <div style={{ fontSize: "48px", fontWeight: 900, color: "color-mix(in srgb, var(--pm-accent) 10%, transparent)", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
+              <div aria-hidden="true" style={{ fontSize: "48px", fontWeight: 900, color: "color-mix(in srgb, var(--pm-accent) 10%, transparent)", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
               <div className="pm-landing-feature-icon">
                 {s.icon}
               </div>
