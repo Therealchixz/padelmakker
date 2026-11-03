@@ -56,8 +56,8 @@ test.describe('Public smoke flows', () => {
     await page.goto('/')
 
     await expect(page).toHaveTitle(/Find padelmakker på dit niveau/i)
-    await expect(page.getByText(/Find padelspillere på dit niveau/i)).toBeVisible()
-    await expect(page.getByText(/opret kampe og se ledige baner i Danmark/i)).toBeVisible()
+    await expect(page.getByText(/se hvem der spiller på dit niveau i nærheden/i)).toBeVisible()
+    await expect(page.getByText(/ledig bane hos 150\+ centre/i)).toBeVisible()
     await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
 
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
