@@ -11,7 +11,7 @@ test.describe('Auth flows', () => {
     await page.goto('/login')
 
     await page.getByRole('button', { name: /^Log ind$/i }).click()
-    await expect(page.getByText(/Indtast email og adgangskode/i)).toBeVisible()
+    await expect(page.getByText(/Indtast e-mail eller telefonnummer og adgangskode/i)).toBeVisible()
   })
 
   test('forgot-password mode validates missing email', async ({ page }) => {

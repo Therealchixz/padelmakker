@@ -8,7 +8,7 @@ export function mapAuthErrorMessage(message, context = 'login') {
   const m = String(message || '').toLowerCase();
 
   if (m.includes('invalid login credentials') || m.includes('invalid_credentials')) {
-    return 'Forkert email eller adgangskode.';
+    return 'Forkert e-mail/telefonnummer eller adgangskode.';
   }
   if (m.includes('email not confirmed')) {
     return 'Bekræft din email før du logger ind — tjek din indbakke.';
@@ -19,7 +19,7 @@ export function mapAuthErrorMessage(message, context = 'login') {
   if (m.includes('user not found')) {
     return context === 'forgot'
       ? 'Hvis email findes, sender vi et link. Tjek din indbakke.'
-      : 'Forkert email eller adgangskode.';
+      : 'Forkert e-mail/telefonnummer eller adgangskode.';
   }
   if (m.includes('password') && m.includes('least')) {
     return 'Adgangskoden opfylder ikke kravene.';

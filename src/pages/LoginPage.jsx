@@ -36,7 +36,7 @@ export function LoginPage() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      setErr("Indtast email og adgangskode");
+      setErr("Indtast e-mail eller telefonnummer og adgangskode");
       scrollToFieldById(!email.trim() ? 'login-email' : 'login-password');
       return;
     }
@@ -145,8 +145,8 @@ export function LoginPage() {
             void handleLogin();
           }}
         >
-          <label htmlFor="login-email" style={labelStyle}>E-mail</label>
-          <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "13px" }} />
+          <label htmlFor="login-email" style={labelStyle}>E-mail eller telefonnummer</label>
+          <input id="login-email" autoComplete="username" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk eller 20112233" style={{ ...inputStyle, marginBottom: "13px" }} />
           <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
           <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "8px" }} />
           <div style={{ textAlign: "right", marginBottom: "16px" }}>

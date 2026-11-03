@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { loginCredentialsFromIdentifier } from './loginIdentifier.js'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { signInWithOAuthProvider } from './authOAuth'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionForForm, toPersonNameCase } from './profileUtils'
@@ -556,7 +557,8 @@ export function AuthProvider({ children }) {
   const signIn = async (email, password, captchaToken = '') => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
     const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
-    const payload = { email, password }
+    // Feltet tager både mail og telefonnummer (se loginIdentifier.js).
+    const payload = loginCredentialsFromIdentifier(email, password) || { email, password }
     if (token) payload.options = { captchaToken: token }
     const { data, error } = await supabase.auth.signInWithPassword(payload)
     if (error) throw error

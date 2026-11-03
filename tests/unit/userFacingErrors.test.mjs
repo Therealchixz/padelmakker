@@ -12,7 +12,7 @@ test('mapUserFacingError maps network errors', () => {
 test('mapUserFacingError maps auth-like messages via auth mapper', () => {
   assert.equal(
     mapUserFacingError(new Error('Invalid login credentials')),
-    'Forkert email eller adgangskode.',
+    'Forkert e-mail/telefonnummer eller adgangskode.',
   );
 });
 

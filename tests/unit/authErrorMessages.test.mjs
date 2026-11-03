@@ -6,7 +6,7 @@ describe('mapAuthErrorMessage', () => {
   it('maps invalid login credentials', () => {
     assert.equal(
       mapAuthErrorMessage('Invalid login credentials'),
-      'Forkert email eller adgangskode.',
+      'Forkert e-mail/telefonnummer eller adgangskode.',
     );
   });
 
