@@ -14,6 +14,8 @@
 // Body (valgfri):
 //   { "dryRun": true }   tæller pr. gruppe og viser udkast, sender intet
 //   { "limit": 100 }     højst så mange mails i denne kørsel
+//   { "testTo": "x@y.dk", "testGroup": "phone_email" }
+//                        én prøve til den adresse (opdigtet navn); rører ikke de rigtige modtagere
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { copenhagenDateLabel } from "../send-discovery-digest/content.ts";
@@ -50,14 +52,44 @@ Deno.serve(async (req: Request) => {
 
   let dryRun = false;
   let limit = 100;
+  let testTo = "";
+  let testGroup: RescueGroup = "google_sms";
   try {
     const body = await req.json();
     dryRun = body?.dryRun === true;
+    if (typeof body?.testTo === "string" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.testTo.trim())) {
+      testTo = body.testTo.trim();
+    }
+    if (body?.testGroup === "phone_email" || body?.testGroup === "email_sms" || body?.testGroup === "google_sms") {
+      testGroup = body.testGroup;
+    }
     if (Number.isFinite(Number(body?.limit)) && Number(body.limit) > 0) {
       limit = Math.min(300, Math.floor(Number(body.limit)));
     }
   } catch {
     /* ingen krop */
+  }
+
+  const siteUrlTest = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
+  if (testTo) {
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) return jsonResponse({ error: "RESEND_API_KEY mangler" }, 500);
+    const from = Deno.env.get("DISCOVERY_FROM_EMAIL") || Deno.env.get("FEEDBACK_FROM_EMAIL") || "PadelMakker <kontakt@padelmakker.dk>";
+    const email = buildSignupRescueEmail(
+      testGroup,
+      { id: "test" },
+      { id: "test", full_name: "Mette Eksempel" },
+      { siteUrl: siteUrlTest, unsubLink: `${siteUrlTest}/afmeld`, cvr: CVR, todayLabel: copenhagenDateLabel() },
+    );
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from, to: [testTo], reply_to: "kontakt@padelmakker.dk",
+        subject: `[PRØVE] ${email.subject}`, text: email.text, html: email.html,
+      }),
+    });
+    return jsonResponse({ ok: res.ok, test: true, group: testGroup, status: res.status });
   }
 
   // Alle konti (få hundrede) + deres profiler.
