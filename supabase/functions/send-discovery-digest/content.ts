@@ -61,10 +61,10 @@ export const MAX_ITEMS_PER_SECTION = 5;
 /** Opsummeringen sendes kl. 17 dansk tid. */
 export const DIGEST_LOCAL_HOUR = 17;
 
-const NAVY = "#16377E";
-const NAVY_BG = "#EEF2FB";
+export const NAVY = "#16377E";
+export const NAVY_BG = "#EEF2FB";
 const TEXT = "#0B1120";
-const TEXT_MID = "#3E4C63";
+export const TEXT_MID = "#3E4C63";
 const TEXT_LIGHT = "#596579";
 const BORDER = "#E2E8F0";
 const PAGE_BG = "#EEF2F8";
@@ -110,7 +110,7 @@ export function withKilde(url: string, kilde: string | null | undefined): string
   return `${base}${base.includes("?") ? "&" : "?"}kilde=${encodeURIComponent(k)}${hash}`;
 }
 
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return String(value || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -375,7 +375,7 @@ type ShellParts = {
 };
 
 /** Mailens ramme: logo og dato, blå top med hilsen, hvidt kort og fod. */
-function emailShellHtml(v: ShellParts): string {
+export function emailShellHtml(v: ShellParts): string {
   return `<!doctype html>
 <html lang="da">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"></head>
@@ -410,7 +410,7 @@ function emailShellHtml(v: ShellParts): string {
 </html>`;
 }
 
-function legalLineHtml(opts: { cvr: string }, site: string) {
+export function legalLineHtml(opts: { cvr: string }, site: string) {
   return `<div style="margin-top:10px;font-size:11px;color:#8795AA">PadelMakker · CVR ${escapeHtml(opts.cvr)} · <a href="${escapeHtml(site)}/privatlivspolitik" style="color:#8795AA">Privatlivspolitik</a></div>`;
 }
 
