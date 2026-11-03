@@ -390,14 +390,21 @@ export function validateDisplayName(raw) {
   return { valid: true }
 }
 
-/** Har brugeren gennemført onboarding (profilfelter — ikke JWT metadata)? */
+/**
+ * Har brugeren gennemført onboarding (profilfelter — ikke JWT metadata)?
+ *
+ * Skal kræve det samme som opret-siden, ikke mere. Før krævede den også en
+ * spillestil forskellig fra "Ved ikke endnu" og mindst ét tidspunkt, men opret-
+ * siden tilbyder "Ved ikke endnu" som valg og siger, at tidspunkter er valgfri.
+ * Så blev 30 brugere, der havde gjort alt rigtigt, sendt tilbage til start
+ * (gennemgang 3. nov. 2026). Fødselsdato kommer kun fra opret-siden, så den
+ * skiller stadig en udfyldt profil fra en tom.
+ */
 export function isOnboardingComplete(user, profile) {
   if (!user || !profile) return false
   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
-  const style = String(profile.play_style || '').trim()
-  const styleOk = style !== '' && style !== 'Ved ikke endnu'
-  const availOk = normalizeStringArrayField(profile.availability).length > 0
-  return birthOk && styleOk && availOk
+  const styleOk = String(profile.play_style || '').trim() !== ''
+  return birthOk && styleOk
 }
 
 function isGenericProfileName(name) {
@@ -414,8 +421,7 @@ export function hasSubstantialProfileProgress(profile) {
   const availOk = normalizeStringArrayField(profile.availability).length > 0
   const areaOk = isValidProfileRegion(profile.area)
   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
-  const style = String(profile.play_style || '').trim()
-  const styleOk = style !== '' && style !== 'Ved ikke endnu'
+  const styleOk = String(profile.play_style || '').trim() !== ''
 
   return (availOk && areaOk) || (birthOk && styleOk)
 }
