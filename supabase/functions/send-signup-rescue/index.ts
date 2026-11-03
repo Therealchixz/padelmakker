@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
   }
   const { data: profileRows, error: profErr } = await admin
     .from("profiles")
-    .select("id, full_name, name, birth_year, play_style, city, latitude, phone_verification_exempt, is_banned, role, notification_prefs")
+    .select("id, full_name, name, birth_year, play_style, availability, city, latitude, phone_verification_exempt, is_banned, role, notification_prefs")
     .in("id", users.map((u) => u.id));
   if (profErr) {
     console.error("send-signup-rescue profiles:", profErr.message);
