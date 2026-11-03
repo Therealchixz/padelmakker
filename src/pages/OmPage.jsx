@@ -12,7 +12,7 @@ const ROADMAP_NEXT = [
 
 export function OmPage() {
   return (
-    <LegalPageLayout title="Om PadelMakker">
+    <LegalPageLayout title="Om PadelMakker" showUpdated={false} showSignupCta>
       <p style={{ marginTop: 0, color: theme.textMid }}>
         PadelMakker er en dansk platform, der samler <strong style={{ color: theme.text }}>makkersøgning</strong>,{' '}
         <strong style={{ color: theme.text }}>2v2-kampe og Liga</strong>, <strong style={{ color: theme.text }}>ELO og rangliste</strong>,{' '}

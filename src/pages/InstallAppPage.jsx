@@ -3,7 +3,7 @@ import { theme } from '../lib/platformTheme';
 
 export function InstallAppPage() {
   return (
-    <LegalPageLayout title="Installér PadelMakker på telefonen">
+    <LegalPageLayout title="Installér PadelMakker på telefonen" showUpdated={false}>
       <p style={{ marginTop: 0, color: theme.textMid }}>
         PadelMakker er en <strong style={{ color: theme.text }}>progressiv webapp (PWA)</strong>. Du behøver ikke App Store
         eller Google Play — du tilføjer siden til hjemmeskærmen og åbner den som en almindelig app.

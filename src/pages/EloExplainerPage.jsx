@@ -4,7 +4,7 @@ import { theme } from '../lib/platformTheme';
 
 export function EloExplainerPage() {
   return (
-    <LegalPageLayout title="Sådan virker ELO på PadelMakker">
+    <LegalPageLayout title="Sådan virker ELO på PadelMakker" showUpdated={false} showSignupCta>
       <p style={{ marginTop: 0, color: theme.textMid }}>
         ELO afspejler dit niveau ud fra resultater mod andre spillere. Her er, hvordan 2v2-ELO beregnes i PadelMakker, og hvordan
         Turnerings-ELO (Americano og Mexicano) holdes separat.
@@ -28,7 +28,7 @@ export function EloExplainerPage() {
         Resultat er 1 ved sejr og 0 ved nederlag.
       </p>
 
-      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>K-faktor (action-pakken)</h2>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>K-faktor</h2>
       <p style={{ color: theme.textMid }}>
         K bestemmes <strong style={{ color: theme.text }}>pr. spiller</strong> ud fra egne spillede kampe for den almindelige 2v2-ELO:
       </p>

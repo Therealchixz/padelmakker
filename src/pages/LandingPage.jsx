@@ -20,6 +20,12 @@ const LandingTourVideoLazy = lazy(() =>
   import('../components/LandingTourVideo').then((m) => ({ default: m.LandingTourVideo }))
 );
 
+/** Sørg for at en tekst fra databasen slutter med punktum, før næste sætning sættes på. */
+function withFullStop(text) {
+  const t = String(text || '').trim();
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
 export function LandingPage() {
   const revealRef = useScrollReveal();
   const heroRef = useRef(null);
@@ -185,14 +191,6 @@ export function LandingPage() {
   const landingSectionIntroStyle = {
     textAlign: "center",
     marginBottom: "clamp(32px,7vw,48px)",
-  };
-  const landingSectionKickerStyle = {
-    fontSize: "12px",
-    fontWeight: 700,
-    color: theme.accent,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    marginBottom: "10px",
   };
   const landingSectionHeadingStyle = {
     ...heading("clamp(26px,5.5vw,36px)"),
@@ -417,7 +415,7 @@ export function LandingPage() {
               Find makker<br />på dit niveau.<br /><span className="pm-landing-hero-accent">Spil mere padel.</span>
             </h1>
             <p className="pm-reveal pm-visible pm-delay-2 pm-landing-hero-subtitle" style={{ fontSize: "clamp(16px,3.8vw,19px)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
-              Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
+              Opret en gratis profil, se hvem der spiller på dit niveau i nærheden, og find en ledig bane hos 150+ centre.
             </p>
             <div className="pm-reveal pm-visible pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
               {session ? (
@@ -463,9 +461,8 @@ export function LandingPage() {
       {campaignStats?.found && campaignStats.draw_completed ? (
         <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(16px,4vw,24px) clamp(24px,5vw,32px)' }}>
           <div className="pm-reveal pm-visible" style={landingInfoCardStyle}>
-            <p style={{ ...landingSectionKickerStyle, margin: '0 0 8px' }}>Kampagne</p>
             <h2 style={{ ...heading('clamp(20px,4vw,26px)'), margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-              Første 200 — lodtrækning gennemført
+              Lodtrækningen blandt de første 200 er gennemført
             </h2>
             <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.65, margin: 0 }}>
               Lodtrækningen er afsluttet. Vinderen er kontaktet direkte.
@@ -482,13 +479,12 @@ export function LandingPage() {
               background: `linear-gradient(135deg, ${theme.accentBg}, ${theme.surface})`,
             }}
           >
-            <p style={{ ...landingSectionKickerStyle, margin: '0 0 8px' }}>Kampagne</p>
             <h2 style={{ ...heading('clamp(20px,4vw,26px)'), margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-              Første 200 — vær med i lodtrækningen
+              Vær blandt de første 200, og vær med i lodtrækningen
             </h2>
             <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.65, margin: '0 0 14px' }}>
-              {campaignStats.prize_description || 'Padel-præmie til de første 200 med fuld profil.'}
-              {' '}Eksisterende brugere tæller med — pladser fordeles efter hvem der først opfylder kravene.
+              {withFullStop(campaignStats.prize_description || 'Padel-præmie til de første 200 med fuld profil.')}
+              {' '}Eksisterende brugere tæller med. Pladserne går til dem, der først opfylder kravene.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px' }}>
               <div style={{ fontSize: 'clamp(28px,6vw,36px)', fontWeight: 800, color: theme.accent, letterSpacing: '-0.03em', fontFamily: font }}>
@@ -530,13 +526,12 @@ export function LandingPage() {
       {/* How it works */}
       <section style={landingSectionStyle}>
         <div className="pm-reveal" style={landingSectionIntroStyle}>
-          <p style={landingSectionKickerStyle}>Sådan virker det</p>
           <h2 style={landingSectionHeadingStyle}>Fra profil til kamp på fire skridt</h2>
         </div>
         <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
           {steps.map((s, i) => (
             <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
-              <div style={{ fontSize: "48px", fontWeight: 900, color: theme.accent + "12", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
+              <div style={{ fontSize: "48px", fontWeight: 900, color: "color-mix(in srgb, var(--pm-accent) 10%, transparent)", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
               <div className="pm-landing-feature-icon">
                 {s.icon}
               </div>
@@ -569,7 +564,7 @@ export function LandingPage() {
               </button>
             ) : (
               <button type="button" onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">
-                Kom i gang — det er gratis <ArrowRight size={17} />
+                Opret gratis profil <ArrowRight size={17} />
               </button>
             )}
           </div>
