@@ -34,22 +34,16 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   assert.match(css, /@keyframes pmEloDeltaPop/);
 });
 
-test('landing roadmap is placed after how-it-works and avoids date promises', async () => {
+test('roadmap lives on /om (not the landing page) and avoids date promises', async () => {
   const landingPage = await readFile(new URL('../../src/pages/LandingPage.jsx', import.meta.url), 'utf8');
-  const roadmapComponent = await readFile(new URL('../../src/components/LandingRoadmap.jsx', import.meta.url), 'utf8');
-  const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
+  const omPage = await readFile(new URL('../../src/pages/OmPage.jsx', import.meta.url), 'utf8');
 
-  // Landing sections are lazy-loaded and rendered conditionally; roadmap should
-  // still appear before the ELO explainer in the render tree.
-  assert.match(landingPage, /<LandingRoadmapLazy \/>[\s\S]*<LandingEloExplainerLazy \/>/);
-  assert.match(roadmapComponent, /PadelMakker bliver hele tiden bedre/);
-  assert.match(roadmapComponent, /Live nu/);
-  assert.match(roadmapComponent, /Næste skridt|På vej/);
-  assert.match(roadmapComponent, /På sigt|Senere/);
-  assert.doesNotMatch(roadmapComponent, /20\d{2}|Q[1-4]|kommer næste måned/i);
-  assert.match(css, /\.pm-roadmap-section/);
-  assert.match(css, /\.pm-roadmap-card/);
-  assert.doesNotMatch(css, /var\(--pm-cyan\)/);
+  // Forsiden skal være kort: køreplanen og funktions-gitteret er flyttet væk.
+  assert.doesNotMatch(landingPage, /LandingRoadmap/);
+  assert.doesNotMatch(landingPage, /pm-landing-features-grid/);
+  assert.match(omPage, /Det arbejder vi på/);
+  assert.match(omPage, /ROADMAP_NEXT/);
+  assert.doesNotMatch(omPage, /20\d{2}|Q[1-4]|kommer næste måned/i);
 });
 
 test('landing ELO count-up is slow and replays on every fresh page load', async () => {
