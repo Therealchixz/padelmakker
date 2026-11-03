@@ -4,7 +4,7 @@ import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered, LogIn } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
-import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
+import { fetchLandingPublicStats, buildLandingStatsItems } from '../lib/landingPublicStats';
 import { fetchGrowthCampaignPublic, formatCampaignSpotsLabel } from '../lib/growthCampaign';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
 import { LEGAL_INFO } from '../lib/legalInfo';
@@ -59,19 +59,7 @@ export function LandingPage() {
     if (msg) setInviteNote(msg);
   };
 
-  const statsBannerItems = publicStats
-    ? [
-        { n: formatLandingStatCount(publicStats.player_count), l: 'Spillere på platformen' },
-        { n: formatLandingStatCount(publicStats.open_matches), l: 'Åbne kampe lige nu' },
-        { n: formatLandingStatCount(publicStats.matches_last_30_days), l: 'Kampe spillet (30 dage)' },
-        { n: 'Gratis', l: 'Opret profil uden betaling' },
-      ]
-    : [
-        { n: 'Gratis', l: 'Opret profil uden betaling' },
-        { n: 'Makkere', l: 'Find spillere på dit niveau' },
-        { n: 'Kampe', l: 'Opret og deltag i 2v2' },
-        { n: 'ELO', l: 'Følg udviklingen over tid' },
-      ];
+  const statsBannerItems = buildLandingStatsItems(publicStats);
 
   useEffect(() => {
     const el = heroRef.current;
