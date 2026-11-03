@@ -9,7 +9,8 @@ on:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Fast version: ubuntu-latest blev 26.04, som Playwright 1.59 ikke kan installere Chromium på (3. nov. 2026).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
