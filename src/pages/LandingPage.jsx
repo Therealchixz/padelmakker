@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered, LogIn } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, LogIn } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, buildLandingStatsItems } from '../lib/landingPublicStats';
 import { fetchGrowthCampaignPublic, formatCampaignSpotsLabel } from '../lib/growthCampaign';
@@ -15,9 +15,6 @@ const AnimatedAppMockupLazy = lazy(() =>
 );
 const LandingEloExplainerLazy = lazy(() =>
   import('../components/LandingEloExplainer').then((m) => ({ default: m.LandingEloExplainer }))
-);
-const LandingRoadmapLazy = lazy(() =>
-  import('../components/LandingRoadmap').then((m) => ({ default: m.LandingRoadmap }))
 );
 const LandingTourVideoLazy = lazy(() =>
   import('../components/LandingTourVideo').then((m) => ({ default: m.LandingTourVideo }))
@@ -126,21 +123,10 @@ export function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Bekræft telefon og e-mail, og vælg niveau, region, spillestil og spilledage — så andre kan finde dig rigtigt." },
-    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig, brug forslag og aktiv søgning, og invitér dem til en kamp uden Facebook-tråde." },
-    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Find kamp & bane", desc: "Opret eller tilslut dig 2v2, Liga eller Americano/Mexicano — og se ledige tider hos 150+ centre, når I skal booke." },
-    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultater, følg 2v2-ELO og Turnerings-ELO på ranglisten, og find mere jævnbyrdige kampe næste gang." },
-  ];
-
-  const features = [
-    { icon: <Trophy size={22} color={theme.accent} />, title: "2v2-ELO", desc: "Dynamisk rating med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
-    { icon: <Swords size={22} color={theme.accent} />, title: "2v2-kampe", desc: "Opret åbne eller lukkede kampe med venteliste og godkendelse. Bekræft resultater, før 2v2-ELO opdateres." },
-    { icon: <Shield size={22} color={theme.accent} />, title: "Liga", desc: "Opret eller deltag i holdligaer med stilling, kampprogram og hold-chat — Swiss, alle-mod-alle eller knockout." },
-    { icon: <Medal size={22} color={theme.accent} />, title: "Americano/Mexicano", desc: "Automatisk rundeplan, fair parring og separat Turnerings-ELO (adskilt fra 2v2-ELO)." },
-    { icon: <ListOrdered size={22} color={theme.accent} />, title: "Rangliste", desc: "Se dig selv og andre på 2v2-ELO og Turnerings-ELO — filtrer på region og periode." },
-    { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider via Halbooking, MATCHi, Bookli og Playtomic — og hop direkte videre til booking hos centret." },
-    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Beskeder & kamp-chat", desc: "Chat privat med makkere, eller i kampen og på holdet — aftal tider og hold kontakten." },
-    { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
+    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og hvornår du kan spille. Vi bekræfter telefon og e-mail, så der ikke er falske profiler." },
+    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau, og invitér dem til en kamp uden lange Facebook-tråde." },
+    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Find kamp og bane", desc: "Opret eller tilmeld dig 2v2, Liga eller Americano. Se ledige tider hos 150+ centre via Halbooking, MATCHi, Bookli og Playtomic." },
+    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultatet sammen med modstanderne, og se din ELO på ranglisten. Så bliver næste kamp mere jævnbyrdig." },
   ];
 
   const landingCtaBlue = "var(--pm-landing-cta-blue)";
@@ -545,10 +531,7 @@ export function LandingPage() {
       <section style={landingSectionStyle}>
         <div className="pm-reveal" style={landingSectionIntroStyle}>
           <p style={landingSectionKickerStyle}>Sådan virker det</p>
-          <h2 style={landingSectionHeadingStyle}>Fra profil til kamp — hurtigt i gang</h2>
-          <p style={{ fontSize: "15px", color: theme.textMid, lineHeight: 1.7, maxWidth: "620px", margin: "14px auto 0" }}>
-            Opret profil, find makker, spil 2v2/Liga/Americano og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
-          </p>
+          <h2 style={landingSectionHeadingStyle}>Fra profil til kamp på fire skridt</h2>
         </div>
         <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
           {steps.map((s, i) => (
@@ -566,36 +549,9 @@ export function LandingPage() {
 
       {showDeferredSections && (
         <Suspense fallback={null}>
-          <LandingRoadmapLazy />
-        </Suspense>
-      )}
-
-      {showDeferredSections && (
-        <Suspense fallback={null}>
           <LandingEloExplainerLazy />
         </Suspense>
       )}
-
-      {/* Features */}
-      <section style={{ background: theme.bg, padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div className="pm-reveal" style={landingSectionIntroStyle}>
-            <p style={landingSectionKickerStyle}>Funktioner</p>
-            <h2 style={landingSectionHeadingStyle}>Alt hvad du behøver</h2>
-          </div>
-          <div className="pm-landing-features-grid">
-            {features.map((f, i) => (
-              <div key={f.title} className={"pm-feature-card pm-reveal pm-delay-" + (i + 1)} style={landingFeatureCardStyle}>
-                <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
-                  {f.icon}
-                </div>
-                <div style={landingFeatureTitleStyle}>{f.title}</div>
-                <div style={landingFeatureDescStyle}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="pm-reveal-scale" style={landingSectionStyle}>
@@ -620,54 +576,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
-        <div className="pm-reveal" style={landingInfoCardStyle}>
-          <p style={{ ...landingSectionKickerStyle, margin: "0 0 10px" }}>Centre på platformen</p>
-          <h2 style={{ ...heading("clamp(20px,4vw,24px)"), margin: "0 0 14px", letterSpacing: "-0.02em" }}>Baner-overblik i appen</h2>
-          <p style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.6, margin: "0 0 16px" }}>
-            Se ledige tider hos 150+ tilkoblede centre landet over — via Halbooking, MATCHi, Bookli og Playtomic — og hop videre til booking hos centret, når tidspunktet passer. Dækningen vokser løbende.
-          </p>
-          <Link to="/om" style={{ fontSize: "14px", fontWeight: 600, color: theme.accent, textDecoration: "none" }}>
-            Læs mere om PadelMakker →
-          </Link>
-        </div>
-      </section>
-
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
-        <div
-          className="pm-reveal"
-          style={{
-            ...landingInfoCardStyle,
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "16px 20px",
-          }}
-        >
-          <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-            <p style={{ fontSize: "15px", fontWeight: 700, color: theme.text, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
-              Kender du nogen der mangler makker?
-            </p>
-            <p style={{ fontSize: "13px", color: theme.textMid, margin: 0, lineHeight: 1.5 }}>
-              Send en invitation — det tager under et minut at komme i gang på PadelMakker.
-            </p>
-            {inviteNote ? (
-              <p style={{ fontSize: "12px", color: theme.accent, margin: "8px 0 0", fontWeight: 600 }} role="status">
-                {inviteNote}
-              </p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleInviteFriend()}
-            style={{ ...btn(true), padding: "11px 18px", fontSize: "13px", flexShrink: 0 }}
-          >
-            <Share2 size={16} /> Inviter en ven
-          </button>
-        </div>
-      </section>
-
       <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
         <div className="pm-landing-footer-topline">
           <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. {LEGAL_INFO.cvr}</span>
@@ -686,6 +594,20 @@ export function LandingPage() {
               <Smartphone size={14} aria-hidden />
               Installér app
             </Link>
+            <button
+              type="button"
+              className="pm-landing-footer-primary-link"
+              onClick={() => void handleInviteFriend()}
+              style={{ fontFamily: "inherit", cursor: "pointer" }}
+            >
+              <Share2 size={14} aria-hidden />
+              Inviter en ven
+            </button>
+            {inviteNote ? (
+              <p style={{ fontSize: "12px", color: theme.accent, margin: 0, fontWeight: 600 }} role="status">
+                {inviteNote}
+              </p>
+            ) : null}
             <p className="pm-landing-footer-links-title pm-landing-footer-links-title-secondary">Udforsk</p>
             <div className="pm-landing-footer-link-list-secondary">
             <Link to="/om" className="pm-landing-footer-secondary-link">

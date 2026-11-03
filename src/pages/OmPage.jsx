@@ -2,6 +2,14 @@ import { LegalPageLayout } from '../components/LegalPageLayout';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { theme } from '../lib/platformTheme';
 
+/** Det vi arbejder på nu. Ingen datoer: vi lover ikke tidspunkter, vi ikke kan holde. */
+const ROADMAP_NEXT = [
+  'Endnu bedre forslag til makkere ud fra niveau, region og hvor aktiv du er.',
+  'Færre og mere relevante notifikationer.',
+  'Flere centre og bookingsystemer i baneoversigten.',
+  'Mere statistik om din form og udvikling over tid.',
+];
+
 export function OmPage() {
   return (
     <LegalPageLayout title="Om PadelMakker">
@@ -29,6 +37,17 @@ export function OmPage() {
         <strong style={{ color: theme.text }}>Bookli</strong> og <strong style={{ color: theme.text }}>Playtomic</strong>.
         Det dækker blandt andet Match Padel, Padel Lounge, Smash, Padelboxen, Padel.dk og mange lokale klubber. Når du
         finder en ledig tid, sendes du videre til centrets eget booking-system. Listen udvides løbende.
+      </p>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Det arbejder vi på</h2>
+      <p style={{ color: theme.textMid }}>Vi bygger PadelMakker sammen med spillerne. Lige nu arbejder vi på:</p>
+      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+        {ROADMAP_NEXT.map((item) => (
+          <li key={item} style={{ marginBottom: '8px' }}>{item}</li>
+        ))}
+      </ul>
+      <p style={{ color: theme.textMid }}>
+        Længere ude: flere turneringsformater, værktøjer til klubber og arrangører, og mulighed for at stemme på de
+        forbedringer, der betyder mest for dig. Har du et ønske, så skriv til os.
       </p>
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Kontakt og virksomhed</h2>
       <p style={{ color: theme.textMid }}>
