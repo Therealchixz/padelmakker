@@ -74,33 +74,52 @@ body {
 .pm-delay-5 { transition-delay: 0.5s; }
 .pm-delay-6 { transition-delay: 0.6s; }
 
-/* ─── Landing page hero: mørk banefarve med en tegnet padelbane (ingen slørede fotos) ─── */
+/* ─── Landing page hero: foto-baggrund med mørkt overlay ─── */
 .pm-hero-gradient {
-  background:
-    radial-gradient(120% 90% at 85% 10%, #163a86 0%, transparent 60%),
-    linear-gradient(170deg, var(--pm-court-navy) 0%, #10275a 100%);
+  background-image: url('/hero-bg.jpg');
+  background-image: -webkit-image-set(
+    url('/hero-bg.avif') type('image/avif'),
+    url('/hero-bg.webp') type('image/webp'),
+    url('/hero-bg.jpg') type('image/jpeg')
+  );
+  background-image: image-set(
+    url('/hero-bg.avif') type('image/avif'),
+    url('/hero-bg.webp') type('image/webp'),
+    url('/hero-bg.jpg') type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center top;
   position: relative;
   overflow: hidden;
 }
 
-.pm-hero-court {
-  position: absolute;
-  z-index: 0;
-  left: 50%;
-  bottom: -6%;
-  width: min(1500px, 190vw);
-  height: auto;
-  transform: translateX(-50%) perspective(1200px) rotateX(58deg);
-  transform-origin: 50% 100%;
-  pointer-events: none;
-  color: rgba(147, 197, 253, 0.32);
+@media (max-width: 540px) {
+  .pm-hero-gradient {
+    background-image: url('/hero-bg-mobile.webp');
+    background-image: -webkit-image-set(
+      url('/hero-bg-mobile.avif') type('image/avif'),
+      url('/hero-bg-mobile.webp') type('image/webp'),
+      url('/hero-bg.jpg') type('image/jpeg')
+    );
+    background-image: image-set(
+      url('/hero-bg-mobile.avif') type('image/avif'),
+      url('/hero-bg-mobile.webp') type('image/webp'),
+      url('/hero-bg.jpg') type('image/jpeg')
+    );
+  }
 }
 
-@media (min-width: 900px) {
-  .pm-hero-court {
-    width: min(1600px, 125vw);
-    bottom: -14%;
-  }
+.pm-hero-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 20, 50, 0.82) 0%,
+    rgba(29, 78, 216, 0.60) 100%
+  );
+  pointer-events: none;
 }
 
 /* Kun under CTA — fade mod hvid stats-sektion (matcher theme.surface) */
@@ -4314,22 +4333,13 @@ button,
   }
 
   /* Mobil: samme princip - målte nav-højde + lille luft til hero-indhold */
-  /* Ikke længere fuld skærmhøjde: den tegnede bane under knapperne fylder resten,
-     så tallene kommer tidligere frem og toppen ikke er et tomt felt. */
+  /* Ikke længere fuld skærmhøjde, så tallene kommer tidligere frem og toppen ikke er et tomt felt. */
   .pm-landing-hero {
     box-sizing: border-box;
     padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(24px, 7vw, 36px));
   }
 
-  /* Mobil: banen ligger bag knapperne og toner ind nedefra, så den ikke krydser teksten. */
-  .pm-hero-court {
-    width: 160vw;
-    bottom: 70px;
-    transform: translateX(-50%) perspective(700px) rotateX(50deg);
-    color: rgba(147, 197, 253, 0.42);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
-  }
+
 
   .pm-landing-hero > div:first-child {
     display: flex;
@@ -5068,7 +5078,7 @@ button,
 }
 
 .pm-landing-hero-accent {
-  /* Varm orange på den mørke banefarve (ca. 7:1). */
+  /* Varm orange oven på det mørke overlay på baggrundsbilledet. */
   color: var(--pm-orange-bright);
 }
 

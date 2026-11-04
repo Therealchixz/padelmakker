@@ -26,24 +26,6 @@ function withFullStop(text) {
   return /[.!?]$/.test(t) ? t : `${t}.`;
 }
 
-/**
- * Tegnet padelbane set fra tribunen (20 x 10 m): glasvægge, net, servicelinjer.
- * Ren pynt bag overskriften, i stedet for et sløret foto.
- */
-function HeroCourt() {
-  return (
-    <svg className="pm-hero-court" viewBox="-4 -4 208 108" fill="none" aria-hidden="true" focusable="false">
-      {/* Gitter (tynd) og glasvægge (tyk) */}
-      <rect x="0" y="0" width="200" height="100" stroke="currentColor" strokeWidth="0.6" />
-      <path d="M0 0V100M200 0V100M0 0H40M160 0H200M0 100H40M160 100H200" stroke="currentColor" strokeWidth="2.2" />
-      {/* Net */}
-      <path d="M100 -4V104" stroke="currentColor" strokeWidth="1.4" />
-      {/* Servicelinjer og midterlinje */}
-      <path d="M30.5 0V100M169.5 0V100M30.5 50H169.5" stroke="currentColor" strokeWidth="0.9" />
-    </svg>
-  );
-}
-
 export function LandingPage() {
   const revealRef = useScrollReveal();
   const heroRef = useRef(null);
@@ -398,7 +380,6 @@ export function LandingPage() {
           position: "relative",
         }}
       >
-        <HeroCourt />
         <div
           style={{
             flex: "1 1 auto",

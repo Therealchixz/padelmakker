@@ -100,8 +100,11 @@ test.describe('Public smoke flows', () => {
     )
     // Overskrifterne bruger Bricolage Grotesque; den hentes i samme forespørgsel som Inter.
     await expect(page.locator('link[data-critical-font="inter"]')).toHaveAttribute('href', /Bricolage\+Grotesque/)
-    // Toppen er en tegnet bane, ikke et tungt baggrundsfoto, så der er intet billede at forudindlæse.
-    await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0)
+    await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
+    await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
+      'media',
+      '(max-width: 540px)'
+    )
   })
 
   test('login page and forgot-password mode render', async ({ page }) => {
