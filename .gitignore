@@ -29,3 +29,4 @@ supabase/.temp/
 
 # taste-skill (designværktøj): lokale arbejdsfiler
 .taste-skill/
+.impeccable/review/
