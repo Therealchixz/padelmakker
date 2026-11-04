@@ -31,10 +31,10 @@ export function PadelRacketIcon({ size = 24, title = '', style = {} }) {
       <g transform="translate(12 12) rotate(45) scale(0.8) translate(-8 -15)">
         <defs>
           <mask id={maskId} maskUnits="userSpaceOnUse" x="-4" y="-4" width="24" height="38">
-            <rect x="-4" y="-4" width="24" height="38" fill="#fff" />
-            {HOLES.map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="0.95" fill="#000" />)}
-            <path d="M7 16.9h2l-1 2.1Z" fill="#000" />
-            <path d="M6.1 23.5h3.8M6.1 26.1h3.8" stroke="#000" strokeWidth="0.9" />
+            <rect x="-4" y="-4" width="24" height="38" fill="white" />
+            {HOLES.map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="0.95" fill="black" />)}
+            <path d="M7 16.9h2l-1 2.1Z" fill="black" />
+            <path d="M6.1 23.5h3.8M6.1 26.1h3.8" stroke="black" strokeWidth="0.9" />
           </mask>
         </defs>
         <g mask={`url(#${maskId})`} fill="currentColor">
