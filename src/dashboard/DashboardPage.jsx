@@ -1574,7 +1574,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       </div>
 
       <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${tab === "makker-filter" || tab === "kamp-filter" ? " pm-dash-main--filter" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}${hideMobileBottomNavForKampeCreate ? " pm-dash-main--kampe-create" : ""}`}>
-        {(tab === "hjem" || tab === "profil") && <EmailConfirmReminder user={user} />}
+        {(tab === "hjem" || tab === "profil") && <EmailConfirmReminder user={authUser} />}
         <Suspense
           fallback={
             <div
