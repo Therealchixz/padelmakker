@@ -23,5 +23,4 @@ test('mobil bundnavigation bruger handleTabPress til scroll-to-top', () => {
   assert.match(dash, /handleTabPress/);
   assert.match(dash, /shouldScrollDashboardToTopOnTabReselect/);
   assert.match(dash, /onClick=\{\(\) => handleTabPress\(t\.id\)\}/);
-  assert.match(dash, /handleTabPress\(t\.id, \{ fromMoreSheet: true \}\)/);
 });

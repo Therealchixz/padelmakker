@@ -969,9 +969,11 @@ body {
               box-shadow 0.3s ease;
 }
 
-.pm-feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(29, 78, 216, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .pm-feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(29, 78, 216, 0.12);
+  }
 }
 
 /* ─── Stat counter animation ─── */
@@ -1404,9 +1406,11 @@ button,
   opacity: 1;
 }
 
-.pm-tab-strip-btn:not([data-active="true"]):hover {
-  color: var(--pm-text) !important;
-  background: color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-surface)) !important;
+@media (hover: hover) and (pointer: fine) {
+  .pm-tab-strip-btn:not([data-active="true"]):hover {
+    color: var(--pm-text) !important;
+    background: color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-surface)) !important;
+  }
 }
 
 /* Meget smal skærm: kun ikoner i faner (tekst i title/aria-label) */
@@ -1964,10 +1968,12 @@ button,
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.pm-home-seeking-cta:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--pm-green) 50%, var(--pm-border));
-  box-shadow: var(--pm-shadow-soft);
+@media (hover: hover) and (pointer: fine) {
+  .pm-home-seeking-cta:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--pm-green) 50%, var(--pm-border));
+    box-shadow: var(--pm-shadow-soft);
+  }
 }
 
 .pm-home-seeking-cta:focus-visible {
@@ -2013,9 +2019,11 @@ button,
   transition: transform 180ms ease, box-shadow 220ms ease;
 }
 
-.pm-home-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--pm-shadow-soft);
+@media (hover: hover) and (pointer: fine) {
+  .pm-home-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pm-shadow-soft);
+  }
 }
 
 .pm-home-stat-head {
@@ -3323,9 +3331,11 @@ button,
   cursor: pointer;
 }
 
-.pm-baner-search-clear:hover {
-  color: var(--pm-text);
-  background: var(--pm-surface-alt);
+@media (hover: hover) and (pointer: fine) {
+  .pm-baner-search-clear:hover {
+    color: var(--pm-text);
+    background: var(--pm-surface-alt);
+  }
 }
 
 .pm-baner-search-meta {
@@ -3561,9 +3571,11 @@ button,
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.pm-venue-region-picker-option:hover {
-  border-color: var(--pm-accent);
-  background: var(--pm-surface-alt);
+@media (hover: hover) and (pointer: fine) {
+  .pm-venue-region-picker-option:hover {
+    border-color: var(--pm-accent);
+    background: var(--pm-surface-alt);
+  }
 }
 
 .pm-venue-region-picker-option--active {
@@ -4376,9 +4388,11 @@ button,
   cursor: pointer;
 }
 
-.pm-app-modal-close:hover {
-  color: var(--pm-text);
-  background: var(--pm-surface-muted);
+@media (hover: hover) and (pointer: fine) {
+  .pm-app-modal-close:hover {
+    color: var(--pm-text);
+    background: var(--pm-surface-muted);
+  }
 }
 
 .pm-app-modal-content:has(.pm-app-modal-close-bar) .pm-modal-body {
@@ -9812,9 +9826,11 @@ button,
   transition: background 0.15s, border-color 0.15s;
 }
 
-.pm-liga-v2-team-row:hover {
-  background: var(--pm-accent-bg);
-  border-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border));
+@media (hover: hover) and (pointer: fine) {
+  .pm-liga-v2-team-row:hover {
+    background: var(--pm-accent-bg);
+    border-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border));
+  }
 }
 
 .pm-liga-v2-sheet-back {

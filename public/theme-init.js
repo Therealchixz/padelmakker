@@ -3,6 +3,9 @@ try {
   // Intet eget valg endnu: følg enhedens lys/mørk-indstilling.
   if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark'
   if (t) document.documentElement.setAttribute('data-theme', t)
+  // Statusbjaelken foelger lys/moerk; forsiden (/) er altid moerk.
+  var tc = document.querySelector('meta[name="theme-color"]')
+  if (tc) tc.setAttribute('content', location.pathname === '/' ? '#1B1A17' : (t === 'dark' ? '#141311' : '#F3EEE4'))
 } catch {
   // Ignore storage errors in private/incognito contexts.
 }

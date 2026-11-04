@@ -99,13 +99,11 @@ html:has(.pm-lp) body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   transition: transform 0.15s ease, background-color 0.2s ease;
 }
-.pm-lp-cta:hover { background: #A8432D; }
 .pm-lp-cta:active { transform: scale(0.98); }
 .pm-lp-cta--ink {
   background: var(--lp-ink);
   color: var(--lp-paper) !important;
 }
-.pm-lp-cta--ink:hover { background: #000; }
 
 .pm-lp-pill {
   display: inline-flex;
@@ -122,18 +120,10 @@ html:has(.pm-lp) body {
   white-space: nowrap;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.pm-lp-pill:hover {
-  background: rgba(243, 238, 228, 0.12);
-  border-color: var(--lp-paper);
-}
 .pm-lp-pill--solid {
   background: var(--lp-clay-solid);
   border-color: var(--lp-clay-solid);
   color: #fff !important;
-}
-.pm-lp-pill--solid:hover {
-  background: #A8432D;
-  border-color: #A8432D;
 }
 
 /* ── Toppen ── */
@@ -216,7 +206,6 @@ html:has(.pm-lp) body {
   text-decoration: none;
   color: var(--lp-muted) !important;
 }
-.pm-lp-nav-text:hover { color: var(--lp-paper) !important; }
 .pm-lp-nav-signup { display: none !important; }
 
 .pm-lp-hero-copy {
@@ -637,7 +626,6 @@ html:has(.pm-lp) body {
   color: var(--lp-ball) !important;
   text-decoration: none;
 }
-.pm-lp-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .pm-lp-events {
   list-style: none;
   padding: 0;
@@ -656,10 +644,6 @@ html:has(.pm-lp) body {
   border: 1px solid var(--lp-line);
   text-decoration: none;
   transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-.pm-lp-event:hover {
-  background: #2E2B25;
-  border-color: rgba(243, 238, 228, 0.28);
 }
 .pm-lp-event-time {
   font-family: var(--pm-font-brand);
@@ -757,7 +741,6 @@ html:has(.pm-lp) body {
   color: var(--lp-muted) !important;
 }
 .pm-lp-footer li a:hover,
-.pm-lp-footer li button:hover { color: var(--lp-paper) !important; }
 .pm-lp-footer-note { color: var(--lp-ball); margin: 4px 0 0; font-size: 13px; }
 .pm-lp-footer-base {
   margin-top: 28px;
@@ -780,7 +763,6 @@ html:has(.pm-lp) body {
   color: var(--lp-faint) !important;
   text-decoration: none;
 }
-.pm-lp-footer-legal a:hover { color: var(--lp-paper) !important; }
 
 /* ── Indtoning ved scroll ── */
 .pm-lp [data-lp-reveal] {
@@ -791,6 +773,28 @@ html:has(.pm-lp) body {
 .pm-lp [data-lp-reveal].is-in {
   opacity: 1;
   transform: none;
+}
+
+/* Hover kun med mus, ellers haenger den fast efter et tryk paa telefonen. */
+@media (hover: hover) and (pointer: fine) {
+  .pm-lp-cta:hover { background: #A8432D; }
+  .pm-lp-cta--ink:hover { background: #000; }
+  .pm-lp-pill:hover {
+    background: rgba(243, 238, 228, 0.12);
+    border-color: var(--lp-paper);
+  }
+  .pm-lp-pill--solid:hover {
+    background: #A8432D;
+    border-color: #A8432D;
+  }
+  .pm-lp-nav-text:hover { color: var(--lp-paper) !important; }
+  .pm-lp-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .pm-lp-event:hover {
+    background: #2E2B25;
+    border-color: rgba(243, 238, 228, 0.28);
+  }
+  .pm-lp-footer li button:hover { color: var(--lp-paper) !important; }
+  .pm-lp-footer-legal a:hover { color: var(--lp-paper) !important; }
 }
 
 @keyframes pm-lp-zoom { from { transform: scale(1.18); } to { transform: scale(1); } }

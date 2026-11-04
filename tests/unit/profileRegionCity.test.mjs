@@ -52,7 +52,8 @@ test('aktiv søgning på Find makker og Kampe', () => {
   assert.match(makkereTab, /channel="makker"/);
   assert.match(kampeTab, /ActiveSeekingPanel/);
   assert.match(kampeTab, /channel="kamp"/);
-  assert.match(dash, /PRIMARY_TAB_IDS = \["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"\]/);
+  // Redesign v4: Hjem, Kampe, Makkere og Mere i menuen; Spil er en knap.
+  assert.match(dash, /id: "hjem"[\s\S]*id: "kampe"[\s\S]*id: "makkere"[\s\S]*id: "mere"/);
   assert.doesNotMatch(dash, /id: "liga",\s*label: "Liga"/);
   assert.match(matchFilterPage, /Hvornår søger du kamp/);
   assert.doesNotMatch(matchFilterPage, /Kun kampe med ledige pladser/);

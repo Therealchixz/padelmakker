@@ -74,17 +74,34 @@ test.describe('Logged-in dashboard flows', () => {
   test('kan åbne Baner og se søgning/regioner', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/dashboard/baner')
-    await expect(page.getByRole('button', { name: 'Baner' }).first()).toBeVisible({ timeout: 20_000 })
+    // Baner ligger under Mere (redesign v4), saa siden kendes paa sin overskrift, ikke en fane.
+    await expect(page.getByRole('heading', { level: 1, name: 'Baner' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByPlaceholder(/Søg center/i).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('kan åbne Beskeder-fanen', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/dashboard/beskeder')
-    await expect(page.getByRole('button', { name: 'Beskeder' }).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { level: 1, name: 'Beskeder' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText(/Ingen samtaler endnu|Søg|Ny besked|Beskeder/i).first()).toBeVisible({
       timeout: 20_000,
     })
+  })
+
+  test('bundmenuen har Spil og Mere, og Mere viser genvejene', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/dashboard/hjem')
+    const nav = page.getByRole('navigation', { name: 'Mobil navigation' })
+    await expect(nav.getByRole('button', { name: /Spil/ })).toBeVisible({ timeout: 20_000 })
+    await nav.getByRole('button', { name: /^Mere/ }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Mere' })).toBeVisible({ timeout: 20_000 })
+    for (const name of ['Beskeder', 'Rangliste', 'Baner']) {
+      await expect(page.getByRole('navigation', { name: 'Genveje' }).getByRole('button', { name: new RegExp(name) })).toBeVisible()
+    }
+    await page.getByRole('navigation', { name: 'Genveje' }).getByRole('button', { name: /Baner/ }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Baner' })).toBeVisible({ timeout: 20_000 })
+    await nav.getByRole('button', { name: /Spil/ }).click()
+    await expect(page.getByRole('heading', { name: 'Opret kamp' })).toBeVisible({ timeout: 20_000 })
   })
 
   test('profil-redigering viser blokerede spillere-sektion', async ({ page }) => {
@@ -126,6 +143,7 @@ test.describe('Logged-in dashboard flows', () => {
       '/dashboard/beskeder',
       '/dashboard/notifikationer',
       '/dashboard/profil',
+      '/dashboard/mere',
       '/dashboard/kamp-filter',
       '/dashboard/makker-filter',
     ]
