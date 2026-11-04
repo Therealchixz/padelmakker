@@ -14,6 +14,7 @@ import { formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { SITE_ORIGIN } from '../../lib/siteMeta';
 import { shareMatchUrl } from '../../lib/matchShareText.js';
+import { AvatarCircle } from '../AvatarCircle';
 
 export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCalendar, onShare }) {
   // "Kopieret!"-kvitteringen hoerer kun til denne boks; den laa foer som
@@ -110,7 +111,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
-                {(user?.avatar || '🎾')}
+                <AvatarCircle avatar={user?.avatar} size={28} emojiSize="14px" style={{ background: 'transparent', color: 'var(--pm-on-accent)' }} />
               </div>
             </div>
             <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>1/4 pladser optaget</span>

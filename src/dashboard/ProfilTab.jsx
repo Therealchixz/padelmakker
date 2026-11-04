@@ -18,6 +18,8 @@ import { useAmericanoPartnerOpponentStats } from '../lib/americanoRelationStats'
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
 import { Settings, Swords, Trophy, Save, X } from 'lucide-react';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { EmailConfirmReminder } from '../components/EmailConfirmReminder';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
@@ -782,9 +784,8 @@ export function ProfilTab({ user, showToast, setTab }) {
       {!editing ? (
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
-          <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
-        </div>
+        <ScreenHeader title="Min profil" />
+        <EmailConfirmReminder user={authUser} />
         <div className="pm-profile-top">
         {/* Profile card – centered pf-head layout matching mockup */}
         <div className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>

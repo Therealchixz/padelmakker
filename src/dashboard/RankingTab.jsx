@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { font, theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
 import { ChevronDown } from 'lucide-react';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   statsFromEloHistoryRows,
@@ -681,8 +682,9 @@ export function RankingTab({ user }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
-        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Rangliste</h2>
+      <ScreenHeader
+        title="Rangliste"
+        actions={(
         <div style={{ position: 'relative' }}>
           <select
             value={filterArea}
@@ -694,8 +696,9 @@ export function RankingTab({ user }) {
               background: filterArea !== 'all' ? theme.accentBg : theme.surfaceAlt,
               border: `1px solid ${filterArea !== 'all' ? theme.accent : theme.border}`,
               borderRadius: 8,
-              padding: '5px 26px 5px 10px',
-              fontSize: 12,
+              padding: '0 28px 0 12px',
+              minHeight: 40,
+              fontSize: 13,
               fontWeight: 600,
               color: filterArea !== 'all' ? theme.accent : theme.textMid,
               cursor: 'pointer',
@@ -706,9 +709,10 @@ export function RankingTab({ user }) {
             <option value="all">Alle</option>
             {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <ChevronDown size={13} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: filterArea !== 'all' ? theme.accent : theme.textMid }} />
+          <ChevronDown size={13} style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: filterArea !== 'all' ? theme.accent : theme.textMid }} />
         </div>
-      </div>
+        )}
+      />
 
       {loadError && sorted.length === 0 ? (
         <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>

@@ -32,7 +32,8 @@ import { ChatActionSheet } from '../components/chat/ChatActionSheet';
 import { DateInputField } from '../components/DateInputField';
 import { fetchDmHiddenUserIds, fetchUsersIBlocked } from '../lib/userModeration';
 import { BeskedChatActions } from '../components/BeskedChatActions';
-import { ChatInbox } from '../components/chat/ChatInbox';
+import { ChatInbox, ChatComposeButton } from '../components/chat/ChatInbox';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ChatThreadHeader } from '../components/chat/ChatThreadHeader';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
@@ -1200,6 +1201,20 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   // ── Samtaleliste ──────────────────────────────────────────────────────────
   return (
     <div className="pm-besked-page">
+      <ScreenHeader
+        title="Beskeder"
+        actions={(
+          <ChatComposeButton
+            composeOpen={composeOpen}
+            onToggleCompose={() => {
+              // Søgefeltet skjules under "Ny besked"; en gammel søgning må ikke
+              // blive ved med at filtrere listen usynligt.
+              if (!composeOpen) setInboxSearch('');
+              setComposeOpen((o) => !o);
+            }}
+          />
+        )}
+      />
       <ChatInbox
         items={inboxItems}
         loading={loadingConvos}
@@ -1207,12 +1222,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         searchQuery={inboxSearch}
         onSearchChange={setInboxSearch}
         composeOpen={composeOpen}
-        onToggleCompose={() => {
-          // Søgefeltet skjules under "Ny besked"; en gammel søgning må ikke
-          // blive ved med at filtrere listen usynligt.
-          if (!composeOpen) setInboxSearch('');
-          setComposeOpen((o) => !o);
-        }}
         onOpenItem={(item) => {
           if (item.kind === 'team') openTeamConversation(item.id);
           else openConversation(item.id);
@@ -1280,10 +1289,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         )}
         emptySlot={(
           <div className="pm-state-card pm-state-card--empty" style={{ border: 'none', boxShadow: 'none' }}>
-            <MessageCircle size={48} color={theme.border} style={{ marginBottom: '14px' }} aria-hidden />
+            <MessageCircle size={48} color={theme.border} style={{ display: 'block', margin: '0 auto 14px' }} aria-hidden />
             <div className="pm-state-title">Ingen samtaler endnu</div>
             <div className="pm-state-copy">
-              Tryk compose-knappen for at starte en samtale — eller skriv til et hold under{' '}
+              Tryk på blyanten øverst for at skrive til en spiller — eller skriv til et hold under{' '}
               {setTab ? (
                 <button
                   type="button"

@@ -1,4 +1,5 @@
 import { Plus, Search, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
+import { ScreenHeader } from '../ScreenHeader';
 
 function UnreadBadge({ count }) {
   if (!count) return null;
@@ -27,9 +28,9 @@ export function KampeRedesignToolbar({
 }) {
   return (
     <div className="pm-kampe-v2-toolbar">
-      <div className="pm-kampe-v2-head">
-        <h2 className="pm-kampe-v2-title">Kampe</h2>
-        {onCreate ? (
+      <ScreenHeader
+        title="Kampe"
+        actions={onCreate ? (
           <button
             type="button"
             className="pm-kampe-v2-create pm-kampe-v2-create--icon"
@@ -41,7 +42,7 @@ export function KampeRedesignToolbar({
             <Plus size={18} strokeWidth={2.5} aria-hidden />
           </button>
         ) : null}
-      </div>
+      />
 
       <div className="pm-kampe-v2-format-row" role="tablist" aria-label="Kampe format">
         {formatTabs.map((tab) => {

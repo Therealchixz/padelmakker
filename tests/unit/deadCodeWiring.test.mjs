@@ -48,7 +48,9 @@ test('rundvisningen aabner notifikations-panelet paa mobil', () => {
 
   // Mobil-klokken bor i HomeTab, ikke i DashboardPage.
   assert.match(home, /tourForceNotificationOpen = false/);
-  assert.match(home, /<NotificationBell tourForceOpen=\{tourForceNotificationOpen\} \/>/);
+  // Klokken bor i den fælles toplinje (ScreenHeader), som HomeTab giver flaget videre til.
+  assert.match(home, /bellTourForceOpen=\{tourForceNotificationOpen\}/);
+  assert.match(read('src/components/ScreenHeader.jsx'), /<NotificationBell tourForceOpen=\{bellTourForceOpen\} \/>/);
 
   // Og proppen aabner faktisk panelet.
   assert.match(bell, /if \(!tourForceOpen\) return;\s*\n\s*setOpen\(true\);/);

@@ -1293,12 +1293,6 @@ button,
   white-space: nowrap;
 }
 
-/* Desktop: notifikationsklokke i konto-dropdown — skjul duplikat på Hjem-topbar */
-@media (min-width: 769px) {
-  .pm-home-bell {
-    display: none;
-  }
-}
 
 .pm-dash-header-actions-mobile {
   display: none;
@@ -1681,10 +1675,6 @@ button,
     /* Logo-headeren er skjult på mobil — respekter iPhone-statusbaren */
     padding-top: max(clamp(20px, 5vw, 28px), calc(env(safe-area-inset-top) + 16px));
     padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
-  }
-
-  .pm-dash-main--home {
-    padding-top: max(0px, env(safe-area-inset-top));
   }
 
   .pm-dash-main.pm-dash-main--filter {
@@ -6806,23 +6796,6 @@ button,
   border-color: transparent;
   box-shadow: none;
   cursor: default;
-}
-
-.pm-kampe-v2-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.pm-kampe-v2-title {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  line-height: 1.2;
-  color: var(--pm-text);
 }
 
 .pm-kampe-v2-create {
@@ -12172,4 +12145,47 @@ button,
 .pm-landing-elo-link:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* ── Fælles toplinje for appens hovedsider (ScreenHeader.jsx) ──
+   Samme højde, afstand og titel på Hjem, Makkere, Baner, Kampe, Rangliste,
+   Beskeder og Min profil. Venstre kant flugter med kortene nedenunder. */
+.pm-screen-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.pm-screen-header-leading {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.pm-screen-header-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--pm-font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--pm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-screen-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pm-chat-v2-inbox-head.pm-chat-v2-inbox-head--no-title {
+  padding-top: 12px;
 }

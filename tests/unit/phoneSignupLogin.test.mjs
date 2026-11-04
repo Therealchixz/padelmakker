@@ -49,7 +49,10 @@ test('appen bruger det nye login og den ventende mail', () => {
 
 test('e-mail-påmindelsen får login-kontoen (authUser), ikke spillerprofilen', async () => {
   const { readFile } = await import('node:fs/promises');
-  const dash = await readFile(new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url), 'utf8');
   // Profilen har ingen email_confirmed_at/new_email, så påmindelsen ville aldrig (eller altid) vises.
-  assert.match(dash, /<EmailConfirmReminder user=\{authUser\} \/>/);
+  // Påmindelsen står lige under den fælles toplinje på Hjem og Min profil.
+  for (const f of ['HomeTab', 'ProfilTab']) {
+    const s = await readFile(new URL(`../../src/dashboard/${f}.jsx`, import.meta.url), 'utf8');
+    assert.match(s, /<EmailConfirmReminder user=\{authUser\} \/>/, f);
+  }
 });

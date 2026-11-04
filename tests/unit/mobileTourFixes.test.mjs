@@ -25,7 +25,8 @@ test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
   assert.match(dash, /scrollBlock: 'start'/);
   assert.match(dash, /waitForMount: true/);
   assert.doesNotMatch(dash, /tourForceOpen=\{tourOnNotificationStep\}/);
-  assert.match(home, /pm-home-bell/);
+  // Klokken sidder nu i den fælles toplinje (ScreenHeader), stadig med tour-åbning.
+  assert.match(home, /bellTourForceOpen=\{tourForceNotificationOpen\}/);
   assert.match(home, /data-tour="home-latest-activity" className="pm-tour-scroll-anchor"/);
   assert.match(dash, /clampHighlight: true/);
   assert.match(dash, /scrollTourTarget/);

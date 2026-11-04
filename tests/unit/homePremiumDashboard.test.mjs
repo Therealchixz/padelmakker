@@ -78,6 +78,8 @@ test('home dashboard keeps mobile layout hooks and seeking CTA styling', async (
   const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
 
   assert.match(dashboardPage, /pm-dash-main--home/)
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.pm-dash-main--home\s*\{[\s\S]*padding-top:\s*0/)
+  // Ejeren 4. nov. 2026: "Én fælles toplinje" — Hjem har samme top-afstand som de andre faner.
+  assert.doesNotMatch(css, /\.pm-dash-main--home\s*\{[^}]*padding-top/)
+  assert.match(css, /\.pm-screen-header\s*\{/)
   assert.match(css, /\.pm-home-seeking-cta\s*\{/)
 })
