@@ -1,5 +1,6 @@
 /**
- * Danske fejltekster til Supabase Auth (login, nulstilling af adgangskode).
+ * Danske fejltekster til Supabase Auth.
+ * context: 'login' | 'signup' | 'forgot' | 'reset'
  */
 
 import { mapTwilioSmsErrorMessage } from './twilioSmsErrors.js';
@@ -22,7 +23,13 @@ export function mapAuthErrorMessage(message, context = 'login') {
       : 'Forkert e-mail/telefonnummer eller adgangskode.';
   }
   if (m.includes('password') && m.includes('least')) {
-    return 'Adgangskoden opfylder ikke kravene.';
+    return 'Adgangskoden er for kort eller for svag. Brug mindst 8 tegn.';
+  }
+  if (m.includes('should be different') || m.includes('same password') || m.includes('same_password')) {
+    return 'Den nye adgangskode skal være forskellig fra den gamle.';
+  }
+  if (context === 'reset' && (m.includes('session') || m.includes('expired') || m.includes('jwt'))) {
+    return 'Linket er udløbet. Bed om et nyt link under "Glemt adgangskode" på login-siden.';
   }
   if (m.includes('network') || m.includes('fetch')) {
     return 'Kunne ikke forbinde. Tjek dit netværk og prøv igen.';
@@ -35,27 +42,43 @@ export function mapAuthErrorMessage(message, context = 'login') {
     || m.includes('email_exists')
     || m.includes('user already registered')
   ) {
+    if (context === 'signup') {
+      return 'Der findes allerede en profil med det telefonnummer eller den e-mail. Log ind i stedet, eller brug "Glemt adgangskode".';
+    }
     return 'Den e-mail er allerede i brug på en anden konto.';
   }
 
   const raw = String(message || '').trim();
   if (!raw || /^[a-z_]+$/i.test(raw) && raw.includes('_')) {
-    return context === 'forgot'
-      ? 'Kunne ikke sende nulstillingsmail. Prøv igen.'
-      : 'Login fejlede. Tjek email og adgangskode.';
+    if (context === 'forgot') return 'Kunne ikke sende nulstillingsmail. Prøv igen.';
+    if (context === 'signup') return 'Oprettelsen fejlede. Prøv igen om lidt — eller skriv til kontakt@padelmakker.dk.';
+    if (context === 'reset') return 'Kunne ikke gemme den nye adgangskode. Prøv igen, eller bed om et nyt link.';
+    return 'Login fejlede. Tjek email og adgangskode.';
   }
   return raw;
 }
 
+/** Skal fejlen vise en "Log ind i stedet"-genvej? (kontoen findes allerede) */
+export function authErrorSuggestsLogin(message) {
+  const m = String(message || '').toLowerCase();
+  return (
+    (m.includes('already') && (m.includes('registered') || m.includes('exists') || m.includes('in use')))
+    || m.includes('email_exists')
+    || m.includes('phone_exists')
+    || m.includes('allerede')
+  );
+}
+
 /** SMS / OTP under oprettelse og telefonbekræftelse */
-export function mapPhoneAuthErrorMessage(message) {
+export function mapPhoneAuthErrorMessage(message, context = 'signup') {
   const twilioMapped = mapTwilioSmsErrorMessage(message);
   if (twilioMapped) return twilioMapped;
 
   const m = String(message || '').toLowerCase();
 
+  // Supabase bruger samme besked ("Token has expired or is invalid") for en forkert og en udløbet kode.
   if ((m.includes('expired') || m.includes('expire')) && (m.includes('otp') || m.includes('token') || m.includes('sms'))) {
-    return 'Koden er udløbet. Send en ny SMS-kode og prøv igen.';
+    return 'Koden passer ikke eller er udløbet. Tjek de 6 cifre — eller send en ny kode.';
   }
   if (m.includes('invalid') && (m.includes('otp') || m.includes('token') || m.includes('code'))) {
     return 'Forkert kode. Tjek de 6 cifre fra SMS’en og prøv igen.';
@@ -70,5 +93,5 @@ export function mapPhoneAuthErrorMessage(message) {
     return 'SMS-oprettelse er midlertidigt lukket. Prøv igen senere.';
   }
 
-  return mapAuthErrorMessage(message, 'login');
+  return mapAuthErrorMessage(message, context);
 }

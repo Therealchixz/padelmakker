@@ -58,7 +58,10 @@ export function LoginPage() {
 
   const handleForgotPassword = async () => {
     if (!email.trim() || !email.includes("@")) {
-      setErr("Indtast din email først");
+      // Telefonnummer i feltet: nulstilling sker via e-mail, så sig det tydeligt.
+      setErr(/\d{8}/.test(email.replace(/\s/g, ""))
+        ? "Nulstilling sker via e-mail. Har du kun oprettet dig med telefonnummer, så skriv til kontakt@padelmakker.dk, så hjælper vi."
+        : "Indtast din e-mail først.");
       scrollToFieldById('forgot-email');
       return;
     }
@@ -105,7 +108,7 @@ export function LoginPage() {
             >
               <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
               <label htmlFor="forgot-email" style={labelStyle}>Email</label>
-              <input id="forgot-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+              <input id="forgot-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
               {turnstileEnabled && (
                 <div id="forgot-captcha" style={{ marginBottom: "14px" }}>
                   <TurnstileWidget
@@ -115,7 +118,7 @@ export function LoginPage() {
                   />
                 </div>
               )}
-              {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
+              <div role="alert">{err && <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
               <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
               </button>
@@ -163,7 +166,7 @@ export function LoginPage() {
               />
             </div>
           )}
-          {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
+          <div role="alert">{err && <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
           <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
             {submitting ? "Logger ind..." : "Log ind"}
           </button>
@@ -172,7 +175,7 @@ export function LoginPage() {
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
         <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12.5px", color: theme.textMid }}>
           Ny her?{" "}
-          <Link to={signupUrl} style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+          <Link to={signupUrl} style={{ color: theme.accent, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: "44px", padding: "0 4px" }}>
             Opret en profil
           </Link>
         </p>
