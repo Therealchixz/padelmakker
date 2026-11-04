@@ -8,7 +8,7 @@
 
 :root {
   --pm-kd-card-border: #E2E8F0;
-  --pm-kd-card-shadow: 0 2px 8px rgba(13, 39, 82, 0.07);
+  --pm-kd-card-shadow: 0 2px 8px rgba(27, 26, 23, 0.07);
   --pm-kd-inset: #F2F5F9;
   --pm-kd-ghost-bg: #E9EDF4;
   --pm-kd-ghost-fg: #9AA9BD;
@@ -69,9 +69,9 @@
   white-space: nowrap;
 }
 
-.pm-kd-chip--navy { background: #16377E; color: #fff; }
-.pm-kd-chip--amber { background: #F2A93B; color: #0D2752; }
-.pm-kd-chip--light { background: rgba(255, 255, 255, 0.93); color: #0D2752; }
+.pm-kd-chip--navy { background: #1B1A17; color: #fff; }
+.pm-kd-chip--amber { background: #F2A93B; color: #0F0E0C; }
+.pm-kd-chip--light { background: rgba(255, 255, 255, 0.93); color: #0F0E0C; }
 .pm-kd-chip--live {
   background: #E5484D;
   color: #fff;
@@ -660,7 +660,7 @@
   border-radius: 10px;
   padding: 14px;
   width: 100%;
-  box-shadow: 0 6px 14px rgba(22, 55, 126, 0.32);
+  box-shadow: 0 6px 14px rgba(27, 26, 23, 0.32);
 }
 
 .pm-kd-btn-navy:disabled {

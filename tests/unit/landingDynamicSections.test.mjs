@@ -21,17 +21,16 @@ test('landing ELO explainer uses a concise match story with a visible rating cha
   assert.equal(formatEloDelta(landingEloScoreExample.delta), '+25 ELO');
 });
 
-test('landing page includes the ELO explainer and scroll-reveal flow styling', async () => {
+test('landing page uses live public data and the v4 scroll story', async () => {
   const landingPage = await readFile(new URL('../../src/pages/LandingPage.jsx', import.meta.url), 'utf8');
-  const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../../src/styles/landing.css', import.meta.url), 'utf8');
 
-  assert.match(landingPage, /<LandingEloExplainer/);
   assert.match(landingPage, /fetchLandingPublicStats/);
+  assert.match(landingPage, /public_upcoming_americano_events/);
   assert.match(landingPage, /Inviter en ven/);
-  assert.match(landingPage, /pm-landing-step-flow/);
-  assert.match(css, /\.pm-landing-step-flow\.pm-visible::before/);
-  assert.match(css, /\.pm-elo-explainer-card\.pm-visible/);
-  assert.match(css, /@keyframes pmEloDeltaPop/);
+  assert.match(landingPage, /LANDING_STORY_STEPS/);
+  assert.match(css, /\.pm-lp-story-stick\s*\{[^}]*position:\s*sticky/);
+  assert.match(css, /prefers-reduced-motion/);
 });
 
 test('roadmap lives on /om (not the landing page) and avoids date promises', async () => {
@@ -56,19 +55,9 @@ test('landing ELO count-up is slow and replays on every fresh page load', async 
   assert.doesNotMatch(component, /sessionStorage/);
 });
 
-test('landing CTA buttons keep strong contrast in light and dark mode', async () => {
-  const landingPage = await readFile(new URL('../../src/pages/LandingPage.jsx', import.meta.url), 'utf8');
-  const variables = await readFile(new URL('../../src/styles/variables.css', import.meta.url), 'utf8');
-  const navPrimaryStyle = landingPage.match(/const navPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
-  const heroPrimaryStyle = landingPage.match(/const heroPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
-  const ctaPrimaryStyle = landingPage.match(/const ctaPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
-
-  assert.match(variables, /--pm-landing-cta-blue:\s*#1D4ED8/);
-  assert.match(landingPage, /const landingCtaBlue = "var\(--pm-landing-cta-blue\)";/);
-  assert.match(navPrimaryStyle, /background:\s*landingCtaBlue/);
-  assert.match(navPrimaryStyle, /color:\s*theme\.onAccent/);
-  assert.match(heroPrimaryStyle, /color:\s*landingCtaBlue/);
-  assert.match(ctaPrimaryStyle, /color:\s*landingCtaBlue/);
-  assert.doesNotMatch(heroPrimaryStyle, /color:\s*theme\.accent/);
-  assert.doesNotMatch(ctaPrimaryStyle, /color:\s*theme\.accent/);
+test('landing CTA buttons keep strong contrast', async () => {
+  const css = await readFile(new URL('../../src/styles/landing.css', import.meta.url), 'utf8');
+  // Hvid tekst paa lerfarven (#C0503A) giver 4,7:1; den lysere #C8553D gav kun 4,35:1.
+  assert.match(css, /--lp-clay-solid:\s*#C0503A/);
+  assert.match(css, /\.pm-lp-cta\s*\{[^}]*background:\s*var\(--lp-clay-solid\)/);
 });

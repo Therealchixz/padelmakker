@@ -267,7 +267,7 @@ body {
 }
 
 .pm-app-mockup-brand-text small {
-  color: #16377E;
+  color: #1B1A17;
   font-size: 6.6px;
   font-style: italic;
   font-weight: 900;
@@ -325,8 +325,8 @@ body {
   border-radius: 24px;
   padding: 18px;
   color: white;
-  background: linear-gradient(135deg, #0D2752, #16377E);
-  box-shadow: 0 18px 38px rgba(22, 55, 126, 0.26);
+  background: linear-gradient(135deg, #0F0E0C, #1B1A17);
+  box-shadow: 0 18px 38px rgba(27, 26, 23, 0.26);
   overflow: hidden;
 }
 
@@ -431,7 +431,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #16377E;
+  color: #1B1A17;
   background: rgba(232, 238, 249, 0.95);
   font-size: 12px;
   font-weight: 900;
@@ -1362,7 +1362,7 @@ button,
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(22, 55, 126, 0.4) transparent;
+  scrollbar-color: rgba(27, 26, 23, 0.4) transparent;
 }
 
 .pm-tab-strip::-webkit-scrollbar {
@@ -1374,7 +1374,7 @@ button,
 }
 
 .pm-tab-strip::-webkit-scrollbar-thumb {
-  background: rgba(22, 55, 126, 0.2);
+  background: rgba(27, 26, 23, 0.2);
   border-radius: 10px;
 }
 
@@ -1814,11 +1814,11 @@ button,
   }
 
   .pm-mobile-bottom-btn[data-active="true"] {
-    color: var(--pm-navy, #16377E);
+    color: var(--pm-navy, #1B1A17);
   }
 
   .pm-mobile-bottom-btn[data-active="true"]::after {
-    background: var(--pm-navy, #16377E);
+    background: var(--pm-navy, #1B1A17);
   }
 
   .pm-mobile-bottom-btn:active {
@@ -3050,7 +3050,7 @@ button,
 .pm-pill-tab[aria-selected="true"] {
   background: var(--pm-navy, var(--pm-accent-solid));
   color: var(--pm-on-accent, #fff);
-  box-shadow: 0 2px 6px rgba(13, 39, 82, 0.22);
+  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.22);
   font-weight: 700;
 }
 
@@ -7408,7 +7408,7 @@ button,
   background: var(--pm-navy);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(22, 55, 126, 0.22);
+  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.22);
   max-width: 100%;
   white-space: nowrap;
 }
@@ -7433,7 +7433,7 @@ button,
 
 .pm-kampe-v2-list-cta--on-waitlist {
   background: var(--pm-surface, #fff);
-  color: var(--pm-navy, #16377E);
+  color: var(--pm-navy, #1B1A17);
   border: 1.5px solid var(--pm-green, #059669);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-green, #059669) 12%, transparent);
 }
@@ -10853,9 +10853,9 @@ button,
 }
 
 .pm-chat-v2-quick-action--blue {
-  border-color: rgba(22, 55, 126, 0.25);
-  background: rgba(22, 55, 126, 0.08);
-  color: #16377E;
+  border-color: rgba(27, 26, 23, 0.25);
+  background: rgba(27, 26, 23, 0.08);
+  color: #1B1A17;
 }
 
 .pm-chat-v2-quick-action--green {
@@ -11636,7 +11636,7 @@ button,
 .pm-seg-btn.active {
   background: var(--pm-navy);
   color: #fff;
-  box-shadow: 0 3px 8px rgba(22, 55, 126, 0.28);
+  box-shadow: 0 3px 8px rgba(27, 26, 23, 0.28);
 }
 
 .pm-chips-row {
@@ -11780,7 +11780,7 @@ button,
   border-radius: 14px;
   padding: 16px;
   color: #fff;
-  background: linear-gradient(120deg, #0D2752 55%, #1D4A9E 100%);
+  background: linear-gradient(120deg, #0F0E0C 55%, #2E2B25 100%);
   position: relative;
   overflow: hidden;
 }
@@ -11868,7 +11868,7 @@ button,
 
 .pm-range-input::-webkit-slider-thumb:active {
   cursor: grabbing;
-  box-shadow: 0 0 0 4px rgba(22, 55, 126, 0.18);
+  box-shadow: 0 0 0 4px rgba(27, 26, 23, 0.18);
 }
 
 .pm-range-input::-moz-range-thumb {
@@ -12068,9 +12068,15 @@ button,
   text-wrap: balance;
 }
 
-/* Offentlige sider: overskrifter i brand-skriften (Bricolage Grotesque). Appen efter login er uændret. */
+/* Offentlige sider: overskrifter i brand-skriften (Anton, versaler). Appen efter login er uændret. */
 .pm-brand {
   --pm-font-display: var(--pm-font-brand);
+  --pm-display-weight: 400;
+  --pm-display-tracking: 0.005em;
+  --pm-display-case: uppercase;
+  --pm-display-leading: 0.95;
+  /* Ingen falsk fed Anton, hvis en overskrift beder om vaegt 700/800. */
+  font-synthesis: none;
 }
 .pm-brand h1,
 .pm-brand h2 {

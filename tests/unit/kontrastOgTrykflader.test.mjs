@@ -75,11 +75,16 @@ test('der findes en separat farve til udfyldte flader', () => {
   assert.ok(MOERK['--pm-accent-solid'], 'mangler i moerk palet');
 });
 
-test('lys tilstand er farvemaessigt uaendret', () => {
-  // Den nye variabel har samme vaerdi som accenten i lys tilstand, saa
-  // aendringen kan ikke flytte en eneste farve der.
-  assert.equal(LYS['--pm-accent-solid'], LYS['--pm-accent']);
-});
+for (const [navn, p] of [['lys', LYS], ['moerk', MOERK]]) {
+  test(`${navn}: link-accenten er laesbar som tekst`, () => {
+    // Redesign v4: lerfarven til knapper (--pm-accent-solid) er for lys til
+    // broedtekst paa papir, saa links har deres egen, moerkere nuance.
+    for (const flade of ['--pm-bg', '--pm-surface']) {
+      const k = kontrast(p['--pm-accent'], p[flade] || LYS[flade]);
+      assert.ok(k >= 4.5, `${flade}: kontrast ${k.toFixed(1)}:1`);
+    }
+  });
+}
 
 for (const [navn, p] of [['lys', LYS], ['moerk', MOERK]]) {
   test(`${navn}: hvid tekst paa den primaere knap er laesbar`, () => {

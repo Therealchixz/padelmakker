@@ -169,8 +169,11 @@ export const labelStyle = {
 export const heading = (size = '24px') => ({
   fontFamily: displayFont,
   fontSize: size,
-  fontWeight: 800,
-  letterSpacing: '-0.03em',
+  // Vaerdierne skifter under .pm-brand (Anton findes kun i een vaegt og saettes med versaler).
+  fontWeight: 'var(--pm-display-weight)',
+  letterSpacing: 'var(--pm-display-tracking)',
+  textTransform: 'var(--pm-display-case)',
+  lineHeight: 'var(--pm-display-leading)',
   color: 'var(--pm-text)',
 });
 

@@ -48,9 +48,9 @@ test.describe('Logged-in dashboard flows', () => {
     await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible()
   })
 
-  test('marketing-forside viser Gå til dashboard (ikke Opret/Log ind)', async ({ page }) => {
+  test('marketing-forside viser Gå til appen (ikke Opret/Log ind)', async ({ page }) => {
     await page.goto('/?forside=1')
-    await expect(page.getByRole('button', { name: /Gå til dashboard/i }).first()).toBeVisible({
+    await expect(page.getByRole('button', { name: /Gå til appen/i }).first()).toBeVisible({
       timeout: 15_000,
     })
     await expect(page.getByRole('button', { name: /Opret gratis profil/i })).toHaveCount(0)
