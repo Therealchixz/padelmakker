@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { theme, btn } from '../lib/platformTheme';
 import { isAvatarUrl } from '../lib/avatarUpload';
+import { PadelRacketIcon, isDefaultAvatar } from './PadelRacketIcon';
 
 const EMOJIS = ['🎾', '👨', '👩', '🧔', '👩‍🦰', '👨‍🦱', '👩‍🦱', '🧑'];
 
@@ -45,7 +46,9 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
         }}>
           {showingImage
             ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontSize: '32px' }}>{displayAvatar || '🎾'}</span>
+            : isDefaultAvatar(displayAvatar)
+              ? <span style={{ color: theme.accent }}><PadelRacketIcon size={36} strokeWidth={1.8} /></span>
+              : <span style={{ fontSize: '32px' }}>{displayAvatar}</span>
           }
         </div>
         <div>
@@ -73,7 +76,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
 
       {/* Emoji-alternativ */}
       <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-        Eller vælg emoji
+        Eller vælg et ikon
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {EMOJIS.map(e => (
@@ -98,7 +101,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
               justifyContent: 'center',
             }}
           >
-            {e}
+            {isDefaultAvatar(e) ? <span style={{ color: theme.accent }}><PadelRacketIcon size={22} strokeWidth={1.8} title="Padel-ikon" /></span> : e}
           </button>
         ))}
       </div>

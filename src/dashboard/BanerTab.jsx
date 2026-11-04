@@ -22,6 +22,7 @@ import { DateInputField } from '../components/DateInputField';
 import { formatMatchDateHeadlineDa } from '../lib/matchDisplayUtils';
 import { CourtFacilitiesGrid } from '../lib/courtFacilities';
 import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 const BANER_DATE_INPUT_STYLE = { ...inputStyle, padding: '8px 10px', fontSize: '13px', marginBottom: 0 };
 
@@ -437,9 +438,7 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px' }}>
-        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Baner</h2>
-      </div>
+      <ScreenHeader title="Baner" />
 
       <div className="pm-baner-search-row">
         <div className="pm-baner-search-wrap">

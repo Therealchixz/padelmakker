@@ -7,7 +7,8 @@ import { supabase } from '../lib/supabase';
 import { fetchCourtsCached } from '../lib/courtsCache';
 import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
-import { NotificationBell } from '../components/NotificationBell';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { EmailConfirmReminder } from '../components/EmailConfirmReminder';
 import { AppModal } from '../components/AppModal';
 
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -164,6 +165,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
+  const firstName = String(displayName || '').trim().split(/\s+/)[0] || '';
 
   // Kort dato til undertekst, fx "9. jun".
   const shortDate = (ymd) => {
@@ -1125,15 +1127,13 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           </div>
         </div>
       )}
-      {/* Compact topbar: avatar + greeting */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 12px' }}>
-        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
-        </div>
-        <div className="pm-home-bell"><NotificationBell tourForceOpen={tourForceNotificationOpen} /></div>
-      </div>
+      {/* Fælles toplinje: hilsen med fornavn + klokken (mobil) */}
+      <ScreenHeader
+        title={firstName ? `${greetingText}, ${firstName}` : greetingText}
+        leading={<AvatarCircle avatar={user.avatar} size={40} emojiSize="20px" style={{ background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />}
+        bellTourForceOpen={tourForceNotificationOpen}
+      />
+      <EmailConfirmReminder user={authUser} />
 
       <GrowthCampaignBanner />
       <MonthMasterTeaser />

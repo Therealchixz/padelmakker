@@ -1,5 +1,6 @@
 import type { CSSProperties, ImgHTMLAttributes } from 'react';
 import { isAvatarUrl } from '../lib/avatarUpload';
+import { PadelRacketIcon, isDefaultAvatar } from './PadelRacketIcon';
 
 export type ProfileAvatarProps = {
   avatar?: string | null;
@@ -57,7 +58,7 @@ export function ProfileAvatar({
         ...style,
       }}
     >
-      {avatar || '🎾'}
+      {isDefaultAvatar(avatar) ? <PadelRacketIcon size={Math.round(size * 0.52)} strokeWidth={1.8} /> : avatar}
     </div>
   );
 }

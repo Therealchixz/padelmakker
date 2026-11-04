@@ -2,6 +2,24 @@ import { SquarePen, Search, X } from 'lucide-react';
 import { ChatInitialsAvatar } from './ChatInitialsAvatar';
 import { formatInboxTime } from '../../lib/chatDisplayUtils';
 
+/**
+ * "Ny besked"-knappen. Står i sidens fælles toplinje (ScreenHeader) i BeskedTab,
+ * så Beskeder ser ud som de andre hovedsider.
+ */
+export function ChatComposeButton({ composeOpen = false, onToggleCompose }) {
+  return (
+    <button
+      type="button"
+      className={`pm-chat-v2-inbox-compose${composeOpen ? ' pm-chat-v2-inbox-compose--active' : ''}`}
+      onClick={onToggleCompose}
+      aria-label={composeOpen ? 'Luk ny besked' : 'Ny besked'}
+      aria-expanded={composeOpen}
+    >
+      {composeOpen ? <X size={18} aria-hidden /> : <SquarePen size={18} aria-hidden />}
+    </button>
+  );
+}
+
 export function ChatInbox({
   items = [],
   loading = false,
@@ -9,7 +27,6 @@ export function ChatInbox({
   searchQuery = '',
   onSearchChange,
   composeOpen = false,
-  onToggleCompose,
   composeSlot = null,
   onOpenItem,
   emptySlot = null,
@@ -24,19 +41,7 @@ export function ChatInbox({
 
   return (
     <div className="pm-chat-v2-inbox">
-      <div className="pm-chat-v2-inbox-head">
-        <div className="pm-chat-v2-inbox-head-row">
-          <h2 className="pm-chat-v2-inbox-title">Beskeder</h2>
-          <button
-            type="button"
-            className={`pm-chat-v2-inbox-compose${composeOpen ? ' pm-chat-v2-inbox-compose--active' : ''}`}
-            onClick={onToggleCompose}
-            aria-label={composeOpen ? 'Luk ny besked' : 'Ny besked'}
-            aria-expanded={composeOpen}
-          >
-            {composeOpen ? <X size={18} aria-hidden /> : <SquarePen size={18} aria-hidden />}
-          </button>
-        </div>
+      <div className="pm-chat-v2-inbox-head pm-chat-v2-inbox-head--no-title">
         {/* Ny besked erstatter søgefeltet, så der ikke står to søgefelter
             under hinanden ("Søg i beskeder" og "Søg efter spiller"). */}
         {composeOpen ? composeSlot : (

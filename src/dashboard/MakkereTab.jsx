@@ -7,6 +7,7 @@ import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -643,10 +644,7 @@ export function MakkereTab({ user, showToast }) {
 
   return (
     <div>
-      {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
-        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Find makker</h2>
-      </div>
+      <ScreenHeader title="Find makker" />
 
       <ActiveSeekingPanel
         variant="compact"
