@@ -37,11 +37,23 @@ export function shouldRequirePhoneVerification(user, profile, serverExempt) {
   return true
 }
 
-/** Skal brugeren bekræfte email før dashboard? (fx efter telefon-signup) */
+/**
+ * Skal brugeren bekræfte email før dashboard?
+ * Nej, hvis telefonen er bekræftet med SMS (phone_confirmed_at sættes kun af Supabase efter en rigtig kode):
+ * så kommer man ind med det samme og bekræfter e-mailen senere (påmindelse i appen).
+ * Ejerens beslutning 4. nov. 2026: den tvungne log ud + e-mail-trin var det største frafald.
+ */
 export function shouldRequireEmailVerification(user, options = {}) {
   if (!user) return false
   if (user.email_confirmed_at) return false
+  if (user.phone_confirmed_at) return false
   // new_email: telefon-konti, hvor mailen venter på bekræftelse.
   if (String(user.email || user.new_email || '').trim()) return true
   return Boolean(String(options.pendingEmail || '').trim())
+}
+
+/** E-mail der venter på bekræftelse (til påmindelsen i appen), ellers ''. */
+export function emailAwaitingConfirmation(user) {
+  if (!user || user.email_confirmed_at) return ''
+  return String(user.new_email || user.email || user.user_metadata?.pending_email || '').trim()
 }

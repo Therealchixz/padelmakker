@@ -365,20 +365,13 @@ export function PhoneVerificationPage() {
       }
 
       clearPendingSignup()
-      try {
-        await signOut()
-      } catch {
-        /* dashboard er gated på email_confirmed_at — fortsæt til email-trin */
-      }
-
+      // Husk e-mailen i fanen, så profil-tjekket ikke tror, den mangler, før Supabase har opdateret brugeren.
       writePendingSignupEmail({ email: effectiveEmail, phone: pendingPhone || undefined })
-      setInfo(
-        'Telefon bekræftet (trin 2/3). Du bliver logget ud nu — det er med vilje. Næste trin: åbn linket i emailen (trin 3/3), og log derefter ind.',
-      )
-      navigate('/opret/bekraeft-email', {
-        replace: true,
-        state: { email: effectiveEmail, phone: pendingPhone || '' },
-      })
+      // Ingen tvungen log ud længere: telefonen er bekræftet, så brugeren kommer ind med det samme.
+      // E-mailen bekræftes senere via linket (påmindelse på Hjem/Profil, EmailConfirmReminder).
+      void tryAutoEnrollGrowthCampaign()
+      setInfo('Telefonnummer bekræftet. Velkommen til PadelMakker!')
+      navigate('/dashboard', { replace: true })
     } catch (e) {
       setErr(mapPhoneAuthErrorMessage(e?.message))
       // Forkert kode: ryd felterne og sæt markøren i første felt, så man kan prøve igen med det samme.
@@ -429,7 +422,7 @@ export function PhoneVerificationPage() {
     >
       <div className="pm-auth-panel pm-auth-panel--centered">
         <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, marginBottom: '10px', letterSpacing: '0.04em' }}>
-          {mode === 'phone_change' ? 'Sidste trin · SMS-kode' : 'Næsten færdig · SMS-kode'}
+          Sidste trin · SMS-kode
         </p>
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>
           {otpSent && !editPhone ? 'Indtast koden fra SMS’en' : 'Bekræft dit telefonnummer'}
@@ -588,10 +581,9 @@ export function PhoneVerificationPage() {
           </form>
         )}
 
-        {mode === 'signup' && otpSent && (
+        {mode === 'signup' && otpSent && !editPhone && (
           <div className="pm-auth-post-verify-note">
-            <strong style={{ color: theme.text }}>Efter bekræftelse:</strong> Du logges kort ud, så du kan bekræfte email på
-            næste side. Det er med vilje — så login først virker, når både telefon og email er bekræftet.
+            Når koden er bekræftet, er du inde. Vi har også sendt et link til din e-mail. Det kan du klikke på senere.
           </div>
         )}
       </div>

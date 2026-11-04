@@ -540,7 +540,7 @@ export function OnboardingPage() {
     <div key={0}>
       <div style={{ textAlign: "center", padding: "0 8px 18px" }}>
         <div style={screenHeading}>Lad os lære dig at kende</div>
-        <div style={screenSub}>Fire korte trin — bagefter bekræfter du med SMS og e-mail</div>
+        <div style={screenSub}>Fire korte trin og en SMS-kode. Så er du inde.</div>
       </div>
       {oauthSession ? (
         <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
