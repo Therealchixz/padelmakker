@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { font, theme, btn, heading } from '../lib/platformTheme';
+import { displayFont, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, LogIn } from 'lucide-react';
+import { ArrowRight, UserPlus, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, LogIn } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, buildLandingStatsItems } from '../lib/landingPublicStats';
 import { fetchGrowthCampaignPublic, formatCampaignSpotsLabel } from '../lib/growthCampaign';
@@ -129,10 +129,10 @@ export function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og hvornår du kan spille. Vi bekræfter telefon og e-mail, så der ikke er falske profiler." },
-    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau, og invitér dem til en kamp uden lange Facebook-tråde." },
-    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Find kamp og bane", desc: "Opret eller tilmeld dig 2v2, Liga eller Americano. Se ledige tider hos 150+ centre via Halbooking, MATCHi, Bookli og Playtomic." },
-    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultatet sammen med modstanderne, og se din ELO på ranglisten. Så bliver næste kamp mere jævnbyrdig." },
+    { title: "Opret profil", desc: "Vælg niveau, region, spillestil og hvornår du kan spille. Vi bekræfter telefon og e-mail, så der ikke er falske profiler." },
+    { title: "Find makker", desc: "Se spillere nær dig på dit niveau, og invitér dem til en kamp uden lange Facebook-tråde." },
+    { title: "Find kamp og bane", desc: "Opret eller tilmeld dig 2v2, Liga eller Americano. Se ledige tider hos 150+ centre via Halbooking, MATCHi, Bookli og Playtomic." },
+    { title: "Følg din rating", desc: "Bekræft resultatet sammen med modstanderne, og se din ELO på ranglisten. Så bliver næste kamp mere jævnbyrdig." },
   ];
 
   const landingCtaBlue = "var(--pm-landing-cta-blue)";
@@ -196,25 +196,6 @@ export function LandingPage() {
     ...heading("clamp(26px,5.5vw,36px)"),
     letterSpacing: "-0.03em",
   };
-  const landingFeatureCardStyle = {
-    background: theme.surface,
-    borderRadius: "14px",
-    padding: "32px 24px",
-    boxShadow: theme.shadow,
-    border: "1px solid " + theme.border,
-  };
-  const landingFeatureTitleStyle = {
-    fontSize: "18px",
-    fontWeight: 700,
-    marginBottom: "10px",
-    letterSpacing: "-0.02em",
-    color: theme.text,
-  };
-  const landingFeatureDescStyle = {
-    fontSize: "14px",
-    color: theme.textMid,
-    lineHeight: 1.65,
-  };
   const landingInfoCardStyle = {
     background: theme.surface,
     borderRadius: "14px",
@@ -225,7 +206,7 @@ export function LandingPage() {
 
   return (
     <div
-      className="pm-landing"
+      className="pm-landing pm-brand"
       ref={revealRef}
       style={{
         paddingBottom: 'max(96px, env(safe-area-inset-bottom))',
@@ -451,7 +432,7 @@ export function LandingPage() {
         <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
           {statsBannerItems.map((s, i) => (
             <div key={i} className={"pm-reveal pm-delay-" + (i+1)}>
-              <div className="pm-stat-number" style={{ fontFamily: font, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
+              <div className="pm-stat-number" style={{ fontFamily: displayFont, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
               <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "4px", fontWeight: 500 }}>{s.l}</div>
             </div>
           ))}
@@ -487,7 +468,7 @@ export function LandingPage() {
               {' '}Eksisterende brugere tæller med. Pladserne går til dem, der først opfylder kravene.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px' }}>
-              <div style={{ fontSize: 'clamp(28px,6vw,36px)', fontWeight: 800, color: theme.accent, letterSpacing: '-0.03em', fontFamily: font }}>
+              <div style={{ fontSize: 'clamp(28px,6vw,36px)', fontWeight: 800, color: theme.accent, letterSpacing: '-0.03em', fontFamily: displayFont }}>
                 {formatCampaignSpotsLabel(campaignStats)}
               </div>
               <span style={{ fontSize: '13px', color: theme.textMid, fontWeight: 600 }}>pladser taget</span>
@@ -528,18 +509,17 @@ export function LandingPage() {
         <div className="pm-reveal" style={landingSectionIntroStyle}>
           <h2 style={landingSectionHeadingStyle}>Fra profil til kamp på fire skridt</h2>
         </div>
-        <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
+        <ol className="pm-landing-step-flow pm-reveal">
           {steps.map((s, i) => (
-            <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
-              <div aria-hidden="true" style={{ fontSize: "48px", fontWeight: 900, color: "color-mix(in srgb, var(--pm-accent) 10%, transparent)", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
-              <div className="pm-landing-feature-icon">
-                {s.icon}
+            <li key={s.title} className={"pm-landing-step pm-reveal pm-delay-" + (i + 1)}>
+              <span className="pm-landing-step-num" aria-hidden="true">{i + 1}</span>
+              <div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
               </div>
-              <div style={{ ...landingFeatureTitleStyle, fontSize: "17px", marginBottom: "8px", letterSpacing: "-0.01em" }}>{s.title}</div>
-              <div style={{ ...landingFeatureDescStyle, lineHeight: 1.6 }}>{s.desc}</div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
       {showDeferredSections && (

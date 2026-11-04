@@ -103,7 +103,6 @@ export function AnimatedAppMockup({ className = '' }) {
 
   return (
     <figure className={`pm-app-mockup ${className}`.trim()} role="img" aria-label={getLandingMockupAriaLabel()}>
-      <div className="pm-app-mockup-glow" aria-hidden="true" />
       <div className="pm-app-mockup-phone" aria-hidden="true">
         <div className="pm-app-mockup-speaker" />
         <div className="pm-app-mockup-appbar">

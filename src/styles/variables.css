@@ -120,6 +120,12 @@
   --pm-focus-ring-dark: 0 0 0 3px rgba(96, 165, 250, 0.32);
   --pm-font:        'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --pm-font-display:'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  /* Brand-overskrifter på de offentlige sider (forside, Om, FAQ, ELO, Events). Varm, afrundet grotesk. */
+  --pm-font-brand:  'Bricolage Grotesque', 'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  /* Varm accent (den orange fra bane-kortet). --pm-orange kan bruges til tekst på lys baggrund (4.9:1);
+     --pm-orange-bright er til mørk baggrund og store tal. */
+  --pm-orange:        #C2410C;
+  --pm-orange-bright: #FB923C;
 }
 
 /* ── Dark mode overrides ── */
@@ -149,6 +155,7 @@
   --pm-amber-border:#92400E;
   --pm-warm:        #FBBF24;
   --pm-warm-bg:     #292010;
+  --pm-orange:      #FB923C;
   --pm-blue:        #60A5FA;
   --pm-blue-bg:     #162038;
   --pm-red:         #F87171;

@@ -22,7 +22,7 @@ export function LegalPageLayout({ title, children, showUpdated = true, showSignu
 
   return (
     <div
-      className="pm-legal-page"
+      className="pm-legal-page pm-brand"
       style={{
         fontFamily: font,
         background: theme.bg,

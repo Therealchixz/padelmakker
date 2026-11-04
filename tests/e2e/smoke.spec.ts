@@ -10,7 +10,7 @@ test.describe('Public smoke flows', () => {
   test('landing page renders hero and primary CTA', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { name: /Find makker/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Find makker/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
   })
 
@@ -74,7 +74,7 @@ test.describe('Public smoke flows', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
-    const hero = page.getByRole('heading', { name: /Find makker/i })
+    const hero = page.getByRole('heading', { level: 1, name: /Find makker/i })
     const firstStat = page.getByText('Opret profil uden betaling').first()
     await expect(hero).toBeVisible()
     await expect(firstStat).toBeVisible()
@@ -94,11 +94,13 @@ test.describe('Public smoke flows', () => {
       'crossorigin',
       ''
     )
-    await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
     await expect(page.locator('link[data-critical-font="inter"][href*="fonts.googleapis.com"]')).toHaveAttribute(
       'as',
       'style'
     )
+    // Overskrifterne bruger Bricolage Grotesque; den hentes i samme forespørgsel som Inter.
+    await expect(page.locator('link[data-critical-font="inter"]')).toHaveAttribute('href', /Bricolage\+Grotesque/)
+    await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
     await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
       'media',
       '(max-width: 540px)'
@@ -132,7 +134,7 @@ test.describe('Public smoke flows', () => {
   test('unauthenticated dashboard request lands on public app', async ({ page }) => {
     await page.goto('/dashboard')
 
-    await expect(page.getByRole('heading', { name: /Find makker/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Find makker/i })).toBeVisible()
     await expect(page).toHaveURL(/\/$/)
   })
 })
