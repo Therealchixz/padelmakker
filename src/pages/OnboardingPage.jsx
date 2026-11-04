@@ -47,7 +47,7 @@ import { CityPlaceSearchField } from '../components/CityPlaceSearchField';
 import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 import { LEGAL_INFO } from '../lib/legalInfo';
-import { ArrowRight, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 /**
  * Niveau-kort — klik sætter levelNumeric. Følger Dansk Padel Forbunds skala
@@ -84,7 +84,16 @@ export function OnboardingPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showFineTune, setShowFineTune] = useState(false);
   const [showLevelQuiz, setShowLevelQuiz] = useState(false);
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", intent_now: "", area: "", city: "", latitude: null, longitude: null, cityLabel: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [showPassword, setShowPassword] = useState(false);
+  /** Fejl om e-mail, telefon og adgangskode vises først, når man har forladt feltet — ikke mens man skriver. */
+  const [touched, setTouched] = useState({ email: false, phone: false, password: false });
+  const touch = (k) => setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
+  const [checkingPassword, setCheckingPassword] = useState(false);
+  /** "Mangler før du kan fortsætte" vises først, når man har prøvet at gå videre fra trinnet. */
+  const [triedContinueStep, setTriedContinueStep] = useState(-1);
+  /** Adgangskoden er allerede tjekket mod kendte læk ved "Fortsæt" — så spørger vi ikke igen ved oprettelsen. */
+  const breachCheckedPasswordRef = useRef(null);
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", phone: "", password: "", levelNumeric: 3, style: "", court_side: "", intent_now: "", area: "", city: "", latitude: null, longitude: null, cityLabel: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -169,7 +178,6 @@ export function OnboardingPage() {
       first_name: f.first_name || first,
       last_name: f.last_name || last,
       email: f.email || email,
-      email_confirm: f.email_confirm || email,
     }));
     const pic = oauthAvatarUrl(user);
     if (pic && !avatarPreviewUrl && !avatarFile) {
@@ -180,23 +188,13 @@ export function OnboardingPage() {
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const toggleDay   = (d) => setForm(f => ({ ...f, available_days: f.available_days.includes(d) ? f.available_days.filter(x => x !== d) : [...f.available_days, d] }));
-  const passwordMismatch =
-    form.password_confirm.length > 0 &&
-    form.password !== form.password_confirm;
   const passwordTooShort =
-    form.password_confirm.length > 0 && form.password.length > 0 && form.password.length < 8;
+    touched.password && form.password.length > 0 && form.password.length < 8;
 
   const emailTouchedInvalid =
-    form.email.trim().length > 0 && !isValidSignupEmail(form.email);
-  const normalizedEmail = form.email.trim().toLowerCase();
-  const normalizedEmailConfirm = form.email_confirm.trim().toLowerCase();
-  const emailConfirmTouchedInvalid =
-    form.email_confirm.trim().length > 0 && !isValidSignupEmail(form.email_confirm);
-  const emailMismatch =
-    form.email_confirm.trim().length > 0 &&
-    normalizedEmail !== normalizedEmailConfirm;
+    touched.email && form.email.trim().length > 0 && !isValidSignupEmail(form.email);
   const phoneTouchedInvalid =
-    form.phone.trim().length > 0 && !isValidSignupPhone(form.phone);
+    touched.phone && form.phone.trim().length > 0 && !isValidSignupPhone(form.phone);
 
   const missingStepRequirements = (targetStep = step) => {
     const missing = [];
@@ -205,9 +203,7 @@ export function OnboardingPage() {
       if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
       if (!oauthSession) {
         if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
-        if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
         if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
-        if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       }
       if (
         phoneExemptResolved &&
@@ -254,13 +250,30 @@ export function OnboardingPage() {
     scrollFormFieldIntoView(missingRequirementsRef.current, { block: 'center' });
   };
 
-  const handleContinue = () => {
-    if (canNext()) {
-      setErr('');
-      setStep((s) => s + 1);
+  const handleContinue = async () => {
+    if (!canNext()) {
+      setTouched({ email: true, phone: true, password: true });
+      setTriedContinueStep(step);
+      scrollToMissingOnStep();
       return;
     }
-    scrollToMissingOnStep();
+    setErr('');
+    // Tjek adgangskoden mod kendte læk allerede her, så fejlen står ved feltet — ikke først på sidste trin.
+    if (step === 0 && !oauthSession && breachCheckedPasswordRef.current !== form.password) {
+      setCheckingPassword(true);
+      try {
+        const breach = await checkPasswordBreached(form.password);
+        if (breach.breached) {
+          setErr(BREACHED_PASSWORD_MESSAGE);
+          scrollOnboardingValidationError(BREACHED_PASSWORD_MESSAGE);
+          return;
+        }
+        breachCheckedPasswordRef.current = form.password;
+      } finally {
+        setCheckingPassword(false);
+      }
+    }
+    setStep((s) => s + 1);
   };
 
   const handleFinishClick = () => {
@@ -297,9 +310,7 @@ export function OnboardingPage() {
     form.birth_month,
     form.birth_day,
     form.email,
-    form.email_confirm,
     form.password,
-    form.password_confirm,
     form.phone,
   ]);
 
@@ -317,10 +328,8 @@ export function OnboardingPage() {
       form.first_name.trim() ||
       form.last_name.trim() ||
       form.email.trim() ||
-      form.email_confirm.trim() ||
       form.phone.trim() ||
       form.password ||
-      form.password_confirm ||
       form.levelNumeric != null ||
       form.style ||
       form.court_side ||
@@ -468,31 +477,20 @@ export function OnboardingPage() {
         scrollOnboardingValidationError("Adgangskoden skal være mindst 8 tegn.");
         return;
       }
-      if (form.password !== form.password_confirm) {
-        setErr("Adgangskoderne er ikke ens — tjek begge felter.");
-        scrollOnboardingValidationError("Adgangskoderne er ikke ens — tjek begge felter.");
-        return;
-      }
       // Kun de første fem tegn af kodeordets tjeksum sendes; fejler åbent.
-      const breach = await checkPasswordBreached(form.password);
-      if (breach.breached) {
-        setErr(BREACHED_PASSWORD_MESSAGE);
-        scrollOnboardingValidationError(BREACHED_PASSWORD_MESSAGE);
-        return;
+      // Normalt allerede tjekket ved "Fortsæt" på trin 1 — så springes det over her.
+      if (breachCheckedPasswordRef.current !== form.password) {
+        const breach = await checkPasswordBreached(form.password);
+        if (breach.breached) {
+          setErr(BREACHED_PASSWORD_MESSAGE);
+          scrollOnboardingValidationError(BREACHED_PASSWORD_MESSAGE);
+          return;
+        }
+        breachCheckedPasswordRef.current = form.password;
       }
       if (!isValidSignupEmail(form.email)) {
         setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
         scrollOnboardingValidationError("Indtast en gyldig e-mail (fx navn@domæne.dk).");
-        return;
-      }
-      if (!isValidSignupEmail(form.email_confirm)) {
-        setErr("Gentag din e-mail i feltet Bekræft email.");
-        scrollOnboardingValidationError("Gentag din e-mail i feltet Bekræft email.");
-        return;
-      }
-      if (normalizedEmail !== normalizedEmailConfirm) {
-        setErr("E-mailadresserne matcher ikke - tjek begge felter.");
-        scrollOnboardingValidationError("E-mailadresserne matcher ikke - tjek begge felter.");
         return;
       }
       if (avatarFile) {
@@ -594,68 +592,61 @@ export function OnboardingPage() {
               id="onb-email"
               value={form.email}
               onChange={e => set("email", e.target.value)}
+              onBlur={() => touch("email")}
               placeholder="din@email.dk"
               type="email"
               autoComplete="email"
+              aria-invalid={emailTouchedInvalid || undefined}
+              aria-describedby={emailTouchedInvalid ? "onb-email-error" : "onb-email-hint"}
               style={{ ...obInput, ...inputBorder(emailTouchedInvalid) }}
             />
-            {emailTouchedInvalid && (
-              <p style={errorText}>Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).</p>
+            {emailTouchedInvalid ? (
+              <p id="onb-email-error" style={errorText}>Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).</p>
+            ) : (
+              <div id="onb-email-hint" style={fieldHint}>Vi sender et link hertil, som du kan bekræfte, når du er inde.</div>
             )}
           </div>
           <div style={fieldWrap}>
-            <label htmlFor="onb-email-confirm" style={obLabel}>Bekræft e-mail</label>
-            <input
-              id="onb-email-confirm"
-              value={form.email_confirm}
-              onChange={e => set("email_confirm", e.target.value)}
-              placeholder="Gentag din e-mail"
-              type="email"
-              autoComplete="email"
-              style={{ ...obInput, ...inputBorder(emailConfirmTouchedInvalid || emailMismatch) }}
-            />
-            {emailConfirmTouchedInvalid && (
-              <p style={errorText}>Gentag din email i et gyldigt format.</p>
-            )}
-            {!emailConfirmTouchedInvalid && emailMismatch && (
-              <p style={errorText}>Emails matcher ikke - tjek begge felter.</p>
-            )}
-          </div>
-          <div style={fieldWrap}>
-            <label htmlFor="onb-password" style={obLabel}>
-              Adgangskode <span style={{ color: theme.textLight, fontWeight: 400 }}>(min. 8 tegn)</span>
-            </label>
-            <div style={{ display: "flex", gap: "10px" }}>
+            <label htmlFor="onb-password" style={obLabel}>Adgangskode</label>
+            <div style={{ position: "relative" }}>
               <input
                 id="onb-password"
                 value={form.password}
                 onChange={e => set("password", e.target.value)}
-                placeholder="Adgangskode"
-                type="password"
+                onBlur={() => touch("password")}
+                placeholder="Mindst 8 tegn"
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                style={{ ...obInput, flex: 1, minWidth: 0 }}
+                aria-invalid={passwordTooShort || undefined}
+                aria-describedby={passwordTooShort ? "onb-password-error" : undefined}
+                style={{ ...obInput, paddingRight: "52px", ...inputBorder(passwordTooShort) }}
               />
-              <input
-                id="onb-password-confirm"
-                aria-label="Bekræft adgangskode"
-                value={form.password_confirm}
-                onChange={e => set("password_confirm", e.target.value)}
-                placeholder="Gentag"
-                type="password"
-                autoComplete="new-password"
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Skjul adgangskode" : "Vis adgangskode"}
+                aria-pressed={showPassword}
                 style={{
-                  ...obInput,
-                  flex: 1,
-                  minWidth: 0,
-                  border: `1.5px solid ${passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border}`,
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  height: "100%",
+                  width: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  background: "transparent",
+                  color: theme.textMid,
+                  cursor: "pointer",
+                  borderRadius: "0 10px 10px 0",
                 }}
-              />
+              >
+                {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+              </button>
             </div>
-            {passwordMismatch && (
-              <p style={errorText}>Adgangskoderne matcher ikke — tjek begge felter.</p>
-            )}
-            {!passwordMismatch && passwordTooShort && (
-              <p style={{ ...errorText, color: theme.warm }}>Adgangskoden skal være mindst 8 tegn.</p>
+            {passwordTooShort && (
+              <p id="onb-password-error" style={errorText}>Adgangskoden skal være mindst 8 tegn.</p>
             )}
           </div>
         </>
@@ -665,6 +656,7 @@ export function OnboardingPage() {
         <div style={{ display: "grid", gridTemplateColumns: "76px 1fr 90px", gap: "10px" }}>
           <select
             id="onb-birth-day"
+            autoComplete="bday-day"
             value={form.birth_day}
             onChange={e => set("birth_day", e.target.value)}
             style={{ ...obInput, padding: "12px 8px 12px 12px", color: form.birth_day ? theme.text : theme.textLight }}
@@ -674,6 +666,7 @@ export function OnboardingPage() {
           </select>
           <select
             aria-label="Måned"
+            autoComplete="bday-month"
             value={form.birth_month}
             onChange={e => set("birth_month", e.target.value)}
             style={{ ...obInput, padding: "12px 8px 12px 12px", color: form.birth_month ? theme.text : theme.textLight }}
@@ -683,6 +676,7 @@ export function OnboardingPage() {
           </select>
           <input
             aria-label="År"
+            autoComplete="bday-year"
             value={form.birth_year}
             onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))}
             placeholder="År"
@@ -704,6 +698,7 @@ export function OnboardingPage() {
             id="onb-phone"
             value={form.phone}
             onChange={e => set("phone", e.target.value)}
+            onBlur={() => touch("phone")}
             placeholder="Fx 20112233 eller +4520112233"
             type="tel"
             autoComplete="tel"
@@ -719,11 +714,9 @@ export function OnboardingPage() {
           Tjekker telefon-krav…
         </p>
       )}
-      {phoneExemptResolved && !phoneExempt && (
-        <div style={{ ...insetCard, fontSize: "11.5px", color: theme.textLight, lineHeight: 1.55 }}>
-          {oauthSession
-            ? "Dit telefonnummer bekræftes med en SMS-kode til sidst."
-            : "Dit telefonnummer bekræftes med en SMS-kode, og din e-mail bekræftes med et link til sidst."}
+      {oauthSession && phoneExemptResolved && !phoneExempt && (
+        <div style={{ ...insetCard, fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
+          Dit telefonnummer bekræftes med en SMS-kode til sidst.
         </div>
       )}
     </div>,
@@ -1204,7 +1197,7 @@ export function OnboardingPage() {
             </p>
           )}
         </div>
-        {step < 3 && missingRequirements.length > 0 && (
+        {step < 3 && triedContinueStep === step && missingRequirements.length > 0 && (
           <div
             ref={missingRequirementsRef}
             aria-live="polite"
@@ -1225,10 +1218,12 @@ export function OnboardingPage() {
           {step < 3 ? (
             <button
               type="button"
-              onClick={handleContinue}
-              style={{ ...btnNavy, opacity: canNext() ? 1 : 0.75, cursor: "pointer" }}
+              onClick={() => { void handleContinue(); }}
+              disabled={checkingPassword}
+              aria-busy={checkingPassword || undefined}
+              style={{ ...btnNavy, opacity: canNext() && !checkingPassword ? 1 : 0.75, cursor: checkingPassword ? "wait" : "pointer" }}
             >
-              Fortsæt <ArrowRight size={16} strokeWidth={2.4} />
+              {checkingPassword ? "Tjekker…" : <>Fortsæt <ArrowRight size={16} strokeWidth={2.4} /></>}
             </button>
           ) : (
             <button
