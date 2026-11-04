@@ -70,7 +70,8 @@ test('landing and dashboard swap to dark logo in dark mode without changing Goog
   const dashboardPage = await readFile(new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url), 'utf8')
   const documentHead = await readFile(new URL('../../src/components/DocumentHead.jsx', import.meta.url), 'utf8')
 
-  assert.match(landingPage, /src=\{dark \? "\/logo-brand-dark\.png" : "\/logo-brand\.png"\}/)
+  // Forsiden har altid moerk baggrund (redesign v4), saa den bruger altid det lyse-tekst logo.
+  assert.match(landingPage, /src="\/logo-brand-dark\.png"/)
   assert.match(dashboardPage, /src=\{dark \? "\/logo-brand-dark\.png" : "\/logo-brand\.png"\}/)
   assert.match(documentHead, /ORGANIZATION_LOGO_PATH = '\/icon-512-v2\.png'/)
   assert.doesNotMatch(documentHead, /logo-brand-dark\.png/)

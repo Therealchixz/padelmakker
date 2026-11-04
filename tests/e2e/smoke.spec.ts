@@ -10,7 +10,7 @@ test.describe('Public smoke flows', () => {
   test('landing page renders hero and primary CTA', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { level: 1, name: /Find makker/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Find din makker/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
   })
 
@@ -19,13 +19,11 @@ test.describe('Public smoke flows', () => {
 
     const logo = page.getByRole('img', { name: 'PadelMakker logo' }).first()
     await expect(logo).toBeVisible()
-    await expect(logo).toHaveAttribute('src', '/logo-brand.png')
+    // Forsiden er altid moerk (redesign v4), saa logoet med lys tekst bruges altid.
+    await expect(logo).toHaveAttribute('src', '/logo-brand-dark.png')
     const logoBox = await logo.boundingBox()
     expect(logoBox?.height).toBeLessThanOrEqual(50)
-    await expect(page.getByRole('button', { name: 'PadelMakker forsiden' })).toBeVisible()
-
-    await page.getByRole('button', { name: /M.rk/i }).click()
-    await expect(logo).toHaveAttribute('src', '/logo-brand-dark.png')
+    await expect(page.getByRole('link', { name: 'PadelMakker forsiden' })).toBeVisible()
   })
 
   test('landing page exposes Google-friendly organization logo structured data', async ({ page }) => {
@@ -56,8 +54,7 @@ test.describe('Public smoke flows', () => {
     await page.goto('/')
 
     await expect(page).toHaveTitle(/Find padelmakker på dit niveau/i)
-    await expect(page.getByText(/se hvem der spiller på dit niveau i nærheden/i)).toBeVisible()
-    await expect(page.getByText(/ledig bane hos 150\+ centre/i)).toBeVisible()
+    await expect(page.getByText(/Spillere på dit niveau, åbne kampe og ledige baner hos 150\+ centre/i)).toBeVisible()
     await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
 
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -74,8 +71,9 @@ test.describe('Public smoke flows', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
-    const hero = page.getByRole('heading', { level: 1, name: /Find makker/i })
-    const firstStat = page.getByText('Opret profil uden betaling').first()
+    const hero = page.getByRole('heading', { level: 1, name: /Find din makker/i })
+    // Tal-baandet vises kun med rigtige tal; naeste faste sektion er "Saadan virker det".
+    const firstStat = page.getByRole('heading', { level: 2, name: /Sådan virker det/i })
     await expect(hero).toBeVisible()
     await expect(firstStat).toBeVisible()
 
@@ -94,12 +92,12 @@ test.describe('Public smoke flows', () => {
       'crossorigin',
       ''
     )
-    await expect(page.locator('link[data-critical-font="inter"][href*="fonts.googleapis.com"]')).toHaveAttribute(
+    await expect(page.locator('link[data-critical-font="brand"][href*="fonts.googleapis.com"]')).toHaveAttribute(
       'as',
       'style'
     )
     // Overskrifterne bruger Bricolage Grotesque; den hentes i samme forespørgsel som Inter.
-    await expect(page.locator('link[data-critical-font="inter"]')).toHaveAttribute('href', /Bricolage\+Grotesque/)
+    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /Bricolage\+Grotesque/)
     await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
     await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
       'media',
@@ -134,7 +132,7 @@ test.describe('Public smoke flows', () => {
   test('unauthenticated dashboard request lands on public app', async ({ page }) => {
     await page.goto('/dashboard')
 
-    await expect(page.getByRole('heading', { level: 1, name: /Find makker/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Find din makker/i })).toBeVisible()
     await expect(page).toHaveURL(/\/$/)
   })
 })

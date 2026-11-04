@@ -650,7 +650,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 8,
   border: '1.5px solid var(--pm-border)',
   fontSize: 14,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "var(--pm-font)",
   background: 'var(--pm-surface)',
   color: 'var(--pm-text)',
   display: 'block',
