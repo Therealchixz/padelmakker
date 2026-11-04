@@ -2848,7 +2848,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         />
 
         {showToolsAccordion ? (
-          <div style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "55", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 33%, transparent)`, borderRadius: "10px", overflow: "hidden" }}>
             <button
               type="button"
               onClick={() => setExpandedAdminActions((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}
@@ -2871,7 +2871,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
               {adminActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {adminActionsOpen ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + `color-mix(in srgb, ${theme.warm} 20%, transparent)` }}>
                 {canEditThisMatch ? (
                   <button
                     type="button"
@@ -2902,7 +2902,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                               justifyContent: "center",
                               fontSize: "13px",
                               color: theme.red,
-                              borderColor: theme.red + "55",
+                              borderColor: `color-mix(in srgb, ${theme.red} 33%, transparent)`,
                             }}
                           >
                             <UserMinus size={14} />
@@ -2949,7 +2949,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                       type="button"
                       onClick={() => rejectResult(m.id)}
                       disabled={busy}
-                      style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
+                      style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: `color-mix(in srgb, ${theme.warm} 33%, transparent)` }}
                     >
                       Slet (Admin)
                     </button>
@@ -2960,7 +2960,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     type="button"
                     onClick={() => deleteMatch(m.id)}
                     disabled={busy}
-                    style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}
+                    style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: `color-mix(in srgb, ${theme.red} 33%, transparent)` }}
                   >
                     <Trash2 size={14} /> {isAdmin && adminCanAct && !isCreator ? "Slet kamp (Admin)" : "Slet kamp"}
                   </button>

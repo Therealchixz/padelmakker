@@ -3,7 +3,7 @@
  * (.field, .input, .btn-navy, .btn-ghost, .topbar, .chip, .inset-card, .step-dot m.fl.)
  * Bruger theme-tokens fra platformTheme, så dark mode følger med.
  */
-import { font, theme } from './platformTheme.js';
+import { font, displayFont, theme } from './platformTheme.js';
 
 /** Navy gradient-hero (mockup: linear-gradient(150deg, #0D2752, #1D4A9E)) */
 export const navyGradient = `linear-gradient(150deg, ${theme.navyDeep}, ${theme.navySoft})`;
@@ -125,12 +125,13 @@ export const circleBtn = {
 /** .topbar h1 — 19px/600/-0.3px (sidens eneste overskrift på øverste niveau) */
 export const topbarTitle = {
   flex: 1,
-  fontSize: 19,
-  fontWeight: 600,
+  fontSize: 20,
+  fontWeight: 700,
   letterSpacing: '-0.3px',
   color: theme.text,
   margin: 0,
-  fontFamily: font,
+  // Brand-skriften (Bricolage) under .pm-brand; ellers Inter.
+  fontFamily: displayFont,
 };
 
 /** .ob-icon — rund ikon-cirkel øverst på bekræftelses-skærme */
@@ -152,21 +153,21 @@ export const stepDot = (on) => ({
   width: 26,
   height: 4,
   borderRadius: 99,
-  background: on ? theme.navy : theme.border,
+  background: on ? 'var(--pm-orange)' : theme.border,
   transition: 'background 0.3s',
 });
 
 /** Centreret skærm-intro: overskrift 18px/600/-0.3px + undertekst */
 export const screenHeading = {
-  fontSize: 18,
-  fontWeight: 600,
+  fontSize: 20,
+  fontWeight: 700,
   letterSpacing: '-0.3px',
   color: theme.text,
-  fontFamily: font,
+  fontFamily: displayFont,
 };
 
 export const screenSub = {
-  fontSize: 12.5,
+  fontSize: 13.5,
   color: theme.textLight,
   marginTop: 5,
   lineHeight: 1.5,
@@ -174,7 +175,7 @@ export const screenSub = {
 
 /** .field-hint */
 export const fieldHint = {
-  fontSize: 11,
+  fontSize: 12.5,
   color: theme.textLight,
   marginTop: 6,
   lineHeight: 1.5,

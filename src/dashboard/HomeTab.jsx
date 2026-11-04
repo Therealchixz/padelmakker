@@ -1083,7 +1083,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         <div
           style={{
             background: theme.warmBg,
-            border: `1px solid ${theme.warm}33`,
+            border: `1px solid color-mix(in srgb, ${theme.warm} 20%, transparent)`,
             borderRadius: '12px',
             padding: '12px 14px',
             marginBottom: '14px',
@@ -1195,7 +1195,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         <div
           style={{
             background: theme.accentBg,
-            border: `1px solid ${theme.accent}33`,
+            border: `1px solid color-mix(in srgb, ${theme.accent} 20%, transparent)`,
             borderRadius: '12px',
             padding: '12px 14px',
             marginBottom: '14px',
@@ -1934,7 +1934,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </span>
                 ) : null}
                 {viewMatch.score ? (
-                  <span style={{ fontSize: "11px", border: "1px solid " + theme.blue + "33", borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
+                  <span style={{ fontSize: "11px", border: "1px solid " + `color-mix(in srgb, ${theme.blue} 20%, transparent)`, borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
                     Resultat: {viewMatch.score}
                   </span>
                 ) : null}
@@ -1949,7 +1949,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </span>
                 ) : null}
                 {viewMatch.eloMin != null && viewMatch.eloMax != null ? (
-                  <span style={{ fontSize: "11px", border: "1px solid " + theme.green + "33", borderRadius: "999px", padding: "4px 10px", color: theme.green, background: theme.greenBg || theme.surfaceAlt }}>
+                  <span style={{ fontSize: "11px", border: "1px solid " + `color-mix(in srgb, ${theme.green} 20%, transparent)`, borderRadius: "999px", padding: "4px 10px", color: theme.green, background: theme.greenBg || theme.surfaceAlt }}>
                     {formatMatchLevelRangeLabel(viewMatch.eloMin, viewMatch.eloMax)}
                   </span>
                 ) : null}

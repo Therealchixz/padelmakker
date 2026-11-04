@@ -112,7 +112,7 @@ export function SignupEmailSentPage() {
 
   return (
     <div
-      className="pm-root"
+      className="pm-root pm-brand"
       style={{
         fontFamily: font,
         background: theme.bg,
@@ -164,7 +164,7 @@ export function SignupEmailSentPage() {
             borderRadius: '10px',
             padding: '16px 18px',
             textAlign: 'left',
-            border: '1px solid ' + theme.accent + '30',
+            border: '1px solid ' + `color-mix(in srgb, ${theme.accent} 19%, transparent)`,
             marginBottom: '20px',
           }}
         >

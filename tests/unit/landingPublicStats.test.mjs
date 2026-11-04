@@ -28,7 +28,8 @@ test('formatLandingStatCount uses locale string for positive counts', () => {
 test('buildLandingStatsItems never shows a dash or zero', () => {
   const items = buildLandingStatsItems({ player_count: 118, open_matches: 0, matches_last_30_days: 0 });
   assert.equal(items.length, 4);
-  assert.deepEqual(items.map((i) => i.n), ['118', '150+', '4', 'Gratis']);
+  // 118 spillere er for få til at vise (det virker som "her er ingen").
+  assert.deepEqual(items.map((i) => i.n), ['150+', '4', 'ELO', 'Gratis']);
   for (const it of items) {
     assert.notEqual(it.n, '—');
     assert.notEqual(it.n, '0');
@@ -36,7 +37,7 @@ test('buildLandingStatsItems never shows a dash or zero', () => {
 });
 
 test('buildLandingStatsItems shows live counts once they are big enough', () => {
-  const items = buildLandingStatsItems({ player_count: 400, open_matches: 12, matches_last_30_days: 90 });
+  const items = buildLandingStatsItems({ player_count: 800, open_matches: 12, matches_last_30_days: 90 });
   assert.deepEqual(items.map((i) => i.l), [
     'Spillere på platformen',
     'Åbne kampe lige nu',

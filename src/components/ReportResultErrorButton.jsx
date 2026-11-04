@@ -137,7 +137,7 @@ export function ReportResultErrorButton({
             fontSize: 12,
             padding: '8px 12px',
             color: theme.warm,
-            borderColor: theme.warm + '66',
+            borderColor: `color-mix(in srgb, ${theme.warm} 40%, transparent)`,
             background: theme.warmBg,
           }}
         >

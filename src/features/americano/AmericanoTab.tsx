@@ -1596,7 +1596,7 @@ export function AmericanoTab({
                 padding: '7px 12px',
                 fontSize: '12px',
                 color: theme.warm,
-                borderColor: theme.warm + '55',
+                borderColor: `color-mix(in srgb, ${theme.warm} 33%, transparent)`,
                 background: theme.warmBg,
                 display: 'inline-flex',
                 alignItems: 'center',

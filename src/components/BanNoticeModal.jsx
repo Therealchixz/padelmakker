@@ -33,7 +33,7 @@ export function BanNoticeModal({ reason, onAcknowledge }) {
               padding: '10px 12px',
               background: theme.redBg,
               borderRadius: '8px',
-              border: `1px solid ${theme.red}40`,
+              border: `1px solid color-mix(in srgb, ${theme.red} 25%, transparent)`,
             }}
           >
             <strong style={{ color: theme.text }}>Begrundelse:</strong> {reason}

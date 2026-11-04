@@ -376,7 +376,7 @@ export function PhoneVerificationPage() {
 
   return (
     <div
-      className="pm-root"
+      className="pm-root pm-brand"
       style={{
         fontFamily: font,
         background: theme.bg,

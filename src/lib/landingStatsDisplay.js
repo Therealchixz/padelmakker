@@ -26,7 +26,9 @@ export function formatLandingStatCount(n) {
 
 /** Mindste tal, før et "live"-tal vises på forsiden. Under det viser vi faste fakta i stedet. */
 export const LANDING_STAT_MIN = {
-  player_count: 20,
+  // Et lille landsdækkende tal læses som "her er ingen nær mig" lige under løftet om
+  // spillere i nærheden. Vis det først, når det er overbevisende (Impeccable, 4. nov. 2026).
+  player_count: 500,
   open_matches: 5,
   matches_last_30_days: 10,
 };

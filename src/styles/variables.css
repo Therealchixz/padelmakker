@@ -232,17 +232,21 @@ textarea:focus-visible {
   box-shadow: var(--pm-focus-ring-dark) !important;
 }
 
+/* Knapper og links: en tydelig ring uden om elementet, når man bruger tastaturet.
+   Før brugte vi box-shadow, men mange knapper sætter deres egen skygge direkte i
+   koden, og den vandt, så fokus var usynligt (Impeccable-vurdering 4. nov. 2026).
+   En outline med lidt luft kan ses på både lyse og mørke (navy) knapper. */
 button:focus-visible,
 [role="button"]:focus-visible,
 a:focus-visible {
-  outline: none;
-  box-shadow: var(--pm-focus-ring);
+  outline: 2px solid var(--pm-accent) !important;
+  outline-offset: 2px;
 }
 
 [data-theme="dark"] button:focus-visible,
 [data-theme="dark"] [role="button"]:focus-visible,
 [data-theme="dark"] a:focus-visible {
-  box-shadow: var(--pm-focus-ring-dark);
+  outline-color: #60A5FA !important;
 }
 
 /* ── Trykflade på mindst 44x44 uden at ændre udseende eller layout ──
@@ -287,8 +291,13 @@ input, select, textarea {
   color: var(--pm-text);
 }
 
-::placeholder {
+/* Samme eller højere specificitet end Tailwinds input::placeholder (#9ca3af, kun 2,5:1),
+   så vores mørkere grå (4,5:1) vinder. */
+::placeholder,
+input::placeholder,
+textarea::placeholder {
   color: var(--pm-text-light);
+  opacity: 1;
 }
 
 button:disabled {

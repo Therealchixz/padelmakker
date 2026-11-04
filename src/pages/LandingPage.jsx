@@ -456,7 +456,7 @@ export function LandingPage() {
             className="pm-reveal pm-visible"
             style={{
               ...landingInfoCardStyle,
-              borderColor: theme.accent + '44',
+              borderColor: `color-mix(in srgb, ${theme.accent} 27%, transparent)`,
               background: `linear-gradient(135deg, ${theme.accentBg}, ${theme.surface})`,
             }}
           >

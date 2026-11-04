@@ -67,7 +67,7 @@ export function CreateMatchForm({
       style={{
         padding: "clamp(16px,3vw,20px)",
         marginBottom: "20px",
-        border: `2px solid ${theme.accent}40`,
+        border: `2px solid color-mix(in srgb, ${theme.accent} 25%, transparent)`,
         boxShadow: theme.shadow,
       }}
     >
