@@ -3,13 +3,24 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 
-test('onboarding requires users to confirm their email address before continuing', async () => {
+test('trin 1 er kort: én e-mail, én adgangskode med vis/skjul, og læk-tjek ved Fortsæt', async () => {
   const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
+  const reminder = await readFile(new URL('../../src/components/EmailConfirmReminder.jsx', import.meta.url), 'utf8');
 
-  assert.match(onboardingPage, /email_confirm/);
-  assert.match(onboardingPage, /Bekr[aæ]ft e-mail/);
-  assert.match(onboardingPage, /Emails matcher ikke|E-mailadresserne matcher ikke/);
-  assert.match(onboardingPage, /email skrevet ens i begge felter/);
+  // Ejeren 4. nov. 2026: "Kortere trin 1". Gentag-felterne er væk.
+  assert.doesNotMatch(onboardingPage, /email_confirm/);
+  assert.doesNotMatch(onboardingPage, /password_confirm/);
+  assert.match(onboardingPage, /Vis adgangskode/);
+  assert.match(onboardingPage, /Skjul adgangskode/);
+  // Fejl vises først, når feltet er forladt.
+  assert.match(onboardingPage, /onBlur=\{\(\) => touch\("email"\)\}/);
+  assert.match(onboardingPage, /touched\.email &&/);
+  // Lækket adgangskode fanges på trin 1, ikke først ved oprettelsen.
+  assert.match(onboardingPage, /step === 0 && !oauthSession && breachCheckedPasswordRef\.current !== form\.password/);
+  assert.match(onboardingPage, /autoComplete="bday-day"/);
+  // En tastefejl i e-mailen kan rettes bagefter inde i appen.
+  assert.match(reminder, /Forkert e-mail\? Ret den/);
+  assert.match(reminder, /supabase\.auth\.updateUser\(\{ email: next \}\)/);
 });
 
 test('onboarding explains the signup choices without adding an early profile preview', async () => {

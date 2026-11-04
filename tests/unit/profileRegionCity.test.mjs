@@ -20,7 +20,7 @@ test('region og by påkrævet med DAWA-søgning i onboarding og profil', () => {
   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
   assert.match(onboarding, /missing\.push\("by"\)/);
   assert.match(onboarding, /CityPlaceSearchField/);
-  assert.match(onboarding, /Bekræft e-mail/);
+  assert.match(onboarding, /id="onb-email"/);
   assert.match(onboarding, /Dit område/);
   assert.match(makkereTab, /loadError/);
   assert.match(makkereTab, /formatProfileLocationLine/);

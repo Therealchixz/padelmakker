@@ -45,9 +45,7 @@ export function useScrollToFieldOnError(error, fieldRef, inputRef, options) {
 export const ONBOARDING_MISSING_FIELD_IDS = {
   'fornavn og efternavn': 'onb-first-name',
   'gyldig email': 'onb-email',
-  'email skrevet ens i begge felter': 'onb-email-confirm',
   'adgangskode på mindst 8 tegn': 'onb-password',
-  'ens adgangskoder': 'onb-password-confirm',
   'gyldigt telefonnummer': 'onb-phone',
   fødselsdato: 'onb-birth-day',
   niveau: 'onb-level-section',
@@ -72,9 +70,7 @@ export function resolveOnboardingFieldIdFromErrorMessage(message) {
   if (msg.includes('telefonnummer')) return 'onb-phone';
   if (msg.includes('region')) return 'onb-region';
   if (msg.includes('by')) return 'onb-city';
-  if (msg.includes('adgangskoderne er ikke ens') || msg.includes('matcher ikke')) return 'onb-password-confirm';
   if (msg.includes('adgangskode')) return 'onb-password';
-  if (msg.includes('gentag din e-mail') || msg.includes('bekræft email')) return 'onb-email-confirm';
   if (msg.includes('e-mail') || msg.includes('email')) return 'onb-email';
   if (msg.includes('navn')) return 'onb-first-name';
   return null;

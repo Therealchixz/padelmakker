@@ -122,7 +122,7 @@ test.describe('Public smoke flows', () => {
     await expect(page.getByPlaceholder('Fornavn')).toBeVisible()
     await expect(page.getByPlaceholder('Efternavn')).toBeVisible()
     await expect(page.getByPlaceholder('din@email.dk')).toBeVisible()
-    await expect(page.getByPlaceholder('Gentag din e-mail')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Vis adgangskode' })).toBeVisible()
   })
 
   test('events page is reachable', async ({ page }) => {

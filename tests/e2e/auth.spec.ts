@@ -27,19 +27,23 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('heading', { name: /Velkommen tilbage/i })).toBeVisible()
   })
 
-  test('onboarding shows inline validation for invalid email and password mismatch', async ({ page }) => {
+  test('onboarding shows inline validation after leaving a field, and can show the password', async ({ page }) => {
     await page.goto('/opret')
 
     // Felterne deler label "Navn"/"E-mail" — mål dem via placeholder.
     const email = page.getByPlaceholder('din@email.dk')
     await email.fill('invalid-email')
+    await expect(page.getByText(/Brug en gyldig e-mail/i)).toHaveCount(0)
     await email.blur()
     await expect(page.getByText(/Brug en gyldig e-mail/i)).toBeVisible()
 
-    await page.getByPlaceholder('Adgangskode', { exact: true }).fill('12345678')
-    const passwordConfirm = page.getByPlaceholder('Gentag', { exact: true })
-    await passwordConfirm.fill('12345679')
-    await passwordConfirm.blur()
-    await expect(page.getByText(/Adgangskoderne matcher ikke/i)).toBeVisible()
+    const password = page.getByPlaceholder('Mindst 8 tegn', { exact: true })
+    await password.fill('1234')
+    await password.blur()
+    await expect(page.getByText(/Adgangskoden skal være mindst 8 tegn/i)).toBeVisible()
+
+    await expect(password).toHaveAttribute('type', 'password')
+    await page.getByRole('button', { name: 'Vis adgangskode' }).click()
+    await expect(password).toHaveAttribute('type', 'text')
   })
 })
