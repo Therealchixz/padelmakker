@@ -46,3 +46,10 @@ test('appen bruger det nye login og den ventende mail', () => {
   assert.match(readFileSync(join(root, 'src/pages/SignupEmailSentPage.jsx'), 'utf8'), /pendingAccountEmail\(user\)/);
   assert.match(readFileSync(join(root, 'src/pages/LoginPage.jsx'), 'utf8'), /E-mail eller telefonnummer/);
 });
+
+test('e-mail-påmindelsen får login-kontoen (authUser), ikke spillerprofilen', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const dash = await readFile(new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url), 'utf8');
+  // Profilen har ingen email_confirmed_at/new_email, så påmindelsen ville aldrig (eller altid) vises.
+  assert.match(dash, /<EmailConfirmReminder user=\{authUser\} \/>/);
+});
