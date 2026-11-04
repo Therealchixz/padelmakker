@@ -74,52 +74,33 @@ body {
 .pm-delay-5 { transition-delay: 0.5s; }
 .pm-delay-6 { transition-delay: 0.6s; }
 
-/* ─── Landing page hero: foto-baggrund med mørkt overlay ─── */
+/* ─── Landing page hero: mørk banefarve med en tegnet padelbane (ingen slørede fotos) ─── */
 .pm-hero-gradient {
-  background-image: url('/hero-bg.jpg');
-  background-image: -webkit-image-set(
-    url('/hero-bg.avif') type('image/avif'),
-    url('/hero-bg.webp') type('image/webp'),
-    url('/hero-bg.jpg') type('image/jpeg')
-  );
-  background-image: image-set(
-    url('/hero-bg.avif') type('image/avif'),
-    url('/hero-bg.webp') type('image/webp'),
-    url('/hero-bg.jpg') type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center top;
+  background:
+    radial-gradient(120% 90% at 85% 10%, #163a86 0%, transparent 60%),
+    linear-gradient(170deg, var(--pm-court-navy) 0%, #10275a 100%);
   position: relative;
   overflow: hidden;
 }
 
-@media (max-width: 540px) {
-  .pm-hero-gradient {
-    background-image: url('/hero-bg-mobile.webp');
-    background-image: -webkit-image-set(
-      url('/hero-bg-mobile.avif') type('image/avif'),
-      url('/hero-bg-mobile.webp') type('image/webp'),
-      url('/hero-bg.jpg') type('image/jpeg')
-    );
-    background-image: image-set(
-      url('/hero-bg-mobile.avif') type('image/avif'),
-      url('/hero-bg-mobile.webp') type('image/webp'),
-      url('/hero-bg.jpg') type('image/jpeg')
-    );
-  }
+.pm-hero-court {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  bottom: -6%;
+  width: min(1500px, 190vw);
+  height: auto;
+  transform: translateX(-50%) perspective(1200px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  color: rgba(147, 197, 253, 0.32);
 }
 
-.pm-hero-gradient::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(10, 20, 50, 0.82) 0%,
-    rgba(29, 78, 216, 0.60) 100%
-  );
-  pointer-events: none;
+@media (min-width: 900px) {
+  .pm-hero-court {
+    width: min(1600px, 125vw);
+    bottom: -14%;
+  }
 }
 
 /* Kun under CTA — fade mod hvid stats-sektion (matcher theme.surface) */
@@ -187,18 +168,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.pm-app-mockup-glow {
-  position: absolute;
-  inset: 58px 8px 34px;
-  border-radius: 42px;
-  background:
-    radial-gradient(circle at 50% 12%, rgba(147, 197, 253, 0.42), transparent 36%),
-    linear-gradient(150deg, rgba(29, 78, 216, 0.24), rgba(14, 165, 233, 0.1));
-  filter: blur(18px);
-  opacity: 0.9;
-  transform: translateY(8px);
 }
 
 .pm-app-mockup-phone {
@@ -522,20 +491,88 @@ body {
   isolation: isolate;
 }
 
+.pm-landing-step-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 900px) {
+  .pm-landing-step-flow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 36px);
+  }
+}
+
+.pm-landing-step {
+  border-top: 1px solid var(--pm-border);
+  padding: 22px 0 26px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .pm-landing-step {
+    grid-template-columns: 1fr;
+    border-top-color: transparent;
+    padding-top: 28px;
+  }
+}
+
+.pm-landing-step-num {
+  font-family: var(--pm-font-display);
+  font-size: clamp(40px, 6vw, 52px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--pm-orange);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 14px;
+}
+
+.pm-landing-step h3 {
+  font-family: var(--pm-font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--pm-text);
+  margin: 0 0 8px;
+}
+
+.pm-landing-step p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--pm-text-mid);
+  max-width: 34ch;
+  text-wrap: pretty;
+}
+
+/* Baneline der tegnes hen over de fire trin, når de kommer frem (kun computer). */
 .pm-landing-step-flow::before {
   content: '';
+  display: none;
   position: absolute;
-  left: 34px;
-  right: 34px;
-  top: 48px;
+  left: 0;
+  right: 0;
+  top: 0;
   z-index: 0;
   height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--pm-accent), color-mix(in srgb, var(--pm-green) 70%, var(--pm-accent)), transparent);
-  opacity: 0.7;
+  background: linear-gradient(90deg, var(--pm-orange), var(--pm-accent));
+  opacity: 0.85;
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1) 120ms;
+}
+
+@media (min-width: 900px) {
+  .pm-landing-step-flow::before {
+    display: block;
+  }
 }
 
 .pm-landing-step-flow.pm-visible::before {
@@ -574,36 +611,17 @@ body {
 }
 
 .pm-elo-explainer-card {
+  /* Åben komposition: før/efter-kortene er de eneste kort (ingen kort i kort). */
   position: relative;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--pm-accent) 22%, var(--pm-border));
-  border-radius: var(--pm-radius-xl);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
-    var(--pm-surface);
-  box-shadow: var(--pm-shadow-lg);
-  padding: clamp(18px, 4vw, 26px);
+  padding: 0;
 }
 
-[data-theme="dark"] .pm-elo-explainer-card {
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--pm-surface) 92%, white), var(--pm-surface-alt)),
-    var(--pm-surface);
+/* Når eksemplet kommer frem, markeres "efter kampen"-kortet med den varme accent. */
+.pm-elo-explainer-card .pm-elo-player-card--after {
+  transition: border-color 600ms ease 900ms;
 }
-
-.pm-elo-explainer-card::before {
-  content: '';
-  position: absolute;
-  inset: -80px -110px auto auto;
-  width: 230px;
-  height: 230px;
-  border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--pm-accent) 32%, transparent), transparent 68%);
-  pointer-events: none;
-}
-
-.pm-elo-explainer-card.pm-visible {
-  box-shadow: 0 26px 80px rgba(29, 78, 216, 0.16);
+.pm-elo-explainer-card.pm-visible .pm-elo-player-card--after {
+  border-color: color-mix(in srgb, var(--pm-orange) 55%, var(--pm-border));
 }
 
 .pm-elo-explainer-card-head,
@@ -649,7 +667,8 @@ body {
   min-width: 0;
   border: 1px solid var(--pm-border);
   border-radius: var(--pm-radius-lg);
-  background: var(--pm-surface-alt);
+  background: var(--pm-surface);
+  box-shadow: var(--pm-shadow);
   padding: 16px;
 }
 
@@ -673,6 +692,7 @@ body {
 
 .pm-elo-player-card b {
   display: block;
+  font-family: var(--pm-font-display);
   margin-top: 6px;
   color: var(--pm-accent);
   font-size: clamp(24px, 5vw, 32px);
@@ -728,10 +748,8 @@ body {
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
-  border: 1px solid var(--pm-border);
-  border-radius: var(--pm-radius-md);
-  background: color-mix(in srgb, var(--pm-surface) 78%, var(--pm-surface-alt));
-  padding: 12px;
+  border-top: 1px solid var(--pm-border);
+  padding: 14px 0 0;
 }
 
 .pm-elo-step-icon {
@@ -4296,10 +4314,21 @@ button,
   }
 
   /* Mobil: samme princip - målte nav-højde + lille luft til hero-indhold */
+  /* Ikke længere fuld skærmhøjde: den tegnede bane under knapperne fylder resten,
+     så tallene kommer tidligere frem og toppen ikke er et tomt felt. */
   .pm-landing-hero {
     box-sizing: border-box;
-    min-height: calc(100dvh + 32px);
     padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(24px, 7vw, 36px));
+  }
+
+  /* Mobil: banen ligger bag knapperne og toner ind nedefra, så den ikke krydser teksten. */
+  .pm-hero-court {
+    width: 160vw;
+    bottom: 70px;
+    transform: translateX(-50%) perspective(700px) rotateX(50deg);
+    color: rgba(147, 197, 253, 0.42);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
   }
 
   .pm-landing-hero > div:first-child {
@@ -5029,33 +5058,22 @@ button,
 }
 
 .pm-landing-hero-title {
-  font-family: var(--pm-font);
-  font-size: clamp(40px, 8vw, 76px);
+  font-family: var(--pm-font-display);
+  font-size: clamp(42px, 8vw, 78px);
   font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.04em;
+  line-height: 1;
+  letter-spacing: -0.035em;
   color: var(--pm-on-accent);
   margin-bottom: 24px;
 }
 
 .pm-landing-hero-accent {
-  /* Lysere blå end --pm-blue: skal kunne læses oven på det mørke hero-billede (min. 3:1). */
-  color: #60A5FA;
+  /* Varm orange på den mørke banefarve (ca. 7:1). */
+  color: var(--pm-orange-bright);
 }
 
 .pm-landing-hero-subtitle {
   color: var(--pm-hero-subtitle);
-}
-
-.pm-landing-feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--pm-accent), var(--pm-accent-gradient-end));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
 }
 
 .pm-landing-cta-banner {
@@ -5096,7 +5114,7 @@ button,
 }
 
 .pm-landing-cta-banner h2 {
-  font-family: var(--pm-font);
+  font-family: var(--pm-font-display);
   font-size: clamp(26px, 5.5vw, 40px);
   font-weight: 800;
   color: var(--pm-on-accent);
@@ -12064,5 +12082,14 @@ button,
 }
 .pm-legal-prose h2,
 .pm-legal-prose h3 {
+  text-wrap: balance;
+}
+
+/* Offentlige sider: overskrifter i brand-skriften (Bricolage Grotesque). Appen efter login er uændret. */
+.pm-brand {
+  --pm-font-display: var(--pm-font-brand);
+}
+.pm-brand h1,
+.pm-brand h2 {
   text-wrap: balance;
 }
