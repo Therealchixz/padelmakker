@@ -58,7 +58,7 @@ export function ProfileAvatar({
         ...style,
       }}
     >
-      {isDefaultAvatar(avatar) ? <PadelRacketIcon size={Math.round(size * 0.52)} strokeWidth={1.8} /> : avatar}
+      {isDefaultAvatar(avatar) ? <PadelRacketIcon size={Math.round(size * 0.6)} /> : avatar}
     </div>
   );
 }

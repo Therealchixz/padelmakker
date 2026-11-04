@@ -1,34 +1,47 @@
+import { useId } from 'react';
+
 /**
- * Tegnet padel-ketsjer (massivt hoved med huller + kort håndtag) — standardbillede
- * for spillere uden eget profilbillede. Ejeren 4. nov. 2026: "Et padel-ikon" i stedet
- * for tennis-emojien 🎾. Samme stregtykkelse som lucide-ikonerne i resten af appen.
+ * Tegnet padel-ketsjer (skrå, fyldt hoved med huller, hals og greb) — standardbillede
+ * for spillere uden eget profilbillede. Ejeren 4. nov. 2026: valgte forslag "B: skrå
+ * ketsjer, fyldt" i stedet for tennis-emojien 🎾.
+ *
+ * Ketsjeren er tegnet lodret i et 16×30-felt og drejet 45° ind i 24×24. Hullerne er
+ * skåret ud med en maske, så baggrunden skinner igennem på enhver farve.
  */
-export function PadelRacketIcon({ size = 24, strokeWidth = 2, title = '', style = {} }) {
+const HEAD = 'M8 1C12.7 1 15 4.3 15 8.5 15 12.8 12.2 16.2 8 16.2S1 12.8 1 8.5C1 4.3 3.3 1 8 1Z';
+const HOLES = [
+  [5.6, 4.6], [8, 4], [10.4, 4.6],
+  [4, 7.2], [6.6, 7], [9.4, 7], [12, 7.2],
+  [4.4, 10], [6.9, 10], [9.1, 10], [11.6, 10],
+  [6.2, 12.7], [8, 13.2], [9.8, 12.7],
+];
+
+export function PadelRacketIcon({ size = 24, title = '', style = {} }) {
+  const maskId = `pm-racket-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
       aria-label={title || undefined}
-      style={{ display: 'block', ...style }}
+      style={{ display: 'block', overflow: 'visible', ...style }}
     >
-      <path d="M12 2.5c3.6 0 6.2 2.7 6.2 6.3 0 3.4-2.4 6.2-5 6.7h-2.4c-2.6-.5-5-3.3-5-6.7 0-3.6 2.6-6.3 6.2-6.3Z" />
-      <path d="M10.8 15.5 10.6 18.5M13.2 15.5l.2 3" />
-      <rect x="10.2" y="18.5" width="3.6" height="3.4" rx="1.2" />
-      <g fill="currentColor" stroke="none">
-        <circle cx="9.6" cy="7" r="0.85" />
-        <circle cx="12" cy="6" r="0.85" />
-        <circle cx="14.4" cy="7" r="0.85" />
-        <circle cx="10.6" cy="9.6" r="0.85" />
-        <circle cx="13.4" cy="9.6" r="0.85" />
-        <circle cx="12" cy="12" r="0.85" />
+      <g transform="translate(12 12) rotate(45) scale(0.8) translate(-8 -15)">
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" x="-4" y="-4" width="24" height="38">
+            <rect x="-4" y="-4" width="24" height="38" fill="#fff" />
+            {HOLES.map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="0.95" fill="#000" />)}
+            <path d="M7 16.9h2l-1 2.1Z" fill="#000" />
+            <path d="M6.1 23.5h3.8M6.1 26.1h3.8" stroke="#000" strokeWidth="0.9" />
+          </mask>
+        </defs>
+        <g mask={`url(#${maskId})`} fill="currentColor">
+          <path d={HEAD} />
+          <path d="M4.9 15.2h6.2l-1.5 5.2H6.4Z" />
+          <rect x="6.05" y="20" width="3.9" height="9.2" rx="1.6" />
+        </g>
       </g>
     </svg>
   );

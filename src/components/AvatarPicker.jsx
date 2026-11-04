@@ -47,7 +47,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
           {showingImage
             ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : isDefaultAvatar(displayAvatar)
-              ? <span style={{ color: theme.accent }}><PadelRacketIcon size={36} strokeWidth={1.8} /></span>
+              ? <span style={{ color: theme.accent }}><PadelRacketIcon size={42} /></span>
               : <span style={{ fontSize: '32px' }}>{displayAvatar}</span>
           }
         </div>
@@ -101,7 +101,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
               justifyContent: 'center',
             }}
           >
-            {isDefaultAvatar(e) ? <span style={{ color: theme.accent }}><PadelRacketIcon size={22} strokeWidth={1.8} title="Padel-ikon" /></span> : e}
+            {isDefaultAvatar(e) ? <span style={{ color: theme.accent }}><PadelRacketIcon size={26} title="Padel-ikon" /></span> : e}
           </button>
         ))}
       </div>

@@ -26,7 +26,7 @@ export function AvatarCircle({ avatar, size = 48, emojiSize = '22px', alt = '', 
       {isAvatarUrl(avatar)
         ? <img src={avatar} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : isDefaultAvatar(avatar)
-          ? <PadelRacketIcon size={Math.round(Number(size) * 0.52) || 24} strokeWidth={1.8} />
+          ? <PadelRacketIcon size={Math.round(Number(size) * 0.6) || 24} />
           : <span style={{ fontSize: emojiSize }}>{avatar}</span>
       }
     </div>
