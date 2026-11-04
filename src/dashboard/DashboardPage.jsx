@@ -1,19 +1,20 @@
-import { useEffect, useLayoutEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { AppModal } from '../components/AppModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { font, theme, btn, tag } from '../lib/platformTheme';
+import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, MoreHorizontal, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
+import { Home, Users, Swords, Settings, LogOut, ChevronDown, MoreHorizontal, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
-import { AvatarCircle } from '../components/AvatarCircle';
 
 const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
 import { ShieldCheck } from 'lucide-react';
+import { MereTab } from './MereTab';
+import '../styles/mere.css';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
@@ -593,7 +594,6 @@ function useUnreadKampeNotificationsCount(userId) {
   return useRealtimeCount(userId, createController);
 }
 
-const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"];
 const TOUR_VERSION = 4;
 const SCROLL_RETRY_MAX = 40;
 const SCROLL_START_SETTLE_RETRIES = 16;
@@ -654,7 +654,7 @@ const accountMenuRowBtnStyle = ({ isDanger = false, isLast = false } = {}) => ({
 
 // Konstant - uden for komponenten, saa listen ikke genskabes ved hver
 // rendering og kan staa i rute-effektens afhaengigheder.
-const VALID_TABS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
+const VALID_TABS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "mere", "kamp-filter", "makker-filter", "admin", "notifikationer"];
 
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet, updateProfile } = useAuth();
@@ -694,7 +694,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [pathTab, navigate]);
 
   const [dark, setDark] = useDarkMode();
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
@@ -788,11 +787,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
         description: 'Her finder du spillere, der matcher niveau og område, så du hurtigere får sat en kamp op.',
       },
       {
-        id: 'baner-booking',
-        tab: 'baner',
-        selector: tabTourSelector('baner'),
-        title: 'Baner & booking',
-        description: 'Du booker ikke direkte i PadelMakker. Her finder du baner og åbner deres bookingsystem via booking-linket.',
+        id: 'spil',
+        selector: tabTourSelector('spil'),
+        title: 'Spil',
+        description: 'Den store Spil-knap åbner en ny kamp: vælg bane, tid og niveau, og inviter andre med.',
       },
       {
         id: 'kampe',
@@ -806,13 +804,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
     if (isMobileView) {
       base.push({
-        id: 'mobile-more',
-        selectors: ['[data-tour="mobile-more-sheet"]', '[data-tour="mobile-tab-mere"]'],
-        tooltipPlacement: 'above',
-        waitForMount: true,
-        skipScroll: true,
-        title: 'Mere-menu',
-        description: 'Tryk på Mere nederst — her finder du Baner, Rangliste, Profil og flere indstillinger.',
+        id: 'mere',
+        tab: 'mere',
+        selector: tabTourSelector('mere'),
+        title: 'Mere',
+        description: 'Under Mere finder du Beskeder, Rangliste, Baner, Liga, Americano, din profil og indstillinger.',
       });
 
       base.push({
@@ -828,11 +824,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
     } else {
       base.push(
         {
-          id: 'ranking',
-          tab: 'ranking',
-          selector: '[data-tour="tab-ranking"]',
-          title: 'Ranking',
-          description: 'Her kan du følge ELO, placering og udvikling over tid.',
+          id: 'mere',
+          tab: 'mere',
+          selector: tabTourSelector('mere'),
+          title: 'Mere',
+          description: 'Under Mere finder du Beskeder, Rangliste, Baner, Liga, Americano, din profil og indstillinger.',
         },
         {
           id: 'account-menu',
@@ -857,13 +853,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return base;
   }, [isMobileView, tabTourSelector]);
 
-  const mobileMoreTourActive =
-    tourOpen && tourSteps[tourStepIndex]?.id === 'mobile-more';
 
   const tourOnNotificationStep =
     tourOpen && tourSteps[tourStepIndex]?.id === 'notification-bell';
 
-  const mobileMoreVisible = mobileMoreOpen || mobileMoreTourActive;
 
   const persistTourCompleted = useCallback(() => {
     if (!tourStorageKey) return;
@@ -878,7 +871,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (typeof window !== 'undefined') {
       setIsMobileView(window.innerWidth <= 768);
     }
-    setMobileMoreOpen(false);
     setAccountOpen(false);
     setTourStepIndex(0);
     setTourOpen(true);
@@ -902,7 +894,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     persistTourCompleted();
     setTourOpen(false);
     setTourStepIndex(0);
-    setMobileMoreOpen(false);
     setAccountOpen(false);
     if (withToastMessage) showToast(withToastMessage);
   }, [persistTourCompleted, showToast]);
@@ -964,7 +955,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tab, refreshProfileQuiet]);
 
   useEffect(() => {
-    setMobileMoreOpen(false);
     setAccountOpen(false);
   }, [tab]);
 
@@ -999,12 +989,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     }, 900);
     return () => window.clearTimeout(timer);
   }, [tourStorageKey, welcomeStorageKey]);
-
-  useLayoutEffect(() => {
-    if (!tourOpen) return;
-    const step = tourSteps[tourStepIndex];
-    setMobileMoreOpen(step?.id === 'mobile-more');
-  }, [tourOpen, tourStepIndex, tourSteps]);
 
   useEffect(() => {
     if (!tourOpen) return;
@@ -1120,7 +1104,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const openFeedbackModal = useCallback(() => {
     setAccountOpen(false);
-    setMobileMoreOpen(false);
     setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
     setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
     setFeedbackTopic("");
@@ -1255,24 +1238,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
     };
   }, [isAdmin, isMobileView, tab]);
 
-  const allTabs = [
-    { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
-    { id: "makkere",  label: "Makkere",  icon: <Users         size={15} /> },
-    { id: "baner",    label: "Baner",    icon: <MapPin        size={15} /> },
-    { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: kampeTabBadge, attention: hasKampeAttention },
-    { id: "ranking",  label: "Rangliste",      icon: <Trophy        size={15} /> },
-    { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
+  const moreTabIds = ["mere", "beskeder", "baner", "ranking", "profil", "admin"];
+  const mereBadge = (unreadMessages > 0 ? unreadMessages : 0) + (isAdmin && adminAttentionCount > 0 ? adminAttentionCount : 0);
+  // Redesign v4: Hjem · Kampe · Spil · Makkere · Mere. Beskeder, Baner, Rangliste og Profil ligger under Mere.
+  const navTabs = [
+    { id: "hjem",     label: "Hjem",    icon: <Home size={18} /> },
+    { id: "kampe",    label: "Kampe",   icon: <Swords size={18} />, badge: kampeTabBadge, attention: hasKampeAttention },
+    { id: "makkere",  label: "Makkere", icon: <Users size={18} /> },
+    { id: "mere",     label: "Mere",    icon: <MoreHorizontal size={18} />, badge: mereBadge > 0 ? mereBadge : null },
   ];
-  // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
-  if (isMobileView) allTabs.push({ id: "profil", label: "Min profil", icon: <Settings size={15} /> });
-  if (isAdmin && isMobileView) {
-    allTabs.push({
-      id: "admin",
-      label: "Admin",
-      icon: <ShieldCheck size={15} />,
-      badge: adminAttentionCount > 0 ? adminAttentionCount : null,
-    });
-  }
+  const isNavTabActive = (id) => (id === "mere" ? moreTabIds.includes(tab) : tab === id);
+  const openSpil = () => setTab("kampe", { search: "create=1" });
 
   const openAdminPanel = async () => {
     let focusSubTab = null;
@@ -1289,29 +1265,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setAccountOpen(false);
   };
 
-  const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
-  const mobilePrimaryTabIds = ["hjem", "makkere", "kampe", "beskeder"];
-  const mobilePrimaryTabs = allTabs.filter((t) => mobilePrimaryTabIds.includes(t.id));
-  const mobileMoreTabs = allTabs.filter((t) => !mobilePrimaryTabIds.includes(t.id));
-  const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
-  const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
   const handleTabPress = useCallback((tabId, opts = {}) => {
-    const { fromMoreSheet = false, ...navOpts } = opts;
     const isCurrentTab = tab === tabId;
-    const primaryReselect = isMobileView && isCurrentTab && !fromMoreSheet && !mobileMoreOpen;
-    const moreSheetReselect = isMobileView && isCurrentTab && fromMoreSheet;
-
-    if ((primaryReselect || moreSheetReselect) && shouldScrollDashboardToTopOnTabReselect()) {
+    if (isMobileView && isCurrentTab && shouldScrollDashboardToTopOnTabReselect()) {
       scrollDashboardToTop('smooth');
-      if (fromMoreSheet) setMobileMoreOpen(false);
       return;
     }
-
-    setTab(tabId, navOpts);
-    if (fromMoreSheet) setMobileMoreOpen(false);
-  }, [tab, isMobileView, mobileMoreOpen, setTab]);
+    setTab(tabId, opts);
+  }, [tab, isMobileView, setTab]);
 
   const hideMobileBottomNavForChat = isMobileView && tab === "beskeder" && mobileConversationOpen;
   const hideMobileBottomNavForKampeDetail = isMobileView && isKampeDetailRoute(location.pathname);
@@ -1525,8 +1488,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       {/* Tab strip */}
       <div className="pm-tab-strip" style={{ background: theme.surface, borderBottom: "1px solid " + theme.border }}>
-        {primaryTabs.map(t => {
-          const active = tab === t.id;
+        {navTabs.map(t => {
+          const active = isNavTabActive(t.id);
           const tabAttention = Boolean(t.attention && !active);
           return (
           <button key={t.id} type="button" className="pm-tab-strip-btn" data-active={active ? "true" : "false"} title={t.label} aria-label={t.label} data-tour={`tab-${t.id}`} onClick={() => setTab(t.id)} style={tabBtnStyle(active)} aria-current={active ? "page" : undefined}>
@@ -1544,6 +1507,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span className="pm-tab-label">{t.label}</span>
           </button>
         );})}
+        {!isMobileView && (
+          <button type="button" className="pm-spil-btn pm-spil-btn--strip" data-tour="tab-spil" onClick={openSpil}>
+            Spil
+          </button>
+        )}
 
         {!isMobileView && (
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", paddingLeft: "8px", flexShrink: 0 }}>
@@ -1594,6 +1562,24 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive onCreatePanelChange={setKampeCreatePanelOpen} />}
             {tab === "ranking"  && <RankingTabLazy user={user} />}
+            {tab === "mere" && (
+              <MereTab
+                user={user}
+                displayName={displayName}
+                email={authUser?.email}
+                unreadMessages={unreadMessages}
+                isAdmin={isAdmin}
+                adminAttentionCount={adminAttentionCount}
+                dark={dark}
+                onToggleDark={() => setDark((d) => !d)}
+                setTab={setTab}
+                onStartTour={startTour}
+                onOpenFeedback={openFeedbackModal}
+                onOpenAdmin={() => void openAdminPanel()}
+                onShowLanding={() => navigate("/?forside=1")}
+                onLogout={onLogout}
+              />
+            )}
             {tab === "beskeder" && (
               <BeskedTabLazy
                 user={user}
@@ -1648,7 +1634,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
           closeTour("Guide gennemført. God fornøjelse!");
           setTab("hjem");
         }}
-        zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
 
       {welcomeOpen && isValidCityPlace(user) && (
@@ -1851,127 +1836,25 @@ export function DashboardPage({ user, onLogout, showToast }) {
         </AppModal>
       )}
 
-      {mobileMoreVisible && !mobileMoreTourActive && (
-        <button
-          type="button"
-          aria-label="Luk menu"
-          className="pm-mobile-more-backdrop"
-          onClick={() => setMobileMoreOpen(false)}
-        />
-      )}
-      {mobileMoreVisible && (
-        <div data-tour="mobile-more-sheet" className={mobileMoreTourActive ? 'pm-mobile-more-sheet pm-mobile-more-sheet--tour' : 'pm-mobile-more-sheet'}>
-          {/* User profile header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid ' + theme.border }}>
-            <AvatarCircle avatar={user?.avatar} size={44} emojiSize="20px" style={{ background: theme.accentBg, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
-              <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authUser?.email}</div>
-            </div>
-            {user ? (
-              <>
-                <span style={tag(theme.accentBg, theme.accent)}>
-                  ELO {Math.round(Number(user.elo_rating) || 1000)}
-                </span>
-                {user?.level != null && user.level !== '' ? (
-                  <span style={tag(theme.amberBg, theme.amberText)}>
-                    Niveau {formatPlaytomicLevel(user.level)}
-                  </span>
-                ) : null}
-              </>
-            ) : null}
-          </div>
-          {mobileMoreTabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className="pm-mobile-more-row"
-              onClick={() => handleTabPress(t.id, { fromMoreSheet: true })}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
-                {t.icon}
-                {t.label}
-                {t.badge && (
-                  <span style={{ background: theme.redSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
-                    {t.badge > 9 ? "9+" : t.badge}
-                  </span>
-                )}
-              </span>
-            </button>
-          ))}
-          <button
-            type="button"
-            className="pm-mobile-more-row"
-            onClick={() => setDark((d) => !d)}
-            aria-pressed={dark}
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {dark ? <Moon size={16} /> : <Sun size={16} />}
-              Mørk tilstand
-            </span>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: dark ? theme.accent : theme.textMid }}>
-              {dark ? "Til" : "Fra"}
-            </span>
-          </button>
-          <button
-            type="button"
-            className="pm-mobile-more-row"
-            onClick={openFeedbackModal}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Bug size={16} />
-              Rapportér fejl
-            </span>
-          </button>
-          <button
-            type="button"
-            className="pm-mobile-more-row"
-            onClick={() => {
-              setMobileMoreOpen(false);
-              startTour();
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Compass size={16} />
-              Start guide
-            </span>
-          </button>
-          <button
-            type="button"
-            className="pm-mobile-more-row"
-            onClick={() => {
-              setMobileMoreOpen(false);
-              navigate("/?forside=1");
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <ExternalLink size={16} />
-              Se forsiden
-            </span>
-          </button>
-          <button
-            type="button"
-            className="pm-mobile-more-row pm-mobile-more-logout"
-            onClick={() => {
-              setMobileMoreOpen(false);
-              onLogout();
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <LogOut size={16} />
-              Log ud
-            </span>
-          </button>
-        </div>
-      )}
-
       {!hideMobileBottomNav && (
-      <nav className={mobileMoreTourActive ? 'pm-mobile-bottom-nav pm-mobile-bottom-nav--tour' : 'pm-mobile-bottom-nav'} aria-label="Mobil navigation">
-        {mobilePrimaryTabs.map((t) => {
-          const active = tab === t.id && !mobileMoreVisible;
+      <nav className="pm-mobile-bottom-nav pm-nav-v4" aria-label="Mobil navigation">
+        {[...navTabs.slice(0, 2), null, ...navTabs.slice(2)].map((t) => {
+          if (!t) {
+            return (
+              <button
+                key="spil"
+                type="button"
+                className="pm-spil-btn"
+                data-tour="mobile-tab-spil"
+                onClick={openSpil}
+                aria-label="Spil: opret en kamp"
+              >
+                Spil
+              </button>
+            );
+          }
+          const active = isNavTabActive(t.id);
           const tabAttention = Boolean(t.attention && !active);
-          const mobileTabColor = active ? theme.accent : theme.textMid;
           return (
             <button
               key={t.id}
@@ -1980,14 +1863,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
               data-active={active ? "true" : "false"}
               onClick={() => handleTabPress(t.id)}
               className="pm-mobile-bottom-btn"
-              aria-label={t.label}
+              aria-label={t.badge ? `${t.label} (${t.badge})` : t.label}
               aria-current={active ? "page" : undefined}
-              title={t.label}
             >
-              <span className="pm-mobile-bottom-icon-wrap" style={{ color: mobileTabColor }}>
+              <span className="pm-mobile-bottom-icon-wrap">
                 {t.icon}
                 {t.badge && (
-                  <span className="pm-mobile-bottom-badge">
+                  <span className="pm-mobile-bottom-badge" aria-hidden>
                     {t.badge > 9 ? "9+" : t.badge}
                   </span>
                 )}
@@ -1995,39 +1877,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   <span style={{ position: "absolute", top: "-3px", right: "-4px", width: "8px", height: "8px", borderRadius: "50%", background: theme.red }} />
                 )}
               </span>
-              <span
-                className="pm-mobile-bottom-label"
-                style={{ color: mobileTabColor, fontWeight: active ? 700 : 500 }}
-              >
-                {t.label}
-              </span>
+              <span className="pm-mobile-bottom-label">{t.label}</span>
             </button>
           );
         })}
-        <button
-          type="button"
-          data-tour="mobile-tab-mere"
-          data-active={mobileMoreIsActive || mobileMoreOpen ? "true" : "false"}
-          onClick={() => setMobileMoreOpen((open) => !open)}
-          className="pm-mobile-bottom-btn"
-          aria-label="Mere"
-          title="Mere"
-        >
-          <span className="pm-mobile-bottom-icon-wrap">
-            <MoreHorizontal size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
-            {mobileMoreBadge > 0 && (
-              <span className="pm-mobile-bottom-badge">
-                {mobileMoreBadge > 9 ? "9+" : mobileMoreBadge}
-              </span>
-            )}
-          </span>
-          <span
-            className="pm-mobile-bottom-label"
-            style={{ color: mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid, fontWeight: mobileMoreIsActive || mobileMoreOpen ? 700 : 500 }}
-          >
-            Mere
-          </span>
-        </button>
       </nav>
       )}
     </div>

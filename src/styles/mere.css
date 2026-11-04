@@ -1,0 +1,274 @@
+/* ── Mere-siden (redesign v4) ── */
+
+.pm-mere {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 24px;
+}
+
+/* Profilkortet: omvendte farver (blaek paa papir i lys tilstand, papir paa blaek i moerk). */
+.pm-mere-profile {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-areas:
+    'avatar text'
+    'go go';
+  gap: 12px 14px;
+  align-items: center;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--pm-text);
+  color: var(--pm-bg);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.pm-mere-profile:active { transform: scale(0.98); }
+.pm-mere-profile > :first-child { grid-area: avatar; }
+.pm-mere-profile-text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pm-mere-profile-name {
+  font-family: var(--pm-font-brand);
+  text-transform: uppercase;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  font-synthesis: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-mere-profile-email {
+  font-size: 13px;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-mere-profile-stats {
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--pm-ball);
+}
+[data-theme="dark"] .pm-mere-profile-stats { color: var(--pm-accent-solid); }
+.pm-mere-profile-go {
+  grid-area: go;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pm-bg) 12%, transparent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Genveje */
+.pm-mere-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-mere-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: 14px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms ease-out, border-color 160ms ease, background-color 160ms ease;
+}
+.pm-mere-tile:active { transform: scale(0.97); }
+.pm-mere-tile-icon { color: var(--pm-accent); display: flex; }
+.pm-mere-tile-label { font-weight: 600; font-size: 14px; }
+.pm-mere-tile-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+
+/* Grupper med linjer */
+.pm-mere-group { margin-top: 12px; }
+.pm-mere-group-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+}
+.pm-mere-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1.5px solid var(--pm-text);
+}
+.pm-mere-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--pm-border);
+  background: transparent;
+  color: var(--pm-text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.pm-mere-row:active { background: var(--pm-surface-muted); }
+.pm-mere-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pm-mere-row-icon { display: flex; color: var(--pm-text-mid); }
+.pm-mere-row-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pm-text-light);
+  flex-shrink: 0;
+}
+.pm-mere-row-value {
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+.pm-mere-row[aria-pressed="true"] .pm-mere-row-value { color: var(--pm-accent); }
+
+.pm-mere-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  margin-top: 20px;
+  border: 1.5px solid var(--pm-text);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--pm-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 120ms ease-out, background-color 160ms ease;
+}
+.pm-mere-logout:active { transform: scale(0.98); }
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-mere-tile:hover { border-color: var(--pm-text-light); }
+  .pm-mere-row:hover { background: var(--pm-surface-alt); }
+  .pm-mere-logout:hover { background: var(--pm-surface); }
+}
+
+@media (min-width: 769px) {
+  .pm-mere-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .pm-mere-profile {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-areas: 'avatar text go';
+  }
+}
+
+/* ── Bundmenu: Hjem · Kampe · Spil · Makkere · Mere ── */
+@media (max-width: 768px) {
+  .pm-mobile-bottom-nav.pm-nav-v4 {
+    grid-template-columns: 1fr 1fr 84px 1fr 1fr;
+    align-items: end;
+    background: color-mix(in srgb, var(--pm-bg) 94%, transparent);
+    box-shadow: none;
+  }
+  .pm-nav-v4 .pm-mobile-bottom-btn[data-active="true"] { color: var(--pm-text); }
+  .pm-nav-v4 .pm-mobile-bottom-btn[data-active="true"]::after { background: var(--pm-accent-solid); }
+  .pm-nav-v4 .pm-mobile-bottom-label { font-size: 11px; }
+}
+
+/* Spil-knappen: den eneste store handling i menuen. Ingen evig puls: den ses hele tiden. */
+.pm-spil-btn {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-top: -30px;
+  border: 5px solid var(--pm-bg);
+  border-radius: 50%;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-brand);
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-synthesis: none;
+  cursor: pointer;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--pm-accent-solid) 35%, transparent);
+  transition: transform 120ms ease-out, background-color 160ms ease;
+}
+.pm-spil-btn:active { transform: scale(0.94); }
+
+/* Paa computer: Spil som knap i fane-baandet */
+.pm-spil-btn--strip {
+  width: auto;
+  height: 40px;
+  margin: 0 0 0 4px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 18px;
+  align-self: center;
+  box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pm-spil-btn:hover { background: color-mix(in srgb, var(--pm-accent-solid) 86%, black); }
+}
+
+/* Tal paa menuen i lerfarven, som paa Beskeder-feltet. Roed er til fejl og advarsler. */
+.pm-nav-v4 .pm-mobile-bottom-badge {
+  background: var(--pm-accent-solid);
+  border-color: var(--pm-bg);
+}
+
+/* Reducér bevægelse: de to evige animationer (live-prik og "skriver...") staar stille. */
+@media (prefers-reduced-motion: reduce) {
+  .pm-live-dot,
+  .pm-chat-v2-typing-dot,
+  .pm-spil-btn,
+  .pm-mere-tile,
+  .pm-mere-profile {
+    animation: none !important;
+    transition: none !important;
+  }
+}

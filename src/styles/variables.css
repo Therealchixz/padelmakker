@@ -291,6 +291,38 @@ a:focus-visible {
   transform: translate(-50%, -50%);
 }
 
+/* ── Foeles som en app paa telefonen (skill: mobile-native) ── */
+html {
+  /* Ingen graa/blaa flash naar man trykker; knapperne har deres egen :active-feedback. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role="button"] {
+  /* Tryk reagerer med det samme (ingen ventetid paa dobbelttryk-zoom). */
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+[role="tab"] {
+  /* Et langt tryk paa en knap markerer ikke dens tekst. Indhold kan stadig kopieres. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (pointer: coarse) {
+  /* iPhone zoomer ind paa felter med tekst under 16px og zoomer ikke ud igen.
+     !important fordi mange felter faar 14px direkte i koden (inputStyle). */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 /* ── Base colors for html/body ── */
 html, body {
   background: var(--pm-bg);

@@ -7,10 +7,11 @@ import { dirname, join } from 'node:path';
 const dir = dirname(fileURLToPath(import.meta.url));
 const read = (rel) => readFileSync(join(dir, rel), 'utf8');
 
-test('Sprint B: mobil primary includes Beskeder, Baner i Mere', () => {
+test('Redesign v4: Beskeder, Baner og Rangliste ligger under Mere', () => {
   const dash = read('../../src/dashboard/DashboardPage.jsx');
-  assert.match(dash, /mobilePrimaryTabIds = \["hjem", "makkere", "kampe", "beskeder"\]/);
-  assert.match(dash, /Baner, Rangliste, Profil/);
+  const mere = read('../../src/dashboard/MereTab.jsx');
+  assert.match(dash, /moreTabIds = \["mere", "beskeder", "baner", "ranking", "profil", "admin"\]/);
+  assert.match(mere, /label="Beskeder"[\s\S]*label="Rangliste"[\s\S]*label="Baner"/);
 });
 
 test('Sprint B: Americano create labels are aligned', () => {

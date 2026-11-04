@@ -11,17 +11,17 @@ const profil = readFileSync(join(dir, '../../src/dashboard/ProfilTab.jsx'), 'utf
 
 const overlay = readFileSync(join(dir, '../../src/components/GuidedTourOverlay.jsx'), 'utf8');
 
-test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
+test('tour shows Spil and the Mere page and scrolls activity/profile to top', () => {
   assert.match(dash, /TOUR_VERSION = 4/);
-  assert.match(dash, /mobile-more-sheet/);
-  assert.match(dash, /mobileMoreTourActive/);
-  assert.match(dash, /selectors: \['\[data-tour="mobile-more-sheet"\]', '\[data-tour="mobile-tab-mere"\]'\]/);
-  assert.match(dash, /mobileMoreVisible && !mobileMoreTourActive/);
-  assert.match(dash, /pm-mobile-bottom-nav--tour/);
+  // Redesign v4: Mere er en side, ikke en skuffe. Guiden peger paa Spil og Mere i menuen.
+  assert.doesNotMatch(dash, /mobile-more-sheet/);
+  assert.match(dash, /id: 'spil',\s*selector: tabTourSelector\('spil'\)/);
+  assert.match(dash, /id: 'mere',\s*tab: 'mere',\s*selector: tabTourSelector\('mere'\)/);
+  assert.match(dash, /data-tour="mobile-tab-spil"/);
   assert.match(dash, /hideMobileBottomNavForKampeDetail[\s\S]*isKampeDetailRoute\(location\.pathname\)/);
   assert.match(dash, /hideMobileBottomNavForChat \? " pm-dash-main--chat"/);
   assert.match(dash, /hideMobileBottomNavForKampeDetail \? " pm-dash-main--kampe-detail"/);
-  assert.match(dash, /const active = tab === t\.id && !mobileMoreVisible/);
+  assert.match(dash, /const active = isNavTabActive\(t\.id\)/);
   assert.match(dash, /scrollBlock: 'start'/);
   assert.match(dash, /waitForMount: true/);
   assert.doesNotMatch(dash, /tourForceOpen=\{tourOnNotificationStep\}/);

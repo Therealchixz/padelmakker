@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { syncThemeColorWithTheme } from './themeColor';
 
 /** Har besøgende selv valgt lys/mørk? Ellers følger vi telefonens/computerens indstilling. */
 function readStoredTheme() {
@@ -30,6 +31,8 @@ export function useDarkMode() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    // Forsiden har sin egen faste moerke farve; den saetter den selv.
+    if (!document.querySelector('.pm-lp')) syncThemeColorWithTheme();
     if (firstRun.current) {
       firstRun.current = false;
       if (!hadStoredChoice.current) return;

@@ -10,6 +10,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { formatMatchDateDa, formatTimeSlotDa } from '../lib/matchDisplayUtils';
 import { buildPublicTournamentPath } from '../lib/publicShareRoutes';
 import { LANDING_STORY_STEPS } from '../components/landing/LandingStoryScreens';
+import { setThemeColor, syncThemeColorWithTheme, THEME_COLOR_INK } from '../lib/themeColor';
 import '../styles/landing.css';
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -69,6 +70,12 @@ export function LandingPage() {
   const revealRef = useRef(null);
   const revealImgRef = useRef(null);
   const revealTextRef = useRef(null);
+
+  // Statusbjaelken paa telefonen skal vaere moerk som forsiden, og skifte tilbage naar man gaar videre.
+  useEffect(() => {
+    setThemeColor(THEME_COLOR_INK);
+    return () => syncThemeColorWithTheme();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

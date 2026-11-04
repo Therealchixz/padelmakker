@@ -11,12 +11,13 @@ Brug design-skillsene i `.claude/skills/`, når du designer eller ændrer hjemme
 - **design-taste-frontend** (taste-skill): kunstnerisk retning for offentlige sider (forside, events, om, FAQ) og nye skærme. PadelMakker har allerede et brand, så kør altid `draw.mjs` med `--keep palette,type`.
 - **Emil Kowalskis skills**: `animate`, `review-animations`, `improve-animations`, `find-animation-opportunities`, `remove-animations`, `choreograph` og `animation-performance` til bevægelse. `mobile-native` gør, at appen føles som en app på telefonen. `break-ui` tester sider med ekstreme data. `emil-design-eng` og `apple-design` dækker detaljer og finish.
 
-Ejerens tidligere valg går altid forud for en skills egen husstil:
+Ejerens valg går altid forud for en skills egen husstil. Ejeren valgte 4. nov. 2026 redesignet fra Claude Design-prototypen "PadelMakker Prototype v4" (bygges i trin, se `PRODUCT.md`). Prototypen er en retning, ikke en skabelon, der skal følges 100 %:
 
+- farver: papir (`--pm-bg`), blæk (`--pm-ink`) og lerfarve (`--pm-accent-solid`, `--pm-clay`) i stedet for navy
+- skrift: Anton (versaler) på overskrifter på de offentlige sider (`.pm-brand`), Instrument Sans til tekst, IBM Plex Mono kun til tal og tider
 - det gamle baggrundsfoto på forsiden (ikke en tegnet bane)
-- skriften Bricolage Grotesque på overskrifter (`.pm-brand`)
-- orange accent (`--pm-orange`) og navy som hovedfarve
 - padel-ikonet "B" (skrå, fyldt ketsjer) som standardbillede
-- den fælles toplinje (`ScreenHeader`) på appens hovedsider
+- den fælles toplinje (`ScreenHeader`) på appens hovedsider, sammen med bundmenuen Hjem · Kampe · Spil · Makkere · Mere
+- kun rigtige tal og navne på offentlige sider; eksempeldata mærkes "Eksempel"
 
 Spørg ejeren, før du laver store om-designs eller skifter farver, skrift eller billeder.
