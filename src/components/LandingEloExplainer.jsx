@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
 import {
   formatEloDelta,
@@ -95,8 +96,11 @@ export function LandingEloExplainer() {
             Hver kamp gør din næste kamp mere fair
           </h2>
           <p>
-            2v2-ELO opdateres med individuel forventning, dynamisk K-værdi og sejrsmargin.
-            Turnerings-ELO (Americano/Mexicano) holdes separat, så formaterne påvirker ikke hinanden.
+            Din rating går op, når du vinder, og mest når du slår et stærkere hold. Modstanderne bekræfter resultatet, før
+            noget ændres. Turneringer har deres egen rating.
+          </p>
+          <p>
+            <Link to="/elo" className="pm-landing-elo-link">Sådan beregnes det →</Link>
           </p>
         </div>
 

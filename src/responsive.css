@@ -12103,3 +12103,73 @@ button,
 .pm-brand h2 {
   text-wrap: balance;
 }
+
+/* FAQ: spørgsmål som fold-ud. Kort liste at skimme; svaret når man trykker. */
+.pm-faq-item {
+  border-bottom: 1px solid var(--pm-border);
+}
+.pm-faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pm-text);
+  line-height: 1.35;
+}
+.pm-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.pm-faq-item summary::after {
+  content: '';
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--pm-text-light);
+  border-bottom: 2px solid var(--pm-text-light);
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform 0.2s ease;
+}
+.pm-faq-item[open] summary::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+.pm-faq-answer {
+  padding: 0 0 16px;
+  color: var(--pm-text-mid);
+}
+.pm-faq-answer p {
+  margin: 0 0 10px;
+}
+.pm-faq-answer p:last-child {
+  margin-bottom: 0;
+}
+.pm-faq-answer ul {
+  margin: 0 0 10px;
+  padding-left: 1.25rem;
+}
+.pm-faq-answer li {
+  margin-bottom: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-faq-item summary::after {
+    transition: none;
+  }
+}
+
+.pm-landing-elo-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--pm-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+.pm-landing-elo-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
