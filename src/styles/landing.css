@@ -591,12 +591,12 @@ html:has(.pm-lp) body {
   height: 100%;
   object-fit: cover;
 }
-/* Samme foto som toppen, men et helt andet udsnit: taet paa spillerne og bolden. */
+/* Samme foto som toppen, men et andet udsnit: tilskuerne og lyset i hallens venstre side. */
 .pm-lp-reveal-img img {
-  width: 190%;
+  width: 230%;
   max-width: none;
-  margin-left: -78%;
-  object-position: 70% 55%;
+  margin-left: 0;
+  object-position: 0% 45%;
 }
 .pm-lp-reveal::after {
   content: '';
@@ -841,6 +841,7 @@ html:has(.pm-lp) body {
   .pm-lp-story-bar,
   .pm-lp-story-count,
   .pm-lp-story-stage { display: none; }
+  .pm-lp-story-body { display: block; }
   .pm-lp-story-copy { min-height: 0; display: grid; gap: 40px; }
   .pm-lp-story-step { position: static; opacity: 1; transform: none !important; transition: none; }
   .pm-lp-story-step-screen {
@@ -857,4 +858,16 @@ html:has(.pm-lp) body {
   .pm-lp-reveal { clip-path: none; }
   .pm-lp-reveal-img { transform: none; }
   .pm-lp [data-lp-reveal] { opacity: 1; transform: none; transition: none; }
+
+  @media (min-width: 960px) {
+    .pm-lp-story-step {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      column-gap: 48px;
+      align-items: center;
+    }
+    .pm-lp-story-step-screen { grid-row: span 2; margin-bottom: 0; }
+    .pm-lp-story-step h3 { align-self: end; }
+    .pm-lp-story-step p { align-self: start; }
+  }
 }
