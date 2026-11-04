@@ -3,7 +3,7 @@
  * for spillere uden eget profilbillede. Ejeren 4. nov. 2026: "Et padel-ikon" i stedet
  * for tennis-emojien 🎾. Samme stregtykkelse som lucide-ikonerne i resten af appen.
  */
-export function PadelRacketIcon({ size = 24, strokeWidth = 2, title, style }) {
+export function PadelRacketIcon({ size = 24, strokeWidth = 2, title = '', style = {} }) {
   return (
     <svg
       width={size}
