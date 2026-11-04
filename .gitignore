@@ -26,3 +26,6 @@ supabase/.temp/
 .impeccable/live/
 .impeccable/history/
 .impeccable/config.local.json
+
+# taste-skill (designværktøj): lokale arbejdsfiler
+.taste-skill/
