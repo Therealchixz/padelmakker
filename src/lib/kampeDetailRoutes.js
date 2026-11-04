@@ -17,6 +17,7 @@ const DASHBOARD_TABS = new Set([
   'liga',
   'beskeder',
   'profil',
+  'mere',
   'kamp-filter',
   'makker-filter',
   'admin',

@@ -14,6 +14,10 @@ import {
 } from '../../src/lib/kampeDetailRoutes.js';
 
 describe('kampeDetailRoutes', () => {
+  it('parseDashboardTab kender Mere-siden (redesign v4)', () => {
+    assert.equal(parseDashboardTab('/dashboard/mere'), 'mere');
+  });
+
   it('parseDashboardTab treats nested kampe paths as kampe tab', () => {
     assert.equal(parseDashboardTab('/dashboard/kampe/2v2/abc'), 'kampe');
     assert.equal(parseDashboardTab('/dashboard/hjem'), 'hjem');
