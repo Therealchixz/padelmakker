@@ -31,7 +31,7 @@ import { validateFirstLastName, canAccessDashboard, isValidProfileRegion, toPers
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 import { checkPasswordBreached, BREACHED_PASSWORD_MESSAGE } from '../lib/passwordBreachCheck';
-import { mapAuthErrorMessage } from '../lib/authErrorMessages';
+import { mapAuthErrorMessage, authErrorSuggestsLogin } from '../lib/authErrorMessages';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import {
   scrollFormFieldIntoView,
@@ -80,6 +80,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
+  const [errSuggestsLogin, setErrSuggestsLogin] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showFineTune, setShowFineTune] = useState(false);
   const [showLevelQuiz, setShowLevelQuiz] = useState(false);
@@ -367,7 +368,7 @@ export function OnboardingPage() {
       return;
     }
 
-    setSubmitting(true); setErr("");
+    setSubmitting(true); setErr(""); setErrSuggestsLogin(false);
     /*
       GDPR art. 7 stk. 1: vi skal kunne PAAVISE accepten, ikke bare kraeve
       den. Feltet er sendt med i user_metadata, hvor en database-trigger
@@ -517,7 +518,8 @@ export function OnboardingPage() {
       });
     } catch (e) {
       const raw = String(e?.message || '');
-      const authMapped = mapAuthErrorMessage(raw, 'login');
+      const authMapped = mapAuthErrorMessage(raw, 'signup');
+      setErrSuggestsLogin(authErrorSuggestsLogin(raw));
       setErr(
         authMapped !== raw
           ? authMapped
@@ -549,7 +551,13 @@ export function OnboardingPage() {
         <>
           <OAuthButtons redirectPath="/opret" disabled={submitting} onError={setErr} />
           <p style={{ fontSize: "12px", color: theme.textLight, margin: "0 0 10px", lineHeight: 1.5, textAlign: "center" }}>
-            Google sparer dig for adgangskode — SMS-bekræftelse kræves stadig.
+            Google sparer dig for adgangskode. SMS-bekræftelse kræves stadig.
+          </p>
+          <p style={{ fontSize: "13px", color: theme.textMid, margin: "0 0 6px", textAlign: "center" }}>
+            Har du allerede en profil?{" "}
+            <Link to="/login" style={{ color: theme.accent, fontWeight: 600, display: "inline-flex", alignItems: "center", minHeight: "44px", padding: "0 4px" }}>
+              Log ind
+            </Link>
           </p>
           <AuthDivider />
         </>
@@ -1183,9 +1191,19 @@ export function OnboardingPage() {
 
         {steps[step]}
 
-        {err && (
-          <p style={{ color: theme.red, fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5, marginTop: "14px" }}>{err}</p>
-        )}
+        <div role="alert">
+          {err && (
+            <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, lineHeight: 1.5, marginTop: "14px" }}>
+              {err}
+              {errSuggestsLogin && (
+                <>
+                  {" "}
+                  <Link to="/login" style={{ color: theme.accent, fontWeight: 700 }}>Log ind i stedet</Link>
+                </>
+              )}
+            </p>
+          )}
+        </div>
         {step < 3 && missingRequirements.length > 0 && (
           <div
             ref={missingRequirementsRef}

@@ -27,8 +27,11 @@ function cleanOtp(raw) {
 }
 
 /** 6-felts SMS-kode med auto-advance, backspace og indsæt (paste) af hele koden. */
-function OtpBoxes({ value, onChange, onComplete, disabled }) {
+function OtpBoxes({ value, onChange, onComplete, disabled, invalid, focusFirstNonce }) {
   const refs = useRef([])
+  useEffect(() => {
+    if (focusFirstNonce) refs.current[0]?.focus()
+  }, [focusFirstNonce])
   const digits = Array.from({ length: 6 }, (_, i) => value[i] || '')
 
   const setAt = (i, d) => {
@@ -69,7 +72,7 @@ function OtpBoxes({ value, onChange, onComplete, disabled }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 14 }} role="group" aria-label="6-cifret SMS-kode">
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 10, width: '100%' }} role="group" aria-label="6-cifret SMS-kode">
       {digits.map((d, i) => (
         <input
           key={i}
@@ -78,20 +81,24 @@ function OtpBoxes({ value, onChange, onComplete, disabled }) {
           inputMode="numeric"
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           aria-label={`Ciffer ${i + 1}`}
+          aria-invalid={invalid || undefined}
           value={d}
           disabled={disabled}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onFocus={(e) => e.target.select()}
           style={{
-            width: 44,
-            height: 54,
+            // Passer til en 390 px skærm: seks felter må højst fylde kortets bredde.
+            flex: '1 1 0',
+            minWidth: 0,
+            maxWidth: 52,
+            height: 56,
             textAlign: 'center',
             fontSize: 22,
             fontWeight: 700,
             fontFamily: font,
             color: theme.text,
-            border: `2px solid ${d ? theme.accent : theme.border}`,
+            border: `2px solid ${invalid ? theme.red : d ? theme.accent : theme.border}`,
             borderRadius: 12,
             background: theme.surface,
             outline: 'none',
@@ -153,6 +160,10 @@ export function PhoneVerificationPage() {
   const [info, setInfo] = useState('')
   const [resendAtMs, setResendAtMs] = useState(0)
   const [nowMs, setNowMs] = useState(Date.now())
+  const [codeInvalid, setCodeInvalid] = useState(false)
+  const [focusFirstNonce, setFocusFirstNonce] = useState(0)
+  /** Google-brugere (telefonskift) kan rette nummeret her; ved almindelig oprettelse starter man forfra. */
+  const [editPhone, setEditPhone] = useState(false)
 
   const phoneFromState = useMemo(
     () => normalizePhoneToE164(location.state?.phone),
@@ -179,7 +190,7 @@ export function PhoneVerificationPage() {
       setPendingEmail(String(user?.email || '').trim())
       if (phoneFromState) {
         setOtpSent(true)
-        setInfo(`SMS-kode blev sendt til ${maskPhone(phoneFromState)}.`)
+        setResendAtMs(Date.now() + 60_000)
       }
       return
     }
@@ -192,7 +203,8 @@ export function PhoneVerificationPage() {
       setPendingPhone(phoneFromState)
       setPendingEmail(emailFromState)
       setOtpSent(true)
-      setInfo(`SMS-kode blev sendt til ${maskPhone(phoneFromState)}.`)
+      // Koden er lige sendt: vent 60 s før "Send kode igen", så en ny kode ikke erstatter den første.
+      setResendAtMs(Date.now() + 60_000)
       return
     }
 
@@ -258,7 +270,10 @@ export function PhoneVerificationPage() {
       setOtpCode('')
       setResendAtMs(Date.now() + 60_000)
       setNowMs(Date.now())
-      setInfo(`SMS-kode sendt til ${maskPhone(normalizedPhone)}.`)
+      setEditPhone(false)
+      setCodeInvalid(false)
+      setFocusFirstNonce((n) => n + 1)
+      setInfo(`Ny kode sendt til ${maskPhone(normalizedPhone)}.`)
       clearPrefillPhone()
       if (turnstileEnabled) {
         setCaptchaToken('')
@@ -366,6 +381,10 @@ export function PhoneVerificationPage() {
       })
     } catch (e) {
       setErr(mapPhoneAuthErrorMessage(e?.message))
+      // Forkert kode: ryd felterne og sæt markøren i første felt, så man kan prøve igen med det samme.
+      setCodeInvalid(true)
+      setOtpCode('')
+      setFocusFirstNonce((n) => n + 1)
     } finally {
       verifyingRef.current = false
       setSubmitting(false)
@@ -373,6 +392,25 @@ export function PhoneVerificationPage() {
   }
 
   const noPendingSignup = mode === 'signup' && !pendingPhone && !normalizedDraftPhone
+  const showPhoneForm = !otpSent || editPhone
+  const startOver = async () => {
+    clearPendingSignup()
+    try { await signOut() } catch { /* ignore */ }
+    navigate('/opret', { replace: true })
+  }
+  const linkBtn = {
+    border: 'none',
+    background: 'transparent',
+    color: theme.accent,
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    minHeight: '44px',
+    padding: '0 4px',
+    textDecoration: 'underline',
+    textUnderlineOffset: '3px',
+  }
 
   return (
     <div
@@ -391,13 +429,19 @@ export function PhoneVerificationPage() {
     >
       <div className="pm-auth-panel pm-auth-panel--centered">
         <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, marginBottom: '10px', letterSpacing: '0.04em' }}>
-          Trin 2 af 3 · SMS-bekræftelse
+          {mode === 'phone_change' ? 'Sidste trin · SMS-kode' : 'Næsten færdig · SMS-kode'}
         </p>
-        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekræft dit telefonnummer</h1>
+        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>
+          {otpSent && !editPhone ? 'Indtast koden fra SMS’en' : 'Bekræft dit telefonnummer'}
+        </h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
-          {mode === 'phone_change'
-            ? 'Indtast telefonnummer og SMS-koden for at fortsætte.'
-            : 'Vi sender en 6-cifret kode på SMS. Indtast den herunder — den udløber efter kort tid.'}
+          {otpSent && !editPhone ? (
+            <>Vi har sendt en 6-cifret kode til <strong style={{ color: theme.text }}>{maskPhone(pendingPhone)}</strong>.</>
+          ) : mode === 'phone_change' ? (
+            'Skriv dit telefonnummer, så sender vi en 6-cifret kode på SMS.'
+          ) : (
+            'Vi sender en 6-cifret kode på SMS. Den bekræfter, at du er en rigtig spiller.'
+          )}
         </p>
 
         {noPendingSignup && (
@@ -406,78 +450,25 @@ export function PhoneVerificationPage() {
           </div>
         )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            void sendCode()
-          }}
-        >
-          <label htmlFor="verify-phone" style={labelStyle}>Telefonnummer</label>
-          <input
-            id="verify-phone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            value={phoneInput}
-            onChange={(e) => {
-              setPhoneInput(e.target.value)
-              setErr('')
-            }}
-            placeholder="Fx 20112233 eller +4520112233"
-            style={{
-              ...inputStyle,
-              marginBottom: normalizedDraftPhone ? '14px' : '6px',
-              border: '1px solid ' + (normalizedDraftPhone || phoneInput.trim().length === 0 ? theme.border : theme.red),
-            }}
-          />
-          {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
-            <p style={{ color: theme.red, fontSize: '12px', marginBottom: '12px', fontWeight: 600 }}>
-              Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
-            </p>
-          )}
-
-          {mode === 'signup' && turnstileEnabled && (
-            <div id="verify-captcha" style={{ marginBottom: '14px' }}>
-              <TurnstileWidget
-                siteKey={turnstileSiteKey}
-                onTokenChange={setCaptchaToken}
-                resetNonce={captchaResetNonce}
-              />
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={submitting || (!canResend && otpSent)}
-            style={{
-              ...btn(true),
-              width: '100%',
-              justifyContent: 'center',
-              marginBottom: '14px',
-              opacity: submitting || (!canResend && otpSent) ? 0.55 : 1,
-              cursor: submitting || (!canResend && otpSent) ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
-          </button>
-        </form>
-
-        {otpSent && (
+        {otpSent && !editPhone && (
           <form
             onSubmit={(e) => {
               e.preventDefault()
               void verifyCode()
             }}
           >
-            <div id="verify-otp" style={labelStyle}>SMS-kode (6 cifre)</div>
-            <p style={{ fontSize: '12px', color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-              Koden står i SMS’en fra os. Kommer den ikke frem, vent et minut og tryk «Send kode igen».
-            </p>
+            <div id="verify-otp" />
             <OtpBoxes
               value={otpCode}
               disabled={submitting}
-              onChange={(v) => { setOtpCode(v); setErr('') }}
+              invalid={codeInvalid}
+              focusFirstNonce={focusFirstNonce}
+              onChange={(v) => { setOtpCode(v); setErr(''); setCodeInvalid(false) }}
               onComplete={(code) => { void verifyCode(code) }}
             />
+            <div role="alert" aria-live="assertive" style={{ minHeight: err ? undefined : 0 }}>
+              {err && <p style={{ color: theme.red, fontSize: '13.5px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
+            </div>
             <button
               type="submit"
               disabled={submitting}
@@ -489,8 +480,111 @@ export function PhoneVerificationPage() {
                 cursor: submitting ? 'not-allowed' : 'pointer',
               }}
             >
-              {submitting ? 'Bekræfter...' : 'Bekræft telefonnummer'}
+              {submitting ? 'Bekræfter…' : 'Bekræft telefonnummer'}
             </button>
+            {info && <p role="status" style={{ color: theme.accent, fontSize: '13px', marginTop: '12px', fontWeight: 600, lineHeight: 1.45 }}>{info}</p>}
+          </form>
+        )}
+
+        {otpSent && !editPhone && (
+          <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: `1px solid ${theme.border}` }}>
+            <p style={{ fontSize: '13px', color: theme.textMid, margin: '0 0 4px', lineHeight: 1.5 }}>
+              Ingen SMS? Det kan tage op til et minut.
+            </p>
+            {canResend && mode === 'signup' && turnstileEnabled && (
+              <div id="verify-captcha" style={{ margin: '8px 0' }}>
+                <TurnstileWidget
+                  siteKey={turnstileSiteKey}
+                  onTokenChange={setCaptchaToken}
+                  resetNonce={captchaResetNonce}
+                />
+              </div>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0 12px' }}>
+              <button
+                type="button"
+                onClick={() => { void sendCode() }}
+                disabled={submitting || !canResend}
+                style={{ ...linkBtn, color: canResend ? theme.accent : theme.textLight, cursor: canResend ? 'pointer' : 'default', textDecoration: canResend ? 'underline' : 'none' }}
+              >
+                {canResend ? 'Send kode igen' : `Send ny kode om ${resendSeconds} s`}
+              </button>
+              {mode === 'phone_change' ? (
+                <button type="button" onClick={() => { setEditPhone(true); setErr('') }} style={linkBtn}>
+                  Forkert nummer?
+                </button>
+              ) : (
+                <button type="button" onClick={() => { void startOver() }} style={linkBtn}>
+                  Forkert nummer? Start forfra
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showPhoneForm && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void sendCode()
+            }}
+          >
+            <label htmlFor="verify-phone" style={labelStyle}>Telefonnummer</label>
+            <input
+              id="verify-phone"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              value={phoneInput}
+              onChange={(e) => {
+                setPhoneInput(e.target.value)
+                setErr('')
+              }}
+              placeholder="Fx 20112233 eller +4520112233"
+              aria-invalid={(!normalizedDraftPhone && phoneInput.trim().length > 0) || undefined}
+              aria-describedby="verify-phone-error"
+              style={{
+                ...inputStyle,
+                marginBottom: normalizedDraftPhone ? '14px' : '6px',
+                border: '1px solid ' + (normalizedDraftPhone || phoneInput.trim().length === 0 ? theme.border : theme.red),
+              }}
+            />
+            {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
+              <p id="verify-phone-error" style={{ color: theme.red, fontSize: '12.5px', marginBottom: '12px', fontWeight: 600 }}>
+                Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
+              </p>
+            )}
+
+            {mode === 'signup' && turnstileEnabled && (
+              <div id="verify-captcha" style={{ marginBottom: '14px' }}>
+                <TurnstileWidget
+                  siteKey={turnstileSiteKey}
+                  onTokenChange={setCaptchaToken}
+                  resetNonce={captchaResetNonce}
+                />
+              </div>
+            )}
+            <div role="alert" aria-live="assertive">
+              {err && <p style={{ color: theme.red, fontSize: '13.5px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
+            </div>
+            <button
+              type="submit"
+              disabled={submitting || (!canResend && otpSent)}
+              style={{
+                ...btn(true),
+                width: '100%',
+                justifyContent: 'center',
+                opacity: submitting || (!canResend && otpSent) ? 0.55 : 1,
+                cursor: submitting || (!canResend && otpSent) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {!otpSent || canResend ? 'Send SMS-kode' : `Send igen om ${resendSeconds} s`}
+            </button>
+            {editPhone && (
+              <button type="button" onClick={() => setEditPhone(false)} style={{ ...linkBtn, width: '100%', marginTop: '6px' }}>
+                Tilbage til koden
+              </button>
+            )}
           </form>
         )}
 
@@ -500,31 +594,6 @@ export function PhoneVerificationPage() {
             næste side. Det er med vilje — så login først virker, når både telefon og email er bekræftet.
           </div>
         )}
-
-        {err && <p style={{ color: theme.red, fontSize: '13px', marginTop: '14px' }}>{err}</p>}
-        {info && <p style={{ color: theme.accent, fontSize: '13px', marginTop: '14px', fontWeight: 600, lineHeight: 1.45 }}>{info}</p>}
-
-        <button
-          type="button"
-          onClick={async () => {
-            clearPendingSignup()
-            try { await signOut() } catch { /* ignore */ }
-            navigate('/login', { replace: true })
-          }}
-          title="Brug dette hvis du vil starte forfra med en anden email eller telefon"
-          style={{
-            marginTop: '18px',
-            border: 'none',
-            background: 'transparent',
-            color: theme.textLight,
-            fontSize: '12px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            width: '100%',
-          }}
-        >
-          Log ud og start forfra
-        </button>
       </div>
 
       <div style={{ width: '100%', maxWidth: '420px', marginTop: '24px' }}>

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapAuthErrorMessage, mapPhoneAuthErrorMessage } from '../../src/lib/authErrorMessages.js';
+import { mapAuthErrorMessage, mapPhoneAuthErrorMessage, authErrorSuggestsLogin } from '../../src/lib/authErrorMessages.js';
 
 describe('mapAuthErrorMessage', () => {
   it('maps invalid login credentials', () => {
@@ -34,7 +34,7 @@ describe('mapAuthErrorMessage', () => {
   it('maps expired OTP for phone', () => {
     assert.equal(
       mapPhoneAuthErrorMessage('Token has expired or is invalid'),
-      'Koden er udløbet. Send en ny SMS-kode og prøv igen.',
+      'Koden passer ikke eller er udløbet. Tjek de 6 cifre — eller send en ny kode.',
     );
   });
 
@@ -52,5 +52,22 @@ describe('mapAuthErrorMessage', () => {
       ),
       /testkonto/,
     );
+  });
+
+  it('signup context: existing account suggests logging in', () => {
+    const msg = mapAuthErrorMessage('User already registered', 'signup');
+    assert.match(msg, /Log ind i stedet/);
+    assert.equal(authErrorSuggestsLogin('User already registered'), true);
+    assert.equal(authErrorSuggestsLogin('Invalid login credentials'), false);
+  });
+
+  it('signup context: unknown snake_case error is not called a login error', () => {
+    assert.doesNotMatch(mapAuthErrorMessage('unexpected_failure', 'signup'), /Login/);
+    assert.doesNotMatch(mapPhoneAuthErrorMessage('unexpected_failure'), /Login/);
+  });
+
+  it('reset context: expired link and same password', () => {
+    assert.match(mapAuthErrorMessage('Auth session missing!', 'reset'), /Linket er udløbet/);
+    assert.match(mapAuthErrorMessage('New password should be different from the old password.', 'reset'), /forskellig/);
   });
 });
