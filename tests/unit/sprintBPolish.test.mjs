@@ -35,8 +35,8 @@ test('Sprint B: BanerTab uses abort + cache TTL', () => {
 
 test('Sprint B: signup copy is honest about funnel', () => {
   const onboarding = read('../../src/pages/OnboardingPage.jsx');
-  // Efter profilen kommer SMS og e-mail — det skal stå på første skærm.
-  assert.match(onboarding, /bagefter bekræfter du med SMS og e-mail/);
+  // Efter profilen kommer en SMS-kode, og så er man inde (e-mail bekræftes senere) — det skal stå på første skærm.
+  assert.match(onboarding, /Fire korte trin og en SMS-kode/);
   assert.doesNotMatch(onboarding, /under 2 minutter/);
   // Antallet i teksten skal passe med trin-stregerne (QA 14. okt. 2026: der stod "Tre trin" over fire streger).
   const stepCount = onboarding.match(/const stepTitles = \[([^\]]*)\]/)[1].split(',').length;

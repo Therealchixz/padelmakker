@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loginCredentialsFromIdentifier, pendingAccountEmail } from '../../src/lib/loginIdentifier.js';
-import { shouldRequireEmailVerification } from '../../src/lib/phoneVerification.js';
+import { shouldRequireEmailVerification, emailAwaitingConfirmation } from '../../src/lib/phoneVerification.js';
 import { hasEnteredEmail } from '../../src/lib/profileCompleteness.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -22,11 +22,18 @@ test('login-feltet tager både mail og telefonnummer', () => {
   assert.deepEqual(loginCredentialsFromIdentifier('1234', 'x'), { email: '1234', password: 'x' });
 });
 
-test('telefon-konto med mail der venter → sendes til mail-siden, ikke ind i appen', () => {
+test('telefon-konto med bekræftet SMS og mail der venter → kommer ind i appen (mail bekræftes senere)', () => {
   const phoneUser = { phone: '4520112233', phone_confirmed_at: '2026-11-01T10:00:00Z', email: '', new_email: 'spiller@mail.dk', email_confirmed_at: null };
   assert.equal(pendingAccountEmail(phoneUser), 'spiller@mail.dk');
-  assert.equal(shouldRequireEmailVerification(phoneUser), true);
+  // Ejerens beslutning 4. nov. 2026: ingen tvungen log ud / e-mail-trin efter SMS.
+  assert.equal(shouldRequireEmailVerification(phoneUser), false);
+  assert.equal(emailAwaitingConfirmation(phoneUser), 'spiller@mail.dk', 'påmindelsen viser mailen');
   assert.equal(hasEnteredEmail(phoneUser), true, 'ikke bedt om at skrive mailen igen');
+});
+
+test('konto uden bekræftet telefon og uden bekræftet mail → skal stadig bekræfte mailen', () => {
+  assert.equal(shouldRequireEmailVerification({ email: 'a@b.dk', email_confirmed_at: null, phone_confirmed_at: null }), true);
+  assert.equal(emailAwaitingConfirmation({ email: 'a@b.dk', email_confirmed_at: '2026-01-01' }), '');
 });
 
 test('bekræftet mail og Google-brugere er uændrede', () => {
