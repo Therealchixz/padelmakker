@@ -221,7 +221,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
           padding: '10px 12px', cursor: 'pointer', background: isSel ? theme.accentBg : 'transparent',
           border: inDropdown ? 'none' : '1.5px solid ' + (isSel ? theme.accent : theme.border),
           borderRadius: inDropdown ? 0 : 12, marginBottom: inDropdown ? 0 : 8,
-          borderBottom: inDropdown ? '1px solid ' + theme.border + '80' : undefined,
+          borderBottom: inDropdown ? '1px solid ' + `color-mix(in srgb, ${theme.border} 50%, transparent)` : undefined,
         }}
       >
         <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
@@ -521,7 +521,7 @@ function RegistrationDetail({
               padding: '7px 12px',
               fontSize: 12,
               color: theme.warm,
-              borderColor: theme.warm + '55',
+              borderColor: `color-mix(in srgb, ${theme.warm} 33%, transparent)`,
               background: theme.warmBg,
               display: 'inline-flex',
               alignItems: 'center',
@@ -774,7 +774,7 @@ function ActiveDetail({
               padding: '7px 12px',
               fontSize: 12,
               color: theme.warm,
-              borderColor: theme.warm + '55',
+              borderColor: `color-mix(in srgb, ${theme.warm} 33%, transparent)`,
               background: theme.warmBg,
               display: 'inline-flex',
               alignItems: 'center',

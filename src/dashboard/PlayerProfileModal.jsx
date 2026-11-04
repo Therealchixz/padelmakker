@@ -349,7 +349,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {/* Profile head — centered, matches mockup */}
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '4px' }}>
           <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
-            <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
+            <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + `color-mix(in srgb, ${theme.accent} 25%, transparent)` }} />
             {pRef.level != null && pRef.level !== '' && (
               <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>

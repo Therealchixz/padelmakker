@@ -41,7 +41,7 @@ export function ResetPasswordPage({ onDone }) {
   };
 
   return (
-    <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
+    <div className="pm-root pm-brand" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-narrow">
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Ny adgangskode</h1>
         <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Vælg din nye adgangskode.</p>

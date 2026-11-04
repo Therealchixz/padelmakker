@@ -312,7 +312,7 @@ export function CreateAmericanoTournamentForm({
               placeholder={`F.eks. Fredags ${formatLabel}`}
               style={{
                 ...inputStyle,
-                ...(step1Error ? { borderColor: theme.red, boxShadow: `0 0 0 1px ${theme.red}44` } : {}),
+                ...(step1Error ? { borderColor: theme.red, boxShadow: `0 0 0 1px color-mix(in srgb, ${theme.red} 27%, transparent)` } : {}),
               }}
               aria-invalid={step1Error ? true : undefined}
               aria-describedby={step1Error ? 'americano-create-name-error' : undefined}

@@ -1124,7 +1124,7 @@ export function OnboardingPage() {
   return (
     <div
       ref={onboardingTopRef}
-      className="pm-root"
+      className="pm-root pm-brand"
       style={{
         fontFamily: font,
         background: theme.bg,

@@ -20,7 +20,7 @@ function BadgeDetailPanel({ badge, onClose }) {
     <div
       style={{
         background: badge.earned ? theme.accentBg : theme.surfaceAlt,
-        border: `1px solid ${badge.earned ? theme.accent + '35' : theme.border}`,
+        border: `1px solid ${badge.earned ? `color-mix(in srgb, ${theme.accent} 21%, transparent)` : theme.border}`,
         borderRadius: 14,
         padding: '14px 14px 12px',
         marginBottom: 14,
@@ -83,7 +83,7 @@ function BadgeDetailPanel({ badge, onClose }) {
               borderRadius: 999,
               background: badge.earned ? theme.greenBg : theme.surface,
               color: badge.earned ? theme.green : theme.textMid,
-              border: `1px solid ${badge.earned ? theme.green + '40' : theme.border}`,
+              border: `1px solid ${badge.earned ? `color-mix(in srgb, ${theme.green} 25%, transparent)` : theme.border}`,
             }}
           >
             {badge.earned ? 'Opnået' : 'Ikke opnået endnu'}

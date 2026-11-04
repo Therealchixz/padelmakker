@@ -173,7 +173,7 @@ export function AdminReportDmViewer({
                       background: fromReported ? theme.redBg : theme.surface,
                       border: `1px solid ${fromReported ? 'var(--pm-danger-border, ' + theme.red + '40)' : theme.border}`,
                       color: theme.text,
-                      boxShadow: nearReport ? `0 0 0 2px ${theme.warm}55` : 'none',
+                      boxShadow: nearReport ? `0 0 0 2px color-mix(in srgb, ${theme.warm} 33%, transparent)` : 'none',
                     }}
                   >
                     {msg.content}

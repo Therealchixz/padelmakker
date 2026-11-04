@@ -339,7 +339,7 @@ export function PendingResultConfirmModal({ user }) {
               padding: '8px 10px',
               background: theme.redBg,
               borderRadius: '8px',
-              border: '1px solid ' + theme.red + '40',
+              border: '1px solid ' + `color-mix(in srgb, ${theme.red} 25%, transparent)`,
             }}
           >
             {error}
@@ -364,7 +364,7 @@ export function PendingResultConfirmModal({ user }) {
               width: '100%',
               justifyContent: 'center',
               color: theme.red,
-              borderColor: theme.red + '55',
+              borderColor: `color-mix(in srgb, ${theme.red} 33%, transparent)`,
               opacity: busy ? 0.6 : 1,
             }}
           >

@@ -1148,7 +1148,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%`}
                       statColor={theme.green}
                       statLabel="sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1167,7 +1167,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%`}
                       statColor={theme.warm}
                       statLabel="nederlag som makker"
-                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 25%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1186,7 +1186,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%`}
                       statColor={theme.green}
                       statLabel="din sejr"
-                      avatarStyle={{ background: theme.greenBg, border: "1px solid " + theme.green + "40" }}
+                      avatarStyle={{ background: theme.greenBg, border: "1px solid " + `color-mix(in srgb, ${theme.green} 25%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1237,7 +1237,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
                       statColor={americanoOutcomeColors.win.text}
                       statLabel="sejr på banen"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1256,7 +1256,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
                       statColor={theme.warm}
                       statLabel="nederlag som makker"
-                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 25%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1297,7 +1297,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%`}
                       statColor={americanoOutcomeColors.win.text}
                       statLabel="din sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1321,7 +1321,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%`}
                       statColor={theme.green}
                       statLabel="sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1340,7 +1340,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%`}
                       statColor={theme.warm}
                       statLabel="nederlag som makker"
-                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 25%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1381,7 +1381,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%`}
                       statColor={theme.green}
                       statLabel="din sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>

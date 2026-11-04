@@ -473,7 +473,7 @@ export function LigaSwissBracket({
                           onClick={() => setSelectedMatch({ match, rn, prevStats })}
                           style={{
                             background: theme.surface,
-                            border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border),
+                            border: '1px solid ' + (isMyMatch ? `color-mix(in srgb, ${theme.accent} 38%, transparent)` : theme.border),
                             borderRadius: '12px',
                             padding: '10px 12px',
                             display: 'grid',

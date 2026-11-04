@@ -981,7 +981,7 @@ export function AmericanoCompletedCard({
                     key={`hl-${i}`}
                     style={{
                       background: theme.greenBg,
-                      border: `1px solid ${theme.green}33`,
+                      border: `1px solid color-mix(in srgb, ${theme.green} 20%, transparent)`,
                       borderRadius: 10,
                       padding: '8px 10px',
                       display: 'flex',
@@ -1036,7 +1036,7 @@ export function AmericanoCompletedCard({
                   key={`hl-${i}`}
                   style={{
                     background: theme.accentBg,
-                    border: `1px solid ${theme.accent}33`,
+                    border: `1px solid color-mix(in srgb, ${theme.accent} 20%, transparent)`,
                     borderRadius: 10,
                     padding: '8px 10px',
                     display: 'flex',

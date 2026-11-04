@@ -224,7 +224,7 @@ export function AdminUserEditModal({
                       minHeight: '50px',
                       fontSize: '12px',
                       background: theme.surface,
-                      borderColor: `${theme.red}40`,
+                      borderColor: `color-mix(in srgb, ${theme.red} 25%, transparent)`,
                     }}
                   />
                 </div>

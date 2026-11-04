@@ -500,8 +500,8 @@ export function NotificationBell({ tourForceOpen = false }) {
                 onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void openNotificationTarget(n); } } : undefined}
                 style={{
                   padding: "10px 12px 10px 14px",
-                  borderBottom: "1px solid " + theme.border + "80",
-                  background: n.read ? "transparent" : theme.accentBg + "40",
+                  borderBottom: "1px solid " + `color-mix(in srgb, ${theme.border} 50%, transparent)`,
+                  background: n.read ? "transparent" : `color-mix(in srgb, ${theme.accentBg} 25%, transparent)`,
                   transition: "background 0.2s",
                   cursor: isClickable ? "pointer" : "default",
                 }}

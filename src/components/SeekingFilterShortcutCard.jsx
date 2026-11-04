@@ -98,7 +98,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
     <div
       style={{
         background: theme.surfaceAlt,
-        border: `1px solid ${feedVisibleNow ? theme.accent + '55' : theme.border}`,
+        border: `1px solid ${feedVisibleNow ? `color-mix(in srgb, ${theme.accent} 33%, transparent)` : theme.border}`,
         borderRadius: 10,
         padding: '12px 14px',
         marginBottom: 16,
