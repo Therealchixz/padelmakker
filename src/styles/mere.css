@@ -272,3 +272,90 @@
     transition: none !important;
   }
 }
+
+/* ── Spil-valget: 2v2, Americano/Mexicano eller Liga ── */
+.pm-spil-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 16px 14px;
+}
+.pm-spil-sheet-grip {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--pm-border);
+  margin: -6px auto 2px;
+}
+.pm-spil-sheet-title {
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  font-synthesis: none;
+}
+.pm-spil-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pm-spil-option {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px solid var(--pm-border);
+  border-radius: 16px;
+  background: var(--pm-bg);
+  color: var(--pm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease-out, border-color 160ms ease;
+}
+.pm-spil-option:active { transform: scale(0.98); }
+.pm-spil-option-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+}
+.pm-spil-option-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pm-spil-option-title { font-weight: 700; font-size: 16px; }
+.pm-spil-option-desc { font-size: 13px; line-height: 1.4; color: var(--pm-text-mid); }
+.pm-spil-option-chev { color: var(--pm-text-light); }
+.pm-spil-sheet-cancel {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--pm-text-mid);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Arket glider op nedefra paa telefonen (kortere end en side-overgang, ease-out). */
+.pm-spil-sheet--sheet { animation: pm-spil-sheet-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pm-spil-sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .pm-spil-option:hover { border-color: var(--pm-text-light); }
+  .pm-spil-sheet-cancel:hover { color: var(--pm-text); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-spil-sheet--sheet { animation: none; }
+  .pm-spil-option { transition: none; }
+}

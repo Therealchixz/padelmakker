@@ -100,8 +100,30 @@ test.describe('Logged-in dashboard flows', () => {
     }
     await page.getByRole('navigation', { name: 'Genveje' }).getByRole('button', { name: /Baner/ }).click()
     await expect(page.getByRole('heading', { level: 1, name: 'Baner' })).toBeVisible({ timeout: 20_000 })
+    // Spil lader brugeren vaelge, hvilken slags kamp der oprettes.
     await nav.getByRole('button', { name: /Spil/ }).click()
+    const chooser = page.getByRole('dialog', { name: 'Hvad vil du oprette?' })
+    await expect(chooser.getByRole('button', { name: /2v2-kamp/ })).toBeVisible({ timeout: 20_000 })
+    await expect(chooser.getByRole('button', { name: /Americano/ })).toBeVisible()
+    await expect(chooser.getByRole('button', { name: /Liga/ })).toBeVisible()
+    await chooser.getByRole('button', { name: /2v2-kamp/ }).click()
     await expect(page.getByRole('heading', { name: 'Opret kamp' })).toBeVisible({ timeout: 20_000 })
+  })
+
+  test('Spil-valget åbner Americano- og liga-formularen (gemmer intet)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const nav = page.getByRole('navigation', { name: 'Mobil navigation' })
+    await page.goto('/dashboard/hjem')
+    await nav.getByRole('button', { name: /Spil/ }).click()
+    await page.getByRole('dialog', { name: 'Hvad vil du oprette?' }).getByRole('button', { name: /Americano/ }).click()
+    await expect(page.getByRole('heading', { name: 'Opret Americano/Mexicano' })).toBeVisible({ timeout: 20_000 })
+    await page.goto('/dashboard/hjem')
+    await nav.getByRole('button', { name: /Spil/ }).click()
+    await page.getByRole('dialog', { name: 'Hvad vil du oprette?' }).getByRole('button', { name: /Liga/ }).click()
+    // Kun admin kan oprette en liga (formularen "Opret liga" aabner); andre lander paa liga-oversigten.
+    const ligaCreate = page.getByRole('heading', { name: 'Opret liga' })
+    const ligaTab = page.getByRole('tab', { name: /^Liga/, selected: true })
+    await expect(ligaCreate.or(ligaTab).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('profil-redigering viser blokerede spillere-sektion', async ({ page }) => {
