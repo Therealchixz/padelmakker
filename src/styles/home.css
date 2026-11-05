@@ -1,0 +1,294 @@
+/* ── Hjem (redesign v4) ──
+   Raekkefoelge: invitationer, dine kommende, aabne kampe paa dit niveau, genveje, aktivitet. */
+
+.pm-home-h {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--pm-text);
+}
+
+.pm-home-section { margin: 8px 18px 18px; }
+.pm-home-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pm-home-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--pm-accent);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Toplinjen: ELO-pille og beskeder ved siden af klokken */
+.pm-home-elo-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--pm-text);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pm-text);
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pm-home-chat-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pm-text);
+  color: var(--pm-bg);
+  cursor: pointer;
+}
+.pm-home-chat-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 2px solid var(--pm-bg);
+  border-radius: 9px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  box-sizing: content-box;
+}
+
+/* Dine kommende */
+.pm-home-up {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--pm-border);
+  border-radius: 16px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease-out, border-color 160ms ease;
+}
+.pm-home-up:active { transform: scale(0.98); }
+.pm-home-up-badge {
+  width: 52px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.pm-home-up-badge-top {
+  display: block;
+  font-family: var(--pm-font-brand);
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+}
+.pm-home-up-badge-top.is-small { font-size: 16px; }
+.pm-home-up-badge-bottom {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--pm-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--pm-text-mid);
+}
+
+/* Invitationer: blaek-kort, saa de skiller sig ud fra resten */
+.pm-home-invite {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--pm-text);
+  color: var(--pm-bg);
+}
+.pm-home-invite-title {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.35;
+  /* To linjer: invitationen er vigtig tekst og maa ikke klippes efter en linje (skill: break-ui). */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pm-home-invite-sub {
+  margin-top: 2px;
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+.pm-home-invite-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pm-home-invite-primary,
+.pm-home-invite-secondary {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.pm-home-invite-primary {
+  border: 0;
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+.pm-home-invite-secondary {
+  border: 1.5px solid color-mix(in srgb, var(--pm-bg) 45%, transparent);
+  background: transparent;
+  color: var(--pm-bg);
+}
+.pm-home-invite-primary:active,
+.pm-home-invite-secondary:active { transform: scale(0.97); }
+
+/* Aabne kampe paa dit niveau */
+.pm-home-open-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1.5px solid var(--pm-text);
+}
+.pm-home-open-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--pm-border);
+  background: transparent;
+  color: var(--pm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-home-open-when { display: flex; flex-direction: column; gap: 2px; }
+.pm-home-open-time {
+  font-family: var(--pm-font-brand);
+  font-size: 22px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+}
+.pm-home-open-day {
+  font-family: var(--pm-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--pm-text-mid);
+}
+.pm-home-open-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pm-home-open-court {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-home-open-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  color: var(--pm-text-mid);
+}
+.pm-home-open-dots { display: inline-flex; gap: 3px; }
+.pm-home-open-dots > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pm-green);
+}
+.pm-home-open-dots > span.is-on { background: var(--pm-green); }
+.pm-home-open-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Genveje */
+.pm-home-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 18px 8px;
+}
+.pm-home-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: 14px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease-out, border-color 160ms ease;
+}
+.pm-home-tile > svg:first-child { color: var(--pm-accent); flex-shrink: 0; }
+.pm-home-tile-chev { margin-left: auto; color: var(--pm-text-light); flex-shrink: 0; }
+.pm-home-tile:active { transform: scale(0.97); }
+
+/* Aktiviteten: en liste med streger i stedet for en stak kort */
+.pm-home-feed-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1.5px solid var(--pm-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-home-up:hover,
+  .pm-home-tile:hover { border-color: var(--pm-text-light); }
+  .pm-home-open-row:hover { background: var(--pm-surface-alt); }
+  .pm-home-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-home-up,
+  .pm-home-tile,
+  .pm-home-invite-primary,
+  .pm-home-invite-secondary { transition: none; }
+}

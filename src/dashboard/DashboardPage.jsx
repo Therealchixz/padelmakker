@@ -767,9 +767,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {
         id: 'quick-action',
         tab: 'hjem',
-        selector: '[data-tour="quick-action-kampe"]',
-        title: 'Hurtig handling',
-        description: 'De store kort på forsiden er genveje. Tryk fx på “Åbne kampe” for at hoppe direkte til kamp-flowet.',
+        selector: '[data-tour="quick-action-makkere"]',
+        title: 'Genveje',
+        description: 'Herfra finder du hurtigt en makker eller en ledig bane. Åbne kampe på dit niveau står lige ovenover, når der er nogen.',
       },
       {
         id: 'latest-activity',
@@ -1564,7 +1564,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
           }
         >
-          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} deferOnboardingPrompt={onboardingThisVisit || welcomeOpen || tourOpen} />}
+          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} deferOnboardingPrompt={onboardingThisVisit || welcomeOpen || tourOpen}  unreadMessages={unreadMessages} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive onCreatePanelChange={setKampeCreatePanelOpen} />}

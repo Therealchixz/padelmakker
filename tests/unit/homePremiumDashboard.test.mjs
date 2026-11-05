@@ -8,12 +8,15 @@ const MAKKERE_TAB_URL = new URL('../../src/dashboard/MakkereTab.jsx', import.met
 const RESPONSIVE_CSS_URL = new URL('../../src/responsive.css', import.meta.url)
 const DASHBOARD_PAGE_URL = new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url)
 
-test('home tab uses compact greeting header and quick actions', async () => {
+test('home tab uses compact greeting header, open matches and shortcuts (redesign v4)', async () => {
   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
 
   assert.match(homeTab, /greetingText/)
   assert.match(homeTab, /displayName/)
-  assert.match(homeTab, /data-tour=\{`quick-action-\$\{t\}`\}/)
+  assert.match(homeTab, /`Hej, \$\{firstName\}`/)
+  assert.match(homeTab, /Åbne kampe på dit niveau/)
+  assert.match(homeTab, /data-tour="quick-action-makkere"/)
+  assert.match(homeTab, /data-tour="quick-action-baner"/)
   assert.match(homeTab, /Niveau og ELO er ikke det samme/)
   assert.match(homeTab, /className="pm-home-seeking-cta"/)
   assert.match(homeTab, /data-tour="home-latest-activity"/)
