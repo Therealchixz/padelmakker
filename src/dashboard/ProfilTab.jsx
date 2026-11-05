@@ -17,7 +17,7 @@ import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory,
 import { useAmericanoPartnerOpponentStats } from '../lib/americanoRelationStats';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { Settings, Swords, Trophy, Save, X } from 'lucide-react';
+import { Settings, Swords, Trophy, Save, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { EmailConfirmReminder } from '../components/EmailConfirmReminder';
 import { profileFormState } from './profileTabHelpers';
@@ -813,7 +813,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 </div>
               )}
             </div>
-            <h2 style={{ fontSize: 19, fontWeight: 600, marginTop: 12, letterSpacing: '-0.3px', color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
+            <h2 className="pm-v4-display" style={{ fontSize: 30, color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
             <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
             </p>
@@ -845,12 +845,12 @@ export function ProfilTab({ user, showToast, setTab }) {
                 Aktuel {isAmericanoMode ? TOURNAMENT_ELO_LABEL : TWO_V_TWO_ELO_LABEL} · {activeModeLabel}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
-                <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+                <div className="pm-v4-num" style={{ fontSize: '48px' }}>
                   {(is2v2Mode ? elo : americanoElo) ?? '—'}
                 </div>
                 {is2v2Mode && todayEloChange !== 0 && (
                   <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)', letterSpacing: '-0.2px' }}>
-                    {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
+                    {todayEloChange > 0 ? <TrendingUp size={14} aria-hidden style={{ verticalAlign: '-2px' }} /> : <TrendingDown size={14} aria-hidden style={{ verticalAlign: '-2px' }} />} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
                   </div>
                 )}
               </div>
@@ -1052,7 +1052,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
               {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
-                <div style={{ fontSize: "26px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
+                <div className="pm-v4-num" style={{ fontSize: "32px", color: theme.warm }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
                 <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {bestStreak} i træk</div>
               </>)}
               {statCard(<>
@@ -1072,7 +1072,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
                 {peakElo ? (
                   <>
-                    <div style={{ fontSize: "22px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                    <div className="pm-v4-num" style={{ fontSize: "30px", color: theme.accent }}>🏆 {peakElo}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
                   </>
                 ) : (

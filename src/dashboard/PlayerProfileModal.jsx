@@ -356,7 +356,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               </div>
             )}
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
+          <div className="pm-v4-display" style={{ fontSize: '28px', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
           {(locationDisplay || pRef.created_at) && (
             <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>
               {[locationDisplay, pRef.created_at ? `Medlem siden ${new Date(pRef.created_at).getFullYear()}` : null].filter(Boolean).join(' · ')}
@@ -459,7 +459,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               >
                 Ligakampe vundet
               </div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: theme.blue, letterSpacing: '-0.02em' }}>
+              <div className="pm-v4-num" style={{ fontSize: '30px', color: theme.blue }}>
                 🏅 {ligaStats.wins}
               </div>
               <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
@@ -500,7 +500,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               </div>
             ) : (
               <>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: theme.warm, marginTop: '4px', letterSpacing: '-0.02em' }}>
+                <div className="pm-v4-num" style={{ fontSize: '30px', color: theme.warm, marginTop: '4px' }}>
                   {streakStats.currentStreak > 0 ? `🔥 ${streakStats.currentStreak}` : '0'}
                 </div>
                 <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '4px' }}>Bedste: {streakStats.bestStreak} i træk</div>

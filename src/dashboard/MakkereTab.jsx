@@ -6,7 +6,7 @@ import { REGIONS, PLAY_STYLES, INTENTS, COURT_SIDES, intentDisplayLabel } from '
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
-import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
@@ -164,7 +164,7 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
           aria-label="Skjul forslag"
           style={{ position: 'absolute', top: 0, right: 0, width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
         >
-          ✕
+          <X size={18} aria-hidden />
         </button>
       ) : null}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -1010,17 +1010,17 @@ export function MakkereTab({ user, showToast }) {
             disabled={safePage === 0}
             style={{ ...btn(false), padding: '8px 18px', fontSize: '13px', opacity: safePage === 0 ? 0.35 : 1 }}
           >
-            ← Forrige
+            <ChevronLeft size={16} aria-hidden /> Forrige
           </button>
           <span style={{ fontSize: '13px', color: theme.textMid, fontWeight: 600 }}>
-            {safePage + 1} / {totalPages}
+            <span className="pm-v4-mono">{safePage + 1} / {totalPages}</span>
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={safePage === totalPages - 1}
             style={{ ...btn(false), padding: '8px 18px', fontSize: '13px', opacity: safePage === totalPages - 1 ? 0.35 : 1 }}
           >
-            Næste →
+            Næste <ChevronRight size={16} aria-hidden />
           </button>
         </div>
       )}

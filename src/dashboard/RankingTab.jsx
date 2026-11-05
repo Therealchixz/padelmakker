@@ -2,7 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { font, theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check, TrendingUp, TrendingDown } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
@@ -653,7 +653,7 @@ export function RankingTab({ user }) {
           style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
         />
         <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
-          {firstName}{isMe ? ' ✓' : ''}
+          {firstName}{isMe ? <Check size={12} strokeWidth={3} aria-label=" (dig)" style={{ marginLeft: 3, verticalAlign: '-1px' }} /> : null}
         </b>
         {/* ELO stod før både her og i det store tal nedenunder (podiet vises kun
             for "Alle tider", hvor score er ELO), og "Niveau" brød over to linjer. */}
@@ -788,7 +788,7 @@ export function RankingTab({ user }) {
         </div>
         <div className="pm-rank-hero-inner">
           <div>
-            <span style={{ fontFamily: font, fontSize: 'clamp(32px,8vw,40px)', fontWeight: 800, letterSpacing: '-0.04em' }}>
+            <span className="pm-v4-num" style={{ fontSize: 'clamp(44px,11vw,56px)' }}>
               {period === 'all' && myBundleLoading ? '…' : userRank > 0 ? `#${userRank}` : '—'}
             </span>
             <span style={{ fontSize: '14px', marginLeft: '8px', opacity: 0.6 }}>
@@ -800,7 +800,7 @@ export function RankingTab({ user }) {
             </span>
           </div>
           <div className="pm-rank-hero-elo">
-            <div style={{ fontFamily: font, fontSize: 'clamp(20px,5vw,24px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
+            <div className="pm-v4-num" style={{ fontSize: 'clamp(28px,7vw,34px)' }}>
               {period === 'all' && displayScore === null
                 ? '…'
                 : period === 'all'
@@ -839,7 +839,7 @@ export function RankingTab({ user }) {
         )}
         {rankChange !== 0 && (
           <div style={{ marginTop: '8px', fontSize: '11px', fontWeight: 600, color: rankChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)' }}>
-            {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+            {rankChange > 0 ? <><TrendingUp size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {rankChange} pladser</> : <><TrendingDown size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {Math.abs(rankChange)} pladser</>}
           </div>
         )}
       </div>
@@ -1053,7 +1053,7 @@ export function RankingTab({ user }) {
             </div>
             {rankChange !== 0 && (
               <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.red, marginTop: 1 }}>
-                {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+                {rankChange > 0 ? <><TrendingUp size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {rankChange} pladser</> : <><TrendingDown size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {Math.abs(rankChange)} pladser</>}
               </div>
             )}
           </div>
