@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
@@ -7,6 +7,9 @@ import { supabase } from '../lib/supabase';
 import { fetchCourtsCached } from '../lib/courtsCache';
 import { Users, MapPin, Swords, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap, MessageCircle } from 'lucide-react';
 import '../styles/home.css';
+
+// Kortet (Leaflet + bane-listen) hentes foerst, naar Hjem viser det.
+const HomeNearbyMapLazy = lazy(() => import('../components/HomeNearbyMap'));
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { EmailConfirmReminder } from '../components/EmailConfirmReminder';
@@ -1388,6 +1391,18 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         </div>
         )}
       </div>
+
+      {/* Kort: centre i naerheden og hvor der er aabne kampe (kun med by og placering i profilen) */}
+      {user?.latitude != null && user?.longitude != null ? (
+        <Suspense fallback={null}>
+          <HomeNearbyMapLazy
+            user={user}
+            openMatches={openMatchFeed}
+            onSeeMatches={() => setTab('kampe')}
+            onFindCourt={() => setTab('baner')}
+          />
+        </Suspense>
+      ) : null}
 
       {/* Åbne kampe på dit niveau (fra de samme data som aktiviteten) */}
       {homeOpenMatches.length > 0 && (
