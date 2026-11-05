@@ -120,8 +120,10 @@ test.describe('Logged-in dashboard flows', () => {
     await page.goto('/dashboard/hjem')
     await nav.getByRole('button', { name: /Spil/ }).click()
     await page.getByRole('dialog', { name: 'Hvad vil du oprette?' }).getByRole('button', { name: /Liga/ }).click()
-    // Kun admin kan oprette en liga; andre lander paa liga-oversigten. Begge dele er Liga-fanen.
-    await expect(page.getByRole('tab', { name: /^Liga/ })).toHaveAttribute('aria-selected', 'true', { timeout: 20_000 })
+    // Kun admin kan oprette en liga (formularen "Opret liga" aabner); andre lander paa liga-oversigten.
+    const ligaCreate = page.getByRole('heading', { name: 'Opret liga' })
+    const ligaTab = page.getByRole('tab', { name: /^Liga/, selected: true })
+    await expect(ligaCreate.or(ligaTab).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('profil-redigering viser blokerede spillere-sektion', async ({ page }) => {
