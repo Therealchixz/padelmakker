@@ -8,7 +8,7 @@
  * ESLint det, hvis noget mangler.
  */
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { btn, font, inputStyle, labelStyle, theme } from '../../lib/platformTheme';
 import { DateInputField } from '../DateInputField';
 import { PillTabs } from '../PillTabs';
@@ -77,7 +77,7 @@ export function CreateMatchForm({
           return (
             <span key={s.n} style={{ display: "contents" }}>
               <div className={`pm-wiz-step${state ? ` ${state}` : ""}`}>
-                <div className="pm-wiz-num">{state === "done" ? "✓" : s.n}</div>
+                <div className="pm-wiz-num">{state === "done" ? <Check size={14} strokeWidth={3} aria-label="Færdig" /> : s.n}</div>
                 <span className="pm-wiz-label">{s.label}</span>
               </div>
               {i < arr.length - 1 && <div className="pm-wiz-line" />}
@@ -441,7 +441,7 @@ export function CreateMatchForm({
             }
             style={{ ...btn(true, { size: "md", fontWeight: 600 }), flex: 2, opacity: creating ? 0.55 : 1 }}
           >
-            {creating ? "Opretter..." : "Opret kamp ✓"}
+            {creating ? "Opretter..." : <><Check size={16} strokeWidth={3} aria-hidden /> Opret kamp</>}
           </button>
         )}
       </div>

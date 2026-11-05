@@ -1,0 +1,164 @@
+/* ── Kampe (redesign v4) ──
+   Kun udseende: alle funktioner i kortene og formularen er de samme som foer.
+   Vaelgerne er praefikset med .pm-kampe-v4 / .pm-kampe-v4-root, saa de vinder over responsive.css. */
+
+/* "+ Opret" med synlig tekst i lerfarve */
+.pm-kampe-v4 .pm-kampe-v4-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform 120ms ease-out;
+}
+.pm-kampe-v4 .pm-kampe-v4-create:active { transform: scale(0.96); }
+
+/* 2v2 · Americano · Liga som en delt vaelger */
+.pm-kampe-v4 .pm-kampe-v2-format-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 3px;
+  margin: 0 0 12px;
+  border-radius: 12px;
+  background: var(--pm-surface-muted);
+  overflow: visible;
+}
+.pm-kampe-v4 .pm-kampe-v2-format-pill {
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--pm-text-mid);
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+.pm-kampe-v4 .pm-kampe-v2-format-pill--active {
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
+}
+[data-theme="dark"] .pm-kampe-v4 .pm-kampe-v2-format-pill--active {
+  background: var(--pm-ink-raised);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.pm-kampe-v4 .pm-kampe-v2-format-count {
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+/* Kampkort: roligt papir, stor dato, tydelig hovedknap */
+.pm-kampe-v4-root .pm-kampe-v2-list-card {
+  border-radius: 16px;
+  box-shadow: none;
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-date-badge {
+  width: 52px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-date-badge b {
+  font-family: var(--pm-font-brand);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-date-badge span {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--pm-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--pm-text-mid);
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-datetime--primary { font-size: 15px; }
+.pm-kampe-v4-root .pm-kampe-v2-list-meta-time {
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-cta {
+  min-height: 44px;
+  border-radius: 12px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-size: 14px;
+  box-shadow: none;
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-cta--secondary {
+  background: transparent;
+  color: var(--pm-text);
+  box-shadow: inset 0 0 0 1.5px var(--pm-text);
+}
+.pm-kampe-v4-root .pm-kampe-v2-list-cta:active { transform: scale(0.98); }
+
+/* Godkend/afvis-anmodninger: store nok til en finger */
+.pm-kampe-v4-root .pm-kampe-v2-join-request-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+}
+
+/* Opret kamp: ingen kort-i-kort, og trinene kan laeses */
+.pm-kampe-v4-root .pm-create-form-panel {
+  border: 1px solid var(--pm-border) !important;
+  border-radius: 18px;
+  box-shadow: none !important;
+}
+.pm-kampe-v4-root .pm-create-form-panel .pm-wiz {
+  margin: 0 0 18px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.pm-kampe-v4-root .pm-wiz-num {
+  width: 30px;
+  height: 30px;
+  font-family: var(--pm-font-mono);
+  font-size: 13px;
+}
+.pm-kampe-v4-root .pm-wiz-step.on .pm-wiz-num {
+  background: var(--pm-accent-solid);
+  border-color: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+}
+.pm-kampe-v4-root .pm-wiz-label { font-size: 12px; }
+.pm-kampe-v4-root .pm-wiz-line { margin-bottom: 18px; }
+.pm-kampe-v4-root .pm-form-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-kampe-v4 .pm-kampe-v4-create:hover { background: color-mix(in srgb, var(--pm-accent-solid) 86%, black); }
+  .pm-kampe-v4 .pm-kampe-v2-format-pill:not(.pm-kampe-v2-format-pill--active):hover { color: var(--pm-text); }
+  .pm-kampe-v4-root .pm-kampe-v2-list-card:hover { border-color: var(--pm-text-light); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-kampe-v4 .pm-kampe-v4-create,
+  .pm-kampe-v4 .pm-kampe-v2-format-pill { transition: none; }
+}

@@ -73,7 +73,8 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil } from 'lucide-react';
+import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil, Check } from 'lucide-react';
+import '../styles/kampe-v4.css';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -2584,7 +2585,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                   className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--approve"
                   title={!canApproveNow ? "Vent til en plads bliver ledig" : undefined}
                 >
-                  {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
+                  {busyId === m.id + "-approve-" + req.id ? "..." : <><Check size={14} strokeWidth={3} aria-hidden /> Godkend</>}
                 </button>
                 <button
                   type="button"
@@ -3146,7 +3147,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const detailBundle = detailMatch ? getMatchCardBundle(detailMatch) : null;
 
   return (
-    <div>
+    <div className="pm-kampe-v4-root">
       {showCreatePanel ? (
         <KampeCreateHeader
           title={createHeaderTitle}
