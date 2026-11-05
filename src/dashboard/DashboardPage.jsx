@@ -14,6 +14,7 @@ const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
 import { ShieldCheck } from 'lucide-react';
 import { MereTab } from './MereTab';
+import { SpilChooser } from '../components/SpilChooser';
 import '../styles/mere.css';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
@@ -695,6 +696,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const [dark, setDark] = useDarkMode();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [spilChooserOpen, setSpilChooserOpen] = useState(false);
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
@@ -790,7 +792,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'spil',
         selector: tabTourSelector('spil'),
         title: 'Spil',
-        description: 'Den store Spil-knap åbner en ny kamp: vælg bane, tid og niveau, og inviter andre med.',
+        description: 'Den store Spil-knap: vælg selv, om du vil oprette en 2v2-kamp, en Americano/Mexicano eller en liga.',
       },
       {
         id: 'kampe',
@@ -1248,7 +1250,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "mere",     label: "Mere",    icon: <MoreHorizontal size={18} />, badge: mereBadge > 0 ? mereBadge : null },
   ];
   const isNavTabActive = (id) => (id === "mere" ? moreTabIds.includes(tab) : tab === id);
-  const openSpil = () => setTab("kampe", { search: "create=1" });
+  // Spil lader brugeren vaelge: 2v2-kamp, Americano/Mexicano eller Liga.
+  const openSpil = () => setSpilChooserOpen(true);
+  const pickSpil = (search) => {
+    setSpilChooserOpen(false);
+    setTab("kampe", { search });
+  };
 
   const openAdminPanel = async () => {
     let focusSubTab = null;
@@ -1836,6 +1843,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
         </AppModal>
       )}
 
+      <SpilChooser
+        open={spilChooserOpen}
+        onClose={() => setSpilChooserOpen(false)}
+        onPick={pickSpil}
+        asSheet={isMobileView}
+        canCreateLiga={isAdmin}
+      />
+
       {!hideMobileBottomNav && (
       <nav className="pm-mobile-bottom-nav pm-nav-v4" aria-label="Mobil navigation">
         {[...navTabs.slice(0, 2), null, ...navTabs.slice(2)].map((t) => {
@@ -1847,7 +1862,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 className="pm-spil-btn"
                 data-tour="mobile-tab-spil"
                 onClick={openSpil}
-                aria-label="Spil: opret en kamp"
+                aria-label="Spil: opret en kamp, turnering eller liga"
+                aria-haspopup="dialog"
               >
                 Spil
               </button>

@@ -2158,15 +2158,21 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
   /*
    * Deep-link: ?create=1 åbner opret-formularen direkte (fx "Opret ny kamp" i makker-invitation).
-   * Med format=americano er det turnerings-formularen (turnerings-knappen på Hjem).
+   * Med format=americano er det turnerings-formularen (turnerings-knappen på Hjem),
+   * med format=liga opret-liga (Spil-valget).
    */
   useEffect(() => {
     if (!tabActive) return;
     const params = new URLSearchParams(location.search);
     if (params.get("create") !== "1") return;
-    if (normalizeKampeFormat(params.get("format")) === KAMPE_FORMAT_AMERICANO) {
+    const createFormat = normalizeKampeFormat(params.get("format"));
+    if (createFormat === KAMPE_FORMAT_AMERICANO) {
       setKampeFormat(KAMPE_FORMAT_AMERICANO);
       setShowAmericanoCreate(true);
+    } else if (createFormat === KAMPE_FORMAT_LIGA) {
+      // Spil-valget: kun admin kan oprette en liga; andre lander paa liga-oversigten.
+      setKampeFormat(KAMPE_FORMAT_LIGA);
+      if (isAdmin) setShowLigaCreate(true);
     } else {
       setKampeFormat(KAMPE_FORMAT_PADEL);
       setShowCreate(true);
@@ -2174,7 +2180,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     params.delete("create");
     const q = params.toString();
     navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
-  }, [tabActive, location.search, navigate]);
+  }, [tabActive, location.search, navigate, isAdmin]);
 
   /* Legacy ?focus= / #pm-match- → nye detail-ruter */
   useEffect(() => {
