@@ -51,7 +51,7 @@
   box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
 }
 [data-theme="dark"] .pm-kampe-v4 .pm-kampe-v2-format-pill--active {
-  background: var(--pm-ink-raised);
+  background: color-mix(in srgb, var(--pm-paper) 16%, transparent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .pm-kampe-v4 .pm-kampe-v2-format-count {

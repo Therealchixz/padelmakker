@@ -1,0 +1,65 @@
+/* ── Faelles v4-byggeklodser i appen (redesign trin 5) ──
+   Bruges af Makkere, Beskeder, Rangliste, Profil og spillerprofilen. */
+
+/* Store tal (ELO, placering, streaks): Anton, faste cifferbredder */
+.pm-v4-num {
+  font-family: var(--pm-font-brand);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+}
+
+/* Navne og store overskrifter: Anton med versaler */
+.pm-v4-display {
+  font-family: var(--pm-font-brand);
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  font-synthesis: none;
+}
+
+/* Smaa tal og data (sidetal, tider) */
+.pm-v4-mono {
+  font-family: var(--pm-font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Faneblade (PillTabs): en delt vaelger som i v4 i stedet for en blaek-knap */
+.pm-pill-tabs.pm-pill-tabs {
+  background: var(--pm-surface-muted);
+  border: 0;
+  padding: 3px;
+}
+.pm-pill-tabs .pm-pill-tab-active,
+.pm-pill-tabs .pm-pill-tab[aria-selected="true"] {
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
+}
+[data-theme="dark"] .pm-pill-tabs .pm-pill-tab-active,
+[data-theme="dark"] .pm-pill-tabs .pm-pill-tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--pm-paper) 16%, transparent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Rangliste: din placering paa blaek, uden glans-gradient */
+.pm-rank-hero.pm-rank-hero {
+  background: var(--pm-ink);
+  color: var(--pm-paper);
+}
+[data-theme="dark"] .pm-rank-hero {
+  background: var(--pm-ink-raised);
+  border: 1px solid var(--pm-border);
+}
+
+/* Beskeder: rolige raekker med en tydelig ulaest-markering */
+.pm-chat-v2-inbox-row.pm-chat-v2-inbox-row { background: transparent; }
+.pm-chat-v2-inbox-unread {
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-mono);
+}
