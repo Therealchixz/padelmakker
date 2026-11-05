@@ -1,4 +1,5 @@
 import { Plus, Search, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
+import '../../styles/kampe-v4.css';
 import { ScreenHeader } from '../ScreenHeader';
 
 function UnreadBadge({ count }) {
@@ -27,19 +28,21 @@ export function KampeRedesignToolbar({
   createBusy = false,
 }) {
   return (
-    <div className="pm-kampe-v2-toolbar">
+    <div className="pm-kampe-v2-toolbar pm-kampe-v4">
       <ScreenHeader
         title="Kampe"
         actions={onCreate ? (
           <button
             type="button"
-            className="pm-kampe-v2-create pm-kampe-v2-create--icon"
+            className="pm-kampe-v2-create pm-kampe-v4-create"
             onClick={onCreate}
             disabled={createBusy}
             aria-label={createLabel}
             title={createLabel}
           >
-            <Plus size={18} strokeWidth={2.5} aria-hidden />
+            {/* Redesign v4: synlig tekst, saa man ikke skal gaette, hvad plusset goer. */}
+            <Plus size={16} strokeWidth={2.5} aria-hidden />
+            <span>Opret</span>
           </button>
         ) : null}
       />
