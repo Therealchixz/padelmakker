@@ -292,3 +292,149 @@
   .pm-home-invite-primary,
   .pm-home-invite-secondary { transition: none; }
 }
+
+/* ── Kort: i naerheden ── */
+.pm-home-map-modes {
+  display: inline-grid;
+  grid-auto-flow: column;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--pm-surface-muted);
+}
+.pm-home-map-modes > button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pm-text-mid);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pm-home-map-modes > button[aria-selected="true"] {
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
+}
+[data-theme="dark"] .pm-home-map-modes > button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--pm-paper) 16%, transparent);
+}
+.pm-home-map-frame {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-muted);
+}
+.pm-home-map-canvas {
+  height: 200px;
+  width: 100%;
+  /* Kortet maa ikke fange lodret scroll paa telefonen (skill: mobile-native). */
+  touch-action: pan-y;
+}
+/* Kortet foelger lidt med i moerk tilstand, saa det ikke lyser hvidt op. */
+[data-theme="dark"] .pm-home-map-canvas .leaflet-tile-pane {
+  filter: brightness(0.72) contrast(1.05) saturate(0.7);
+}
+.pm-home-map-me {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--pm-blue);
+  border: 3px solid var(--pm-on-accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.pm-home-map-pin {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--pm-text);
+  border: 2px solid var(--pm-bg);
+}
+.pm-home-map-pin.has-matches {
+  border-radius: 15px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-mono);
+  font-weight: 600;
+  font-size: 12px;
+}
+.pm-home-map-pin > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
+}
+.pm-home-map-pin.is-active {
+  outline: 3px solid var(--pm-ball);
+  outline-offset: 1px;
+}
+.pm-home-map-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--pm-border);
+}
+.pm-home-map-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--pm-border);
+  background: transparent;
+  color: var(--pm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-home-map-row.is-active .pm-home-map-row-name { color: var(--pm-accent); }
+.pm-home-map-row-name {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-home-map-row-meta {
+  flex-shrink: 0;
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  color: var(--pm-text-mid);
+}
+.pm-home-map-action { margin-top: 10px; }
+.pm-home-map-cta {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: transform 120ms ease-out;
+}
+.pm-home-map-cta--ink {
+  background: var(--pm-text);
+  color: var(--pm-bg);
+}
+.pm-home-map-cta:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) {
+  .pm-home-map-row:hover { background: var(--pm-surface-alt); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-home-map-cta { transition: none; }
+}
