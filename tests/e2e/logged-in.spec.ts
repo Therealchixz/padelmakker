@@ -38,7 +38,10 @@ test.describe('Logged-in dashboard flows', () => {
     await page.goto('/dashboard')
     // Første test efter login: appen kan bruge mere end standardens 5 sek. på at starte i CI.
     await expect(page.getByRole('button', { name: 'Hjem' }).first()).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByText('Book Bane').first()).toBeVisible({ timeout: 20_000 })
+    // Redesign v4: genvejene paa Hjem er "Find makker" og "Find ledig bane", og ELO-pillen sidder i toplinjen.
+    await expect(page.getByRole('button', { name: /Find ledig bane/ })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('button', { name: /Find makker/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /ELO \d+\. Se ranglisten/ })).toBeVisible()
   })
 
   test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {

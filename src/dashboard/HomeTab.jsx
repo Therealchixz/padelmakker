@@ -5,7 +5,8 @@ import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { supabase } from '../lib/supabase';
 import { fetchCourtsCached } from '../lib/courtsCache';
-import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap } from 'lucide-react';
+import { Users, MapPin, Swords, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap, MessageCircle } from 'lucide-react';
+import '../styles/home.css';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { EmailConfirmReminder } from '../components/EmailConfirmReminder';
@@ -160,7 +161,30 @@ async function fetchHomeUpcomingItems(userId) {
   return items.slice(0, 5);
 }
 
-export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false, deferOnboardingPrompt = false }) {
+/** Data til kampvisningen for en aaben 2v2-kamp (bruges af "Aabne kampe" og aktiviteten). */
+function openMatchViewPayload(row) {
+  return {
+    kind: "open",
+    matchId: row.matchId,
+    title: `${row.creatorName} søger spillere`,
+    createdAt: row.created_at,
+    date: row.date,
+    time: row.time,
+    timeEnd: row.timeEnd,
+    court: row.court,
+    booked: row.booked,
+    eloMin: row.eloMin,
+    eloMax: row.eloMax,
+    description: row.description,
+    creatorName: row.creatorName,
+    creatorAvatar: row.creatorAvatar,
+    creatorArea: row.creatorArea,
+    players: row.players,
+    playerCount: row.playerCount,
+  };
+}
+
+export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false, deferOnboardingPrompt = false, unreadMessages = 0 }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
@@ -838,22 +862,18 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     return rel ? rel.charAt(0).toUpperCase() + rel.slice(1) : "";
   };
 
-  const actions = [
-    { Icon: Users,       color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Find Makker",  tab: "makkere" },
-    { Icon: MapPin,      color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Book Bane",    tab: "baner"   },
-    { Icon: CalendarPlus,color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Åbne Kampe",   tab: "kampe"   },
-    { Icon: BarChart2,   color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Rangliste",    tab: "ranking" },
-  ];
 
+  // Redesign v4: aktiviteten er en rolig liste med streger, ikke en stak kort.
   const activityRowBaseStyle = {
     display: "flex",
     alignItems: "center",
     gap: "11px",
-    borderRadius: "16px",
-    padding: "12px 14px",
-    border: "1px solid " + theme.border,
-    boxShadow: theme.shadowSoft,
-    background: theme.surface,
+    borderRadius: 0,
+    padding: "12px 2px",
+    border: "none",
+    borderBottom: "1px solid " + theme.border,
+    boxShadow: "none",
+    background: "transparent",
   };
 
   // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
@@ -1079,8 +1099,22 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
+  // Aabne 2v2-kampe, hvor du kan vaere med: ikke dine egne, ikke fyldt, og din ELO passer.
+  const homeOpenMatches = useMemo(() => {
+    const myElo = Number(user?.elo_rating) || 1000;
+    const today = DateTime.now().toISODate();
+    return openMatchFeed
+      .filter((r) => String(r.creatorId) !== String(user?.id))
+      .filter((r) => (r.playerCount || 0) < 4)
+      .filter((r) => !(r.players || []).some((pl) => String(pl.userId) === String(user?.id)))
+      .filter((r) => !r.date || r.date >= today)
+      .filter((r) => (r.eloMin == null || myElo >= r.eloMin) && (r.eloMax == null || myElo <= r.eloMax))
+      .sort((a, b) => `${a.date || ''} ${a.time || ''}`.localeCompare(`${b.date || ''} ${b.time || ''}`))
+      .slice(0, 3);
+  }, [openMatchFeed, user?.id, user?.elo_rating]);
+
   return (
-    <div>
+    <div className="pm-home">
       {showIosInstallHint && (
         <div
           style={{
@@ -1129,9 +1163,25 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       )}
       {/* Fælles toplinje: hilsen med fornavn + klokken (mobil) */}
       <ScreenHeader
-        title={firstName ? `${greetingText}, ${firstName}` : greetingText}
-        leading={<AvatarCircle avatar={user.avatar} size={40} emojiSize="20px" style={{ background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />}
+        // Kort hilsen (redesign v4), saa der er plads til ELO, beskeder og klokken paa telefonen.
+        title={firstName ? `Hej, ${firstName}` : greetingText}
         bellTourForceOpen={tourForceNotificationOpen}
+        actions={(
+          <>
+            <button type="button" className="pm-home-elo-pill" onClick={() => setTab('ranking')} aria-label={`ELO ${Math.round(Number(user?.elo_rating) || 1000)}. Se ranglisten`}>
+              ELO {Math.round(Number(user?.elo_rating) || 1000)}
+            </button>
+            <button
+              type="button"
+              className="pm-home-chat-btn"
+              onClick={() => setTab('beskeder')}
+              aria-label={unreadMessages > 0 ? `Beskeder, ${unreadMessages} ulæste` : 'Beskeder'}
+            >
+              <MessageCircle size={19} aria-hidden />
+              {unreadMessages > 0 ? <span className="pm-home-chat-badge" aria-hidden>{unreadMessages > 9 ? '9+' : unreadMessages}</span> : null}
+            </button>
+          </>
+        )}
       />
       <EmailConfirmReminder user={authUser} />
 
@@ -1157,39 +1207,6 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         />
       ) : null}
 
-      {/* Quick 2×2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 0' }}>
-        {actions.map(({ Icon, color, bg, title, tab: t }) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            data-tour={`quick-action-${t}`}
-            style={{
-              background: theme.surface,
-              borderRadius: 16,
-              boxShadow: theme.shadow,
-              border: `1px solid ${theme.border}`,
-              padding: '13px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 7,
-              fontWeight: 600,
-              fontSize: 12.5,
-              color: theme.text,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
-              <Icon size={18} />
-            </div>
-            {title}
-          </button>
-        ))}
-      </div>
       {/* Kun én hjælpeboks ad gangen: ELO-forklaringen venter, til iPhone-tippet er skjult. */}
       {showNiveauEloHint && !showIosInstallHint && (
         <div
@@ -1239,10 +1256,66 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         </div>
       )}
 
+      {/* Invitationer */}
+      {(inviteItems.length > 0 || invitesLoadError) && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
+            <h2 className="pm-home-h">Invitationer</h2>
+            {inviteItems.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-accent)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+                {inviteItems.length} nye
+              </span>
+            )}
+          </div>
+          {invitesLoadError ? (
+            <div style={{ padding: '0 18px' }}>
+              <div className="pm-state-card pm-state-card--error">
+                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+                <div className="pm-state-title">Kunne ikke hente invitationer</div>
+                <div className="pm-state-copy">{invitesLoadError}</div>
+              </div>
+            </div>
+          ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {inviteItems.map((it) => (
+              <div key={it.key} className="pm-home-invite">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
+                    {it.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="pm-home-invite-title">{it.title}</div>
+                    {it.subtitle ? <div className="pm-home-invite-sub">{it.subtitle}</div> : null}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
+                </div>
+                {it.kind === 'inbound' ? (
+                  <div className="pm-home-invite-actions">
+                    <button type="button" className="pm-home-invite-primary" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}>
+                      Godkend
+                    </button>
+                    <button type="button" className="pm-home-invite-secondary" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}>
+                      Afvis
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pm-home-invite-actions">
+                    <button type="button" className="pm-home-invite-primary" onClick={() => setTab(it.target.tab, { search: it.target.search })}>
+                      Se invitationen
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          )}
+        </div>
+      )}
+
       {/* Kommende kampe */}
       <div style={{ marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
+          <h2 className="pm-home-h">Dine kommende</h2>
           {!upcomingLoading && upcomingItems.length > 0 && (
             <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           )}
@@ -1295,11 +1368,11 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               key={it.key}
               type="button"
               onClick={() => setTab(it.target.tab, { search: it.target.search })}
-              style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+              className="pm-home-up"
             >
-              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
-                <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
-                {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
+              <div className="pm-home-up-badge">
+                <span className={'pm-home-up-badge-top' + (it.kind === 'liga' ? ' is-small' : '')}>{it.badge.top}</span>
+                {it.badge.bottom ? <span className="pm-home-up-badge-bottom">{it.badge.bottom}</span> : null}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
@@ -1316,64 +1389,57 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         )}
       </div>
 
-      {/* Invitationer */}
-      {(inviteItems.length > 0 || invitesLoadError) && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
-            {inviteItems.length > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-accent)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
-                {inviteItems.length} nye
-              </span>
-            )}
+      {/* Åbne kampe på dit niveau (fra de samme data som aktiviteten) */}
+      {homeOpenMatches.length > 0 && (
+        <section className="pm-home-section" aria-labelledby="pm-home-open-title">
+          <div className="pm-home-section-head">
+            <h2 id="pm-home-open-title" className="pm-home-h">Åbne kampe på dit niveau</h2>
+            <button type="button" className="pm-home-link" data-tour="quick-action-kampe" onClick={() => setTab('kampe')}>
+              Se alle
+            </button>
           </div>
-          {invitesLoadError ? (
-            <div style={{ padding: '0 18px' }}>
-              <div className="pm-state-card pm-state-card--error">
-                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
-                <div className="pm-state-title">Kunne ikke hente invitationer</div>
-                <div className="pm-state-copy">{invitesLoadError}</div>
-              </div>
-            </div>
-          ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-            {inviteItems.map((it) => (
-              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
-                    {it.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
-                    {it.subtitle ? <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 2 }}>{it.subtitle}</div> : null}
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
-                </div>
-                {it.kind === 'inbound' ? (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
-                    <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}
-                      style={{ flex: 1, background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                      Godkend
-                    </button>
-                    <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
-                      style={{ flex: 1, background: theme.surface, color: theme.accent, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                      Afvis
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
-                    <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                      style={{ width: '100%', background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
-                      Se
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          )}
-        </div>
+          <ul className="pm-home-open-list">
+            {homeOpenMatches.map((row) => {
+              const day = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+              const lvl = formatMatchLevelRangeLabel(row.eloMin, row.eloMax) || '';
+              const free = Math.max(0, 4 - (row.playerCount || 0));
+              return (
+                <li key={row.matchId}>
+                  <button type="button" className="pm-home-open-row" onClick={() => setViewMatch(openMatchViewPayload(row))}>
+                    <span className="pm-home-open-when">
+                      <span className="pm-home-open-time">{row.time ? String(row.time).slice(0, 5) : '—'}</span>
+                      <span className="pm-home-open-day">{day}</span>
+                    </span>
+                    <span className="pm-home-open-main">
+                      <span className="pm-home-open-court">{row.court}</span>
+                      <span className="pm-home-open-meta">
+                        <span className="pm-home-open-dots" aria-label={`${row.playerCount || 0} af 4 spillere`}>
+                          {[0, 1, 2, 3].map((n) => <span key={n} className={n < (row.playerCount || 0) ? 'is-on' : ''} />)}
+                        </span>
+                        {lvl ? <span>{lvl}</span> : null}
+                      </span>
+                    </span>
+                    <span className="pm-home-open-cta">{free === 1 ? '1 ledig' : `${free} ledige`}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
+
+      <nav className="pm-home-tiles" aria-label="Genveje">
+        <button type="button" className="pm-home-tile" data-tour="quick-action-makkere" onClick={() => setTab('makkere')}>
+          <Users size={20} aria-hidden />
+          <span>Find makker</span>
+          <ChevronRight size={16} aria-hidden className="pm-home-tile-chev" />
+        </button>
+        <button type="button" className="pm-home-tile" data-tour="quick-action-baner" onClick={() => setTab('baner')}>
+          <MapPin size={20} aria-hidden />
+          <span>Find ledig bane</span>
+          <ChevronRight size={16} aria-hidden className="pm-home-tile-chev" />
+        </button>
+      </nav>
 
       {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
         <button
@@ -1400,7 +1466,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       {/* Aktivitetsfeed */}
       {feedLoading ? (
         <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 10px' }}>Aktivitet</h3>
+          <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {[54, 46, 54, 38, 50].map((w, i) => (
               <div key={i} style={{ height: "54px", borderRadius: "8px", background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
@@ -1409,7 +1475,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         </div>
       ) : feedLoadError && allFeedRows.length === 0 ? (
         <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 10px' }}>Aktivitet</h3>
+          <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div className="pm-state-card pm-state-card--error">
             <div className="pm-state-icon" aria-hidden="true">⚠️</div>
             <div className="pm-state-title">Kunne ikke hente aktivitet</div>
@@ -1446,7 +1512,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 18px 0' }}>Aktivitet</h3>
+            <h2 className="pm-home-h" style={{ margin: '18px 18px 0' }}>Seneste aktivitet</h2>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button
@@ -1470,7 +1536,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="pm-home-feed-list">
             {feedRows.length === 0 ? (
               <div className="pm-ui-card" style={{ padding: "16px", color: theme.textMid, fontSize: "13px" }}>
                 {allFeedRows.length > 0 ? (
@@ -1599,25 +1665,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   action: (
                     <button
                       onClick={() =>
-                        setViewMatch({
-                          kind: "open",
-                          matchId: row.matchId,
-                          title: `${row.creatorName} søger spillere`,
-                          createdAt: row.created_at,
-                          date: row.date,
-                          time: row.time,
-                          timeEnd: row.timeEnd,
-                          court: row.court,
-                          booked: row.booked,
-                          eloMin: row.eloMin,
-                          eloMax: row.eloMax,
-                          description: row.description,
-                          creatorName: row.creatorName,
-                          creatorAvatar: row.creatorAvatar,
-                          creatorArea: row.creatorArea,
-                          players: row.players,
-                          playerCount: row.playerCount,
-                        })
+                        setViewMatch(openMatchViewPayload(row))
                       }
                       style={activityActionBtnStyle(theme.green)}
                     >
