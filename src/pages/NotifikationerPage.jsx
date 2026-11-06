@@ -48,7 +48,7 @@ function NotifIcon({ type }) {
     case 'match_cancelled':
     case 'americano_cancelled':
     case 'league_cancelled':
-      return wrap(theme.lossBg, theme.loss, <X style={iconStyle} />);
+      return wrap(theme.surfaceMuted, theme.textMid, <X style={iconStyle} />);
     case 'match_updated':
       return wrap(theme.amberBg, theme.amberText, <CalendarClock style={iconStyle} />);
     case 'elo_change':

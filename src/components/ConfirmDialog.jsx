@@ -40,7 +40,7 @@ export function ConfirmDialog({
           boxShadow: theme.modalShadow,
           border: '1px solid ' + theme.border,
           textAlign: hasStructuredContent ? 'center' : 'left',
-          fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
+          fontFamily: 'var(--pm-font)',
         }}
         onClick={e => e.stopPropagation()}
       >

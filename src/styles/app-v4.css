@@ -342,3 +342,7 @@ button.pm-notif-v4-item { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .pm-swipe-slide, .pm-swipe-row.is-removing { transition: none; }
 }
+
+/* Tekstsider (Om, FAQ, privatliv m.m.): hold linjerne i en behagelig laengde. */
+.pm-legal-page p,
+.pm-legal-page li { max-width: 60ch; }

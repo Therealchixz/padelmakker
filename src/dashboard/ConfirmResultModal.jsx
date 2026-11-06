@@ -36,7 +36,7 @@ export function ConfirmResultModal({
 
   return (
     <AppModal open onClose={busy ? undefined : onClose} ariaLabel="Bekræft resultat" maxWidthPreset="sm">
-      <div className="pm-modal-body" style={{ fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
+      <div className="pm-modal-body" style={{ fontFamily: 'var(--pm-font)' }}>
         {/* Eyebrow */}
         <div style={{ textAlign: 'center', fontSize: '10.5px', fontWeight: 700, letterSpacing: '1.3px', textTransform: 'uppercase', color: 'var(--pm-text-mid)' }}>
           Bekræft resultat

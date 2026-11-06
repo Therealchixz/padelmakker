@@ -1211,7 +1211,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                           statValue={`${theirWinPct}%`}
                           statColor={theme.loss}
                           statLabel="de vinder"
-                          avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
+                          avatarStyle={{ background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}
                           onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                         />
                       </div>
@@ -1278,7 +1278,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                         statValue={`${theirWinPct}%`}
                         statColor={americanoOutcomeColors.loss.text}
                         statLabel="de vinder"
-                        avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
+                        avatarStyle={{ background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}
                         onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                       />
                     </div>
@@ -1362,7 +1362,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                         statValue={`${theirWinPct}%`}
                         statColor={theme.loss}
                         statLabel="de vinder"
-                        avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
+                        avatarStyle={{ background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}
                         onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                       />
                     </div>

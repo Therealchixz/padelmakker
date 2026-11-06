@@ -144,7 +144,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
 
   return (
     <AppModal open onClose={onClose} ariaLabel={`Inviter ${inviteeName}`} maxWidthPreset="sm" zIndex={1200} contentStyle={{ maxHeight: '80vh' }}>
-      <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
+      <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto', fontFamily: 'var(--pm-font)' }}>
 
         {/* Player header */}
         <div style={{ display: 'flex', gap: 11, alignItems: 'center', marginBottom: 14 }}>

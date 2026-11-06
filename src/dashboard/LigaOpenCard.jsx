@@ -279,7 +279,7 @@ export function LigaOpenCard({
         const ligaLabel = seasonLabel ? `${seasonLabel} Liga` : 'Liga';
         const metaParts = [dateRangeStr, `${filled}/${maxTeams} hold`].filter(Boolean);
         let statusBg = theme.greenBg, statusColor = theme.green, statusBorder = undefined, statusText = 'Åben';
-        if (isFull) { statusBg = theme.lossBg; statusColor = theme.loss; statusText = 'Fuld'; }
+        if (isFull) { statusBg = theme.surfaceMuted; statusColor = theme.textMid; statusText = 'Fuld'; }
         else if (isAlmostFull) { statusBg = theme.amberBg; statusColor = theme.amberText; statusBorder = `1px solid ${theme.amberBorder}`; statusText = '1 plads'; }
         return (
           <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
