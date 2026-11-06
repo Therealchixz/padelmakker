@@ -822,7 +822,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>
               ) : null}
               {user.level != null && user.level !== '' ? (
-                <span style={tag(theme.amberBg, theme.amberText)}>
+                <span style={tag(theme.surfaceMuted, theme.text)}>
                   Niveau {formatPlaytomicLevel(user.level)}
                 </span>
               ) : null}

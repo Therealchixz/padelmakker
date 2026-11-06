@@ -6,7 +6,7 @@ import { KampeCreateHeader } from '../components/kampe/KampeRedesignToolbar';
 
 function matchResultTag(match, myTeamId) {
   if (!match.team2_id) return { label: 'Fri runde', color: theme.textLight, bg: theme.surfaceAlt, border: theme.border };
-  if (match.status !== 'reported') return { label: 'Planlagt', color: theme.amberText, bg: theme.amberBg, border: theme.amberBorder };
+  if (match.status !== 'reported') return { label: 'Planlagt', color: theme.textMid, bg: theme.surfaceMuted, border: theme.border };
 
   if (!myTeamId) {
     return { label: match.score_text || '—', color: theme.onAccent, bg: theme.navySoft, border: 'transparent' };

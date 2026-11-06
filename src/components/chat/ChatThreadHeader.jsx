@@ -32,7 +32,7 @@ export function ChatThreadHeader({
         ) : null}
       </div>
       {levelTag && (
-        <span style={tag(theme.amberBg, theme.amberText)}>{levelTag}</span>
+        <span style={tag(theme.surfaceMuted, theme.text)}>{levelTag}</span>
       )}
       {actionsSlot || null}
     </div>

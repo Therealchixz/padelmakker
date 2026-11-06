@@ -43,7 +43,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
           {wonLabel && (
             <span style={{
               fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
-              background: theme.amberBg, color: theme.amberText, border: `1px solid ${theme.amberBorder}`,
+              background: winner === 'team1' ? theme.greenBg : theme.lossBg, color: winner === 'team1' ? theme.green : theme.loss, border: '1px solid transparent',
             }}>
               {winner === 'team1' ? 'Vundet' : 'Tabt'}
             </span>
@@ -93,7 +93,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         margin: '18px 0 0', padding: '8px 12px', borderRadius: 999,
-        background: theme.accentBg, color: theme.accent,
+        background: theme.amberBg, color: theme.amberText,
         fontSize: 12, fontWeight: 700,
       }}>
         <Clock size={14} aria-hidden />

@@ -368,7 +368,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             {pRef.intent_now && <span style={tag(theme.surfaceMuted, theme.textMid)}>{intentDisplayLabel(pRef.intent_now)}</span>}
             {!dataLoading && elo != null && <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
             {levelDisplay ? (
-              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
+              <span style={tag(theme.surfaceMuted, theme.text)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
             {age && <span style={tag(theme.surfaceAlt, theme.textMid)}>{age} år</span>}
           </div>
@@ -442,7 +442,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               style={{
                 marginBottom: '16px',
                 padding: '12px 14px',
-                background: theme.accentBg,
+                background: theme.surfaceMuted,
                 borderRadius: '10px',
                 border: '1px solid ' + theme.border,
               }}

@@ -50,14 +50,14 @@ function NotifIcon({ type }) {
     case 'league_cancelled':
       return wrap(theme.surfaceMuted, theme.textMid, <X style={iconStyle} />);
     case 'match_updated':
-      return wrap(theme.amberBg, theme.amberText, <CalendarClock style={iconStyle} />);
+      return wrap(theme.surfaceMuted, theme.textMid, <CalendarClock style={iconStyle} />);
     case 'elo_change':
     case 'americano_completed':
     case 'league_completed':
       return wrap(theme.greenBg, theme.green, <TrendingUp style={iconStyle} />);
     case 'americano_started':
     case 'league_started':
-      return wrap(theme.accentBg, theme.accent, <Trophy style={iconStyle} />);
+      return wrap(theme.surfaceMuted, theme.text, <Trophy style={iconStyle} />);
     case 'makker_suggestion':
       return wrap(theme.purpleBg, theme.purple, <Users style={iconStyle} />);
     default:

@@ -191,10 +191,12 @@ export function resolveModalMaxWidth(presetOrPx) {
   return presetOrPx || MODAL_WIDTH_PRESETS.md;
 }
 
-/** Find makker match-score badge colors (tokens) */
+/** Find makker match-score badge colors (tokens).
+ * Kun "Staerkt match" faar farve (groen). Resten er neutrale maerker med en lille prik,
+ * saa kortet ikke faar en ekstra farve; ler er forbeholdt knapperne. */
 export function makkerMatchBadge(score) {
-  if (score >= 80) return { label: 'Stærkt match', color: 'var(--pm-green)', bg: 'var(--pm-green-bg)', border: 'var(--pm-success-border)' };
-  if (score >= 65) return { label: 'God match', color: 'var(--pm-accent)', bg: 'var(--pm-accent-bg)', border: 'var(--pm-info-border)' };
-  if (score >= 50) return { label: 'Okay match', color: 'var(--pm-warm)', bg: 'var(--pm-warm-bg)', border: 'var(--pm-warning-border)' };
-  return { label: 'Mulig match', color: 'var(--pm-text-light)', bg: 'var(--pm-surface-alt)', border: 'var(--pm-border)' };
+  if (score >= 80) return { label: 'Stærkt match', color: 'var(--pm-green)', bg: 'var(--pm-green-bg)', border: 'transparent', dot: 'var(--pm-green)' };
+  if (score >= 65) return { label: 'God match', color: 'var(--pm-text)', bg: 'var(--pm-surface-muted)', border: 'transparent', dot: 'var(--pm-green)' };
+  if (score >= 50) return { label: 'Okay match', color: 'var(--pm-text-mid)', bg: 'var(--pm-surface-muted)', border: 'transparent', dot: 'var(--pm-text-light)' };
+  return { label: 'Mulig match', color: 'var(--pm-text-mid)', bg: 'var(--pm-surface-muted)', border: 'transparent', dot: null };
 }

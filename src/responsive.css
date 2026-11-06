@@ -2083,14 +2083,14 @@ button,
 }
 
 .pm-status-badge--accent {
-  background: var(--pm-accent-bg);
-  color: var(--pm-accent);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text);
   border-color: var(--pm-border);
 }
 
 .pm-status-badge--blue {
-  background: var(--pm-blue-bg);
-  color: var(--pm-blue);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-mid);
   border-color: var(--pm-border);
 }
 
@@ -2101,13 +2101,13 @@ button,
 }
 
 .pm-status-badge--warm {
-  background: var(--pm-warm-bg);
+  background: var(--pm-amber-bg);
   color: var(--pm-amber-text);
-  border-color: color-mix(in srgb, var(--pm-warm) 28%, var(--pm-border));
+  border-color: var(--pm-amber-border);
 }
 
 .pm-status-badge--neutral {
-  background: var(--pm-surface-alt);
+  background: var(--pm-surface-muted);
   color: var(--pm-text-mid);
   border-color: var(--pm-border);
 }
@@ -2304,8 +2304,8 @@ button,
 }
 
 .pm-card-subpanel--accent {
-  background: var(--pm-accent-bg);
-  border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+  background: var(--pm-surface-muted);
+  border-color: var(--pm-border);
 }
 
 .pm-card-subpanel--warm {
@@ -2334,8 +2334,8 @@ button,
 }
 
 .pm-card-row-item--accent {
-  background: var(--pm-accent-bg);
-  border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+  background: var(--pm-surface-muted);
+  border-color: var(--pm-border);
 }
 
 .pm-card-row-item--neutral {
@@ -2511,7 +2511,7 @@ button,
 }
 
 .pm-data-table-row--highlight {
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
 }
 
 .pm-ui-card-soft {
@@ -2874,11 +2874,6 @@ button,
   border-radius: 50%;
   background: #FFFFFF;
   display: inline-block;
-  animation: pm-live-pulse 1.4s ease-in-out infinite;
-}
-@keyframes pm-live-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
 }
 
 /* Player slot — top slot er hævet over center service-linjen, bottom slot under */
@@ -3094,7 +3089,7 @@ button,
   width: 40px;
   height: 40px;
   border-radius: var(--pm-radius-md);
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4458,7 +4453,7 @@ button,
   max-width: 100%;
   padding: 4px 4px 4px 10px;
   border-radius: 999px;
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
   color: var(--pm-text);
   font-family: var(--pm-font);
   font-size: 12.5px;
@@ -4536,8 +4531,8 @@ button,
 }
 
 .pm-active-seeking-row--compact.pm-active-seeking-row--on {
-  background: var(--pm-accent-bg);
-  border-color: color-mix(in srgb, var(--pm-accent) 28%, var(--pm-border));
+  background: var(--pm-surface);
+  border-color: var(--pm-border);
 }
 
 .pm-active-seeking-row--compact.pm-active-seeking-row--off {
@@ -4588,7 +4583,7 @@ button,
 }
 
 .pm-active-seeking-badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -4596,8 +4591,8 @@ button,
 }
 
 .pm-active-seeking-badge--active {
-  background: var(--pm-accent-bg);
-  color: var(--pm-accent);
+  background: var(--pm-green-bg);
+  color: var(--pm-green);
 }
 
 .pm-active-seeking-badge--expired {
@@ -4612,9 +4607,8 @@ button,
   margin-top: 5px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
-  border: 1px solid color-mix(in srgb, var(--pm-accent) 18%, var(--pm-border));
-  color: var(--pm-accent);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-mid);
   line-height: 1.2;
 }
 
@@ -4630,7 +4624,7 @@ button,
 }
 
 .pm-active-seeking-countdown__unit {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: lowercase;
 }
@@ -4648,7 +4642,7 @@ button,
 }
 
 .pm-active-seeking-home-toggle--on {
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface);
 }
 
 .pm-active-seeking-home-toggle--off {
@@ -4677,7 +4671,7 @@ button,
 }
 
 .pm-active-seeking-home-online--on {
-  color: var(--pm-accent);
+  color: var(--pm-green);
 }
 
 .pm-active-seeking-home-online--off {
@@ -4705,8 +4699,8 @@ button,
   height: 44px;
   margin-bottom: 14px;
   border-radius: 12px;
-  background: var(--pm-accent-bg);
-  color: var(--pm-accent);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4823,7 +4817,7 @@ button,
 }
 
 .pm-auth-success-card {
-  background: var(--pm-accent-bg);
+  background: var(--pm-green-bg);
   padding: 20px;
   border-radius: var(--pm-radius-lg);
   margin-top: 20px;
@@ -7628,7 +7622,7 @@ button,
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   padding: 4px 8px;
   border-radius: 999px;
@@ -7641,8 +7635,8 @@ button,
 }
 
 .pm-kampe-v2-badge--warm {
-  background: color-mix(in srgb, var(--pm-warm) 16%, var(--pm-surface));
-  color: var(--pm-warm);
+  background: var(--pm-amber-bg);
+  color: var(--pm-amber-text);
 }
 
 .pm-kampe-v2-badge--blue {
@@ -7666,7 +7660,7 @@ button,
 }
 
 .pm-kampe-v2-badge--neutral {
-  background: var(--pm-surface-alt);
+  background: var(--pm-surface-muted);
   color: var(--pm-text-mid);
 }
 
@@ -7682,12 +7676,12 @@ button,
 }
 
 .pm-kampe-v2-badge--full {
-  background: var(--pm-danger-bg, #FDEAEA);
-  color: var(--pm-danger, #E5484D);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-mid);
 }
 
 .pm-kampe-v2-badge--closed {
-  background: color-mix(in srgb, var(--pm-text-mid) 12%, var(--pm-surface));
+  background: var(--pm-surface-muted);
   color: var(--pm-text-mid);
 }
 
@@ -7944,6 +7938,9 @@ button,
 }
 
 .pm-kampe-v2-list-elo-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 700;

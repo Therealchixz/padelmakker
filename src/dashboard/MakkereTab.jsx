@@ -150,7 +150,7 @@ function writeDismissedSugg(userId, set) {
 
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor, displayGamesFor }) {
+export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor, displayGamesFor }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p, viewer);
   const quality = makkerMatchBadge(score);
@@ -189,7 +189,7 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
               ELO {Math.round(Number(displayEloFor ? displayEloFor(p) : p.elo_rating) || 1000)}
             </span>
             {p.level != null && p.level !== '' ? (
-              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
+              <span style={tag(theme.surfaceMuted, theme.text)}>Niveau {formatPlaytomicLevel(p.level)}</span>
             ) : null}
           </div>
           <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -220,7 +220,7 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
           fontSize: '11px', fontWeight: 700,
           whiteSpace: 'nowrap', flexShrink: 0,
         }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
+          {quality.dot ? <span aria-hidden style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.dot, flexShrink: 0 }} /> : null}
           {quality.label}
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -921,7 +921,7 @@ export function MakkereTab({ user, showToast }) {
                       ELO {Math.round(Number(displayElo(p)) || 1000)}
                     </span>
                     {p.level != null && p.level !== '' ? (
-                      <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
+                      <span style={tag(theme.surfaceMuted, theme.text)}>Niveau {formatPlaytomicLevel(p.level)}</span>
                     ) : null}
                     {isSeekingActive(p) && (
                       <span style={tag(theme.greenBg, theme.green)}>{seekingActivityLabelDisplay(p)}</span>
@@ -953,7 +953,7 @@ export function MakkereTab({ user, showToast }) {
                   fontSize: '11px', fontWeight: 700,
                   whiteSpace: 'nowrap', flexShrink: 0,
                 }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
+                  {quality.dot ? <span aria-hidden style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.dot, flexShrink: 0 }} /> : null}
                   {quality.label}
                 </span>
                 <span style={{ fontSize: 11.5, color: theme.textMid, flex: '1 1 140px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

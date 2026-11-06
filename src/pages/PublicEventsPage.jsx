@@ -11,7 +11,7 @@ import { authReturnSignupUrl } from '../lib/authReturnPath';
 
 function statusLabel(status) {
   if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: theme.warningBorder, color: theme.amberText };
-  return { text: 'Tilmelding åben', bg: theme.accentBg, border: theme.infoBorder, color: theme.accent };
+  return { text: 'Tilmelding åben', bg: theme.greenBg, border: 'transparent', color: theme.green };
 }
 
 export function PublicEventsPage() {

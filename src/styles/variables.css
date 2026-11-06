@@ -1,4 +1,8 @@
-/* ── PadelMakker design tokens — light mode ── */
+/* ── PadelMakker design tokens — light mode ──
+   Farvekort (nov. 2026): papir + blaek baerer alt. Ler er eneste staerke farve og
+   betyder "tryk her". Tre stille signalfarver fra banen bruges kun til status:
+   groen (godt/vundet/aabent), rosa-roed (tabt/fejl/farligt), okker (afventer).
+   Blaa og lilla er udfaset; info er neutral blaek. */
 :root {
   --pm-bg:          #F3EEE4;
   --pm-surface:     #FBF8F2;
@@ -31,18 +35,18 @@
   /* Okker = afventer / kraever opmaerksomhed. Holdt gul-brun, saa den ikke ligner ler. */
   --pm-amber:       #8C6400;
   --pm-amber-bg:    #F6ECCB;
-  --pm-amber-text:  #6E4F00;
-  --pm-amber-border:#EDD9B5;
+  --pm-amber-text:  #6B4D00;
+  --pm-amber-border:#E3CF95;
 
-  --pm-warm:        #8C6400;
+  --pm-warm:        #7A5700;
   --pm-warm-bg:     #F6ECCB;
-  --pm-blue:        #2563EB;
-  --pm-blue-bg:     #EFF6FF;
-  --pm-red:         #DC2626;
+  --pm-blue:        #4A463E;
+  --pm-blue-bg:     #EAE3D6;
+  --pm-red:         #B4234A;
   /* Udfyldte roede maerker med hvid tekst (antal ulaeste m.m.). Samme ide som
      --pm-accent-solid: i moerk tilstand er --pm-red for lys til hvid tekst. */
-  --pm-red-solid:   #DC2626;
-  --pm-red-bg:      #FEF2F2;
+  --pm-red-solid:   #B4234A;
+  --pm-red-bg:      #F8E3E7;
 
   --pm-green:       #2F5D4E;
   --pm-green-bg:    #E2EBE5;
@@ -50,25 +54,25 @@
      saa de to ikke forveksles. */
   --pm-loss:        #B4234A;
   --pm-loss-bg:     #F8E3E7;
-  --pm-purple:      #7C3AED;
-  --pm-purple-bg:   #F5F3FF;
-  --pm-info:        #2563EB;
-  --pm-info-bg:     #EFF6FF;
-  --pm-info-border: #93C5FD;
+  --pm-purple:      #2F5D4E;
+  --pm-purple-bg:   #E2EBE5;
+  --pm-info:        #4A463E;
+  --pm-info-bg:     #EAE3D6;
+  --pm-info-border: #D9D1C2;
   --pm-success:     #2F5D4E;
   --pm-success-bg:  #E2EBE5;
-  --pm-success-border:#6EE7B7;
-  --pm-warning:     #B45309;
-  --pm-warning-bg:  #FEF3C7;
-  --pm-warning-border:#FCD34D;
-  --pm-danger:      #DC2626;
-  --pm-danger-bg:   #FEF2F2;
-  --pm-danger-border:#FCA5A5;
-  --pm-danger-strong:#B91C1C;
+  --pm-success-border:#B9CDC2;
+  --pm-warning:     #7A5700;
+  --pm-warning-bg:  #F6ECCB;
+  --pm-warning-border:#E3CF95;
+  --pm-danger:      #B4234A;
+  --pm-danger-bg:   #F8E3E7;
+  --pm-danger-border:#E8B9C4;
+  --pm-danger-strong:#8E1A39;
   --pm-on-accent:   #FFFFFF;
-  --pm-podium-gold:   #D97706;
-  --pm-podium-silver: #7D776B;
-  --pm-podium-bronze: #B45309;
+  --pm-podium-gold:   #8C6400;
+  --pm-podium-silver: #6B655A;
+  --pm-podium-bronze: #7E5236;
   /* Americano: groen = vundet, papir = uafgjort, dempet = tabt (ikke roed). */
   --pm-americano-win-bg: var(--pm-green-bg);
   --pm-americano-win-border: color-mix(in srgb, var(--pm-green) 45%, var(--pm-border));
@@ -79,9 +83,9 @@
   --pm-americano-loss-bg: var(--pm-loss-bg);
   --pm-americano-loss-border: color-mix(in srgb, var(--pm-loss) 35%, var(--pm-border));
   --pm-americano-loss-text: var(--pm-loss);
-  --pm-americano-neutral-bg: #FFFFFF;
-  --pm-americano-neutral-border: #E8ECF1;
-  --pm-americano-neutral-text: #0F172A;
+  --pm-americano-neutral-bg: #FBF8F2;
+  --pm-americano-neutral-border: #D9D1C2;
+  --pm-americano-neutral-text: #1B1A17;
   --pm-elo-gradient-start:#1B1A17;
   --pm-elo-gradient-end:#2E2B25;
   --pm-brand-gradient: linear-gradient(135deg, var(--pm-elo-gradient-start), var(--pm-elo-gradient-end));
@@ -93,9 +97,9 @@
   --pm-surface-muted: #EAE3D6;
   --pm-video-bg: #1B1A17;
   /* Form-prikkerne har hvide bogstaver (V/T/U); de lyse nuancer gav 2,3-3,8:1. */
-  --pm-form-win: #15803D;
-  --pm-form-loss: #DC2626;
-  --pm-form-draw: #6B7280;
+  --pm-form-win: #2F5D4E;
+  --pm-form-loss: #B4234A;
+  --pm-form-draw: #6B655A;
   --pm-elo-progress-track: rgba(255,255,255,0.15);
   --pm-overlay:     rgba(0,0,0,0.35);
   --pm-overlay-strong: rgba(0,0,0,0.5);
@@ -167,42 +171,42 @@
   --pm-accent-bg:   #3A2119;
   --pm-landing-cta-blue: #C0503A;
 
-  --pm-amber:       #FBBF24;
-  --pm-amber-bg:    #2A1F0E;
-  --pm-amber-text:  #FCD34D;
-  --pm-amber-border:#92400E;
-  --pm-warm:        #FBBF24;
-  --pm-warm-bg:     #292010;
+  --pm-amber:       #E9B44C;
+  --pm-amber-bg:    #2A2210;
+  --pm-amber-text:  #F0C871;
+  --pm-amber-border:#5E4A1A;
+  --pm-warm:        #E9B44C;
+  --pm-warm-bg:     #2A2210;
   --pm-orange:      #E8836B;
-  --pm-blue:        #60A5FA;
-  --pm-blue-bg:     #162038;
-  --pm-red:         #F87171;
-  --pm-red-solid:   #DC2626;
-  --pm-red-bg:      #2D1515;
+  --pm-blue:        #CFC7B8;
+  --pm-blue-bg:     #2A2722;
+  --pm-red:         #F27A96;
+  --pm-red-solid:   #B4234A;
+  --pm-red-bg:      #3A1822;
 
   --pm-green:       #7FBFA4;
   --pm-green-bg:    #14261F;
   --pm-loss:        #F27A96;
   --pm-loss-bg:     #3A1822;
-  --pm-purple:      #A78BFA;
-  --pm-purple-bg:   #1A0F35;
-  --pm-info:        #60A5FA;
-  --pm-info-bg:     #162038;
-  --pm-info-border: #3B82F6;
+  --pm-purple:      #7FBFA4;
+  --pm-purple-bg:   #14261F;
+  --pm-info:        #CFC7B8;
+  --pm-info-bg:     #2A2722;
+  --pm-info-border: #3A362F;
   --pm-success:     #7FBFA4;
   --pm-success-bg:  #14261F;
-  --pm-success-border:#10B981;
-  --pm-warning:     #FBBF24;
-  --pm-warning-bg:  #292010;
-  --pm-warning-border:#D97706;
-  --pm-danger:      #F87171;
-  --pm-danger-bg:   #2D1515;
-  --pm-danger-border:#EF4444;
-  --pm-danger-strong:#FCA5A5;
+  --pm-success-border:#2E5546;
+  --pm-warning:     #E9B44C;
+  --pm-warning-bg:  #2A2210;
+  --pm-warning-border:#5E4A1A;
+  --pm-danger:      #F27A96;
+  --pm-danger-bg:   #3A1822;
+  --pm-danger-border:#6E2B3D;
+  --pm-danger-strong:#F8A5B8;
   --pm-on-accent:   #FFFFFF;
-  --pm-podium-gold:   #FBBF24;
+  --pm-podium-gold:   #E9B44C;
   --pm-podium-silver: #A39B8C;
-  --pm-podium-bronze: #D97706;
+  --pm-podium-bronze: #C08A68;
   --pm-americano-win-bg: var(--pm-green-bg);
   --pm-americano-win-border: color-mix(in srgb, var(--pm-green) 45%, var(--pm-border));
   --pm-americano-win-text: var(--pm-green);

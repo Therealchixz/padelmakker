@@ -1997,7 +1997,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </span>
                 ) : null}
                 {viewMatch.score ? (
-                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.text, background: theme.surfaceMuted }}>
                     Resultat: {viewMatch.score}
                   </span>
                 ) : null}
