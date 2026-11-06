@@ -78,9 +78,6 @@
 .pm-notif-v4 {
   color: var(--pm-text);
   background: var(--pm-bg);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 .pm-notif-v4--dropdown {
   position: absolute;
@@ -97,26 +94,73 @@
   padding: 16px 16px 12px;
   z-index: 200;
 }
-.pm-notif-v4--sheet {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px));
-  animation: pm-notif-sheet-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+/* ── Ark nedefra (BottomSheet) ── */
+.pm-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(27, 26, 23, 0.4);
+  animation: pm-sheet-fade-in 200ms ease both;
 }
-@keyframes pm-notif-sheet-in {
-  from { transform: translateY(32px); opacity: 0; }
-  to { transform: none; opacity: 1; }
+.pm-sheet-backdrop.is-closing { animation: pm-sheet-fade-out 220ms ease both; }
+.pm-sheet {
+  position: relative;
+  width: 100%;
+  max-height: 86dvh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -12px 40px rgba(27, 26, 23, 0.2);
+  outline: none;
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Kun "backwards": naar indgangen er faerdig, maa traek-koden flytte arket. */
+  animation: pm-sheet-up 300ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
-@media (prefers-reduced-motion: reduce) {
-  .pm-notif-v4--sheet { animation: none; }
-}
-.pm-notif-v4-grip {
+.pm-sheet.is-closing { animation: pm-sheet-down 220ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.pm-sheet-grip {
+  flex-shrink: 0;
   width: 40px;
   height: 4px;
   border-radius: 2px;
   background: var(--pm-border);
-  margin: 0 auto 14px;
-  flex-shrink: 0;
+  margin: 10px auto 4px;
+}
+/* Usynligt, men stoerre greb, saa det er nemt at ramme med tommelfingeren. */
+.pm-sheet-grip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 28px;
+}
+.pm-sheet-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+@keyframes pm-sheet-up { from { transform: translate3d(0, 100%, 0); } }
+@keyframes pm-sheet-down { to { transform: translate3d(0, 100%, 0); } }
+@keyframes pm-sheet-fade-in { from { opacity: 0; } }
+@keyframes pm-sheet-fade-out { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pm-sheet, .pm-sheet.is-closing, .pm-sheet-backdrop, .pm-sheet-backdrop.is-closing { animation-duration: 1ms; }
+}
+
+/* ── Notifikationer: indhold ── */
+.pm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 .pm-notif-v4-head {
   display: flex;
@@ -124,6 +168,7 @@
   justify-content: space-between;
   gap: 12px;
 }
+.pm-notif-v4-head-actions { display: flex; align-items: center; gap: 4px; }
 .pm-notif-v4-title {
   margin: 0;
   font-family: var(--pm-font-brand);
@@ -134,10 +179,9 @@
   letter-spacing: 0.01em;
 }
 .pm-notif-v4--dropdown .pm-notif-v4-title { font-size: 24px; }
-.pm-notif-v4-read,
-.pm-notif-v4-clear {
+.pm-notif-v4-read {
   min-height: 44px;
-  padding: 0 4px;
+  padding: 0 6px;
   border: 0;
   background: none;
   color: var(--pm-accent);
@@ -146,27 +190,34 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
 }
-.pm-notif-v4-clear { color: var(--pm-text-light); }
+.pm-notif-v4-close {
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--pm-text-mid);
+  cursor: pointer;
+}
 .pm-notif-v4-list {
   margin-top: 10px;
   border-top: 1.5px solid var(--pm-text);
 }
-.pm-notif-v4-row {
-  display: flex;
-  align-items: flex-start;
-  border-bottom: 1px solid var(--pm-border);
-}
 .pm-notif-v4-item {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   display: grid;
-  grid-template-columns: 10px 1fr auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: start;
   padding: 12px 0;
   border: 0;
+  border-bottom: 1px solid var(--pm-border);
   background: none;
   color: inherit;
   font: inherit;
@@ -181,7 +232,7 @@ button.pm-notif-v4-item { cursor: pointer; }
   background: var(--pm-border);
 }
 .pm-notif-v4-dot.is-unread { background: var(--pm-accent-solid); }
-.pm-notif-v4-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pm-notif-v4-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pm-notif-v4-t {
   font-weight: 600;
   font-size: 14px;
@@ -191,8 +242,10 @@ button.pm-notif-v4-item { cursor: pointer; }
 .pm-notif-v4-b {
   font-size: 13px;
   line-height: 1.4;
-  color: var(--pm-text-mid);
-  overflow-wrap: anywhere;
+  color: var(--pm-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .pm-notif-v4-cta,
 .pm-notif-v4-time {
@@ -202,19 +255,7 @@ button.pm-notif-v4-item { cursor: pointer; }
   letter-spacing: 0.03em;
 }
 .pm-notif-v4-cta { color: var(--pm-accent); text-transform: uppercase; margin-top: 3px; }
-.pm-notif-v4-time { color: var(--pm-text-light); white-space: nowrap; padding-top: 2px; }
-.pm-notif-v4-del {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin-right: -10px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: none;
-  color: var(--pm-text-light);
-  cursor: pointer;
-}
+.pm-notif-v4-time { color: var(--pm-text-light); white-space: nowrap; padding-top: 3px; }
 .pm-notif-v4-empty {
   display: flex;
   flex-direction: column;
@@ -225,18 +266,37 @@ button.pm-notif-v4-item { cursor: pointer; }
   font-size: 14px;
 }
 .pm-notif-v4-extras {
-  margin-top: 14px;
+  margin-top: 16px;
   border: 1px solid var(--pm-border);
   border-radius: 12px;
   overflow: hidden;
   background: var(--pm-surface);
-  flex-shrink: 0;
 }
 .pm-notif-v4-extras > :last-child,
 .pm-notif-v4-extras .pm-push-controls > :last-child { border-bottom: 0 !important; }
-.pm-notif-v4-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
+.pm-notif-v4-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.pm-notif-v4-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--pm-accent);
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pm-notif-v4-link--muted { color: var(--pm-text-light); }
 @media (hover: hover) and (pointer: fine) {
   button.pm-notif-v4-item:hover .pm-notif-v4-t { text-decoration: underline; text-underline-offset: 3px; }
-  .pm-notif-v4-del:hover { color: var(--pm-text); }
-  .pm-notif-v4-read:hover, .pm-notif-v4-clear:hover { text-decoration: underline; }
+  .pm-notif-v4-close:hover { background: var(--pm-surface-muted); }
+  .pm-notif-v4-read:hover { text-decoration: underline; }
+  .pm-notif-v4-link:hover { text-decoration: underline; }
 }
