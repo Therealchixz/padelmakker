@@ -2085,13 +2085,13 @@ button,
 .pm-status-badge--accent {
   background: var(--pm-accent-bg);
   color: var(--pm-accent);
-  border-color: color-mix(in srgb, var(--pm-accent) 28%, var(--pm-border));
+  border-color: var(--pm-border);
 }
 
 .pm-status-badge--blue {
   background: var(--pm-blue-bg);
   color: var(--pm-blue);
-  border-color: color-mix(in srgb, var(--pm-blue) 28%, var(--pm-border));
+  border-color: var(--pm-border);
 }
 
 .pm-status-badge--green {
@@ -6045,7 +6045,7 @@ button,
 .pm-admin-meta-box {
   font-size: 12px;
   color: var(--pm-text-mid);
-  background: var(--pm-surface-alt);
+  background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -7660,6 +7660,11 @@ button,
   color: var(--pm-danger);
 }
 
+.pm-kampe-v2-badge--lost {
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-mid);
+}
+
 .pm-kampe-v2-badge--neutral {
   background: var(--pm-surface-alt);
   color: var(--pm-text-mid);
@@ -7780,13 +7785,17 @@ button,
 .pm-kampe-v2-list-team--pill.pm-kampe-v2-list-team--t1 {
   padding: 4px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--pm-accent) 11%, var(--pm-surface));
+  background: var(--pm-surface-muted);
 }
 
 .pm-kampe-v2-list-team--pill.pm-kampe-v2-list-team--t2 {
   padding: 4px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--pm-blue) 11%, var(--pm-surface));
+  background: var(--pm-surface-muted);
+}
+/* Farver har én betydning: groen = vundet. Holdene selv er neutrale (ikke ler/blaa). */
+.pm-kampe-v2-list-team--pill.pm-kampe-v2-list-team--won {
+  background: color-mix(in srgb, var(--pm-green) 24%, var(--pm-surface));
 }
 
 .pm-kampe-v2-list-roster-meta {
@@ -7844,14 +7853,14 @@ button,
 }
 
 .pm-kampe-v2-list-team--t1 > .pm-avatar-circle {
-  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
-  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+  border: 1.5px solid var(--pm-border);
+  background: var(--pm-surface);
   box-sizing: border-box;
 }
 
 .pm-kampe-v2-list-team--t2 > .pm-avatar-circle {
-  border: 1.5px solid color-mix(in srgb, var(--pm-blue) 50%, var(--pm-border));
-  background: color-mix(in srgb, var(--pm-blue) 8%, var(--pm-surface));
+  border: 1.5px solid var(--pm-border);
+  background: var(--pm-surface);
   box-sizing: border-box;
 }
 
@@ -7926,7 +7935,7 @@ button,
 }
 
 .pm-kampe-v2-list-elo-delta--down {
-  color: var(--pm-danger);
+  color: var(--pm-text-mid);
 }
 
 .pm-kampe-v2-list-elo-delta--solo {
@@ -7950,9 +7959,10 @@ button,
 }
 
 .pm-kampe-v2-list-elo-result--down {
-  color: var(--pm-danger);
-  background: color-mix(in srgb, var(--pm-danger) 10%, var(--pm-surface));
-  border: 1px solid color-mix(in srgb, var(--pm-danger) 20%, var(--pm-border));
+  /* Et tab er ikke en fejl: neutral, ikke roed (roed er forbeholdt fejl og advarsler). */
+  color: var(--pm-text-mid);
+  background: var(--pm-surface-muted);
+  border: 1px solid var(--pm-border);
 }
 
 /* Status (LIVE m.m.) skal altid sidde øverst til højre — også på mobil (flex i <button> kan wrappe). */
@@ -9008,7 +9018,7 @@ button,
 }
 
 .pm-americano-v2-detail-player-elo-delta--down {
-  color: var(--pm-danger);
+  color: var(--pm-text-mid);
 }
 
 .pm-americano-v2-detail-player-points {

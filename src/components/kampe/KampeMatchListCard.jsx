@@ -17,6 +17,7 @@ function badgeToneClass(tone) {
   if (tone === 'warm') return 'pm-kampe-v2-badge--warm';
   if (tone === 'green') return 'pm-kampe-v2-badge--green';
   if (tone === 'danger') return 'pm-kampe-v2-badge--danger';
+  if (tone === 'lost') return 'pm-kampe-v2-badge--lost';
   return 'pm-kampe-v2-badge--neutral';
 }
 
@@ -125,8 +126,11 @@ export function KampeMatchListCard({
     hasConfirmedResult && (didWin || didLose)
       ? didWin
         ? { label: 'Vundet', tone: 'green' }
-        : { label: 'Tabt', tone: 'danger' }
+        : { label: 'Tabt', tone: 'lost' }
       : null;
+  // Hvilken side vandt (uafhaengigt af om jeg var med): vinderen staar staerkt, taberen dempet.
+  const t1Won = hasConfirmedResult && Number(winnerTeam) === 1;
+  const t2Won = hasConfirmedResult && Number(winnerTeam) === 2;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
   const defaultAvatar = DEFAULT_LIST_AVATAR;
@@ -153,8 +157,8 @@ export function KampeMatchListCard({
     );
   };
 
-  const renderSingleTeam = (slots, teamKey, size = listAvatarSize) => (
-    <div className={`pm-kampe-v2-list-team pm-kampe-v2-list-team--pill pm-kampe-v2-list-team--${teamKey}`}>
+  const renderSingleTeam = (slots, teamKey, size = listAvatarSize, won = false) => (
+    <div className={`pm-kampe-v2-list-team pm-kampe-v2-list-team--pill pm-kampe-v2-list-team--${teamKey}${won ? ' pm-kampe-v2-list-team--won' : ''}`}>
       {slots.map((p, i) => renderTeamSlot(p, i, teamKey, size))}
     </div>
   );
@@ -238,17 +242,17 @@ export function KampeMatchListCard({
           marginTop: 4,
         }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            {renderSingleTeam(t1Slots, 't1')}
-            <span style={{ fontSize: 12, fontWeight: 700, color: didWin ? 'var(--pm-text)' : 'var(--pm-text-mid)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+            {renderSingleTeam(t1Slots, 't1', listAvatarSize, t1Won)}
+            <span style={{ fontSize: 12, fontWeight: 700, color: t1Won ? 'var(--pm-text)' : 'var(--pm-text-light)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t1, profilesById, currentUserId)}
             </span>
           </div>
-          <div style={{ flexShrink: 0, alignSelf: 'center', fontSize: 15, fontWeight: 700, color: 'var(--pm-accent)', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+          <div style={{ flexShrink: 0, alignSelf: 'center', fontFamily: 'var(--pm-font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--pm-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             {setScoreStr}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            {renderSingleTeam(t2Slots, 't2')}
-            <span style={{ fontSize: 12, fontWeight: 700, color: didLose ? 'var(--pm-text-mid)' : 'var(--pm-text)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+            {renderSingleTeam(t2Slots, 't2', listAvatarSize, t2Won)}
+            <span style={{ fontSize: 12, fontWeight: 700, color: t2Won ? 'var(--pm-text)' : 'var(--pm-text-light)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t2, profilesById, currentUserId)}
             </span>
           </div>

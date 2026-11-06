@@ -1610,7 +1610,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 const winnerEloChange = Number(row.winnerEloChange);
                 const hasWinnerElo = Number.isFinite(winnerEloChange);
                 const winnerEloTone =
-                  winnerEloChange > 0 ? theme.green : winnerEloChange < 0 ? theme.red : theme.textMid;
+                  winnerEloChange > 0 ? theme.green : winnerEloChange < 0 ? theme.loss : theme.textMid;
                 return renderActivityRowCard({
                   key: `am-${i}`,
                   isHighlight,
@@ -1849,13 +1849,13 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
               const won = row.result === 'win';
               const change = Number(row.change) || 0;
-              const tone = change >= 0 ? theme.green : theme.red;
+              const tone = change >= 0 ? theme.green : theme.loss;
               return renderActivityRowCard({
                 key: `elo-${i}`,
                 isHighlight,
                 tone,
                 leading: (
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: won ? theme.greenBg : theme.redBg, color: won ? theme.green : theme.red, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: won ? theme.greenBg : theme.lossBg, color: won ? theme.green : theme.loss, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {won ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                 ),
@@ -1936,7 +1936,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                               Number(p.eloChange) > 0
                                 ? theme.green
                                 : Number(p.eloChange) < 0
-                                  ? theme.red
+                                  ? theme.loss
                                   : theme.textMid,
                           }}
                         >
@@ -2037,7 +2037,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                         <div key={`w-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <AvatarCircle avatar={p.avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                           <div style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.red }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.loss }}>
                             {Number(p.change) >= 0 ? "+" : ""}{Number(p.change) || 0} ELO
                           </div>
                         </div>
@@ -2052,7 +2052,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                         <div key={`l-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <AvatarCircle avatar={p.avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                           <div style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.red }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.loss }}>
                             {Number(p.change) >= 0 ? "+" : ""}{Number(p.change) || 0} ELO
                           </div>
                         </div>

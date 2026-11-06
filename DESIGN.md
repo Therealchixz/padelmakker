@@ -194,6 +194,8 @@ En varm, næsten monokrom base af papir og blæk, hvor lerfarven bærer al handl
 
 **Reglen om rød til fejl.** Tællere og ulæst-mærker er ler. Rød (`danger`) er forbeholdt fejl og advarsler.
 
+**Reglen om én betydning pr. farve (6. nov. 2026).** Ler betyder "tryk her" (knapper, Spil, aktiv fane, ulæst). Grøn betyder vundet eller plus. Et tab er ikke en fejl: "Tabt", minus-ELO og tabende hold står i neutralt blæk på `surface-muted` (`--pm-loss`, `--pm-loss-bg`), aldrig i rød eller ler. Resultater (sæt-score) står i blæk, ikke ler. Holdene i kampkort er neutrale; kun vinderholdet får en grøn tone.
+
 ## Typography
 
 **Display Font:** Anton (med 'Arial Narrow', Impact)

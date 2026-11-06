@@ -35,6 +35,8 @@ export const theme = {
   dangerStrong:'var(--pm-danger-strong)',
   green:       'var(--pm-green)',
   greenBg:     'var(--pm-green-bg)',
+  loss:        'var(--pm-loss)',
+  lossBg:      'var(--pm-loss-bg)',
   winText:     'var(--pm-americano-win-text)',
   surfaceMuted:'var(--pm-surface-muted)',
   ctaGradient: 'var(--pm-cta-gradient)',

@@ -45,6 +45,9 @@
 
   --pm-green:       #2F5D4E;
   --pm-green-bg:    #E2EBE5;
+  /* Tabt / minus-point: neutralt blaek, ikke roed. Roed betyder fejl og advarsler. */
+  --pm-loss:        var(--pm-text-mid);
+  --pm-loss-bg:     var(--pm-surface-muted);
   --pm-purple:      #7C3AED;
   --pm-purple-bg:   #F5F3FF;
   --pm-info:        #2563EB;
