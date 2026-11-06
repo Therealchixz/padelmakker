@@ -1131,7 +1131,7 @@ export function OnboardingPage() {
         background: theme.bg,
         minHeight: "100dvh",
         color: theme.text,
-        paddingTop: "max(10px, env(safe-area-inset-top, 0px))",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)",
         paddingBottom: "max(96px, env(safe-area-inset-bottom))",
       }}
     >

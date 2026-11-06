@@ -29,7 +29,7 @@ export function LegalPageLayout({ title, children, showUpdated = true, showSignu
         minHeight: '100dvh',
         color: theme.text,
         padding:
-          'max(16px, env(safe-area-inset-top)) clamp(16px, 4vw, 28px) max(100px, calc(env(safe-area-inset-bottom) + 72px))',
+          'max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) clamp(16px, 4vw, 28px) max(100px, calc(env(safe-area-inset-bottom) + 72px))',
       }}
     >
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>

@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
-import { font, theme } from '../lib/platformTheme';
-import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { theme } from '../lib/platformTheme';
+import { Bell, Trash2 } from 'lucide-react';
+import { AppModal } from './AppModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { NotificationPushControls } from './NotificationPushControls';
@@ -30,6 +31,7 @@ export function NotificationBell({ tourForceOpen = false }) {
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [matchMetaById, setMatchMetaById] = useState({});
   const [realtimeVersion, setRealtimeVersion] = useState(0);
@@ -326,6 +328,7 @@ export function NotificationBell({ tourForceOpen = false }) {
     if (!target) return;
     await markNotifRead(n);
     setOpen(false);
+    setSheetOpen(false);
     navigate(target.path);
   };
 
@@ -341,41 +344,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     return court;
   }, [matchMetaById]);
 
-  const typeIcon = (type) => {
-    switch (type) {
-      case "match_join": return "\u2694\uFE0F";
-      case "match_invite": return "\u2694\uFE0F";
-      case "match_chat": return "\uD83D\uDCAC";
-      case "match_chat_group": return "\uD83D\uDCAC";
-      case "match_full": return "\u2705";
-      case "result_submitted": return "\uD83D\uDCCA";
-      case "result_confirmed": return "\uD83C\uDFC6";
-      case "elo_change": return "\uD83D\uDCC8";
-      case "match_cancelled": return "\u274C";
-      case "match_updated": return "\uD83D\uDCC5";
-      case "welcome": return "\uD83D\uDC4B";
-      case "team_invite": return "\uD83C\uDFBE";
-      case "team_invite_accepted": return "\u2705";
-      case "team_invite_declined": return "\u274C";
-      case "americano_invite": return "\u2694\uFE0F";
-      case "americano_full": return "\u2705";
-      case "americano_started": return "\uD83C\uDFBE";
-      case "americano_spot_open": return "\uD83D\uDD14";
-      case "americano_cancelled": return "\u274C";
-      case "match_watch_match": return "\uD83D\uDD0D";
-      case "open_matches_weekly": return "\uD83D\uDD0D";
-      case "makker_suggestion": return "\uD83E\uDD1D";
-      case "league_started": return "\uD83C\uDFBE";
-      case "user_report": return "\uD83D\uDEA8";
-      case "americano_completed": return "\uD83C\uDFC6";
-      case "league_full": return "\u2705";
-      case "league_completed": return "\uD83C\uDFC6";
-      case "league_cancelled": return "\u274C";
-      case "result_error_report": return "\u26A0\uFE0F";
-      default: return "\uD83D\uDD14";
-    }
-  };
-
   const iconBtn = {
     background: "none",
     border: "none",
@@ -388,6 +356,93 @@ export function NotificationBell({ tourForceOpen = false }) {
     flexShrink: 0,
     WebkitTapHighlightColor: "transparent",
   };
+
+  const ctaLabel = (n, clickTarget, kampeTarget) => {
+    let label;
+    if (clickTarget.kind === 'admin') label = n.type === 'result_error_report' ? 'Åbn Admin → Fejl' : 'Åbn Admin → Anmeldelser';
+    else if (kampeTarget) label = kampeFocusFooterLabel(kampeTarget.format, n.type);
+    else if (clickTarget.kind === 'profile') label = 'Åbn din profil';
+    else if (clickTarget.kind === 'proposal-popup') label = 'Bekræft kampen';
+    else label = 'Åbn';
+    label = label.replace(/^Tryk for at /, '').replace(/\s*→\s*$/, '');
+    return label.charAt(0).toUpperCase() + label.slice(1) + ' →';
+  };
+
+  const panelContent = (
+    <>
+      <div className="pm-notif-v4-head">
+        <h2 className="pm-notif-v4-title">Notifikationer</h2>
+        {unreadCount > 0 ? (
+          <button type="button" className="pm-notif-v4-read" onClick={() => void markAllRead()} aria-label="Markér alle notifikationer som læst">
+            Markér læst
+          </button>
+        ) : null}
+      </div>
+      <div className="pm-notif-v4-list">
+        {displayNotifs.length === 0 ? (
+          <div className="pm-notif-v4-empty">
+            <Bell size={22} aria-hidden="true" />
+            <span>Ingen notifikationer endnu</span>
+          </div>
+        ) : displayNotifs.map((n) => {
+          const clickTarget = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
+          const kampeTarget = notificationKampeTarget(n);
+          const isMatchChatGroup = n.type === "match_chat_group";
+          const count = n.unreadCount > 0 ? n.unreadCount : n.totalCount;
+          const itemTitle = isMatchChatGroup
+            ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
+            : n.title;
+          const itemBody = isMatchChatGroup
+            ? `${matchLabel(n.match_id)} · ${count} ${count === 1 ? "besked" : "beskeder"}`
+            : n.body;
+          const body = (
+            <>
+              <span className={'pm-notif-v4-dot' + (n.read ? '' : ' is-unread')} aria-hidden />
+              <span className="pm-notif-v4-main">
+                <span className="pm-notif-v4-t">{!n.read ? <span className="pm-sr-only">Ulæst: </span> : null}{itemTitle}</span>
+                {itemBody ? <span className="pm-notif-v4-b">{itemBody}</span> : null}
+                {clickTarget ? <span className="pm-notif-v4-cta">{ctaLabel(n, clickTarget, kampeTarget)}</span> : null}
+              </span>
+              <span className="pm-notif-v4-time">{formatNotificationAge(n.created_at)}</span>
+            </>
+          );
+          return (
+            <div key={n.id} className="pm-notif-v4-row">
+              {clickTarget ? (
+                <button type="button" className="pm-notif-v4-item" onClick={() => { void openNotificationTarget(n); }}>{body}</button>
+              ) : (
+                <div className="pm-notif-v4-item">{body}</div>
+              )}
+              <button
+                type="button"
+                className="pm-notif-v4-del"
+                onClick={() => deleteNotificationItem(n)}
+                aria-label="Slet notifikation"
+                title="Slet"
+              >
+                <Trash2 size={15} aria-hidden="true" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {/* Push og indstillinger (herunder tippet om hjemmeskaermen paa iPhone). */}
+      <div className="pm-notif-v4-extras">
+        <NotificationPushControls
+          userId={userId}
+          notificationPrefs={normalizeNotificationPrefs(profile?.notification_prefs)}
+          variant="dropdown"
+          onAfterTest={() => void load()}
+        />
+        <NotificationSettingsDisclosure />
+      </div>
+      {notifs.length > 0 ? (
+        <div className="pm-notif-v4-foot">
+          <button type="button" className="pm-notif-v4-clear" onClick={() => setConfirmClear(true)}>Ryd alle</button>
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <>
@@ -407,15 +462,16 @@ export function NotificationBell({ tourForceOpen = false }) {
         type="button"
         onClick={() => {
           if (window.innerWidth < 768) {
-            navigate('/dashboard/notifikationer');
+            setSheetOpen(true);
+            load();
           } else {
             setOpen(!open);
             if (!open) load();
           }
         }}
         style={{ ...iconBtn, position: "relative" }}
-        aria-label="Notifikationer"
-        aria-expanded={open}
+        aria-label={unreadCount > 0 ? `Notifikationer, ${unreadCount} ulæste` : "Notifikationer"}
+        aria-expanded={open || sheetOpen}
       >
         <Bell size={20} color={theme.textMid} strokeWidth={2} />
         {unreadCount > 0 && (
@@ -428,128 +484,38 @@ export function NotificationBell({ tourForceOpen = false }) {
       {open && (
         <div
           data-tour="notification-panel"
-          className="pm-notification-panel"
-          style={{
-            position: "absolute",
-            top: "100%",
-            right: 0,
-            marginTop: "8px",
-            width: "min(360px, calc(100vw - 24px))",
-            maxHeight: "min(420px, 70dvh)",
-            background: theme.surface,
-            borderRadius: "12px",
-            boxShadow: theme.shadowLg,
-            border: "1px solid " + theme.border,
-            zIndex: 200,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
+          className="pm-notification-panel pm-notif-v4 pm-notif-v4--dropdown"
+          role="dialog"
+          aria-label="Notifikationer"
         >
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "12px 14px", borderBottom: "1px solid " + theme.border }}>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text, flex: "1 1 auto", minWidth: "100px" }}>Notifikationer</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
-              {unreadCount > 0 && (
-                <button type="button" onClick={() => void markAllRead()} aria-label="Markér alle notifikationer som læst" style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "6px 8px", minHeight: 32 }}>
-                  <CheckCheck size={13} /> Læs alle
-                </button>
-              )}
-              {notifs.length > 0 && (
-                <button type="button" onClick={() => setConfirmClear(true)} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
-                  Ryd alle
-                </button>
-              )}
-            </div>
-          </div>
-
-          <NotificationSettingsDisclosure />
-
-          <NotificationPushControls
-            userId={userId}
-            notificationPrefs={normalizeNotificationPrefs(profile?.notification_prefs)}
-            variant="dropdown"
-            onAfterTest={() => void load()}
-          />
-
-          <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
-            {displayNotifs.length === 0 ? (
-              <div style={{ padding: "32px 16px", textAlign: "center", color: theme.textLight, fontSize: "13px" }}>
-                <Bell size={24} color={theme.textLight} style={{ marginBottom: "8px" }} />
-                <div>Ingen notifikationer endnu</div>
-              </div>
-            ) : displayNotifs.map(n => {
-              const clickTarget = resolveNotificationClickTarget(n, { isAdmin: profile?.role === 'admin' });
-              const kampeTarget = notificationKampeTarget(n);
-              const isClickable = Boolean(clickTarget);
-              const isMatchChatGroup = n.type === "match_chat_group";
-              const itemTitle = isMatchChatGroup
-                ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
-                : n.title;
-              const itemBody = isMatchChatGroup ? matchLabel(n.match_id) : n.body;
-              const itemMeta = isMatchChatGroup
-                ? `${n.unreadCount > 0 ? n.unreadCount : n.totalCount} ${
-                    (n.unreadCount > 0 ? n.unreadCount : n.totalCount) === 1 ? "besked" : "beskeder"
-                  }`
-                : "";
-              return (
-              <div
-                key={n.id}
-                role={isClickable ? "button" : undefined}
-                tabIndex={isClickable ? 0 : undefined}
-                onClick={isClickable ? () => { void openNotificationTarget(n); } : undefined}
-                onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void openNotificationTarget(n); } } : undefined}
-                style={{
-                  padding: "10px 12px 10px 14px",
-                  borderBottom: "1px solid " + `color-mix(in srgb, ${theme.border} 50%, transparent)`,
-                  background: n.read ? "transparent" : `color-mix(in srgb, ${theme.accentBg} 25%, transparent)`,
-                  transition: "background 0.2s",
-                  cursor: isClickable ? "pointer" : "default",
-                }}
-              >
-                <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{typeIcon(n.type)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{itemTitle}</div>
-                    <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{itemBody}</div>
-                    {isMatchChatGroup && (
-                      <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{itemMeta}</div>
-                    )}
-                    {isClickable && (
-                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>
-                        {clickTarget.kind === 'admin' && n.type === 'result_error_report'
-                          ? "Tryk for at åbne Admin (PIN) → Fejl →"
-                          : clickTarget.kind === 'admin'
-                            ? "Tryk for at åbne Admin (PIN) → Anmeldelser →"
-                            : kampeTarget
-                            ? kampeFocusFooterLabel(kampeTarget.format, n.type)
-                            : clickTarget.kind === 'profile'
-                              ? "Tryk for at åbne din profil →"
-                              : clickTarget.kind === 'proposal-popup'
-                                ? "Tryk for at bekræfte kampen →"
-                                : "Tryk for at åbne →"}
-                      </div>
-                    )}
-                    <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{formatNotificationAge(n.created_at)}</div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", flexShrink: 0 }}>
-                    {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent }} />}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); deleteNotificationItem(n); }}
-                      title="Slet"
-                      aria-label="Slet notifikation"
-                      style={{ ...iconBtn, padding: "8px", color: theme.textLight }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );})}
-          </div>
+          {panelContent}
         </div>
       )}
     </div>
+    <AppModal
+      open={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      ariaLabel="Notifikationer"
+      maxWidthPreset="sm"
+      backdropStyle={{ alignItems: 'flex-end', padding: 0 }}
+      contentStyle={{
+        width: '100%',
+        maxWidth: '100%',
+        maxHeight: '86dvh',
+        margin: 0,
+        padding: 0,
+        borderRadius: '26px 26px 0 0',
+        borderBottom: 0,
+        background: 'var(--pm-bg)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div className="pm-notif-v4 pm-notif-v4--sheet">
+        <div className="pm-notif-v4-grip" aria-hidden />
+        {panelContent}
+      </div>
+    </AppModal>
     </>
   );
 }

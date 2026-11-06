@@ -124,7 +124,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
             type="button"
             onClick={() => setLightbox(null)}
             aria-label="Luk"
-            style={{ position: 'absolute', top: 'max(16px, env(safe-area-inset-top))', right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: 'max(20px, calc(env(safe-area-inset-top, 0px) + 12px))', right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
             <X size={20} />
           </button>

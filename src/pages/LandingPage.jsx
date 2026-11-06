@@ -123,8 +123,10 @@ export function LandingPage() {
       if (rv && !reduce) {
         const rect = rv.getBoundingClientRect();
         const q = clamp01((vh - rect.top) / (vh * 0.85));
-        const ins = (1 - q) * 14;
-        rv.style.clipPath = `inset(${ins}% ${ins}% ${ins}% ${ins}% round ${28 - q * 8}px)`;
+        // Lille indrykning foroven/forneden, saa der ikke staar et tomt felt over billedet.
+        const insY = (1 - q) * 5;
+        const insX = (1 - q) * 10;
+        rv.style.clipPath = `inset(${insY}% ${insX}% ${insY}% ${insX}% round ${28 - q * 8}px)`;
         if (revealImgRef.current) revealImgRef.current.style.transform = `scale(${1.25 - q * 0.25})`;
         if (revealTextRef.current) revealTextRef.current.style.transform = `translate3d(${(1 - q) * -60}px, 0, 0)`;
       }

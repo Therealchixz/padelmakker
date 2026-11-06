@@ -177,7 +177,7 @@ html:has(.pm-lp) body {
   left: 0;
   right: 0;
   z-index: 3;
-  padding-top: max(20px, env(safe-area-inset-top));
+  padding-top: max(28px, calc(env(safe-area-inset-top, 0px) + 14px));
   animation: pm-lp-fade 0.8s ease both;
 }
 .pm-lp-nav .pm-lp-inner {
@@ -562,8 +562,8 @@ html:has(.pm-lp) body {
 .pm-lp-reveal {
   position: relative;
   height: clamp(460px, 70svh, 720px);
-  margin: 24px 0;
-  clip-path: inset(14% 14% 14% 14% round 28px);
+  margin: 8px 0 24px;
+  clip-path: inset(5% 10% 5% 10% round 28px);
   will-change: clip-path;
   overflow: hidden;
 }
