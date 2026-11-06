@@ -31,15 +31,16 @@ function graphPalette(dark) {
   return {
     gridLine: theme.border,
     gridText: theme.textLight,
-    line: theme.accent,
-    lineHover: theme.accent,
-    areaStart: theme.accent,
-    areaStartOpacity: 0.25,
-    areaEnd: theme.accent,
+    // Data staar i blaek; ler er forbeholdt det, man kan trykke paa.
+    line: theme.text,
+    lineHover: theme.text,
+    areaStart: theme.text,
+    areaStartOpacity: 0.12,
+    areaEnd: theme.text,
     areaEndOpacity: 0.02,
-    dotFill: theme.accent,
-    dotStroke: theme.onAccent,
-    valueLabel: theme.accent,
+    dotFill: theme.text,
+    dotStroke: theme.surface,
+    valueLabel: theme.text,
     axisLabel: theme.textLight,
     emptyText: theme.textLight,
     lineWidth: 2,
@@ -307,7 +308,7 @@ export function EloGraph({
             minWidth: '120px',
           }}
         >
-          <div style={{ fontSize: '15px', fontWeight: 800, color: theme.accent, letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em' }}>
             {valueLabel} {Math.round(hi.val)}
           </div>
           <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '2px', lineHeight: 1.3 }}>

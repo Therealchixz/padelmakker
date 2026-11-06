@@ -31,7 +31,7 @@ import { ChevronDown, Clock } from 'lucide-react';
 import { ToggleSwitch } from './ToggleSwitch';
 
 function StatusDot({ active, expired }) {
-  const color = active ? theme.accent : expired ? theme.warm : theme.textLight;
+  const color = active ? theme.green : expired ? theme.warm : theme.textLight;
   return (
     <span
       aria-hidden
@@ -41,7 +41,7 @@ function StatusDot({ active, expired }) {
         borderRadius: '50%',
         background: color,
         flexShrink: 0,
-        boxShadow: active ? `0 0 0 3px ${theme.accentBg}` : 'none',
+        boxShadow: active ? `0 0 0 3px ${theme.greenBg}` : 'none',
       }}
     />
   );

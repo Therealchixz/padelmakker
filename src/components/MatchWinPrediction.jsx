@@ -30,18 +30,18 @@ export function MatchWinPrediction({ prediction }) {
           marginBottom: 4,
         }}
       >
-        <span style={{ color: theme.accent }}>{t1Label}</span>
+        <span style={{ color: theme.text }}>{t1Label}</span>
         <span style={{ color: theme.textMid, fontWeight: 600, fontSize: 10 }}>
           Sejrschance
         </span>
-        <span style={{ color: theme.green }}>{t2Label}</span>
+        <span style={{ color: theme.textMid }}>{t2Label}</span>
       </div>
       <div style={{ height: 8, borderRadius: 4, background: theme.border, display: 'flex', overflow: 'hidden' }}>
         <div
-          style={{ width: `${team1WinPct}%`, background: theme.accent, minWidth: team1WinPct > 0 ? 2 : 0 }}
+          style={{ width: `${team1WinPct}%`, background: theme.text, minWidth: team1WinPct > 0 ? 2 : 0 }}
         />
         <div style={{ width: '2px', background: theme.onAccent, flexShrink: 0 }} />
-        <div style={{ flex: 1, background: theme.green }} />
+        <div style={{ flex: 1, background: theme.textLight }} />
       </div>
       <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: theme.textMid, lineHeight: 1.45 }}>
         {quality}

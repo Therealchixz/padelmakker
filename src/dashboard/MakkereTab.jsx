@@ -185,7 +185,7 @@ function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDis
             >
               {p.full_name || p.name}
             </span>
-            <span style={tag(theme.accentBg, theme.accent)}>
+            <span style={tag(theme.surfaceMuted, theme.text)}>
               ELO {Math.round(Number(displayEloFor ? displayEloFor(p) : p.elo_rating) || 1000)}
             </span>
             {p.level != null && p.level !== '' ? (
@@ -679,8 +679,8 @@ export function MakkereTab({ user, showToast }) {
           style={{
             width: '100%',
             textAlign: 'left',
-            background: theme.blueBg,
-            border: `1px solid ${theme.accent}`,
+            background: theme.accentBg,
+            border: `1px solid color-mix(in srgb, ${theme.accent} 35%, ${theme.border})`,
             borderRadius: 10,
             padding: '12px 14px',
             marginBottom: 16,
@@ -749,8 +749,8 @@ export function MakkereTab({ user, showToast }) {
       </div>
 
       {makkerFilterOn && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.blueBg, border: `1px solid ${theme.accent}` }}>
-          <SlidersHorizontal size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}>
+          <SlidersHorizontal size={15} color={theme.textMid} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dine makker-kriterier</div>
             <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -917,7 +917,7 @@ export function MakkereTab({ user, showToast }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px' }}>{p.full_name || p.name}</span>
-                    <span style={tag(theme.accentBg, theme.accent)}>
+                    <span style={tag(theme.surfaceMuted, theme.text)}>
                       ELO {Math.round(Number(displayElo(p)) || 1000)}
                     </span>
                     {p.level != null && p.level !== '' ? (

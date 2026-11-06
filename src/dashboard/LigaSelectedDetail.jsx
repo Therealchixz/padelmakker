@@ -224,7 +224,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
           borderBottom: inDropdown ? '1px solid ' + `color-mix(in srgb, ${theme.border} 50%, transparent)` : undefined,
         }}
       >
-        <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
+        <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.surfaceMuted, border: '1px solid ' + theme.border, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
           <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 1 }}>{partnerMetaLine(p)}</div>
@@ -403,7 +403,7 @@ function RegistrationDetail({
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: theme.text }}>
                     {t.name}
-                    {isMine ? <span style={{ fontSize: 11, color: theme.accent, fontWeight: 700 }}> · dig</span> : null}
+                    {isMine ? <span style={{ fontSize: 11, color: theme.textMid, fontWeight: 700 }}> · dig</span> : null}
                   </span>
                   <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, fontSize: 11, color: theme.textMid, marginTop: 2 }}>
                     {ligaPlayerLabel(t.player1_name, t.player1_id, league.created_by, user.id)}
@@ -603,7 +603,7 @@ function ActiveDetail({
 
       {joined && myMatch ? (
         <div className="pm-card-subpanel pm-card-subpanel--accent" style={{ padding: 14, marginTop: 16, marginBottom: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
             Jeres kamp — runde {league.current_round}
           </div>
           {myMatch.team2_id === null ? (
@@ -657,12 +657,12 @@ function ActiveDetail({
               </div>
               {reportingMatch === myMatch.id ? (
                 confirmPending ? (
-                  <div style={{ background: theme.surface, borderRadius: 10, padding: 16, border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.red) }}>
+                  <div style={{ background: theme.surface, borderRadius: 10, padding: 16, border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.border) }}>
                     <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: theme.text }}>Bekræft resultat</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: 8 }}>
                       <span style={{ fontSize: 20 }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? theme.green : theme.red }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? theme.green : theme.loss }}>
                           {confirmPending.winnerId === myTeam.id ? `${myTeam.name} vandt` : `${opponentTeam.name} vandt`}
                         </div>
                         <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>

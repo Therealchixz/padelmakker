@@ -96,7 +96,7 @@ export function EmailConfirmReminder({ user }) {
         margin: '0 0 16px',
       }}
     >
-      <MailCheck size={20} color={theme.accent} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
+      <MailCheck size={20} color={theme.textMid} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
       <div style={{ minWidth: 0, flex: 1 }}>
         <h2 id="pm-email-reminder-title" style={{ fontSize: '15px', fontWeight: 700, color: theme.text, margin: 0 }}>
           Bekræft din e-mail
@@ -106,7 +106,7 @@ export function EmailConfirmReminder({ user }) {
           med e-mail og nulstille din adgangskode, hvis du glemmer den.
         </p>
         {status && (
-          <p role="status" style={{ fontSize: '13px', color: theme.accent, fontWeight: 600, margin: '8px 0 0' }}>{status}</p>
+          <p role="status" style={{ fontSize: '13px', color: theme.green, fontWeight: 600, margin: '8px 0 0' }}>{status}</p>
         )}
         {editing ? (
           <form onSubmit={(e) => { void saveEmail(e); }} style={{ marginTop: '10px' }}>

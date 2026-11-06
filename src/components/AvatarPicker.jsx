@@ -93,7 +93,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
                 ? `2px solid ${theme.accent}`
                 : `1px solid ${theme.border}`,
               background: (!previewUrl && !isAvatarUrl(value) && value === e)
-                ? theme.blueBg
+                ? theme.accentBg
                 : theme.surface,
               cursor: 'pointer',
               display: 'flex',

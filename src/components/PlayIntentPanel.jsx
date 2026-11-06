@@ -67,7 +67,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: members.length ? 12 : 10 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-            <Users size={15} color={expired ? theme.textLight : theme.accent} />
+            <Users size={15} color={expired ? theme.textLight : theme.textMid} />
             <strong style={{ fontSize: 14, color: theme.text }}>
               {waiting ? 'Du er med — venter på de andre' : 'I er 4 — bekræft jeres kamp'}
             </strong>
@@ -79,7 +79,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
         </div>
         {members.length > 0 && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: expired ? theme.textLight : theme.accent, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: expired ? theme.textLight : theme.text, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {acceptedCount}/{members.length}
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, color: theme.textLight, marginTop: 2 }}>har sagt ja</div>

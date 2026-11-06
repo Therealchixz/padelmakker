@@ -110,8 +110,8 @@ async function fetchHomeUpcomingItems(userId) {
     const m = r.matches;
     if (!m) continue;
     const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Åben';
-    const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
-    const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
+    const statusTone = m.status === 'in_progress' ? theme.text : m.status === 'full' ? theme.textMid : theme.green;
+    const statusBg = m.status === 'in_progress' ? theme.surfaceMuted : m.status === 'full' ? theme.surfaceMuted : theme.greenBg;
     const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
     items.push({
       key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: homeDayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
@@ -151,7 +151,7 @@ async function fetchHomeUpcomingItems(userId) {
       if (!involvesMe) continue;
       const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
       items.push({
-        key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
+        key: `lm-${lm.id}`, kind: 'liga', tone: theme.text, bg: theme.surfaceMuted, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
         title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
         statusLabel: `Runde ${lm.round_number ?? '?'}`,
         subtitle: oppId && teamName.get(oppId) ? `mod ${teamName.get(oppId)}` : 'Kommende kamp',
@@ -1014,7 +1014,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       <div style={activityBodyStyle}>
         {(tag || meta) ? (
           <div style={activityMetaRowStyle}>
-            {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
+            {tag ? <span style={activityTypeTagStyle(tone || theme.textMid)}>{tag}</span> : null}
             {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
           </div>
         ) : null}
@@ -1214,8 +1214,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       {showNiveauEloHint && !showIosInstallHint && (
         <div
           style={{
-            background: theme.accentBg,
-            border: `1px solid color-mix(in srgb, ${theme.accent} 20%, transparent)`,
+            background: theme.surfaceMuted,
+            border: `1px solid ${theme.border}`,
             borderRadius: '12px',
             padding: '12px 14px',
             marginBottom: '14px',
@@ -1354,7 +1354,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               onClick={() => setTab('kampe')}
               style={{ background: theme.surface, border: `1px dashed ${theme.border}`, borderRadius: 16, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
             >
-              <div style={{ width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.accentBg, borderRadius: 10, color: theme.accent }}>
+              <div style={{ width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.surfaceMuted, borderRadius: 10, color: theme.text }}>
                 <CalendarPlus size={20} aria-hidden />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -1642,7 +1642,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 return renderActivityRowCard({
                   key: `liga-${i}`,
                   isHighlight,
-                  tone: theme.accent,
+                  tone: theme.textMid,
                   leading: (
                     <div style={{ position: "relative", width: "40px", height: "32px" }}>
                       <AvatarCircle avatar={c.player1_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
@@ -1733,9 +1733,9 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 return renderActivityRowCard({
                   key: `milestone-${i}`,
                   isHighlight,
-                  tone: theme.purple,
+                  tone: theme.green,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.purpleBg, color: theme.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <TrendingUp size={16} />
                     </div>
                   ),
@@ -1743,7 +1743,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
                   subtitle: "Ny milepæl",
-                  stat: <span style={activityStatPillStyle(theme.purple)}>{row.milestone}+</span>,
+                  stat: <span style={activityStatPillStyle(theme.green)}>{row.milestone}+</span>,
                 });
               }
 
@@ -1759,8 +1759,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   state: playerChatState({ id: row.userId, name: row.name }),
                 });
                 const isMakker = row.seekingChannel === 'makker';
-                const seekTone = isMakker ? theme.green : theme.blue;
-                const seekBg = isMakker ? theme.greenBg : theme.blueBg;
+                const seekTone = theme.textMid;
+                const seekBg = theme.surfaceMuted;
                 const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
@@ -1785,9 +1785,9 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 return renderActivityRowCard({
                   key: `lnew-${i}`,
                   isHighlight,
-                  tone: theme.accent,
+                  tone: theme.textMid,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Trophy size={16} />
                     </div>
                   ),
@@ -1817,9 +1817,9 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 return renderActivityRowCard({
                   key: `match-${i}`,
                   isHighlight,
-                  tone: theme.accent,
+                  tone: theme.textMid,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Swords size={16} />
                     </div>
                   ),
@@ -1900,7 +1900,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {getTournamentFormatLabel(viewTournament.format)} resultat
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
@@ -1970,7 +1970,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {viewMatch.kind === "result" ? "Kampresultat" : "Åben kamp"}
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1997,7 +1997,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </span>
                 ) : null}
                 {viewMatch.score ? (
-                  <span style={{ fontSize: "11px", border: "1px solid " + `color-mix(in srgb, ${theme.blue} 20%, transparent)`, borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
                     Resultat: {viewMatch.score}
                   </span>
                 ) : null}
@@ -2176,7 +2176,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.blue, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
+                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
               </div>
               <button type="button" aria-label="Luk ligastilling detaljer" onClick={closeViewLeague} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
@@ -2186,20 +2186,20 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
                 const isChamp = idx === 0;
                 return (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? theme.blueBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? theme.blue : theme.border) }}>
-                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? theme.accent : theme.textLight, textAlign: "center", flexShrink: 0 }}>
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? theme.greenBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? `color-mix(in srgb, ${theme.green} 40%, ${theme.border})` : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? theme.green : theme.textLight, textAlign: "center", flexShrink: 0 }}>
                       {rankIcon || idx + 1}
                     </div>
                     <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                      <AvatarCircle avatar={t.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
-                      <AvatarCircle avatar={t.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
+                      <AvatarCircle avatar={t.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }} />
+                      <AvatarCircle avatar={t.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{t.player1_name} & {t.player2_name}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? theme.accent : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? theme.green : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
                       <div style={{ fontSize: "10px", color: theme.textLight }}>{t.wins}W · {t.losses}L</div>
                     </div>
                   </div>

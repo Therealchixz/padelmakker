@@ -393,16 +393,16 @@ export function LigaSwissBracket({
                       justifyContent: 'space-between',
                       padding: '10px 14px',
                       borderRadius: '10px',
-                      background: isDone ? theme.accentBg : theme.surfaceAlt,
+                      background: isDone ? theme.greenBg : theme.surfaceAlt,
                       border: '1px solid ' + (isDone ? 'transparent' : theme.border),
                       marginBottom: '6px',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? theme.textMid : theme.textLight }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.green : isCurrent ? theme.textMid : theme.textLight }}>
                       Runde {rn}
                       {totalRounds ? ` / ${totalRounds}` : ''}
                     </span>
-                    <span style={{ fontSize: '11px', color: isDone ? theme.accent : theme.textLight }}>
+                    <span style={{ fontSize: '11px', color: isDone ? theme.green : theme.textLight }}>
                       {isDone ? 'Afsluttet' : isCurrent ? 'Aktiv' : 'Kommende'}
                     </span>
                   </div>
@@ -445,7 +445,7 @@ export function LigaSwissBracket({
                         fontWeight: 600,
                         padding: '3px 6px',
                         borderRadius: '5px',
-                        background: isWin ? theme.greenBg : isLose ? theme.redBg : theme.surfaceAlt,
+                        background: isWin ? theme.greenBg : isLose ? theme.lossBg : theme.surfaceAlt,
                         color: isWin ? theme.green : isLose ? theme.loss : theme.textLight,
                         minWidth: '44px',
                         textAlign: 'center',
@@ -473,13 +473,13 @@ export function LigaSwissBracket({
                           onClick={() => setSelectedMatch({ match, rn, prevStats })}
                           style={{
                             background: theme.surface,
-                            border: '1px solid ' + (isMyMatch ? `color-mix(in srgb, ${theme.accent} 38%, transparent)` : theme.border),
+                            border: '1px solid ' + (isMyMatch ? theme.text : theme.border),
                             borderRadius: '12px',
                             padding: '10px 12px',
                             display: 'grid',
                             gap: '6px',
                             cursor: 'pointer',
-                            boxShadow: isMyMatch ? '0 0 0 3px ' + theme.accentBg : '0 1px 2px rgba(0,0,0,0.04)',
+                            boxShadow: isMyMatch ? '0 0 0 3px ' + theme.surfaceMuted : '0 1px 2px rgba(0,0,0,0.04)',
                             transition: 'border-color .18s, box-shadow .18s, transform .18s',
                           }}
                         >

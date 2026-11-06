@@ -71,7 +71,7 @@ export function PlaytomicLevelPicker({ value, onChange }) {
             borderRadius: 8,
             border: `1px solid ${theme.border}`,
             fontFamily: 'inherit',
-            color: theme.accent,
+            color: theme.text,
           }}
           aria-label="Niveau med ét decimal"
         />
@@ -87,7 +87,7 @@ export function PlaytomicLevelPicker({ value, onChange }) {
         aria-live="polite"
       >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: theme.accent, lineHeight: 1 }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: theme.text, lineHeight: 1 }}>
             {formatPlaytomicLevel(level)}
           </span>
           {bandTitle && (

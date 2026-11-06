@@ -1281,7 +1281,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
                   }
                 }}
               >
-                <AvatarCircle avatar={p.avatar} size={38} emojiSize="18px" style={{ background: theme.accentBg, border: `1px solid ${theme.border}`, flexShrink: 0 }} />
+                <AvatarCircle avatar={p.avatar} size={38} emojiSize="18px" style={{ background: theme.surfaceMuted, border: `1px solid ${theme.border}`, flexShrink: 0 }} />
                 <span className="pm-besked-compose-row-name">{p.full_name || p.name || 'Spiller'}</span>
               </div>
             ))}

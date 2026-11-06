@@ -76,7 +76,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
               {isClosed ? 'LUKKET' : '2V2'}
             </span>
             {levelStr && (
-              <span style={{ background: theme.accentBg, color: theme.accent, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>
+              <span style={{ background: theme.surfaceMuted, color: theme.text, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>
                 {levelStr}
               </span>
             )}

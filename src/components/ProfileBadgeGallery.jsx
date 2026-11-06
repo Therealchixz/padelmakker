@@ -19,8 +19,8 @@ function BadgeDetailPanel({ badge, onClose }) {
   return (
     <div
       style={{
-        background: badge.earned ? theme.accentBg : theme.surfaceAlt,
-        border: `1px solid ${badge.earned ? `color-mix(in srgb, ${theme.accent} 21%, transparent)` : theme.border}`,
+        background: badge.earned ? theme.greenBg : theme.surfaceAlt,
+        border: `1px solid ${badge.earned ? `color-mix(in srgb, ${theme.green} 30%, transparent)` : theme.border}`,
         borderRadius: 14,
         padding: '14px 14px 12px',
         marginBottom: 14,
