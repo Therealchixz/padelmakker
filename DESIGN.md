@@ -194,7 +194,7 @@ En varm, næsten monokrom base af papir og blæk, hvor lerfarven bærer al handl
 
 **Reglen om rød til fejl.** Tællere og ulæst-mærker er ler. Rød (`danger`) er forbeholdt fejl og advarsler.
 
-**Reglen om én betydning pr. farve (6. nov. 2026).** Ler betyder "tryk her" (knapper, Spil, aktiv fane, ulæst). Grøn betyder vundet eller plus. Et tab er ikke en fejl: "Tabt", minus-ELO og tabende hold står i neutralt blæk på `surface-muted` (`--pm-loss`, `--pm-loss-bg`), aldrig i rød eller ler. Resultater (sæt-score) står i blæk, ikke ler. Holdene i kampkort er neutrale; kun vinderholdet får en grøn tone.
+**Reglen om én betydning pr. farve (6. nov. 2026).** Ler betyder "tryk her" (knapper, Spil, aktiv fane, ulæst). Grøn betyder vundet eller plus. "Tabt", minus-ELO og tabte point står i rosa-rød (`--pm-loss` #B4234A, `--pm-loss-bg`), som er holdt køligere end ler, så de ikke forveksles. Det tabende holds navn dæmpes. Resultater (sæt-score) står i blæk, ikke ler. Holdene i kampkort er neutrale; kun vinderholdet får en grøn tone.
 
 **Farvekortet for hele appen (gennemgået 6. nov. 2026).**
 
@@ -203,8 +203,9 @@ En varm, næsten monokrom base af papir og blæk, hvor lerfarven bærer al handl
 | Ler (`accent`, `accent-solid`) | Tryk her | Knapper, links, valgt/aktiv tilstand, kontakter, ulæst-tællere og -prikker |
 | Grøn (`green`) | Godt / åbent | Vundet, plus-ELO, ledige pladser, aktiv søgning, optjente mærker, afsluttet runde |
 | Okker (`amber`, `warm`) | Afventer | Venter på bekræftelse, udløbet, blokeret tid. Gul-brun, så den ikke ligner ler |
+| Rosa-rød (`loss`) | Tabt / minus | Tabt-mærke, minus-ELO, tabte runder, faldet på ranglisten |
 | Rød (`danger`, `red`) | Fejl / farligt | Fejlbeskeder, slet- og forlad-knapper, admin-advarsler, påkrævet felt |
-| Blæk og papir (`text`, `surface-muted`) | Data og alt andet | Tal, ELO, point, score, grafer, "dig"-rækker, tabt, fuld, neutrale mærker og ikonfelter |
+| Blæk og papir (`text`, `surface-muted`) | Data og alt andet | Tal, ELO, point, score, grafer, "dig"-rækker, fuld, aflyst, neutrale mærker og ikonfelter |
 
 Blå og lilla er udfaset i appen (undtagen "din placering"-prikken på kortet). Data og pynt får aldrig ler.
 

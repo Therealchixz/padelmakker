@@ -46,9 +46,10 @@
 
   --pm-green:       #2F5D4E;
   --pm-green-bg:    #E2EBE5;
-  /* Tabt / minus-point: neutralt blaek, ikke roed. Roed betyder fejl og advarsler. */
-  --pm-loss:        var(--pm-text-mid);
-  --pm-loss-bg:     var(--pm-surface-muted);
+  /* Tabt / minus-point: rosa-roed (crimson). Holdt koeligere end ler (#C0503A),
+     saa de to ikke forveksles. */
+  --pm-loss:        #B4234A;
+  --pm-loss-bg:     #F8E3E7;
   --pm-purple:      #7C3AED;
   --pm-purple-bg:   #F5F3FF;
   --pm-info:        #2563EB;
@@ -75,9 +76,9 @@
   --pm-americano-tie-bg: var(--pm-surface);
   --pm-americano-tie-border: var(--pm-border);
   --pm-americano-tie-text: var(--pm-text);
-  --pm-americano-loss-bg: var(--pm-surface-muted);
-  --pm-americano-loss-border: var(--pm-border);
-  --pm-americano-loss-text: var(--pm-text-mid);
+  --pm-americano-loss-bg: var(--pm-loss-bg);
+  --pm-americano-loss-border: color-mix(in srgb, var(--pm-loss) 35%, var(--pm-border));
+  --pm-americano-loss-text: var(--pm-loss);
   --pm-americano-neutral-bg: #FFFFFF;
   --pm-americano-neutral-border: #E8ECF1;
   --pm-americano-neutral-text: #0F172A;
@@ -181,6 +182,8 @@
 
   --pm-green:       #7FBFA4;
   --pm-green-bg:    #14261F;
+  --pm-loss:        #F27A96;
+  --pm-loss-bg:     #3A1822;
   --pm-purple:      #A78BFA;
   --pm-purple-bg:   #1A0F35;
   --pm-info:        #60A5FA;
@@ -206,9 +209,9 @@
   --pm-americano-tie-bg: var(--pm-surface);
   --pm-americano-tie-border: var(--pm-border);
   --pm-americano-tie-text: var(--pm-text);
-  --pm-americano-loss-bg: var(--pm-surface-muted);
-  --pm-americano-loss-border: var(--pm-border);
-  --pm-americano-loss-text: var(--pm-text-mid);
+  --pm-americano-loss-bg: var(--pm-loss-bg);
+  --pm-americano-loss-border: color-mix(in srgb, var(--pm-loss) 35%, var(--pm-border));
+  --pm-americano-loss-text: var(--pm-loss);
   --pm-americano-neutral-bg: #1F1D19;
   --pm-americano-neutral-border: #3A362F;
   --pm-americano-neutral-text: #F3EEE4;

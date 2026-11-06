@@ -495,7 +495,7 @@ export default function PadelMatchResultInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: '4px 0 8px', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }} noValidate>
+    <form onSubmit={handleSubmit} style={{ padding: '4px 0 8px', fontFamily: 'var(--pm-font)' }} noValidate>
       {playersEditable && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           <div>

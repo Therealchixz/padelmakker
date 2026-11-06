@@ -11,7 +11,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
   const wonLabel = winner === 'team1' ? team1Names : winner === 'team2' ? team2Names : null;
 
   return (
-    <div style={{ padding: '0 4px 8px', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
+    <div style={{ padding: '0 4px 8px', fontFamily: 'var(--pm-font)' }}>
       {/* Success circle */}
       <div style={{
         width: 74, height: 74, borderRadius: '50%',
