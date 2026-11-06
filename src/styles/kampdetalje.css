@@ -525,7 +525,7 @@
 }
 
 .pm-kd-elo-card-delta--up { color: var(--pm-green); }
-.pm-kd-elo-card-delta--down { color: var(--pm-red); }
+.pm-kd-elo-card-delta--down { color: var(--pm-text-mid); } /* tab = neutralt, roed = fejl */
 
 .pm-kd-slot-elo-end {
   flex-shrink: 0;
@@ -548,7 +548,7 @@
 }
 
 .pm-kd-delta--up { color: var(--pm-green); }
-.pm-kd-delta--down { color: var(--pm-red); }
+.pm-kd-delta--down { color: var(--pm-text-mid); }
 
 .pm-kd-vs-row {
   display: flex;
@@ -576,7 +576,8 @@
 .pm-kd-set-score-big {
   font-size: 30px;
   font-weight: 700;
-  color: var(--pm-accent);
+  color: var(--pm-text);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -609,7 +610,7 @@
 }
 
 .pm-kd-feed-ic--up { background: var(--pm-green-bg); color: var(--pm-green); }
-.pm-kd-feed-ic--down { background: var(--pm-red-bg); color: var(--pm-red); }
+.pm-kd-feed-ic--down { background: var(--pm-surface-muted); color: var(--pm-text-mid); }
 
 /* ── Deltagerliste (mockup .elo-row) ── */
 .pm-kd-elo-row {

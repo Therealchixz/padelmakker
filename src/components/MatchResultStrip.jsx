@@ -47,7 +47,7 @@ export function MatchResultStrip({ matchResult, eloChange, myTeam }) {
         {confirmed && eloChange != null ? (
           <span
             className="pm-match-result-strip__elo"
-            style={{ color: eloChange >= 0 ? theme.green : theme.red }}
+            style={{ color: eloChange >= 0 ? theme.green : theme.loss }}
           >
             {eloChange >= 0 ? '+' : ''}
             {eloChange} ELO

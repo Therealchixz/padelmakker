@@ -269,7 +269,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     statsMode === 'liga'
       ? [
           { label: 'Vundet', value: ligaStats?.wins ?? 0, color: theme.green },
-          { label: 'Tabt', value: ligaStats?.losses ?? 0, color: theme.red },
+          { label: 'Tabt', value: ligaStats?.losses ?? 0, color: theme.loss },
           { label: 'Kampe', value: ligaStats?.played ?? 0, color: theme.blue },
           { label: 'Win %', value: ligaStats?.played > 0 ? `${ligaStats.winPct}%` : '—', color: theme.accent },
         ]

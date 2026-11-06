@@ -984,7 +984,7 @@ export function RankingTab({ user }) {
                       fontSize: 14, fontWeight: 700, flexShrink: 0,
                       color: period === 'all'
                         ? theme.accent
-                        : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
+                        : isPositive ? theme.green : isNegative ? theme.loss : theme.textLight,
                     }}>
                       {unranked ? null : period === 'all' ? score : score > 0 ? `+${score}` : score}
                     </div>
@@ -1052,7 +1052,7 @@ export function RankingTab({ user }) {
               {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
             </div>
             {rankChange !== 0 && (
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.red, marginTop: 1 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.loss, marginTop: 1 }}>
                 {rankChange > 0 ? <><TrendingUp size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {rankChange} pladser</> : <><TrendingDown size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {Math.abs(rankChange)} pladser</>}
               </div>
             )}

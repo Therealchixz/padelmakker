@@ -20,7 +20,7 @@ function matchResultTag(match, myTeamId) {
   const iWon = match.winner_id === myTeamId;
   return iWon
     ? { label: 'Vundet', color: theme.green, bg: theme.greenBg, border: 'transparent' }
-    : { label: 'Tabt', color: theme.red, bg: theme.redBg, border: 'transparent' };
+    : { label: 'Tabt', color: theme.loss, bg: theme.lossBg, border: 'transparent' };
 }
 
 export function LigaScheduleSheet({

@@ -285,7 +285,7 @@ export function LigaSwissBracket({
       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px', flexWrap: 'wrap' }}>
         {[
           ['win', 'Vinder', theme.green, false],
-          ['lose', 'Taber', theme.red, false],
+          ['lose', 'Taber', theme.loss, false],
           ['pending', 'Afventer', theme.border, true],
         ].map(([kind, label, color, dashed]) => (
           <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: theme.textMid }}>
@@ -367,7 +367,7 @@ export function LigaSwissBracket({
               {orderedConnectors.map((c, i) => {
                 const dim = highlightTeam && c.tid !== highlightTeam;
                 const isHi = highlightTeam === c.tid;
-                const stroke = c.kind === 'win' ? theme.green : c.kind === 'lose' ? theme.red : theme.border;
+                const stroke = c.kind === 'win' ? theme.green : c.kind === 'lose' ? theme.loss : theme.border;
                 return (
                   <g key={i} style={{ opacity: dim ? 0.1 : 1 }}>
                     <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2} strokeLinecap="round" strokeDasharray={c.kind === 'pending' ? '4 5' : undefined} />
@@ -446,7 +446,7 @@ export function LigaSwissBracket({
                         padding: '3px 6px',
                         borderRadius: '5px',
                         background: isWin ? theme.greenBg : isLose ? theme.redBg : theme.surfaceAlt,
-                        color: isWin ? theme.green : isLose ? theme.red : theme.textLight,
+                        color: isWin ? theme.green : isLose ? theme.loss : theme.textLight,
                         minWidth: '44px',
                         textAlign: 'center',
                         flexShrink: 0,
