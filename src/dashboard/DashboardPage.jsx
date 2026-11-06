@@ -1335,7 +1335,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   height: "18px",
                   padding: "0 5px",
                   borderRadius: "999px",
-                  background: theme.redSolid,
+                  background: theme.accentSolid,
                   color: theme.onAccent,
                   fontSize: "10px",
                   fontWeight: 800,
@@ -1350,7 +1350,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 {unreadNotifs > 9 ? "9+" : unreadNotifs}
               </span>
             )}
-            <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.accentBg, color: theme.accent, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.surfaceMuted, color: theme.text, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               {userInitial}
             </span>
             <span className="pm-dash-account-name">{displayName}</span>
@@ -1503,12 +1503,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
-                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.redSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.accentSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                   {t.badge > 9 ? "9+" : t.badge}
                 </span>
               )}
               {!t.badge && tabAttention && (
-                <span style={{ position: "absolute", top: "-3px", right: "-5px", width: "8px", height: "8px", borderRadius: "50%", background: theme.red }} />
+                <span style={{ position: "absolute", top: "-3px", right: "-5px", width: "8px", height: "8px", borderRadius: "50%", background: theme.accentSolid }} />
               )}
             </span>
             <span className="pm-tab-label">{t.label}</span>
@@ -1890,7 +1890,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   </span>
                 )}
                 {!t.badge && tabAttention && (
-                  <span style={{ position: "absolute", top: "-3px", right: "-4px", width: "8px", height: "8px", borderRadius: "50%", background: theme.red }} />
+                  <span style={{ position: "absolute", top: "-3px", right: "-4px", width: "8px", height: "8px", borderRadius: "50%", background: theme.accentSolid }} />
                 )}
               </span>
               <span className="pm-mobile-bottom-label">{t.label}</span>

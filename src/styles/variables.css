@@ -28,13 +28,14 @@
   /* Orange og groen bruges som tekstfarve paa lyse flader; #D97706 og #059669
      gav kun 2,9-3,8:1. De moerkere nuancer holder 4,5:1 paa hvid og paa deres
      egne -bg-flader. */
-  --pm-amber:       #B45309;
-  --pm-amber-bg:    #FAEFDC;
-  --pm-amber-text:  #92400E;
+  /* Okker = afventer / kraever opmaerksomhed. Holdt gul-brun, saa den ikke ligner ler. */
+  --pm-amber:       #8C6400;
+  --pm-amber-bg:    #F6ECCB;
+  --pm-amber-text:  #6E4F00;
   --pm-amber-border:#EDD9B5;
 
-  --pm-warm:        #B45309;
-  --pm-warm-bg:     #FEF3C7;
+  --pm-warm:        #8C6400;
+  --pm-warm-bg:     #F6ECCB;
   --pm-blue:        #2563EB;
   --pm-blue-bg:     #EFF6FF;
   --pm-red:         #DC2626;
@@ -67,15 +68,16 @@
   --pm-podium-gold:   #D97706;
   --pm-podium-silver: #7D776B;
   --pm-podium-bronze: #B45309;
-  --pm-americano-win-bg: #DCFCE7;
-  --pm-americano-win-border: #86EFAC;
-  --pm-americano-win-text: #166534;
-  --pm-americano-tie-bg: #EAE3D6;
-  --pm-americano-tie-border: #D9D1C2;
-  --pm-americano-tie-text: #4A463E;
-  --pm-americano-loss-bg: #FEE2E2;
-  --pm-americano-loss-border: #FECACA;
-  --pm-americano-loss-text: #991B1B;
+  /* Americano: groen = vundet, papir = uafgjort, dempet = tabt (ikke roed). */
+  --pm-americano-win-bg: var(--pm-green-bg);
+  --pm-americano-win-border: color-mix(in srgb, var(--pm-green) 45%, var(--pm-border));
+  --pm-americano-win-text: var(--pm-green);
+  --pm-americano-tie-bg: var(--pm-surface);
+  --pm-americano-tie-border: var(--pm-border);
+  --pm-americano-tie-text: var(--pm-text);
+  --pm-americano-loss-bg: var(--pm-surface-muted);
+  --pm-americano-loss-border: var(--pm-border);
+  --pm-americano-loss-text: var(--pm-text-mid);
   --pm-americano-neutral-bg: #FFFFFF;
   --pm-americano-neutral-border: #E8ECF1;
   --pm-americano-neutral-text: #0F172A;
@@ -198,15 +200,15 @@
   --pm-podium-gold:   #FBBF24;
   --pm-podium-silver: #A39B8C;
   --pm-podium-bronze: #D97706;
-  --pm-americano-win-bg: #102E24;
-  --pm-americano-win-border: #34D399;
-  --pm-americano-win-text: #D1FAE5;
-  --pm-americano-tie-bg: #26241F;
-  --pm-americano-tie-border: #4A463E;
-  --pm-americano-tie-text: #F3EEE4;
-  --pm-americano-loss-bg: #3A1F25;
-  --pm-americano-loss-border: #F87171;
-  --pm-americano-loss-text: #FEE2E2;
+  --pm-americano-win-bg: var(--pm-green-bg);
+  --pm-americano-win-border: color-mix(in srgb, var(--pm-green) 45%, var(--pm-border));
+  --pm-americano-win-text: var(--pm-green);
+  --pm-americano-tie-bg: var(--pm-surface);
+  --pm-americano-tie-border: var(--pm-border);
+  --pm-americano-tie-text: var(--pm-text);
+  --pm-americano-loss-bg: var(--pm-surface-muted);
+  --pm-americano-loss-border: var(--pm-border);
+  --pm-americano-loss-text: var(--pm-text-mid);
   --pm-americano-neutral-bg: #1F1D19;
   --pm-americano-neutral-border: #3A362F;
   --pm-americano-neutral-text: #F3EEE4;

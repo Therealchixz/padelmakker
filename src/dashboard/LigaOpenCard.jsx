@@ -7,12 +7,10 @@ const DA_MON = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov
 
 /** Subtile farver til hold-initial bokse — vælges deterministisk fra hold-id */
 const TEAM_PALETTE = [
-  { bg: 'var(--pm-accent)', fg: 'var(--pm-on-accent)' },
-  { bg: 'var(--pm-green)', fg: 'var(--pm-on-accent)' },
-  { bg: 'var(--pm-purple)', fg: 'var(--pm-on-accent)' },
-  { bg: 'var(--pm-warm)', fg: 'var(--pm-on-accent)' },
-  { bg: 'var(--pm-red)', fg: 'var(--pm-on-accent)' },
-  { bg: 'var(--pm-blue)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-text)', fg: 'var(--pm-bg)' },
+  { bg: 'var(--pm-text-mid)', fg: 'var(--pm-bg)' },
+  { bg: 'var(--pm-green)', fg: 'var(--pm-bg)' },
+  { bg: 'var(--pm-surface-muted)', fg: 'var(--pm-text)' },
 ];
 
 function hashStr(s) {
@@ -281,7 +279,7 @@ export function LigaOpenCard({
         const ligaLabel = seasonLabel ? `${seasonLabel} Liga` : 'Liga';
         const metaParts = [dateRangeStr, `${filled}/${maxTeams} hold`].filter(Boolean);
         let statusBg = theme.greenBg, statusColor = theme.green, statusBorder = undefined, statusText = 'Åben';
-        if (isFull) { statusBg = theme.redBg; statusColor = theme.red; statusText = 'Fuld'; }
+        if (isFull) { statusBg = theme.lossBg; statusColor = theme.loss; statusText = 'Fuld'; }
         else if (isAlmostFull) { statusBg = theme.amberBg; statusColor = theme.amberText; statusBorder = `1px solid ${theme.amberBorder}`; statusText = '1 plads'; }
         return (
           <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>

@@ -98,7 +98,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
     <div
       style={{
         background: theme.surfaceAlt,
-        border: `1px solid ${feedVisibleNow ? `color-mix(in srgb, ${theme.accent} 33%, transparent)` : theme.border}`,
+        border: `1px solid ${feedVisibleNow ? `color-mix(in srgb, ${theme.green} 35%, transparent)` : theme.border}`,
         borderRadius: 10,
         padding: '12px 14px',
         marginBottom: 16,
@@ -110,14 +110,14 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: feedVisibleNow ? theme.accentBg : theme.blueBg,
+            background: theme.surfaceMuted,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
           }}
         >
-          <Icon size={18} color={theme.accent} aria-hidden />
+          <Icon size={18} color={theme.text} aria-hidden />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -131,8 +131,8 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
                   fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: 100,
-                  background: theme.accentBg,
-                  color: theme.accent,
+                  background: theme.greenBg,
+                  color: theme.green,
                 }}
               >
                 Synlig

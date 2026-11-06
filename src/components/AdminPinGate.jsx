@@ -178,7 +178,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
       >
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid ' + theme.border }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldCheck size={18} color={theme.accent} />
+            <ShieldCheck size={18} color={theme.textMid} />
             <span style={{ fontSize: '16px', fontWeight: 800, color: theme.text }}>Admin sikkerhed</span>
           </div>
           <div style={{ marginTop: '6px', fontSize: '12px', color: theme.textMid, lineHeight: 1.5 }}>

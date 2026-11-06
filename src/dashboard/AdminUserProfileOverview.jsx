@@ -96,10 +96,10 @@ export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
             {p.elo_rating != null ? (
-              <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {p.elo_rating}</span>
+              <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {p.elo_rating}</span>
             ) : null}
-            <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>
-            {age ? <span style={tag(theme.blueBg, theme.blue)}>{age} år</span> : null}
+            <span style={tag(theme.surfaceMuted, theme.textMid)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>
+            {age ? <span style={tag(theme.surfaceMuted, theme.textMid)}>{age} år</span> : null}
             {location ? (
               <span style={tag(theme.warmBg, theme.amberText)}>
                 <MapPin size={9} aria-hidden /> {location}
@@ -163,7 +163,7 @@ export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({
         {avail.length > 0 ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {avail.map((a) => (
-              <span key={a} style={tag(theme.accentBg, theme.accent)}>
+              <span key={a} style={tag(theme.surfaceMuted, theme.text)}>
                 {a}
               </span>
             ))}

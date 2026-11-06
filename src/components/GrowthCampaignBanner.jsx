@@ -82,18 +82,18 @@ export function GrowthCampaignBanner() {
           margin: '0 18px 12px',
           padding: '12px 14px',
           borderRadius: 12,
-          background: theme.accentBg,
-          border: `1px solid color-mix(in srgb, ${theme.accent} 20%, transparent)`,
+          background: theme.surfaceMuted,
+          border: `1px solid ${theme.border}`,
           fontSize: 13,
           lineHeight: 1.5,
           color: theme.textMid,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <Gift size={18} color={theme.accent} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
+          <Gift size={18} color={theme.textMid} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
           <div style={{ flex: 1, minWidth: 0 }}>
             <strong style={{ color: theme.text }}>Du er med i Første 200!</strong>{' '}
-            Dit lodnummer er <strong style={{ color: theme.accent }}>#{status.entry_number}</strong>.
+            Dit lodnummer er <strong style={{ color: theme.text }}>#{status.entry_number}</strong>.
             {' '}{spots} pladser taget.
             {' '}
             <Link to="/kampagne/forste-200" style={{ color: theme.accent, fontWeight: 600, textDecoration: 'none' }}>

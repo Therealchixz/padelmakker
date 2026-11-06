@@ -148,7 +148,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
 
         {/* Player header */}
         <div style={{ display: 'flex', gap: 11, alignItems: 'center', marginBottom: 14 }}>
-          <AvatarCircle avatar={invitee.avatar} size={42} emojiSize="20px" style={{ background: theme.accentBg, flexShrink: 0 }} />
+          <AvatarCircle avatar={invitee.avatar} size={42} emojiSize="20px" style={{ background: theme.surfaceMuted, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.2px' }}>
               Invitér {inviteeName} til en kamp

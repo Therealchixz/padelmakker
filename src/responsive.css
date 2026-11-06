@@ -1860,7 +1860,7 @@ button,
     position: absolute;
     top: -7px;
     right: -10px;
-    background: var(--pm-danger);
+    background: var(--pm-accent-solid);
     color: var(--pm-on-accent);
     border: 2px solid var(--pm-surface);
     border-radius: 999px;
@@ -2757,7 +2757,7 @@ button,
   opacity: 0.78;
   font-size: 10px;
 }
-.pm-court-header-team--t1 { color: var(--pm-accent); }
+.pm-court-header-team--t1 { color: var(--pm-text); }
 .pm-court-header-team--t2 { color: var(--pm-blue); }
 
 /* Vinder/taber — objektiv (legacy + tilskuere på afsluttede kampe) */
@@ -2805,7 +2805,7 @@ button,
 .pm-court-side--mine-lost.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
 
 .pm-court-header-team--mine-lost {
-  color: var(--pm-danger) !important;
+  color: var(--pm-loss) !important;
   font-weight: 800;
 }
 
@@ -3829,9 +3829,9 @@ button,
 }
 
 .pm-baner-slot--booked {
-  background: var(--pm-red-bg);
-  color: var(--pm-red);
-  border: 1px solid var(--pm-red);
+  background: var(--pm-loss-bg);
+  color: var(--pm-text-light);
+  border: 1px solid var(--pm-border);
 }
 
 .pm-baner-slot--blocked {
@@ -4878,7 +4878,7 @@ button,
 .pm-not-found__code {
   font-size: 72px;
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text);
   letter-spacing: -0.04em;
   margin-bottom: 8px;
 }
@@ -5803,7 +5803,7 @@ button,
 .pm-admin-card-elo-value {
   font-size: 18px;
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text);
 }
 
 .pm-admin-card-elo-label {
@@ -5887,7 +5887,7 @@ button,
 .pm-admin-section-title {
   font-size: 14px;
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text-light);
   margin-bottom: 4px;
   text-transform: uppercase;
 }
@@ -6179,7 +6179,7 @@ button,
 
 .pm-admin-match-dates .pm-admin-match-played {
   margin-top: 2px;
-  color: var(--pm-accent);
+  color: var(--pm-text-mid);
 }
 
 .pm-admin-match-score-row {
@@ -6865,7 +6865,7 @@ button,
 }
 
 .pm-kampe-v2-unread {
-  background: var(--pm-danger);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   border-radius: 999px;
   min-width: 16px;
@@ -7438,7 +7438,7 @@ button,
 }
 
 .pm-kampe-v2-list-card--unread {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pm-danger) 35%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pm-accent-solid) 35%, transparent);
 }
 
 .pm-kampe-v2-list-card--dull .pm-kampe-v2-list-card-hit,
@@ -7560,7 +7560,7 @@ button,
 }
 
 .pm-kampe-v2-list-meta-live {
-  color: var(--pm-red);
+  color: var(--pm-green);
   font-weight: 700;
 }
 
@@ -7671,9 +7671,10 @@ button,
 }
 
 .pm-kampe-v2-badge--live {
-  background: color-mix(in srgb, var(--pm-danger) 90%, black);
-  color: var(--pm-on-accent);
+  background: var(--pm-text);
+  color: var(--pm-bg);
 }
+.pm-kampe-v2-badge--live .pm-live-dot { background: var(--pm-bg); }
 
 .pm-kampe-v2-badge--open {
   background: color-mix(in srgb, var(--pm-green) 16%, var(--pm-surface));
@@ -7698,7 +7699,7 @@ button,
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--pm-danger);
+  background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 10px;
   font-weight: 800;
@@ -7815,12 +7816,12 @@ button,
 
 .pm-kampe-v2-list-roster-open {
   font-weight: 700;
-  color: var(--pm-accent);
+  color: var(--pm-green);
 }
 
 .pm-kampe-v2-list-roster-full {
   font-weight: 700;
-  color: var(--pm-danger);
+  color: var(--pm-loss);
 }
 
 .pm-kampe-v2-list-participants {
@@ -7888,7 +7889,7 @@ button,
 }
 
 .pm-kampe-v2-list-team--t1 .pm-kampe-v2-list-avatar-slot--empty {
-  border-color: color-mix(in srgb, var(--pm-accent) 28%, var(--pm-border));
+  border-color: var(--pm-border);
 }
 
 .pm-kampe-v2-list-team--t2 .pm-kampe-v2-list-avatar-slot--empty {
@@ -8316,7 +8317,7 @@ button,
 .pm-kampe-v2-detail-player-elo {
   font-size: 10px;
   font-weight: 700;
-  color: var(--pm-accent);
+  color: var(--pm-text);
 }
 
 .pm-kampe-v2-detail-empty-slot {
@@ -8584,13 +8585,13 @@ button,
 }
 
 .pm-americano-v2-list-progress--full .pm-americano-v2-list-progress-fill {
-  background: var(--pm-green);
+  background: var(--pm-text);
 }
 
 .pm-americano-v2-list-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--pm-accent), var(--pm-blue));
+  background: var(--pm-text);
   transition: width 0.25s ease;
 }
 
@@ -8677,14 +8678,14 @@ button,
 
 /* Blå ring om spillere — samme stil som 2v2-kampe på listen */
 .pm-americano-v2-list-avatar-stack > .pm-avatar-circle {
-  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
-  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+  border: 1.5px solid var(--pm-border);
+  background: var(--pm-surface-muted);
   box-sizing: border-box;
 }
 
 .pm-americano-v2-avatar-ring {
-  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border)) !important;
-  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface)) !important;
+  border: 1.5px solid color-mix(in srgb, var(--pm-text) 50%, var(--pm-border)) !important;
+  background: var(--pm-surface-muted);
   box-sizing: border-box;
 }
 
@@ -8850,7 +8851,7 @@ button,
 .pm-americano-v2-detail-fill-left {
   font-size: 12px;
   font-weight: 700;
-  color: var(--pm-accent);
+  color: var(--pm-green);
 }
 
 .pm-americano-v2-detail-progress-row {
@@ -8870,11 +8871,11 @@ button,
 .pm-americano-v2-detail-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--pm-accent), var(--pm-blue));
+  background: var(--pm-text);
 }
 
 .pm-americano-v2-detail-progress--full .pm-americano-v2-detail-progress-fill {
-  background: var(--pm-green);
+  background: var(--pm-text);
 }
 
 .pm-americano-v2-detail-progress-count {
@@ -8934,9 +8935,9 @@ button,
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
-  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
-  color: var(--pm-accent);
+  border: 1.5px solid var(--pm-border);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8999,7 +9000,7 @@ button,
 }
 
 .pm-americano-v2-detail-player-name--me {
-  color: var(--pm-accent);
+  color: var(--pm-text);
 }
 
 .pm-americano-v2-detail-player-elo {
@@ -9296,7 +9297,7 @@ button,
 }
 
 .pm-liga-v2-list-progress-spots {
-  color: var(--pm-accent);
+  color: var(--pm-green);
   font-size: 12px;
 }
 
@@ -9310,7 +9311,7 @@ button,
 
 .pm-liga-v2-list-progress-fill {
   height: 100%;
-  background: var(--pm-accent);
+  background: var(--pm-text);
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -9398,7 +9399,7 @@ button,
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
   margin-bottom: 12px;
 }
 
@@ -9450,7 +9451,7 @@ button,
 .pm-liga-v2-my-points-val {
   font-size: 18px;
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text);
   line-height: 1;
 }
 
@@ -9481,7 +9482,7 @@ button,
 }
 
 .pm-liga-v2-mini-row--mine {
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
 }
 
 .pm-liga-v2-mini-rank {
@@ -9504,7 +9505,7 @@ button,
 
 .pm-liga-v2-mini-you {
   font-weight: 700;
-  color: var(--pm-accent);
+  color: var(--pm-text);
 }
 
 .pm-liga-v2-mini-wl {
@@ -9514,7 +9515,7 @@ button,
 
 .pm-liga-v2-mini-pts {
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text);
   min-width: 24px;
   text-align: right;
 }
@@ -9740,7 +9741,7 @@ button,
 }
 
 .pm-liga-v2-standings-row--mine {
-  background: var(--pm-accent-bg);
+  background: var(--pm-surface-muted);
 }
 
 .pm-liga-v2-standings-rank {
@@ -9761,12 +9762,12 @@ button,
 }
 
 .pm-liga-v2-standings-you {
-  color: var(--pm-accent);
+  color: var(--pm-text);
 }
 
 .pm-liga-v2-standings-pts {
   font-weight: 800;
-  color: var(--pm-accent);
+  color: var(--pm-text);
   text-align: right;
 }
 
@@ -9981,7 +9982,7 @@ button,
 }
 
 .pm-liga-v2-round-label-status--live {
-  color: var(--pm-accent);
+  color: var(--pm-text);
   font-weight: 600;
 }
 
@@ -10009,7 +10010,7 @@ button,
 }
 
 .pm-liga-v2-match-card--mine {
-  border-color: var(--pm-accent);
+  border-color: var(--pm-text);
   border-width: 1.5px;
 }
 
@@ -10149,7 +10150,7 @@ button,
 }
 
 .pm-liga-v2-team-stat-val--red {
-  color: var(--pm-red);
+  color: var(--pm-loss);
 }
 
 .pm-liga-v2-team-stat-lbl {
@@ -11006,7 +11007,7 @@ button,
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--pm-accent);
+  color: var(--pm-text-light);
 }
 
 .pm-chat-v2-invite-title {

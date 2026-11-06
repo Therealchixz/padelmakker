@@ -946,14 +946,14 @@ export function RankingTab({ user }) {
                       alignItems: 'center',
                       gap: 11,
                       padding: '11px 14px',
-                      background: me ? theme.accentBg : 'transparent',
+                      background: me ? theme.surfaceMuted : 'transparent',
                       cursor: me ? 'default' : 'pointer',
-                      borderLeft: me ? `3px solid ${theme.accent}` : undefined,
+                      borderLeft: undefined,
                     }}
                   >
                     <div style={{
                       width: 24, textAlign: 'center', fontWeight: 700,
-                      fontSize: 13, color: me ? theme.accent : theme.textMid, flexShrink: 0,
+                      fontSize: 13, color: me ? theme.text : theme.textMid, flexShrink: 0,
                     }}>
                       {unranked ? '–' : place}
                     </div>
@@ -983,7 +983,7 @@ export function RankingTab({ user }) {
                     <div style={{
                       fontSize: 14, fontWeight: 700, flexShrink: 0,
                       color: period === 'all'
-                        ? theme.accent
+                        ? theme.text
                         : isPositive ? theme.green : isNegative ? theme.loss : theme.textLight,
                     }}>
                       {unranked ? null : period === 'all' ? score : score > 0 ? `+${score}` : score}
@@ -1022,13 +1022,13 @@ export function RankingTab({ user }) {
           margin: '12px 18px 18px',
           background: theme.surface,
           borderRadius: 12,
-          border: `1.5px solid ${theme.accent}`,
+          border: `1.5px solid ${theme.text}`,
           padding: '11px 14px',
           display: 'flex',
           alignItems: 'center',
           gap: 11,
         }}>
-          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.accent, flexShrink: 0 }}>
+          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.text, flexShrink: 0 }}>
             {userRank}
           </div>
           <AvatarCircle
@@ -1048,7 +1048,7 @@ export function RankingTab({ user }) {
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: theme.accent }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.text }}>
               {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
             </div>
             {rankChange !== 0 && (

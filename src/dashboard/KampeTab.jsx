@@ -2573,7 +2573,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                   avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
                   size={28}
                   emojiSize="13px"
-                  style={{ background: theme.accentBg, border: "1px solid " + theme.border, flexShrink: 0 }}
+                  style={{ background: theme.surfaceMuted, border: "1px solid " + theme.border, flexShrink: 0 }}
                 />
                 <span>{req.user_name || "Ukendt"}</span>
               </div>

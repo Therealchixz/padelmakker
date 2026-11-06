@@ -270,19 +270,19 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
       ? [
           { label: 'Vundet', value: ligaStats?.wins ?? 0, color: theme.green },
           { label: 'Tabt', value: ligaStats?.losses ?? 0, color: theme.loss },
-          { label: 'Kampe', value: ligaStats?.played ?? 0, color: theme.blue },
+          { label: 'Kampe', value: ligaStats?.played ?? 0, color: theme.text },
           { label: 'Win %', value: ligaStats?.played > 0 ? `${ligaStats.winPct}%` : '—', color: theme.accent },
         ]
       : statsMode === 'americano'
         ? [
-            { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.accent },
-            { label: 'Turn.', value: americanoPlayed, color: theme.blue },
+            { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.text },
+            { label: 'Turn.', value: americanoPlayed, color: theme.text },
             { label: 'Vundne', value: americanoWins, color: theme.warm },
             { label: 'Win %', value: americanoRounds > 0 ? `${americanoWinPct}%` : '—', color: theme.accent },
           ]
         : [
-            { label: TWO_V_TWO_ELO_LABEL, value: elo, color: theme.accent },
-            { label: 'Kampe', value: games, color: theme.blue },
+            { label: TWO_V_TWO_ELO_LABEL, value: elo, color: theme.text },
+            { label: 'Kampe', value: games, color: theme.text },
             { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
             { label: 'Seneste form', value: null, form: recentForm },
           ];
@@ -349,7 +349,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {/* Profile head — centered, matches mockup */}
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '4px' }}>
           <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
-            <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + `color-mix(in srgb, ${theme.accent} 25%, transparent)` }} />
+            <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.surfaceMuted, border: "2px solid " + theme.border }} />
             {pRef.level != null && pRef.level !== '' && (
               <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
@@ -363,10 +363,10 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             </div>
           )}
           <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {pRef.court_side && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.court_side}</span>}
-            {pRef.play_style && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.play_style}</span>}
-            {pRef.intent_now && <span style={tag(theme.navySoft, theme.onAccent)}>{intentDisplayLabel(pRef.intent_now)}</span>}
-            {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
+            {pRef.court_side && <span style={tag(theme.surfaceMuted, theme.textMid)}>{pRef.court_side}</span>}
+            {pRef.play_style && <span style={tag(theme.surfaceMuted, theme.textMid)}>{pRef.play_style}</span>}
+            {pRef.intent_now && <span style={tag(theme.surfaceMuted, theme.textMid)}>{intentDisplayLabel(pRef.intent_now)}</span>}
+            {!dataLoading && elo != null && <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
             {levelDisplay ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
@@ -430,7 +430,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
                   )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
                 </div>
               ) : (
-                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.accent, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.text, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
               )}
             </div>
           ))}
@@ -459,7 +459,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               >
                 Ligakampe vundet
               </div>
-              <div className="pm-v4-num" style={{ fontSize: '30px', color: theme.blue }}>
+              <div className="pm-v4-num" style={{ fontSize: '30px', color: theme.text }}>
                 🏅 {ligaStats.wins}
               </div>
               <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
@@ -527,7 +527,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               <span style={{ color: theme.textLight }}>Tilgængelighed</span>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
                 {availabilityTags(pRef).map((a) => (
-                  <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>
+                  <span key={a} style={tag(theme.surfaceMuted, theme.textMid)}>{a}</span>
                 ))}
               </div>
             </div>

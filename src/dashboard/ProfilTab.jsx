@@ -651,27 +651,27 @@ export function ProfilTab({ user, showToast, setTab }) {
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
   const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
   const twoVTwoOverviewCards = [
-    { label: "Kampe spillet", value: games, color: theme.blue },
-    { label: "Win rate", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+    { label: "Kampe spillet", value: games, color: theme.text },
+    { label: "Win rate", value: games > 0 ? winPct + "%" : "—", color: theme.text },
     { label: "Nuværende stime", value: twoV2CurrentStreak > 0 ? `🔥 ${twoV2CurrentStreak}` : twoV2CurrentStreak, color: twoV2CurrentStreak > 0 ? theme.warm : theme.textLight },
-    { label: "Turneringer", value: americanoPlayed || 0, color: theme.accent },
+    { label: "Turneringer", value: americanoPlayed || 0, color: theme.text },
   ];
   const americanoOverviewCards = [
-    { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.accent },
+    { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.text },
     { label: "Americano/Mexicano", value: americanoPlayed, color: theme.text },
-    { label: "Runder i alt", value: americanoRounds, color: theme.blue },
+    { label: "Runder i alt", value: americanoRounds, color: theme.text },
     { label: "Runder vundet", value: americanoWins, color: americanoOutcomeColors.win.text },
     { label: "Runder uafgjort", value: americanoDraws, color: americanoOutcomeColors.tie.text },
     { label: "Runder tabt", value: americanoLosses, color: americanoOutcomeColors.loss.text },
-    { label: "Win %", value: americanoRounds > 0 ? americanoWinPct + "%" : "—", color: theme.accent },
+    { label: "Win %", value: americanoRounds > 0 ? americanoWinPct + "%" : "—", color: theme.text },
   ];
   const ligaOverviewCards = [
     { label: "Ligaer", value: ligaStats.leagues, color: theme.text },
-    { label: "Kampe", value: ligaStats.matches, color: theme.blue },
+    { label: "Kampe", value: ligaStats.matches, color: theme.text },
     { label: "Sejre", value: ligaStats.wins, color: theme.green },
-    { label: "Tab", value: ligaStats.losses, color: theme.red },
+    { label: "Tab", value: ligaStats.losses, color: theme.loss },
     { label: "Uafgjort", value: ligaStats.draws, color: theme.textLight },
-    { label: "Win %", value: ligaStats.matches > 0 ? ligaWinPct + "%" : "--", color: theme.accent },
+    { label: "Win %", value: ligaStats.matches > 0 ? ligaWinPct + "%" : "--", color: theme.text },
   ];
   const activeOverviewCards =
     overviewMode === "americano"
@@ -819,21 +819,21 @@ export function ProfilTab({ user, showToast, setTab }) {
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
               {!statsLoading && is2v2Mode && elo != null ? (
-                <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>
+                <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>
               ) : null}
               {user.level != null && user.level !== '' ? (
                 <span style={tag(theme.amberBg, theme.amberText)}>
                   Niveau {formatPlaytomicLevel(user.level)}
                 </span>
               ) : null}
-              {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
+              {!statsLoading && isAmericanoMode && <span style={tag(theme.surfaceMuted, theme.textMid)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
               {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
-                <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
+                <span style={tag(theme.surfaceMuted, theme.textMid)}>{ligaStats.matches} ligakampe</span>
               )}
-              {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-              {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
-              {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
-              {user.intent_now && <span style={tag(theme.blueBg, theme.blue)}>{intentDisplayLabel(user.intent_now)}</span>}
+              {user.birth_year && <span style={tag(theme.surfaceMuted, theme.textMid)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
+              {user.play_style && <span style={tag(theme.surfaceMuted, theme.textMid)}>{user.play_style}</span>}
+              {user.court_side && <span style={tag(theme.surfaceMuted, theme.textMid)}>{user.court_side}</span>}
+              {user.intent_now && <span style={tag(theme.surfaceMuted, theme.textMid)}>{intentDisplayLabel(user.intent_now)}</span>}
               {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
             </div>
           </div>
@@ -1001,7 +1001,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     )) : <div style={{ fontSize: '13px', color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 23, fontWeight: 700, color: s.color || theme.accent, marginTop: 4 }}>{s.value}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: s.color || theme.text, marginTop: 4 }}>{s.value}</div>
                 )}
               </div>
             ))}
@@ -1059,7 +1059,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Bedste måned</div>
                 {bestMonth && bestMonth.month ? (
                   <>
-                    <div style={{ fontSize: "15px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: theme.text, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
                       {bestMonth.wins}/{bestMonth.games} sejre · {bestMonth.change > 0 ? "+" : ""}{bestMonth.change} ELO
                     </div>
@@ -1072,7 +1072,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
                 {peakElo ? (
                   <>
-                    <div className="pm-v4-num" style={{ fontSize: "30px", color: theme.accent }}>🏆 {peakElo}</div>
+                    <div className="pm-v4-num" style={{ fontSize: "30px", color: theme.text }}>🏆 {peakElo}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
                   </>
                 ) : (
@@ -1149,7 +1149,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%`}
                       statColor={theme.green}
                       statLabel="sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
+                      avatarStyle={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1209,9 +1209,9 @@ export function ProfilTab({ user, showToast, setTab }) {
                           name={p.name}
                           subtitle={`${p.asOpponent.games} kampe imod`}
                           statValue={`${theirWinPct}%`}
-                          statColor={theme.red}
+                          statColor={theme.loss}
                           statLabel="de vinder"
-                          avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                          avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
                           onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                         />
                       </div>
@@ -1238,7 +1238,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
                       statColor={americanoOutcomeColors.win.text}
                       statLabel="sejr på banen"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
+                      avatarStyle={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1278,7 +1278,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                         statValue={`${theirWinPct}%`}
                         statColor={americanoOutcomeColors.loss.text}
                         statLabel="de vinder"
-                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
                         onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                       />
                     </div>
@@ -1298,7 +1298,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%`}
                       statColor={americanoOutcomeColors.win.text}
                       statLabel="din sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
+                      avatarStyle={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1322,7 +1322,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%`}
                       statColor={theme.green}
                       statLabel="sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
+                      avatarStyle={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1360,9 +1360,9 @@ export function ProfilTab({ user, showToast, setTab }) {
                         name={p.name}
                         subtitle={`${p.asOpponent.matches} kampe imod`}
                         statValue={`${theirWinPct}%`}
-                        statColor={theme.red}
+                        statColor={theme.loss}
                         statLabel="de vinder"
-                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        avatarStyle={{ background: theme.lossBg, border: `1px solid ${theme.border}` }}
                         onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                       />
                     </div>
@@ -1382,7 +1382,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%`}
                       statColor={theme.green}
                       statLabel="din sejr"
-                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + `color-mix(in srgb, ${theme.accent} 19%, transparent)` }}
+                      avatarStyle={{ background: theme.surfaceMuted, border: "1px solid " + theme.border }}
                       onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
                     />
                   </div>
@@ -1399,21 +1399,21 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
           {is2v2Mode ? (
             <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "padel", view: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
-              <Swords size={18} color={theme.accent} />
+              <Swords size={18} color={theme.textMid} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine 2v2-kampe</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{games} spillet</div>
             </button>
           ) : null}
           {isAmericanoMode ? (
             <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "americano", americanoView: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
-              <Swords size={18} color={theme.accent} />
+              <Swords size={18} color={theme.textMid} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine Americano/Mexicano</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{americanoPlayed} deltaget</div>
             </button>
           ) : null}
           {isLigaMode ? (
             <button onClick={() => openMineLigaerFromProfile(user.id, setTab)} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
-              <Swords size={18} color={theme.accent} />
+              <Swords size={18} color={theme.textMid} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine ligaer</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.leagues} liga{ligaStats.leagues === 1 ? "" : "er"}</div>
             </button>

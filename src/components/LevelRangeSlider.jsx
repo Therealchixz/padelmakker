@@ -15,7 +15,7 @@ const numberInputStyle = {
   borderRadius: 8,
   border: `1px solid ${theme.border}`,
   fontFamily: 'inherit',
-  color: theme.accent,
+  color: theme.text,
   background: theme.surface,
   boxSizing: 'border-box',
 };
