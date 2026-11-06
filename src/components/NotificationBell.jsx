@@ -3,13 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { theme } from '../lib/platformTheme';
-import { Bell, Trash2 } from 'lucide-react';
-import { AppModal } from './AppModal';
-import { ConfirmDialog } from './ConfirmDialog';
+import { Bell, X } from 'lucide-react';
+import { BottomSheet } from './BottomSheet';
+import { isIosDevice, isInStandalone } from '../lib/iosInstallPrompt';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
-import { NotificationPushControls } from './NotificationPushControls';
-import { normalizeNotificationPrefs } from '../lib/notificationPreferences';
-import { NotificationSettingsDisclosure } from './NotificationSettingsPanel';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import { formatNotificationAge, settleExpiredNotifications } from '../lib/notificationAge';
 import {
@@ -17,7 +14,6 @@ import {
   kampeFocusFooterLabel,
 } from '../lib/kampeFocusNavigation';
 import {
-  deleteNotificationsForUser,
   emitNotificationsSync,
   loadDismissedIds,
   NOTIFICATIONS_SYNC_EVENT,
@@ -35,7 +31,6 @@ export function NotificationBell({ tourForceOpen = false }) {
   const [notifs, setNotifs] = useState([]);
   const [matchMetaById, setMatchMetaById] = useState({});
   const [realtimeVersion, setRealtimeVersion] = useState(0);
-  const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
   const realtimeRetryTimerRef = useRef(null);
   const loadSeqRef = useRef(0);
@@ -278,37 +273,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     emitNotificationsSync();
   };
 
-  const deleteNotificationItem = async (notif) => {
-    if (!userId) return;
-    const ids = Array.isArray(notif?.notifIds)
-      ? notif.notifIds.filter((id) => typeof id === "string")
-      : [notif?.id].filter((id) => typeof id === "string");
-    if (!ids.length) return;
-
-    const idSet = new Set(ids);
-    const prevNotifs = notifs;
-    setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
-
-    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
-    if (!deleted.length) {
-      setNotifs(prevNotifs);
-      void load();
-    }
-  };
-
-  const clearAll = async () => {
-    if (!userId || !notifs.length) return;
-    const ids = notifs.map((n) => n.id);
-    const prevNotifs = notifs;
-    setNotifs([]);
-
-    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
-    if (!deleted.length) {
-      setNotifs(prevNotifs);
-      void load();
-    }
-  };
-
   const markNotifRead = async (n) => {
     const ids = Array.isArray(n?.notifIds)
       ? n.notifIds.filter((id) => typeof id === "string")
@@ -357,6 +321,8 @@ export function NotificationBell({ tourForceOpen = false }) {
     WebkitTapHighlightColor: "transparent",
   };
 
+  const showIosTip = isIosDevice() && !isInStandalone();
+  const closePanels = () => { setOpen(false); setSheetOpen(false); };
   const ctaLabel = (n, clickTarget, kampeTarget) => {
     let label;
     if (clickTarget.kind === 'admin') label = n.type === 'result_error_report' ? 'Åbn Admin → Fejl' : 'Åbn Admin → Anmeldelser';
@@ -372,11 +338,16 @@ export function NotificationBell({ tourForceOpen = false }) {
     <>
       <div className="pm-notif-v4-head">
         <h2 className="pm-notif-v4-title">Notifikationer</h2>
-        {unreadCount > 0 ? (
-          <button type="button" className="pm-notif-v4-read" onClick={() => void markAllRead()} aria-label="Markér alle notifikationer som læst">
-            Markér læst
+        <div className="pm-notif-v4-head-actions">
+          {unreadCount > 0 ? (
+            <button type="button" className="pm-notif-v4-read" onClick={() => void markAllRead()} aria-label="Markér alle notifikationer som læst">
+              Markér læst
+            </button>
+          ) : null}
+          <button type="button" className="pm-notif-v4-close" onClick={closePanels} aria-label="Luk notifikationer">
+            <X size={18} aria-hidden="true" />
           </button>
-        ) : null}
+        </div>
       </div>
       <div className="pm-notif-v4-list">
         {displayNotifs.length === 0 ? (
@@ -406,56 +377,24 @@ export function NotificationBell({ tourForceOpen = false }) {
               <span className="pm-notif-v4-time">{formatNotificationAge(n.created_at)}</span>
             </>
           );
-          return (
-            <div key={n.id} className="pm-notif-v4-row">
-              {clickTarget ? (
-                <button type="button" className="pm-notif-v4-item" onClick={() => { void openNotificationTarget(n); }}>{body}</button>
-              ) : (
-                <div className="pm-notif-v4-item">{body}</div>
-              )}
-              <button
-                type="button"
-                className="pm-notif-v4-del"
-                onClick={() => deleteNotificationItem(n)}
-                aria-label="Slet notifikation"
-                title="Slet"
-              >
-                <Trash2 size={15} aria-hidden="true" />
-              </button>
-            </div>
+          return clickTarget ? (
+            <button key={n.id} type="button" className="pm-notif-v4-item" onClick={() => { void openNotificationTarget(n); }}>{body}</button>
+          ) : (
+            <div key={n.id} className="pm-notif-v4-item">{body}</div>
           );
         })}
       </div>
-      {/* Push og indstillinger (herunder tippet om hjemmeskaermen paa iPhone). */}
-      <div className="pm-notif-v4-extras">
-        <NotificationPushControls
-          userId={userId}
-          notificationPrefs={normalizeNotificationPrefs(profile?.notification_prefs)}
-          variant="dropdown"
-          onAfterTest={() => void load()}
-        />
-        <NotificationSettingsDisclosure />
-      </div>
-      {notifs.length > 0 ? (
-        <div className="pm-notif-v4-foot">
-          <button type="button" className="pm-notif-v4-clear" onClick={() => setConfirmClear(true)}>Ryd alle</button>
-        </div>
+      {showIosTip ? (
+        <p className="pm-notif-v4-tip">På iPhone: tilføj PadelMakker til hjemmeskærmen for at få push-notifikationer.</p>
       ) : null}
+      <button type="button" className="pm-notif-v4-all" onClick={() => { closePanels(); navigate('/dashboard/notifikationer'); }}>
+        Se alle, slet og indstillinger
+      </button>
     </>
   );
 
   return (
     <>
-    {confirmClear && (
-      <ConfirmDialog
-        message="Vil du slette alle notifikationer?"
-        confirmLabel="Ja, ryd alle"
-        cancelLabel="Fortryd"
-        danger
-        onConfirm={() => { setConfirmClear(false); clearAll(); }}
-        onCancel={() => setConfirmClear(false)}
-      />
-    )}
     <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
         className="pm-hit-44"
@@ -492,30 +431,9 @@ export function NotificationBell({ tourForceOpen = false }) {
         </div>
       )}
     </div>
-    <AppModal
-      open={sheetOpen}
-      onClose={() => setSheetOpen(false)}
-      ariaLabel="Notifikationer"
-      maxWidthPreset="sm"
-      backdropStyle={{ alignItems: 'flex-end', padding: 0 }}
-      contentStyle={{
-        width: '100%',
-        maxWidth: '100%',
-        maxHeight: '86dvh',
-        margin: 0,
-        padding: 0,
-        borderRadius: '26px 26px 0 0',
-        borderBottom: 0,
-        background: 'var(--pm-bg)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div className="pm-notif-v4 pm-notif-v4--sheet">
-        <div className="pm-notif-v4-grip" aria-hidden />
-        {panelContent}
-      </div>
-    </AppModal>
+    <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} ariaLabel="Notifikationer" className="pm-notif-v4 pm-notif-v4--sheet">
+      {panelContent}
+    </BottomSheet>
     </>
   );
 }
