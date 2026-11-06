@@ -82,7 +82,7 @@ export function PublicTournamentPage() {
 
   return (
     <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: '100dvh', color: theme.text, paddingBottom: 'max(96px, env(safe-area-inset-bottom))' }}>
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: 'max(16px, env(safe-area-inset-top)) clamp(16px, 4vw, 28px) 0' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto', padding: 'max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) clamp(16px, 4vw, 28px) 0' }}>
         <button type="button" onClick={() => navigate('/events')} style={{ ...btn(false), marginBottom: '20px', padding: '8px 14px', fontSize: '13px' }}>
           ← Alle events
         </button>

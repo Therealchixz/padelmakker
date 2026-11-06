@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
@@ -90,7 +91,7 @@ export function LoginPage() {
     return (
       <div className="pm-root pm-brand" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
         <div className="pm-auth-narrow">
-          <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage til login</button>
+          <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px", minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={16} aria-hidden="true" />Tilbage til login</button>
           <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
             <div className="pm-auth-success-card">
@@ -133,7 +134,7 @@ export function LoginPage() {
   return (
     <div className="pm-root pm-brand" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-narrow">
-        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "28px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
+        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "28px", padding: "8px 14px", fontSize: "13px", minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={16} aria-hidden="true" />Tilbage</button>
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <picture>
             <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />

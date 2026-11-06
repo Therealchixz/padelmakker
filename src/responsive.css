@@ -1005,7 +1005,7 @@ button,
 
 .pm-toast {
   position: fixed;
-  top: max(12px, env(safe-area-inset-top));
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -1328,8 +1328,6 @@ button,
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     max-height: min(70dvh, 420px) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14) !important;
   }
 }
 
@@ -1723,7 +1721,7 @@ button,
   }
 
   .pm-mobile-chat-header .pm-chat-v2-thread-header {
-    padding-top: max(8px, env(safe-area-inset-top));
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
 
   .pm-mobile-chat-content {
@@ -4186,6 +4184,8 @@ button,
   width: 100%;
   box-sizing: border-box;
   padding: clamp(40px, 12vw, 80px) clamp(16px, 4vw, 24px);
+  /* Paa iPhone: hold indholdet fri af uret og batteriet i toppen. */
+  padding-top: max(clamp(40px, 12vw, 80px), calc(env(safe-area-inset-top, 0px) + 16px));
 }
 
 .pm-auth-wide {
@@ -4194,6 +4194,7 @@ button,
   width: 100%;
   box-sizing: border-box;
   padding: clamp(24px, 6vw, 40px) clamp(16px, 4vw, 24px);
+  padding-top: max(clamp(24px, 6vw, 40px), calc(env(safe-area-inset-top, 0px) + 16px));
 }
 
 /* iOS Safari zoom-fix: undgå auto-zoom ved fokus på inputs under 16px */
