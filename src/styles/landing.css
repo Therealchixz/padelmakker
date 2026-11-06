@@ -347,7 +347,8 @@ html:has(.pm-lp) body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-top: 40px;
+  /* Paa iPhone: overskriften skal ikke ind under uret, naar sektionen sidder fast. */
+  padding-top: max(40px, calc(env(safe-area-inset-top, 0px) + 20px));
   padding-bottom: 24px;
 }
 .pm-lp-story-head {
@@ -359,14 +360,19 @@ html:has(.pm-lp) body {
 .pm-lp-h2 { font-size: clamp(34px, 9vw, 64px); }
 .pm-lp-story-count { color: var(--lp-clay); }
 .pm-lp-story-bar {
-  height: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.pm-lp-story-bar > span {
+  height: 3px;
   background: var(--lp-line);
-  border-radius: 1px;
+  border-radius: 2px;
   overflow: hidden;
 }
-.pm-lp-story-bar > div {
+.pm-lp-story-bar > span > span {
+  display: block;
   height: 100%;
-  width: 100%;
   background: var(--lp-clay);
   transform-origin: left center;
   transform: scaleX(0);
@@ -389,20 +395,24 @@ html:has(.pm-lp) body {
     var(--lp-raised);
   border: 1px solid var(--lp-line);
 }
-.pm-lp-story-screen {
+/* Skaermene ligger paa en vandret raekke, der foelger scroll: naboerne kigger frem i kanten. */
+.pm-lp-story-track {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  column-gap: 4%;
+  transform: translate3d(12%, 0, 0);
+  will-change: transform;
+}
+.pm-lp-story-screen {
+  flex: 0 0 76%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
   padding: 22px 0 0;
-  opacity: 0;
-  transform: scale(1.06);
-  transition: opacity 0.6s ease, transform 0.9s var(--lp-ease);
+  will-change: transform, opacity;
 }
-.pm-lp-story-screen.is-active {
-  opacity: 1;
-  transform: none;
-}
+.pm-lp-story-screen .pm-lp-phone { width: min(100%, 300px); }
 .pm-lp-story-copy {
   position: relative;
   min-height: 132px;
@@ -411,10 +421,11 @@ html:has(.pm-lp) body {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.5s ease, transform 0.6s var(--lp-ease);
+  transform: translate3d(32px, 0, 0);
+  transition: opacity 0.35s ease, transform 0.45s var(--lp-ease);
 }
-.pm-lp-story-step.is-before { transform: translateY(-24px); }
+/* Teksten foelger skaermenes retning: frem = ind fra hoejre, ud til venstre. */
+.pm-lp-story-step.is-before { transform: translate3d(-32px, 0, 0); }
 .pm-lp-story-step.is-active {
   opacity: 1;
   transform: none;
