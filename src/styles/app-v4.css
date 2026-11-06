@@ -265,30 +265,38 @@ button.pm-notif-v4-item { cursor: pointer; }
   color: var(--pm-text-light);
   font-size: 14px;
 }
-.pm-notif-v4-tip {
-  margin: 14px 0 0;
-  padding: 12px 14px;
+.pm-notif-v4-extras {
+  margin-top: 16px;
+  border: 1px solid var(--pm-border);
   border-radius: 12px;
-  background: var(--pm-surface-muted);
-  color: var(--pm-text-mid);
-  font-size: 13px;
-  line-height: 1.45;
+  overflow: hidden;
+  background: var(--pm-surface);
 }
-.pm-notif-v4-all {
-  display: block;
-  width: 100%;
-  min-height: 48px;
-  margin-top: 12px;
-  border: 1.5px solid var(--pm-text);
-  border-radius: 12px;
+.pm-notif-v4-extras > :last-child,
+.pm-notif-v4-extras .pm-push-controls > :last-child { border-bottom: 0 !important; }
+.pm-notif-v4-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.pm-notif-v4-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
   background: none;
-  color: var(--pm-text);
-  font: 700 14px var(--pm-font-display);
+  color: var(--pm-accent);
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
 }
+.pm-notif-v4-link--muted { color: var(--pm-text-light); }
 @media (hover: hover) and (pointer: fine) {
   button.pm-notif-v4-item:hover .pm-notif-v4-t { text-decoration: underline; text-underline-offset: 3px; }
   .pm-notif-v4-close:hover { background: var(--pm-surface-muted); }
   .pm-notif-v4-read:hover { text-decoration: underline; }
-  .pm-notif-v4-all:hover { background: var(--pm-surface-muted); }
+  .pm-notif-v4-link:hover { text-decoration: underline; }
 }

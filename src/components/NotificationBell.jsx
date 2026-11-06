@@ -5,7 +5,10 @@ import { supabase } from '../lib/supabase';
 import { theme } from '../lib/platformTheme';
 import { Bell, X } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
-import { isIosDevice, isInStandalone } from '../lib/iosInstallPrompt';
+import { ConfirmDialog } from './ConfirmDialog';
+import { NotificationPushControls } from './NotificationPushControls';
+import { normalizeNotificationPrefs } from '../lib/notificationPreferences';
+import { NotificationSettingsDisclosure } from './NotificationSettingsPanel';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { resolveNotificationClickTarget } from '../lib/notificationClickTarget';
 import { formatNotificationAge, settleExpiredNotifications } from '../lib/notificationAge';
@@ -14,6 +17,7 @@ import {
   kampeFocusFooterLabel,
 } from '../lib/kampeFocusNavigation';
 import {
+  deleteNotificationsForUser,
   emitNotificationsSync,
   loadDismissedIds,
   NOTIFICATIONS_SYNC_EVENT,
@@ -28,6 +32,7 @@ export function NotificationBell({ tourForceOpen = false }) {
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [matchMetaById, setMatchMetaById] = useState({});
   const [realtimeVersion, setRealtimeVersion] = useState(0);
@@ -273,6 +278,19 @@ export function NotificationBell({ tourForceOpen = false }) {
     emitNotificationsSync();
   };
 
+  const clearAll = async () => {
+    if (!userId || !notifs.length) return;
+    const ids = notifs.map((n) => n.id);
+    const prevNotifs = notifs;
+    setNotifs([]);
+
+    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
+    if (!deleted.length) {
+      setNotifs(prevNotifs);
+      void load();
+    }
+  };
+
   const markNotifRead = async (n) => {
     const ids = Array.isArray(n?.notifIds)
       ? n.notifIds.filter((id) => typeof id === "string")
@@ -321,7 +339,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     WebkitTapHighlightColor: "transparent",
   };
 
-  const showIosTip = isIosDevice() && !isInStandalone();
   const closePanels = () => { setOpen(false); setSheetOpen(false); };
   const ctaLabel = (n, clickTarget, kampeTarget) => {
     let label;
@@ -384,17 +401,41 @@ export function NotificationBell({ tourForceOpen = false }) {
           );
         })}
       </div>
-      {showIosTip ? (
-        <p className="pm-notif-v4-tip">På iPhone: tilføj PadelMakker til hjemmeskærmen for at få push-notifikationer.</p>
-      ) : null}
-      <button type="button" className="pm-notif-v4-all" onClick={() => { closePanels(); navigate('/dashboard/notifikationer'); }}>
-        Se alle, slet og indstillinger
-      </button>
+      {/* Push og indstillinger: samme byggeklodser som notifikationssiden. */}
+      <div className="pm-notif-v4-extras">
+        <NotificationPushControls
+          userId={userId}
+          notificationPrefs={normalizeNotificationPrefs(profile?.notification_prefs)}
+          variant="dropdown"
+          onAfterTest={() => void load()}
+        />
+        <NotificationSettingsDisclosure />
+      </div>
+      <div className="pm-notif-v4-foot">
+        <button type="button" className="pm-notif-v4-link" onClick={() => { closePanels(); navigate('/dashboard/notifikationer'); }}>
+          Se alle
+        </button>
+        {notifs.length > 0 ? (
+          <button type="button" className="pm-notif-v4-link pm-notif-v4-link--muted" onClick={() => setConfirmClear(true)}>
+            Ryd alle
+          </button>
+        ) : null}
+      </div>
     </>
   );
 
   return (
     <>
+    {confirmClear && (
+      <ConfirmDialog
+        message="Vil du slette alle notifikationer?"
+        confirmLabel="Ja, ryd alle"
+        cancelLabel="Fortryd"
+        danger
+        onConfirm={() => { setConfirmClear(false); clearAll(); }}
+        onCancel={() => setConfirmClear(false)}
+      />
+    )}
     <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
         className="pm-hit-44"
