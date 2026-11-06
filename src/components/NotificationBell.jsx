@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { theme } from '../lib/platformTheme';
 import { Bell, X } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
+import { SwipeToDelete } from './SwipeToDelete';
 import { ConfirmDialog } from './ConfirmDialog';
 import { NotificationPushControls } from './NotificationPushControls';
 import { normalizeNotificationPrefs } from '../lib/notificationPreferences';
@@ -291,6 +292,24 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   };
 
+  const deleteNotificationItem = async (notif) => {
+    if (!userId) return;
+    const ids = Array.isArray(notif?.notifIds)
+      ? notif.notifIds.filter((id) => typeof id === "string")
+      : [notif?.id].filter((id) => typeof id === "string");
+    if (!ids.length) return;
+
+    const idSet = new Set(ids);
+    const prevNotifs = notifs;
+    setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
+
+    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
+    if (!deleted.length) {
+      setNotifs(prevNotifs);
+      void load();
+    }
+  };
+
   const markNotifRead = async (n) => {
     const ids = Array.isArray(n?.notifIds)
       ? n.notifIds.filter((id) => typeof id === "string")
@@ -394,10 +413,14 @@ export function NotificationBell({ tourForceOpen = false }) {
               <span className="pm-notif-v4-time">{formatNotificationAge(n.created_at)}</span>
             </>
           );
-          return clickTarget ? (
-            <button key={n.id} type="button" className="pm-notif-v4-item" onClick={() => { void openNotificationTarget(n); }}>{body}</button>
-          ) : (
-            <div key={n.id} className="pm-notif-v4-item">{body}</div>
+          return (
+            <SwipeToDelete key={n.id} onDelete={() => void deleteNotificationItem(n)} label={`Slet notifikation: ${itemTitle}`}>
+              {clickTarget ? (
+                <button type="button" className="pm-notif-v4-item" onClick={() => { void openNotificationTarget(n); }}>{body}</button>
+              ) : (
+                <div className="pm-notif-v4-item">{body}</div>
+              )}
+            </SwipeToDelete>
           );
         })}
       </div>
