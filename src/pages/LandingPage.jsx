@@ -66,7 +66,9 @@ export function LandingPage() {
   const heroPhotoRef = useRef(null);
   const heroCopyRef = useRef(null);
   const storyRef = useRef(null);
-  const storyBarRef = useRef(null);
+  const storyBarRefs = useRef([]);
+  const storyTrackRef = useRef(null);
+  const storyScreenRefs = useRef([]);
   const revealRef = useRef(null);
   const revealImgRef = useRef(null);
   const revealTextRef = useRef(null);
@@ -111,8 +113,27 @@ export function LandingPage() {
         const rect = story.getBoundingClientRect();
         const range = Math.max(1, rect.height - vh);
         const p = clamp01(-rect.top / range);
-        if (storyBarRef.current) storyBarRef.current.style.transform = `scaleX(${p})`;
-        const step = Math.min(LANDING_STORY_STEPS.length - 1, Math.floor(p * LANDING_STORY_STEPS.length));
+        const n = LANDING_STORY_STEPS.length;
+        const seg = p * n;
+        // Hvert trin staar stille det meste af sit stykke (saa man kan laese det),
+        // og glider saa videre til det naeste i den sidste del.
+        const k = Math.min(n - 1, Math.floor(seg));
+        const f = seg - k;
+        const t = k >= n - 1 ? 0 : clamp01((f - 0.55) / 0.45);
+        const x = k + t * t * (3 - 2 * t);
+        storyBarRefs.current.forEach((el, i) => {
+          if (el) el.style.transform = `scaleX(${clamp01(seg - i)})`;
+        });
+        if (storyTrackRef.current) {
+          storyTrackRef.current.style.transform = `translate3d(${12 - x * 80}%, 0, 0)`;
+        }
+        storyScreenRefs.current.forEach((el, i) => {
+          if (!el) return;
+          const d = Math.min(1, Math.abs(i - x));
+          el.style.transform = `scale(${1 - d * 0.1})`;
+          el.style.opacity = String(1 - d * 0.55);
+        });
+        const step = Math.round(x);
         if (step !== lastStep) {
           lastStep = step;
           setStoryStep(step);
@@ -276,7 +297,7 @@ export function LandingPage() {
           </section>
         )}
 
-        {/* Saadan virker det: fastgjort, skifter trin naar man scroller */}
+        {/* Saadan virker det: fastgjort; skaermene glider sidelaens i takt med scroll */}
         <section className="pm-lp-story" ref={storyRef} aria-labelledby="pm-lp-story-title">
           <div className="pm-lp-story-stick pm-lp-inner">
             <div className="pm-lp-story-head">
@@ -285,14 +306,24 @@ export function LandingPage() {
                 Trin {storyStep + 1} af {LANDING_STORY_STEPS.length}
               </span>
             </div>
-            <div className="pm-lp-story-bar" aria-hidden="true"><div ref={storyBarRef} /></div>
+            <div className="pm-lp-story-bar" aria-hidden="true">
+              {LANDING_STORY_STEPS.map(({ key }, i) => (
+                <span key={key}><span ref={(el) => { storyBarRefs.current[i] = el; }} /></span>
+              ))}
+            </div>
             <div className="pm-lp-story-body">
               <div className="pm-lp-story-stage" aria-hidden="true">
-                {LANDING_STORY_STEPS.map(({ key, Screen }, i) => (
-                  <div key={key} className={'pm-lp-story-screen' + (i === storyStep ? ' is-active' : '')}>
-                    <Screen />
-                  </div>
-                ))}
+                <div className="pm-lp-story-track" ref={storyTrackRef}>
+                  {LANDING_STORY_STEPS.map(({ key, Screen }, i) => (
+                    <div
+                      key={key}
+                      ref={(el) => { storyScreenRefs.current[i] = el; }}
+                      className={'pm-lp-story-screen' + (i === storyStep ? ' is-active' : '')}
+                    >
+                      <Screen />
+                    </div>
+                  ))}
+                </div>
               </div>
               <ol className="pm-lp-story-copy" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {LANDING_STORY_STEPS.map((s, i) => (
