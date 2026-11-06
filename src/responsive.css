@@ -4507,14 +4507,6 @@ button,
   cursor: default;
 }
 
-.pm-page-section-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
 /* Aktiv søgning — filterlinje + nedtælling (Hjem / Find makker / Kampe) */
 .pm-active-seeking-panel {
   font-family: var(--pm-font);
