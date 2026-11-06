@@ -1,4 +1,5 @@
 import { isAvatarUrl } from '../lib/avatarUpload';
+import {  } from 'lucide-react';
 import { theme } from '../lib/platformTheme';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
@@ -318,7 +319,7 @@ export function LigaOpenCard({
             }}
           >
             {isFull
-              ? 'Klar til start ✓'
+              ? 'Klar til start'
               : `${emptySlots} ${emptySlots === 1 ? 'plads' : 'pladser'} tilbage`}
           </span>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { Check } from 'lucide-react';
 import { useScrollToFieldOnError } from '../../lib/formValidationScroll'
 import { nearestHalfHour, TIME_OPTIONS } from '../../lib/timeSlotOptions.js'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
@@ -68,7 +69,7 @@ function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
         return (
           <span key={s.n} style={{ display: 'contents' }}>
             <div className={`pm-wiz-step${state ? ' ' + state : ''}`}>
-              <div className="pm-wiz-num">{state === 'done' ? '✓' : s.n}</div>
+              <div className="pm-wiz-num">{state === 'done' ? <Check size={14} strokeWidth={3} aria-label="Færdig" /> : s.n}</div>
               <span className="pm-wiz-label">{s.label}</span>
             </div>
             {i < 2 && <div className="pm-wiz-line" />}
@@ -625,7 +626,7 @@ export function CreateAmericanoTournamentForm({
             onClick={doSubmit}
             style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2, cursor: submitting ? 'wait' : 'pointer' }}
           >
-            {submitting ? 'Publicerer…' : `Publicér ${formatLabel} ✓`}
+            {submitting ? 'Publicerer…' : <><Check size={14} strokeWidth={3} aria-hidden /> Publicér {formatLabel}</>}
           </button>
         )}
       </div>

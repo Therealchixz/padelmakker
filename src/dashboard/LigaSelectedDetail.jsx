@@ -474,7 +474,7 @@ function RegistrationDetail({
           <div style={{ fontSize: 12, color: myTeam.status === 'pending' ? theme.warm : theme.green, fontWeight: 700 }}>
             {myTeam.status === 'pending'
               ? `⏳ Afventer godkendelse fra ${myTeam.player2_name}`
-              : `✓ Du er tilmeldt som ${myTeam.name}`}
+              : `Du er tilmeldt som ${myTeam.name}`}
           </div>
           <button onClick={onLeaveLeague} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>
             Afmeld hold
@@ -674,7 +674,7 @@ function ActiveDetail({
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={() => reportResult(myMatch, confirmPending.winnerId, confirmPending.score)} disabled={busyId === myMatch.id}
                         style={{ ...btn(true), padding: '9px 16px', fontSize: 13, background: theme.green, borderColor: theme.green }}>
-                        {busyId === myMatch.id ? 'Gemmer…' : '✓ Bekræft'}
+                        {busyId === myMatch.id ? 'Gemmer…' : <><Check size={14} strokeWidth={3} aria-hidden /> Bekræft</>}
                       </button>
                       <button onClick={() => setConfirmPending(null)} style={{ ...btn(false), padding: '8px 14px', fontSize: 13 }}>
                         ← Ret

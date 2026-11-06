@@ -6,7 +6,7 @@ import { REGIONS, PLAY_STYLES, INTENTS, COURT_SIDES, intentDisplayLabel } from '
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
-import { Search, MapPin, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
@@ -656,7 +656,7 @@ export function MakkereTab({ user, showToast }) {
 
       {loadError ? (
         <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>
-          <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+          <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
           <div className="pm-state-title">Kunne ikke hente spillere</div>
           <div className="pm-state-copy">{loadError}</div>
           <div className="pm-state-actions">

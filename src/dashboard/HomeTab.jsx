@@ -5,7 +5,7 @@ import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { supabase } from '../lib/supabase';
 import { fetchCourtsCached } from '../lib/courtsCache';
-import { Users, MapPin, Swords, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap, MessageCircle } from 'lucide-react';
+import { Users, MapPin, Swords, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap, MessageCircle, AlertTriangle } from 'lucide-react';
 import '../styles/home.css';
 
 // Kortet (Leaflet + bane-listen) hentes foerst, naar Hjem viser det.
@@ -1273,7 +1273,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           {invitesLoadError ? (
             <div style={{ padding: '0 18px' }}>
               <div className="pm-state-card pm-state-card--error">
-                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+                <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
                 <div className="pm-state-title">Kunne ikke hente invitationer</div>
                 <div className="pm-state-copy">{invitesLoadError}</div>
               </div>
@@ -1326,7 +1326,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         {upcomingLoadError ? (
           <div style={{ padding: '0 18px' }}>
             <div className="pm-state-card pm-state-card--error">
-              <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+              <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
               <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
               <div className="pm-state-copy">{upcomingLoadError}</div>
             </div>
@@ -1492,7 +1492,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
           <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div className="pm-state-card pm-state-card--error">
-            <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Kunne ikke hente aktivitet</div>
             <div className="pm-state-copy">{feedLoadError}</div>
             <div className="pm-state-actions">

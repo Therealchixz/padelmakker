@@ -73,7 +73,7 @@ import {
   resolveLegacyKampeFocusRedirect,
 } from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
-import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil, Check } from 'lucide-react';
+import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil, Check, AlertTriangle, X } from 'lucide-react';
 import '../styles/kampe-v4.css';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 
@@ -2593,7 +2593,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                   disabled={busyId === m.id + "-reject-" + req.id}
                   className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--reject"
                 >
-                  {busyId === m.id + "-reject-" + req.id ? "..." : "✕ Afvis"}
+                  {busyId === m.id + "-reject-" + req.id ? "..." : <><X size={14} strokeWidth={3} aria-hidden /> Afvis</>}
                 </button>
               </div>
             </div>
@@ -3224,7 +3224,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {detailMatchId && !detailMatch ? (
         detailFetchStatus === 'missing' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Kampen blev ikke fundet</div>
             <div className="pm-state-copy">Den kan være aflyst, eller du har ikke adgang til den længere.</div>
             <div className="pm-state-actions">
@@ -3235,7 +3235,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           </div>
         ) : detailFetchStatus === 'error' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Kampen kunne ikke indlæses</div>
             <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
             <div className="pm-state-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -3335,7 +3335,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       {kampeFormat === "padel" && !loadingMatches && loadError && (
         <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
-          <div className="pm-state-icon">⚠️</div>
+          <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
           <div className="pm-state-title">Kunne ikke hente kampe</div>
           <div className="pm-state-copy">{loadError}</div>
           <div className="pm-state-actions">

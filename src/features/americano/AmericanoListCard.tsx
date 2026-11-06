@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin } from 'lucide-react'
+import { Check } from 'lucide-react';
 import { AvatarCircle } from '../../components/AvatarCircle'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
@@ -182,7 +183,7 @@ export function AmericanoListCard({
                 border: joined ? '1.5px solid var(--pm-border)' : 'none',
               }}
             >
-              {joined ? 'Tilmeldt ✓' : isFull ? 'Fyldt op' : 'Tilmeld'}
+              {joined ? <><Check size={14} strokeWidth={3} aria-hidden /> Tilmeldt</> : isFull ? 'Fyldt op' : 'Tilmeld'}
             </div>
           </>
         ) : (

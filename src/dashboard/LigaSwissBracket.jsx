@@ -316,7 +316,7 @@ export function LigaSwissBracket({
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: 'default',
-                transition: 'all .15s',
+                transition: 'color .15s, background-color .15s, border-color .15s',
               }}
             >
               <span
@@ -403,7 +403,7 @@ export function LigaSwissBracket({
                       {totalRounds ? ` / ${totalRounds}` : ''}
                     </span>
                     <span style={{ fontSize: '11px', color: isDone ? theme.accent : theme.textLight }}>
-                      {isDone ? '✓ Afsluttet' : isCurrent ? '● Aktiv' : 'Kommende'}
+                      {isDone ? 'Afsluttet' : isCurrent ? 'Aktiv' : 'Kommende'}
                     </span>
                   </div>
                   {isFuture ? (

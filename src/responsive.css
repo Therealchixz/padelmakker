@@ -202,7 +202,7 @@ body {
     var(--pm-surface);
   border: 9px solid #0a2755;
   box-shadow:
-    0 30px 80px rgba(2, 6, 23, 0.38),
+    0 30px 80px rgba(27, 26, 23, 0.38),
     inset 0 0 0 1px rgba(255, 255, 255, 0.55);
   overflow: hidden;
 }
@@ -224,7 +224,7 @@ body {
   height: 7px;
   border-radius: 999px;
   margin: 0 auto 18px;
-  background: rgba(15, 23, 42, 0.14);
+  background: rgba(27, 26, 23, 0.14);
 }
 
 .pm-app-mockup-appbar,
@@ -421,7 +421,7 @@ body {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 10px 28px rgba(27, 26, 23, 0.07);
 }
 
 .pm-app-mockup-screen-card-dot {
@@ -466,7 +466,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #0f172a;
+  color: var(--pm-text);
   font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.025em;
@@ -971,8 +971,7 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
   .pm-feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(29, 78, 216, 0.12);
+    border-color: var(--pm-text-light);
   }
 }
 
@@ -1785,7 +1784,7 @@ button,
     -webkit-backdrop-filter: blur(14px) saturate(1.05);
     border-top: 1px solid var(--pm-border);
     padding: 8px 8px max(10px, env(safe-area-inset-bottom));
-    box-shadow: 0 -10px 28px rgba(2, 6, 23, 0.12);
+    box-shadow: 0 -10px 28px rgba(27, 26, 23, 0.12);
   }
 
   .pm-mobile-bottom-btn {
@@ -1841,13 +1840,8 @@ button,
     justify-content: center;
     color: inherit;
     min-height: 18px;
-    transform: none;
-    transition: transform 120ms ease;
   }
 
-  .pm-mobile-bottom-btn[data-active="true"] .pm-mobile-bottom-icon-wrap {
-    transform: translateY(-1px);
-  }
 
   .pm-mobile-bottom-label {
     font-size: 10px;
@@ -1881,7 +1875,7 @@ button,
     font-weight: 800;
     padding: 0 5px;
     line-height: 1;
-    box-shadow: 0 1px 4px rgba(2, 6, 23, 0.2);
+    box-shadow: 0 1px 4px rgba(27, 26, 23, 0.2);
   }
 
   .pm-mobile-more-backdrop {
@@ -1892,7 +1886,7 @@ button,
     border: none;
     margin: 0;
     padding: 0;
-    background: rgba(2, 6, 23, 0.2);
+    background: rgba(27, 26, 23, 0.2);
   }
 
   .pm-mobile-more-sheet {
@@ -1907,7 +1901,7 @@ button,
     border: 1px solid var(--pm-border);
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 14px 38px rgba(2, 6, 23, 0.16);
+    box-shadow: 0 14px 38px rgba(27, 26, 23, 0.16);
   }
 
   .pm-mobile-more-sheet--tour {
@@ -1970,7 +1964,6 @@ button,
 
 @media (hover: hover) and (pointer: fine) {
   .pm-home-seeking-cta:hover {
-    transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--pm-green) 50%, var(--pm-border));
     box-shadow: var(--pm-shadow-soft);
   }
@@ -2021,8 +2014,7 @@ button,
 
 @media (hover: hover) and (pointer: fine) {
   .pm-home-stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--pm-shadow-soft);
+    border-color: var(--pm-text-light);
   }
 }
 
@@ -2655,7 +2647,6 @@ button,
 
 @media (hover: hover) and (pointer: fine) {
   .pm-avatar-circle--clickable:hover {
-    transform: scale(1.06);
     box-shadow: 0 0 0 3px var(--pm-accent-bg);
   }
 }
@@ -3236,8 +3227,6 @@ button,
 /* Baner — filtre */
 @media (hover: hover) and (pointer: fine) {
   .pm-ui-card-interactive:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--pm-shadow-lg);
     border-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border));
   }
 }
@@ -3669,9 +3658,7 @@ button,
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(90deg, var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
-    #EDF2F8;
+    var(--pm-surface-muted);
 }
 
 .pm-baner-map-pin {
@@ -7041,7 +7028,7 @@ button,
   border: none;
   margin: 0;
   padding: 0;
-  background: rgba(2, 6, 23, 0.35);
+  background: rgba(27, 26, 23, 0.35);
 }
 
 .pm-kampe-v2-sheet {
@@ -7053,7 +7040,7 @@ button,
   background: var(--pm-surface);
   border-radius: 18px 18px 0 0;
   padding: max(12px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom));
-  box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18);
+  box-shadow: 0 -12px 40px rgba(27, 26, 23, 0.18);
   max-height: min(85vh, 640px);
   overflow-y: auto;
   transform: translateY(var(--sheet-drag-y, 0px));
@@ -7338,7 +7325,7 @@ button,
   height: 24px;
   border-radius: 50%;
   background: var(--pm-surface);
-  box-shadow: 0 1px 4px rgba(2, 6, 23, 0.15);
+  box-shadow: 0 1px 4px rgba(27, 26, 23, 0.15);
   transition: transform 140ms ease;
 }
 
@@ -7364,7 +7351,7 @@ button,
   padding: 14px;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
   transition: border-color 140ms ease, box-shadow 140ms ease;
   overflow: hidden;
 }
@@ -7763,7 +7750,7 @@ button,
   gap: 10px;
   margin-top: 0;
   padding: 12px 14px;
-  border-top: 1px solid var(--pm-border, #E2E8F0);
+  border-top: 1px solid var(--pm-border);
 }
 
 .pm-kampe-v2-list-card-bottom--open {
@@ -8481,7 +8468,7 @@ button,
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -9148,7 +9135,6 @@ button,
   background: var(--pm-surface);
   border-radius: 10px;
   border: 1px solid var(--pm-border);
-  border-left-width: 4px;
   font-size: 12px;
   color: var(--pm-text);
 }
@@ -9230,7 +9216,7 @@ button,
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
   transition: transform 0.15s ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -9261,7 +9247,7 @@ button,
 }
 
 .pm-liga-v2-list-band--done {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  background: var(--pm-ink-raised);
 }
 
 .pm-liga-v2-list-type {
@@ -9891,7 +9877,7 @@ button,
   height: min(85vh, 640px);
   max-height: min(85vh, 640px);
   overflow: hidden;
-  animation: pm-player-profile-sheet-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pm-player-profile-sheet-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .pm-kampe-v2-sheet.pm-player-profile-sheet.pm-kampe-v2-sheet--dragging,
@@ -10313,11 +10299,6 @@ button,
 }
 
 /* ── Chat v2 (Beskeder redesign) ── */
-@keyframes pmChatTyping {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-5px); opacity: 1; }
-}
-
 .pm-chat-v2-inbox {
   display: flex;
   flex-direction: column;
@@ -10988,16 +10969,17 @@ button,
   height: 6px;
   border-radius: 50%;
   background: var(--pm-text-light);
-  animation: pm-chat-v2-typing-bounce 1.2s infinite ease-in-out;
+  animation: pm-chat-v2-typing-pulse 1.2s infinite ease-in-out;
 }
 
 .pm-chat-v2-message-item--typing {
   align-self: flex-start;
 }
 
-@keyframes pm-chat-v2-typing-bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
-  40% { transform: translateY(-4px); opacity: 1; }
+/* Roligt blink i stedet for hop (skills: impeccable + remove-animations). */
+@keyframes pm-chat-v2-typing-pulse {
+  0%, 80%, 100% { opacity: 0.35; }
+  40% { opacity: 1; }
 }
 
 .pm-chat-v2-invite-card {

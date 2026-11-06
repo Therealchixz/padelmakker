@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X, CalendarClock } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X, CalendarClock, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { theme, font, btn } from '../lib/platformTheme';
@@ -292,7 +292,7 @@ export function NotifikationerPage({ onBack }) {
         ) : loadError ? (
           <div style={{ padding: '0 18px' }}>
             <div className="pm-state-card pm-state-card--error">
-              <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+              <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
               <div className="pm-state-title">Kunne ikke hente notifikationer</div>
               <div className="pm-state-copy">{loadError}</div>
               <div className="pm-state-actions">

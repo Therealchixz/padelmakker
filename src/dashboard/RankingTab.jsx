@@ -2,7 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { font, theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
-import { ChevronDown, Check, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, Check, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
@@ -716,7 +716,7 @@ export function RankingTab({ user }) {
 
       {loadError && sorted.length === 0 ? (
         <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>
-          <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+          <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
           <div className="pm-state-title">Kunne ikke hente ranking</div>
           <div className="pm-state-copy">{loadError}</div>
           <div className="pm-state-actions">

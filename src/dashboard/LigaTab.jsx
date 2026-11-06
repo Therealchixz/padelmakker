@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, font } from '../lib/platformTheme';
-import { Trophy, Plus, Check, Copy, ArrowRight } from 'lucide-react';
+import { Trophy, Plus, Check, Copy, ArrowRight, AlertTriangle } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -1044,7 +1044,7 @@ export function LigaTab({
               return (
                 <span key={s.n} style={{ display: 'contents' }}>
                   <div className={`pm-wiz-step${state ? ' ' + state : ''}`}>
-                    <div className="pm-wiz-num">{state === 'done' ? '✓' : s.n}</div>
+                    <div className="pm-wiz-num">{state === 'done' ? <Check size={14} strokeWidth={3} aria-label="Færdig" /> : s.n}</div>
                     <span className="pm-wiz-label">{s.label}</span>
                   </div>
                   {i < arr.length - 1 && <div className="pm-wiz-line" />}
@@ -1238,7 +1238,7 @@ export function LigaTab({
                   <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} tiebreak-tab · ${createForm.points_loss} nederlag`} />
                 )}
               </div>
-              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
                 <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>&quot;Opret liga&quot;</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
               </div>
@@ -1369,7 +1369,7 @@ export function LigaTab({
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => acceptInvite(invite)} disabled={busy}
                     style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
-                    {busyId === invite.id + '-accept' ? 'Accepterer…' : '✓ Acceptér'}
+                    {busyId === invite.id + '-accept' ? 'Accepterer…' : <><Check size={14} strokeWidth={3} aria-hidden /> Acceptér</>}
                   </button>
                   <button onClick={() => declineInvite(invite)} disabled={busy}
                     style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: theme.red, borderColor: 'var(--pm-danger-border)' }}>
@@ -1406,7 +1406,7 @@ export function LigaTab({
         </div>
       ) : loadError ? (
         <div className="pm-state-card pm-state-card--error">
-          <div className="pm-state-icon">⚠️</div>
+          <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
           <div className="pm-state-title">Kunne ikke hente ligaer</div>
           <div className="pm-state-copy">{loadError}</div>
           <div className="pm-state-actions">
@@ -1489,7 +1489,7 @@ export function LigaTab({
       {embedDetailLeagueId && !selectedLeague ? (
         detailFetchStatus === 'missing' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Ligaen blev ikke fundet</div>
             <div className="pm-state-copy">Den kan være slettet, eller du har ikke adgang til den længere.</div>
             <div className="pm-state-actions">
@@ -1500,7 +1500,7 @@ export function LigaTab({
           </div>
         ) : detailFetchStatus === 'error' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Ligaen kunne ikke indlæses</div>
             <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
             <div className="pm-state-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
