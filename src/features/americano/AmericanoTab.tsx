@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'
 import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, ArrowRight, MapPin, Pencil } from 'lucide-react'
 import { EmptyStateIcon } from '../../components/EmptyStateIcon'
@@ -1177,7 +1178,7 @@ export function AmericanoTab({
   if (!embedDetailId && loadError) {
     return (
       <div className="pm-state-card pm-state-card--error" style={{ fontFamily: font }}>
-        <div className="pm-state-icon">⚠️</div>
+        <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
         <div className="pm-state-title">{TOURNAMENT_LOAD_ERROR_TITLE}</div>
         <div className="pm-state-copy">{loadError}</div>
         <div className="pm-state-actions">
@@ -1437,7 +1438,7 @@ export function AmericanoTab({
       {embedDetailId && !detailTournament ? (
         detailFetchStatus === 'missing' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: 14 }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Turneringen blev ikke fundet</div>
             <div className="pm-state-copy">Den kan være slettet, eller du har ikke adgang til den længere.</div>
             <div className="pm-state-actions">
@@ -1448,7 +1449,7 @@ export function AmericanoTab({
           </div>
         ) : detailFetchStatus === 'error' ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: 14 }}>
-            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
             <div className="pm-state-title">Turneringen kunne ikke indlæses</div>
             <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
             <div className="pm-state-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

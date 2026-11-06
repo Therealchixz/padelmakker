@@ -58,6 +58,6 @@ test('landing ELO count-up is slow and replays on every fresh page load', async 
 test('landing CTA buttons keep strong contrast', async () => {
   const css = await readFile(new URL('../../src/styles/landing.css', import.meta.url), 'utf8');
   // Hvid tekst paa lerfarven (#C0503A) giver 4,7:1; den lysere #C8553D gav kun 4,35:1.
-  assert.match(css, /--lp-clay-solid:\s*#C0503A/);
+  assert.match(css, /--lp-clay-solid:\s*var\(--pm-accent-solid\)/);
   assert.match(css, /\.pm-lp-cta\s*\{[^}]*background:\s*var\(--lp-clay-solid\)/);
 });

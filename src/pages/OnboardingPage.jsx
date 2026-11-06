@@ -1108,7 +1108,7 @@ export function OnboardingPage() {
                   flex: "none",
                 }}
               >
-                ✓
+                <Check size={14} strokeWidth={3} aria-label="Bekræftet" />
               </span>
             )}
           </div>

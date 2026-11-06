@@ -15,7 +15,7 @@ html:has(.pm-lp) body {
   --lp-raised: var(--pm-ink-raised);
   --lp-paper: var(--pm-paper);
   --lp-clay: var(--pm-clay);
-  --lp-clay-solid: #C0503A;
+  --lp-clay-solid: var(--pm-accent-solid);
   --lp-ball: var(--pm-ball);
   --lp-muted: rgba(243, 238, 228, 0.72);
   --lp-faint: rgba(243, 238, 228, 0.62);
@@ -777,15 +777,15 @@ html:has(.pm-lp) body {
 
 /* Hover kun med mus, ellers haenger den fast efter et tryk paa telefonen. */
 @media (hover: hover) and (pointer: fine) {
-  .pm-lp-cta:hover { background: #A8432D; }
-  .pm-lp-cta--ink:hover { background: #000; }
+  .pm-lp-cta:hover { background: color-mix(in srgb, var(--lp-clay-solid) 86%, black); }
+  .pm-lp-cta--ink:hover { background: color-mix(in srgb, var(--lp-ink) 70%, black); }
   .pm-lp-pill:hover {
     background: rgba(243, 238, 228, 0.12);
     border-color: var(--lp-paper);
   }
   .pm-lp-pill--solid:hover {
-    background: #A8432D;
-    border-color: #A8432D;
+    background: color-mix(in srgb, var(--lp-clay-solid) 86%, black);
+    border-color: color-mix(in srgb, var(--lp-clay-solid) 86%, black);
   }
   .pm-lp-nav-text:hover { color: var(--lp-paper) !important; }
   .pm-lp-link:hover { text-decoration: underline; text-underline-offset: 4px; }

@@ -7,7 +7,7 @@ Kort reference for visuel konsistens. **UX-flows ændres ikke her** — kun mark
 1. **Tokens** — [`src/styles/variables.css`](../src/styles/variables.css) (`--pm-*`)
 2. **JS-hjælpere** — [`src/lib/platformTheme.js`](../src/lib/platformTheme.js): `theme`, `btn()`, `inputStyle`, `labelStyle`, `heading()`, `tag()`
 3. **CSS-klasser** — [`src/responsive.css`](../src/responsive.css): `pm-ui-card`, `pm-state-card`, …
-4. **Delte komponenter** — `AppModal`, `SeekingCallout`, `PageSectionTitle`
+4. **Delte komponenter** — `AppModal`, `SeekingCallout`, `ScreenHeader`, `PillTabs`
 
 ## Knapper
 
@@ -59,7 +59,7 @@ Presets: `sm` (380px), `md` (520px), `lg` (640px).
 | Niveau | Størrelse | Brug |
 |--------|-----------|------|
 | Sidetitel | `heading('clamp(20px,4.5vw,24px)')` | Faner |
-| Sektionslabel | `PageSectionTitle` eller `.pm-page-section-title` | «Seneste aktivitet» |
+| Sektionsoverskrift | `<h2 className="pm-home-h">` (sætning, ikke versaler; se DESIGN.md) | «Seneste aktivitet» |
 | Brødtekst | 13–14px | `theme.textMid` |
 | Caption | 11–12px | `theme.textLight` |
 

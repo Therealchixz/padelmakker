@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import {  } from 'lucide-react';
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { theme } from '../../lib/platformTheme'
 
@@ -216,7 +217,7 @@ export function AmericanoOpenCard({
             }}
           >
             {isFull
-              ? 'Klar til start ✓'
+              ? 'Klar til start'
               : `${emptySlots} ${emptySlots === 1 ? 'plads' : 'pladser'} tilbage`}
           </span>
         </div>

@@ -7,21 +7,21 @@
    ──────────────────────────────────────────────────────────────── */
 
 :root {
-  --pm-kd-card-border: #E2E8F0;
+  --pm-kd-card-border: var(--pm-border);
   --pm-kd-card-shadow: 0 2px 8px rgba(27, 26, 23, 0.07);
-  --pm-kd-inset: #F2F5F9;
-  --pm-kd-ghost-bg: #E9EDF4;
-  --pm-kd-ghost-fg: #9AA9BD;
-  --pm-kd-dash: #C9D3E1;
+  --pm-kd-inset: var(--pm-surface-alt);
+  --pm-kd-ghost-bg: var(--pm-surface-muted);
+  --pm-kd-ghost-fg: var(--pm-text-light);
+  --pm-kd-dash: var(--pm-border);
 }
 
 [data-theme="dark"] {
-  --pm-kd-card-border: #334155;
+  --pm-kd-card-border: var(--pm-border);
   --pm-kd-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --pm-kd-inset: #162032;
-  --pm-kd-ghost-bg: #243349;
-  --pm-kd-ghost-fg: #64748B;
-  --pm-kd-dash: #3B4D68;
+  --pm-kd-inset: var(--pm-surface-alt);
+  --pm-kd-ghost-bg: var(--pm-surface-muted);
+  --pm-kd-ghost-fg: var(--pm-text-light);
+  --pm-kd-dash: var(--pm-border);
 }
 
 /* ── Hero (navy gradient + bane-omrids, mockup .event-hero.detail-hero) ── */

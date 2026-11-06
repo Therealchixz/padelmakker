@@ -1417,7 +1417,7 @@ export function AdminTab({ initialSubTab = null }) {
                 type="button"
                 className="pm-ui-card pm-admin-kpi-card"
                 onClick={() => setActiveSubTab(card.target)}
-                style={{ borderLeft: `3px solid ${card.accent}` }}
+                style={{ borderTop: `3px solid ${card.accent}` }}
               >
                 <div className="pm-admin-kpi-top">
                   <span className="pm-admin-kpi-label">{card.label}</span>

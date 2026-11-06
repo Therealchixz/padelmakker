@@ -62,14 +62,14 @@
   --pm-danger-strong:#B91C1C;
   --pm-on-accent:   #FFFFFF;
   --pm-podium-gold:   #D97706;
-  --pm-podium-silver: #64748B;
+  --pm-podium-silver: #7D776B;
   --pm-podium-bronze: #B45309;
   --pm-americano-win-bg: #DCFCE7;
   --pm-americano-win-border: #86EFAC;
   --pm-americano-win-text: #166534;
-  --pm-americano-tie-bg: #F1F5F9;
-  --pm-americano-tie-border: #E2E8F0;
-  --pm-americano-tie-text: #334155;
+  --pm-americano-tie-bg: #EAE3D6;
+  --pm-americano-tie-border: #D9D1C2;
+  --pm-americano-tie-text: #4A463E;
   --pm-americano-loss-bg: #FEE2E2;
   --pm-americano-loss-border: #FECACA;
   --pm-americano-loss-text: #991B1B;
@@ -120,7 +120,7 @@
   --pm-focus-ring-dark: 0 0 0 3px rgba(232, 131, 107, 0.35);
   --pm-font:        'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --pm-font-display:'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  /* Brand-overskrifter på de offentlige sider (forside, Om, FAQ, ELO, Events). Varm, afrundet grotesk. */
+  /* Brand-overskrifter på de offentlige sider (forside, Om, FAQ, ELO, Events). Anton: smal, kantet grotesk med versaler (redesign v4). */
   --pm-font-brand:  'Anton', 'Arial Narrow', Impact, sans-serif;
   /* Varm accent (den orange fra bane-kortet). --pm-orange kan bruges til tekst på lys baggrund (4.9:1);
      --pm-orange-bright er til mørk baggrund og store tal. */
@@ -133,7 +133,7 @@
   --pm-clay:        #C8553D;
   --pm-ball:        #E9B44C;
   --pm-court:       #2F5D4E;
-  --pm-display-weight:   800;
+  --pm-display-weight:   700; /* Instrument Sans hentes kun op til 700 */
   --pm-display-tracking: -0.03em;
   --pm-display-case:     none;
   --pm-display-leading:  1.15;
@@ -193,7 +193,7 @@
   --pm-danger-strong:#FCA5A5;
   --pm-on-accent:   #FFFFFF;
   --pm-podium-gold:   #FBBF24;
-  --pm-podium-silver: #94A3B8;
+  --pm-podium-silver: #A39B8C;
   --pm-podium-bronze: #D97706;
   --pm-americano-win-bg: #102E24;
   --pm-americano-win-border: #34D399;
