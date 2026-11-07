@@ -1474,7 +1474,7 @@ export function LigaTab({
               onClick={openAdminChat}
               style={{ width: '100%', textAlign: 'center', background: theme.surface, border: `1.5px dashed ${theme.border}`, borderRadius: 14, padding: '22px 20px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                 <Plus size={20} strokeWidth={2.4} />
               </div>
               <b style={{ fontSize: 14, color: theme.text, display: 'block', marginBottom: 6 }}>Start en ny liga</b>

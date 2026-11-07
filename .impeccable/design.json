@@ -22,7 +22,8 @@
       "ball": { "role": "secondary", "displayName": "Boldgul", "canonical": "#E9B44C", "tonalRamp": ["#3D2E0F", "#6B5119", "#94701F", "#BF9131", "#E9B44C", "#F0C873", "#F6DDA6", "#FBF0D6"] },
       "court": { "role": "tertiary", "displayName": "Banegrøn", "canonical": "#2F5D4E", "dark": "#7FBFA4", "tonalRamp": ["#14261F", "#1F3D33", "#2F5D4E", "#467A68", "#5F9883", "#7FBFA4", "#B5D8C9", "#E2EBE5"] },
       "court-bg": { "role": "tertiary", "displayName": "Banegrøn skær", "canonical": "#E2EBE5", "dark": "#14261F", "tonalRamp": ["#14261F", "#1F3D33", "#2F5D4E", "#467A68", "#5F9883", "#7FBFA4", "#B5D8C9", "#E2EBE5"] },
-      "danger": { "role": "neutral", "displayName": "Fejlrød", "canonical": "#DC2626", "dark": "#F87171", "tonalRamp": ["#450A0A", "#7F1D1D", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FEF2F2"] }
+      "crimson": { "role": "neutral", "displayName": "Crimson (tabt, fejl, farligt)", "canonical": "#B4234A", "dark": "#F27A96", "tonalRamp": ["#3A1822", "#6E2B3D", "#8E1A39", "#B4234A", "#D2486C", "#F27A96", "#E8B9C4", "#F8E3E7"] },
+      "ochre": { "role": "neutral", "displayName": "Bold-okker (afventer)", "canonical": "#8C6400", "dark": "#E9B44C", "tonalRamp": ["#2A2210", "#5E4A1A", "#6B4D00", "#8C6400", "#B88A1E", "#E9B44C", "#E3CF95", "#F6ECCB"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Forsidens hovedoverskrift i Anton-versaler, linje for linje." },

@@ -160,7 +160,7 @@ export function SignupEmailSentPage() {
 
         <div
           style={{
-            background: theme.accentBg,
+            background: theme.surfaceMuted,
             borderRadius: '10px',
             padding: '16px 18px',
             textAlign: 'left',

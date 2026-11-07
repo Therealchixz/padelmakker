@@ -1,3 +1,4 @@
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
@@ -304,6 +305,8 @@ export function KampeMatchListCard({
             <span
               className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
             >
+              {/* Pilen giver samme besked uden farve (farveblinde ser groen og roed ens). */}
+              {eloDelta >= 0 ? <TrendingUp size={13} aria-hidden /> : <TrendingDown size={13} aria-hidden />}
               Elo {eloDelta >= 0 ? '+' : MINUS_SIGN}{Math.abs(eloDelta)}
             </span>
           </div>

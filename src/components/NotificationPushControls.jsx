@@ -190,7 +190,7 @@ export function NotificationPushControls({
       style={{
         padding: pad,
         borderBottom: '1px solid ' + theme.border,
-        background: `color-mix(in srgb, ${theme.warmBg} 25%, transparent)`,
+        background: theme.surfaceMuted,
         display: 'flex',
         alignItems: 'flex-start',
         gap: 10,
@@ -253,7 +253,7 @@ export function NotificationPushControls({
           style={{
             padding: pad,
             borderBottom: '1px solid ' + theme.border,
-            background: pushSubscribed ? `color-mix(in srgb, ${theme.accentBg} 19%, transparent)` : `color-mix(in srgb, ${theme.warmBg} 25%, transparent)`,
+            background: pushSubscribed ? `color-mix(in srgb, ${theme.greenBg} 45%, transparent)` : theme.surface,
             display: 'flex',
             alignItems: isPage ? 'flex-start' : 'center',
             flexDirection: isPage ? 'column' : 'row',

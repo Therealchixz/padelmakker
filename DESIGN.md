@@ -20,7 +20,10 @@ colors:
   ball: "#E9B44C"
   court: "#2F5D4E"
   court-bg: "#E2EBE5"
-  danger: "#DC2626"
+  crimson: "#B4234A"
+  crimson-bg: "#F8E3E7"
+  ochre: "#8C6400"
+  ochre-bg: "#F6ECCB"
 typography:
   display:
     fontFamily: "Anton, 'Arial Narrow', Impact, sans-serif"
@@ -164,7 +167,7 @@ Appen skal føles som en app på telefonen: 44 px trykflader, øjeblikkelig tryk
 
 ## Colors
 
-En varm, næsten monokrom base af papir og blæk, hvor lerfarven bærer al handling og boldgul kun signalerer, at noget er live.
+En varm, næsten monokrom base af papir og blæk. Ler er den eneste stærke farve og betyder "tryk her". Tre stille signalfarver fra banen (græs-grøn, crimson og bold-okker) bruges kun til status, i små doser.
 
 ### Primary
 - **Ler, udfyldt** (`accent-solid`): fyld bag hvid tekst: primærknapper, Spil-knappen, tællere, aktive chips, trin-numre. Hvid tekst giver 4,7:1. Samme værdi i mørk tilstand.
@@ -192,22 +195,25 @@ En varm, næsten monokrom base af papir og blæk, hvor lerfarven bærer al handl
 
 **Reglen om ingen hex i JSX.** Farver i JSX/TSX skrives som `var(--pm-*)` eller `theme.*`. `scripts/check-ui-hex.mjs` fejler bygget (`STRICT=1`); eneste undtagelse er steder uden CSS-variabler (Leaflet, brand-SVG) med en begrundet `// ui-hex-allow`.
 
-**Reglen om rød til fejl.** Tællere og ulæst-mærker er ler. Rød (`danger`) er forbeholdt fejl og advarsler.
+**Reglen om ler = tryk her.** Ler bruges kun på det, man kan trykke på (knapper, links, kontakter, valgt tilstand, Spil) og på ulæst-tællere/-prikker. Aldrig på tal, mærker, ikonfelter, bokse eller pynt.
 
-**Reglen om én betydning pr. farve (6. nov. 2026).** Ler betyder "tryk her" (knapper, Spil, aktiv fane, ulæst). Grøn betyder vundet eller plus. "Tabt", minus-ELO og tabte point står i rosa-rød (`--pm-loss` #B4234A, `--pm-loss-bg`), som er holdt køligere end ler, så de ikke forveksles. Det tabende holds navn dæmpes. Resultater (sæt-score) står i blæk, ikke ler. Holdene i kampkort er neutrale; kun vinderholdet får en grøn tone.
+**Reglen om stille signalfarver.** Grøn, crimson og okker bruges som tekst på deres egen lyse flade (fx "Vundet", "Tabt", "Afventer"), aldrig som store flader og aldrig med en kant i en anden farve. Et kort må højst have én signalfarve ud over ler-knappen.
 
-**Farvekortet for hele appen (gennemgået 6. nov. 2026).**
+**Reglen om ikke kun farve.** Status står altid også i ord eller form (fx "Vundet"/"Tabt", +/−, pil op/ned), fordi rød-grøn-farveblinde ser grøn og crimson som næsten samme grå.
+
+**Farvekortet (ny gennemgang 6. nov. 2026, testet).**
 
 | Farve | Betyder | Eksempler |
 |---|---|---|
 | Ler (`accent`, `accent-solid`) | Tryk her | Knapper, links, valgt/aktiv tilstand, kontakter, ulæst-tællere og -prikker |
-| Grøn (`green`) | Godt / åbent | Vundet, plus-ELO, ledige pladser, aktiv søgning, optjente mærker, afsluttet runde |
-| Okker (`amber`, `warm`) | Afventer | Venter på bekræftelse, udløbet, blokeret tid. Gul-brun, så den ikke ligner ler |
-| Rosa-rød (`loss`) | Tabt / minus | Tabt-mærke, minus-ELO, tabte runder, faldet på ranglisten |
-| Rød (`danger`, `red`) | Fejl / farligt | Fejlbeskeder, slet- og forlad-knapper, admin-advarsler, påkrævet felt |
-| Blæk og papir (`text`, `surface-muted`) | Data og alt andet | Tal, ELO, point, score, grafer, "dig"-rækker, fuld, aflyst, neutrale mærker og ikonfelter |
+| Græs-grøn (`green` #2F5D4E) | Godt / åbent | Vundet, plus-ELO, åben kamp, ledige pladser, stærkt match, aktiv søgning |
+| Crimson (`loss`, `danger`, `red` #B4234A) | Tabt / fejl / farligt | Tabt, minus-ELO, fejlbeskeder, slet- og forlad-knapper. Én rød i hele appen |
+| Bold-okker (`amber`, `warm` #8C6400) | Afventer | Venter på godkendelse, udløbet, næsten fuld |
+| Blæk og papir (`text`, `surface-muted`) | Data og resten | Tal, ELO, niveau, point, score, grafer, "fuld", "aflyst", "God match", info-bokse, ikonfelter |
 
-Blå og lilla er udfaset i appen (undtagen "din placering"-prikken på kortet). Data og pynt får aldrig ler.
+Blå og lilla er udfaset (tokens peger nu på blæk og grøn). Mørk tilstand: grøn `#7FBFA4`, crimson `#F27A96`, okker `#E9B44C`.
+
+Testet med en side, der viser de rigtige komponenter i lys og mørk: 6 → 4 farvefamilier på samme skærm, halvt så mange farvede pixels, 0 kontrastfejl (impeccable detect) og gennemgået med simuleret deuteranopi, protanopi og tritanopi.
 
 ## Typography
 
