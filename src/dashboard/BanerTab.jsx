@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { theme, btn, inputStyle, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
+  BANER_VENUES,
   groupBanerVenuesByRegion,
   filterGroupedBanerVenuesBySearch,
   halbookingSlotsUrl,
@@ -318,6 +320,29 @@ export function BanerTab() {
     });
   }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, playtomicDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue, loadPlaytomicVenue]);
 
+  /*
+   * Deep-link fra kortet paa Hjem: ?venue=<id> soeger centret frem og aabner dets tider.
+   * Parameteren fjernes bagefter, saa tilbage-knappen ikke aabner det igen.
+   */
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('venue');
+    if (!id) return;
+    const v = BANER_VENUES.find((x) => String(x.id) === id);
+    params.delete('venue');
+    const q = params.toString();
+    navigate({ pathname: location.pathname, search: q ? `?${q}` : '' }, { replace: true });
+    if (!v) return;
+    setVenueSearch(v.title);
+    // Efter soegningen har foldet regionen ud: aabn centret (henter dagens tider).
+    window.setTimeout(() => {
+      openVenue(v);
+      document.getElementById(`pm-baner-venue-${v.id}`)?.scrollIntoView({ block: 'start' });
+    }, 0);
+  }, [location.search, location.pathname, navigate, openVenue]);
+
   /** Unikke "gul tid"-forklaringer — vises én gang under banens slots i stedet for pr. chip. */
   const renderBlockedRuleNotes = (slots) => {
     const hints = [...new Set(
@@ -566,8 +591,9 @@ export function BanerTab() {
           return (
             <div
               key={v.id}
+              id={`pm-baner-venue-${v.id}`}
               className="pm-baner-venue pm-ui-card"
-              style={{ marginBottom: 12 }}
+              style={{ marginBottom: 12, scrollMarginTop: 80 }}
             >
               {/* Card header */}
               <div style={{ padding: '14px 16px 12px' }}>

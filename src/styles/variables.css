@@ -143,6 +143,8 @@
   --pm-clay:        #C8553D;
   --pm-ball:        #E9B44C;
   --pm-court:       #2F5D4E;
+  /* "Din placering" paa kort: den kendte blaa prik (eneste blaa i appen). */
+  --pm-map-me:      #2A78D6;
   --pm-display-weight:   700; /* Instrument Sans hentes kun op til 700 */
   --pm-display-tracking: -0.03em;
   --pm-display-case:     none;

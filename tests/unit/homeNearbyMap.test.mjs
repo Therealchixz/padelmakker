@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildNearbyVenues, formatNearbyKm } from '../../src/lib/homeNearbyMap.js';
+import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../../src/lib/homeNearbyMap.js';
 
 const me = { latitude: 57.048, longitude: 9.919 }; // Aalborg
 const venues = [
@@ -34,4 +34,30 @@ test('uden spillerens placering er der intet kort', () => {
 test('afstand skrives kort', () => {
   assert.equal(formatNearbyKm(0.4), 'under 1 km');
   assert.equal(formatNearbyKm(4.6), '5 km');
+});
+
+test('centre kun placeret i byens midte markeres og skrives med "ca."', () => {
+  const rows = buildNearbyVenues([
+    { id: 'x', title: 'By-center', latitude: 57.06, longitude: 9.92, coordsApprox: true },
+    { id: 'y', title: 'Rigtig adresse', latitude: 57.064, longitude: 9.934, indoor: false },
+  ], me, []);
+  const x = rows.find((r) => r.id === 'x');
+  const y = rows.find((r) => r.id === 'y');
+  assert.equal(x.approx, true);
+  assert.equal(y.approx, false);
+  assert.equal(formatNearbyKm(2.2, true), 'ca. 2 km');
+  assert.equal(formatNearbyKm(0.4, true), 'ca. 1 km');
+});
+
+test('linjen under centret: aabne kampe og naeste kamp, ellers afstand', () => {
+  const now = new Date('2026-11-07T12:00:00');
+  const rows = buildNearbyVenues(venues, me, [
+    { matchId: 1, court: 'Padel Nord', date: '2026-11-09', time: '19:00:00' },
+    { matchId: 2, court: 'Padel Nord', date: '2026-11-08', time: '18:30:00' },
+  ]);
+  const nord = rows.find((r) => r.id === 'b');
+  assert.equal(nearbyVenueMeta(nord, 'kampe', now), '2 åbne · næste i morgen 18:30 · 3 km');
+  const skansen = rows.find((r) => r.id === 'a');
+  assert.equal(nearbyVenueMeta(skansen, 'kampe', now), 'Ingen åbne kampe · under 1 km');
+  assert.equal(nearbyVenueMeta({ ...skansen, indoor: true }, 'baner', now), 'under 1 km · indendørs');
 });
