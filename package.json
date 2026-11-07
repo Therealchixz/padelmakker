@@ -33,7 +33,8 @@
     "baner:audit-booking": "node scripts/audit-all-baner-booking.mjs",
     "baner:geocode": "node scripts/geocode-baner-venues.mjs",
     "db:sql-index": "node scripts/sql-index.mjs",
-    "db:sql-index:check": "node scripts/sql-index.mjs --check"
+    "db:sql-index:check": "node scripts/sql-index.mjs --check",
+    "baner:geo-audit": "node scripts/audit-baner-venue-coords.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.49.0",

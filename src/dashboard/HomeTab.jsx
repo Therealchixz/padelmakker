@@ -1399,7 +1399,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             user={user}
             openMatches={openMatchFeed}
             onSeeMatches={() => setTab('kampe')}
-            onFindCourt={() => setTab('baner')}
+            onCreateMatch={() => setTab('kampe', { search: 'create=1' })}
+            onFindCourt={(v) => setTab('baner', { search: `venue=${encodeURIComponent(v.id)}` })}
           />
         </Suspense>
       ) : null}

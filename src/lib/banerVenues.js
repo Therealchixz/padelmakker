@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { BANER_REGION_ORDER } from './banerRegions.js';
 import { BANER_VENUES_LINKS } from './banerVenuesLinks.generated.js';
 import { BANER_VENUE_COORDS } from './banerVenuesCoords.generated.js';
+import { BANER_VENUE_COORDS_QUALITY } from './banerVenuesCoordsQuality.generated.js';
 import { filterLinkVenuesWithoutIntegratedDuplicates } from './banerVenueDedup.js';
 import { attachVenueFacilities } from './banerVenueFacilities.js';
 
@@ -27,6 +28,16 @@ export { BANER_REGION_ORDER };
 function attachVenueCoords(venue) {
   const c = BANER_VENUE_COORDS[venue.id];
   if (!c || c.lat == null || c.lng == null) return venue;
+  // Tjekket af scripts/audit-baner-venue-coords.mjs: kun byens midte, eller forkert by.
+  const q = BANER_VENUE_COORDS_QUALITY[venue.id];
+  if (q?.approx) {
+    return {
+      ...venue,
+      latitude: q.lat ?? c.lat,
+      longitude: q.lng ?? c.lng,
+      coordsApprox: true,
+    };
+  }
   return { ...venue, latitude: c.lat, longitude: c.lng };
 }
 
@@ -1751,10 +1762,11 @@ const BANER_VENUES_LINKS_DEDUPED = filterLinkVenuesWithoutIntegratedDuplicates(
   BANER_VENUES_LINKS
 );
 
+/** Samme liste uden placering og faciliteter (bruges af scripts/audit-baner-venue-coords.mjs). */
+export const BANER_VENUES_RAW = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS_DEDUPED];
+
 /** Integrerede + Padellife-link-katalog (uden dubletter af integrerede navne) */
-export const BANER_VENUES = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS_DEDUPED].map(
-  attachVenueExtras,
-);
+export const BANER_VENUES = BANER_VENUES_RAW.map(attachVenueExtras);
 
 /**
  * @param {BanerVenue[]} [venues]

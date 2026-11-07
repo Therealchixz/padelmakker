@@ -1,6 +1,9 @@
 /**
  * Geokodér alle baner-centre via Nominatim (OSM) og skriv banerVenuesCoords.generated.js
- * Kør: node scripts/geocode-baner-venues.mjs
+ * Kør: node scripts/geocode-baner-venues.mjs            (kun centre uden placering)
+ *      node scripts/geocode-baner-venues.mjs --retry-approx
+ *        (prøv igen for centre, som tjekket markerede som "kun byens midte" eller forkert by)
+ * Kør bagefter altid: npm run baner:geo-audit
  * Respekterer 1 req/sek (Nominatim fair use). Cache i scripts/output/baner-venue-coords.json
  */
 
@@ -8,6 +11,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BANER_VENUES } from '../src/lib/banerVenues.js';
+import { BANER_VENUE_COORDS } from '../src/lib/banerVenuesCoords.generated.js';
+import { BANER_VENUE_COORDS_QUALITY } from '../src/lib/banerVenuesCoordsQuality.generated.js';
+import { parseVenueAddress } from './audit-baner-venue-coords.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_PATH = join(__dirname, 'output', 'baner-venue-coords.json');
@@ -25,11 +31,17 @@ async function loadCache() {
   }
 }
 
-async function nominatimSearch(query) {
+/**
+ * @param {string} query
+ * @param {{ allowTown?: boolean }} [opts]  allowTown=false: afvis træf, der kun er en by/et område
+ *   (så et navnesøg på centret ikke ender i byens midte).
+ */
+async function nominatimSearch(query, opts = {}) {
+  const { allowTown = true } = opts;
   const url = new URL('https://nominatim.openstreetmap.org/search');
   url.searchParams.set('q', query);
-  url.searchParams.set('format', 'json');
-  url.searchParams.set('limit', '1');
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('limit', '3');
   url.searchParams.set('countrycodes', 'dk');
 
   const res = await fetch(url.toString(), {
@@ -37,9 +49,9 @@ async function nominatimSearch(query) {
   });
   if (!res.ok) throw new Error(`Nominatim ${res.status}`);
   const rows = await res.json();
-  const hit = rows?.[0];
+  const hit = (rows || []).find((r) => allowTown || !['place', 'boundary'].includes(r.category));
   if (!hit?.lat || !hit?.lon) return null;
-  return { lat: Number(hit.lat), lng: Number(hit.lon) };
+  return { lat: Number(hit.lat), lng: Number(hit.lon), town: ['place', 'boundary'].includes(hit.category) };
 }
 
 /** @param {{ title?: string, address?: string, region?: string }} venue */
@@ -47,23 +59,31 @@ function venueGeocodeQueries(venue) {
   const address = String(venue.address || '').trim();
   const title = String(venue.title || '').trim();
   const region = String(venue.region || '').trim();
-  const cityHint = address.split('—')[0].split(',')[0].trim();
+  // Byen i adressen ("Sportsvej 5, 9480, Løkken" -> "Løkken"), ikke gaden.
+  // Den gamle udgave brugte foerste del (gaden), og ramte saa en anden by med samme gadenavn.
+  const parsed = parseVenueAddress(address);
+  const cityHint = parsed.city || (parsed.noStreet ? address.split('—')[0].split(',')[0].trim() : '');
   const looksLikeStreet = /\d/.test(address) && !/se booking/i.test(address);
 
-  /** @type {string[]} */
+  const cleanTitle = title.replace(/\s*\((MATCHi|Playtomic|Halbooking|Bookli)\)\s*$/i, '').trim();
+
+  /** @type {{ q: string, allowTown: boolean }[]} */
   const queries = [];
-  if (looksLikeStreet) queries.push(`${address}, Denmark`);
-  if (title && cityHint && cityHint.length > 2) queries.push(`${title}, ${cityHint}, Denmark`);
-  if (title && region) queries.push(`${title}, ${region}, Denmark`);
-  if (cityHint && region) queries.push(`${cityHint}, ${region}, Denmark`);
-  if (cityHint && cityHint.length > 2) queries.push(`${cityHint}, Denmark`);
-  return [...new Set(queries)];
+  // Praecise forsoeg foerst: gadeadresse, saa centrets navn (kun hvis Nominatim finder selve stedet).
+  if (looksLikeStreet) queries.push({ q: `${address.replace(/\s+,/g, ',')}, Denmark`, allowTown: false });
+  if (cleanTitle && cityHint && cityHint.length > 2) queries.push({ q: `${cleanTitle}, ${cityHint}`, allowTown: false });
+  if (cleanTitle) queries.push({ q: cleanTitle, allowTown: false });
+  // Til sidst byens midte (tjekket markerer dem, saa kortet ikke viser en pind).
+  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, ${region}, Denmark`, allowTown: true });
+  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, Denmark`, allowTown: true });
+  const seen = new Set();
+  return queries.filter(({ q }) => (seen.has(q) ? false : (seen.add(q), true)));
 }
 
 async function geocodeVenue(venue) {
   const queries = venueGeocodeQueries(venue);
-  for (const q of queries) {
-    const hit = await nominatimSearch(q);
+  for (const { q, allowTown } of queries) {
+    const hit = await nominatimSearch(q, { allowTown });
     if (hit) return hit;
     await sleep(1100);
   }
@@ -86,6 +106,12 @@ function renderGenerated(coordsById) {
 async function main() {
   await mkdir(dirname(CACHE_PATH), { recursive: true });
   const cache = await loadCache();
+  // Cachen kan mangle (fx ny maskine): start fra den genererede fil.
+  for (const [id, c] of Object.entries(BANER_VENUE_COORDS)) if (!cache[id]) cache[id] = { lat: c.lat, lng: c.lng };
+  if (process.argv.includes('--retry-approx')) {
+    for (const id of Object.keys(BANER_VENUE_COORDS_QUALITY)) delete cache[id];
+    console.log(`Prøver ${Object.keys(BANER_VENUE_COORDS_QUALITY).length} upræcise centre igen.`);
+  }
   let fetched = 0;
   let failed = 0;
 
@@ -118,6 +144,7 @@ async function main() {
   await writeFile(OUT_PATH, renderGenerated(cache));
   const withCoords = Object.keys(cache).length;
   console.log(`\nFærdig: ${withCoords}/${BANER_VENUES.length} med koordinater (${fetched} nye, ${failed} uden træf denne kørsel).`);
+  console.log('Kør nu: npm run baner:geo-audit');
 }
 
 main().catch((err) => {

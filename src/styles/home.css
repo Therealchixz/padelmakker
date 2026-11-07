@@ -293,42 +293,19 @@
   .pm-home-invite-secondary { transition: none; }
 }
 
-/* ── Kort: i naerheden ── */
-.pm-home-map-modes {
-  display: inline-grid;
-  grid-auto-flow: column;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--pm-surface-muted);
-}
-.pm-home-map-modes > button {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--pm-text-mid);
-  font: inherit;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-}
-.pm-home-map-modes > button[aria-selected="true"] {
-  background: var(--pm-surface);
-  color: var(--pm-text);
-  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
-}
-[data-theme="dark"] .pm-home-map-modes > button[aria-selected="true"] {
-  background: color-mix(in srgb, var(--pm-paper) 16%, transparent);
-}
-.pm-home-map-frame {
+/* ── Kort: i naerheden (som prototypen) ── */
+.pm-home-map-card {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+}
+.pm-home-map-stage {
+  position: relative;
   background: var(--pm-surface-muted);
 }
 .pm-home-map-canvas {
-  height: 200px;
+  height: 220px;
   width: 100%;
   /* Kortet maa ikke fange lodret scroll paa telefonen (skill: mobile-native). */
   touch-action: pan-y;
@@ -337,46 +314,154 @@
 [data-theme="dark"] .pm-home-map-canvas .leaflet-tile-pane {
   filter: brightness(0.72) contrast(1.05) saturate(0.7);
 }
+/* Prototypen: varmere, roligere kort, saa pindene er det, man ser. */
+.pm-home-map-canvas .leaflet-tile-pane { filter: saturate(0.55) sepia(0.12); }
+.pm-home-map-modes {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 500;
+  display: inline-grid;
+  grid-auto-flow: column;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.12);
+}
+.pm-home-map-modes > button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--pm-text-mid);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pm-home-map-modes > button[aria-selected="true"] {
+  background: var(--pm-text);
+  color: var(--pm-bg);
+}
+.pm-home-map-modes > button:disabled { color: var(--pm-text-light); cursor: default; }
+.pm-home-map-place {
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  z-index: 500;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--pm-surface) 85%, transparent);
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pm-text-mid);
+  pointer-events: none;
+}
+.pm-home-map-canvas .leaflet-control-attribution {
+  font-size: 10px;
+  background: color-mix(in srgb, var(--pm-surface) 85%, transparent);
+}
+/* Din placering: den kendte blaa prik (eneste blaa i appen). */
 .pm-home-map-me {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--pm-blue);
-  border: 3px solid var(--pm-on-accent);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  background: var(--pm-map-me);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+/* Pinde: pille med antal + lille stilk, som i prototypen. */
 .pm-home-map-pin {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transform-origin: 50% 100%;
+}
+.pm-home-map-pin-head {
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: var(--pm-text);
-  border: 2px solid var(--pm-bg);
-}
-.pm-home-map-pin.has-matches {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 9px;
   border-radius: 15px;
-  background: var(--pm-accent-solid);
-  color: var(--pm-on-accent);
+  background: var(--pm-pin, var(--pm-accent-solid));
+  color: #FFFFFF;
   font-family: var(--pm-font-mono);
   font-weight: 600;
   font-size: 12px;
-}
-.pm-home-map-pin > span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
   line-height: 1;
+  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.28);
+  border: 2px solid #FFFFFF;
 }
-.pm-home-map-pin.is-active {
-  outline: 3px solid var(--pm-ball);
-  outline-offset: 1px;
+.pm-home-map-pin-stem {
+  width: 2px;
+  height: 8px;
+  background: var(--pm-pin, var(--pm-accent-solid));
 }
+.pm-home-map-pin.is-dot .pm-home-map-pin-head {
+  min-width: 20px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+}
+.pm-home-map-pin.is-kampe { --pm-pin: var(--pm-accent-solid); }
+.pm-home-map-pin.is-baner { --pm-pin: var(--pm-green); }
+.pm-home-map-pin.is-active { --pm-pin: var(--pm-ink); }
+.pm-home-map-pin.is-active .pm-home-map-pin-head { transform: scale(1.15); }
+[data-theme="dark"] .pm-home-map-pin.is-baner { --pm-pin: #3F7A66; }
+/* Valgt center under kortet */
+.pm-home-map-sel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-top: 1px solid var(--pm-border);
+}
+.pm-home-map-sel-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--pm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-home-map-sel-meta {
+  margin-top: 2px;
+  font-family: var(--pm-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+}
+.pm-home-map-sel-cta {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pm-text);
+  color: var(--pm-bg);
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.pm-home-map-sel-cta:active { transform: scale(0.97); }
 .pm-home-map-list {
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
-  border-top: 1px solid var(--pm-border);
 }
 .pm-home-map-row {
   display: flex;
@@ -384,7 +469,7 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 48px;
+  min-height: 44px;
   padding: 10px 2px;
   border: 0;
   border-bottom: 1px solid var(--pm-border);
@@ -394,8 +479,19 @@
   text-align: left;
   cursor: pointer;
 }
-.pm-home-map-row.is-active .pm-home-map-row-name { color: var(--pm-accent); }
+.pm-home-map-row.is-active .pm-home-map-row-name { font-weight: 700; }
+.pm-home-map-row.is-active::before {
+  content: '';
+  align-self: center;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-right: -4px;
+  border-radius: 50%;
+  background: var(--pm-text);
+}
 .pm-home-map-row-name {
+  flex: 1;
   font-weight: 600;
   font-size: 14px;
   min-width: 0;
@@ -409,32 +505,10 @@
   font-size: 11px;
   color: var(--pm-text-mid);
 }
-.pm-home-map-action { margin-top: 10px; }
-.pm-home-map-cta {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 14px;
-  background: var(--pm-accent-solid);
-  color: var(--pm-on-accent);
-  font: inherit;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: transform 120ms ease-out;
-}
-.pm-home-map-cta--ink {
-  background: var(--pm-text);
-  color: var(--pm-bg);
-}
-.pm-home-map-cta:active { transform: scale(0.98); }
 @media (hover: hover) and (pointer: fine) {
   .pm-home-map-row:hover { background: var(--pm-surface-alt); }
+  .pm-home-map-pin:hover .pm-home-map-pin-head { transform: scale(1.08); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pm-home-map-cta { transition: none; }
+  .pm-home-map-sel-cta { transition: none; }
 }
