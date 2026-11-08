@@ -63,3 +63,10 @@ test('et center fundet under eget navn faar en praecis pind, men ikke hvis flere
   assert.equal(out.b?.approx, true);
   assert.equal(out.c?.approx, true);
 });
+
+test('et tilfaeldigt sted fundet ved byens navn giver ingen praecis pind', () => {
+  const venues = [{ id: 'x', title: 'Match Padel Ballerup', address: 'Ballerup — matchpadel.dk' }];
+  const coords = { x: { lat: 55.6497584, lng: 12.1623509 } };
+  const out = auditVenueCoords(venues, coords, { x: { via: 'town', label: 'Ballerup Jagtforening' } });
+  assert.equal(out.x?.approx, true);
+});

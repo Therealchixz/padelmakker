@@ -164,6 +164,12 @@ export function auditVenueCoords(venues, coordsById, foundById = {}) {
     // 3) Fundet under sit eget navn (fx "Rocket Padel Esbjerg"): en rigtig pind, ogsaa uden gadeadresse.
     const found = foundById[v.id];
     if (!shared && found?.via === 'name' && placeNameMatchesVenue(found.label, v.title, city)) continue;
+    // 4) Kun fundet ved at soege paa byen: ogsaa naar Nominatim gav et tilfaeldigt sted i byen
+    //    (fx "Ballerup Jagtforening" for Match Padel Ballerup).
+    if (found?.via === 'town') {
+      out[v.id] = { approx: true, reason: 'town (kun byen fundet)' };
+      continue;
+    }
     const atTownPoint = nearestTownPointKm(c.lat, c.lng) <= TOWN_CENTER_KM;
     if (noStreet && (atTownPoint || shared)) out[v.id] = { approx: true, reason: 'town (ingen gadeadresse)' };
     else if (shared) out[v.id] = { approx: true, reason: 'town (samme punkt som andre centre)' };
