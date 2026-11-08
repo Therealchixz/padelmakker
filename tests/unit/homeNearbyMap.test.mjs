@@ -61,3 +61,15 @@ test('linjen under centret: aabne kampe og naeste kamp, ellers afstand', () => {
   assert.equal(nearbyVenueMeta(skansen, 'kampe', now), 'Ingen åbne kampe · under 1 km');
   assert.equal(nearbyVenueMeta({ ...skansen, indoor: true }, 'baner', now), 'under 1 km · indendørs');
 });
+
+test('kortet kan vise alle landets centre (maxKm og limit uden graense), stadig sorteret efter afstand', () => {
+  const venues = [
+    { id: 'a', title: 'Naer', latitude: 57.05, longitude: 9.92 },
+    { id: 'b', title: 'Esbjerg', latitude: 55.505, longitude: 8.406 },
+    { id: 'c', title: 'Bornholm', latitude: 55.1, longitude: 14.7 },
+  ];
+  const me = { latitude: 57.0587, longitude: 9.9227 };
+  assert.deepEqual(buildNearbyVenues(venues, me, []).map((v) => v.id), ['a']);
+  const all = buildNearbyVenues(venues, me, [], { maxKm: Infinity, limit: Infinity });
+  assert.deepEqual(all.map((v) => v.id), ['a', 'b', 'c']);
+});
