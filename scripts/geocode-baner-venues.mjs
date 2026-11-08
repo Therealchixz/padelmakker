@@ -51,7 +51,13 @@ async function nominatimSearch(query, opts = {}) {
   const rows = await res.json();
   const hit = (rows || []).find((r) => allowTown || !['place', 'boundary'].includes(r.category));
   if (!hit?.lat || !hit?.lon) return null;
-  return { lat: Number(hit.lat), lng: Number(hit.lon), town: ['place', 'boundary'].includes(hit.category) };
+  return {
+    lat: Number(hit.lat),
+    lng: Number(hit.lon),
+    town: ['place', 'boundary'].includes(hit.category),
+    // Navnet paa stedet, Nominatim fandt (bruges af tjekket til at se, om det er selve centret).
+    label: String(hit.name || String(hit.display_name || '').split(',')[0] || '').trim(),
+  };
 }
 
 /** @param {{ title?: string, address?: string, region?: string }} venue */
@@ -67,24 +73,24 @@ function venueGeocodeQueries(venue) {
 
   const cleanTitle = title.replace(/\s*\((MATCHi|Playtomic|Halbooking|Bookli)\)\s*$/i, '').trim();
 
-  /** @type {{ q: string, allowTown: boolean }[]} */
+  /** @type {{ q: string, allowTown: boolean, via: 'address' | 'name' | 'town' }[]} */
   const queries = [];
   // Praecise forsoeg foerst: gadeadresse, saa centrets navn (kun hvis Nominatim finder selve stedet).
-  if (looksLikeStreet) queries.push({ q: `${address.replace(/\s+,/g, ',')}, Denmark`, allowTown: false });
-  if (cleanTitle && cityHint && cityHint.length > 2) queries.push({ q: `${cleanTitle}, ${cityHint}`, allowTown: false });
-  if (cleanTitle) queries.push({ q: cleanTitle, allowTown: false });
+  if (looksLikeStreet) queries.push({ q: `${address.replace(/\s+,/g, ',')}, Denmark`, allowTown: false, via: 'address' });
+  if (cleanTitle && cityHint && cityHint.length > 2) queries.push({ q: `${cleanTitle}, ${cityHint}`, allowTown: false, via: 'name' });
+  if (cleanTitle) queries.push({ q: cleanTitle, allowTown: false, via: 'name' });
   // Til sidst byens midte (tjekket markerer dem, saa kortet ikke viser en pind).
-  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, ${region}, Denmark`, allowTown: true });
-  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, Denmark`, allowTown: true });
+  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, ${region}, Denmark`, allowTown: true, via: 'town' });
+  if (cityHint && cityHint.length > 2) queries.push({ q: `${cityHint}, Denmark`, allowTown: true, via: 'town' });
   const seen = new Set();
   return queries.filter(({ q }) => (seen.has(q) ? false : (seen.add(q), true)));
 }
 
 async function geocodeVenue(venue) {
   const queries = venueGeocodeQueries(venue);
-  for (const { q, allowTown } of queries) {
+  for (const { q, allowTown, via } of queries) {
     const hit = await nominatimSearch(q, { allowTown });
-    if (hit) return hit;
+    if (hit) return { ...hit, via };
     await sleep(1100);
   }
   return null;
@@ -108,8 +114,13 @@ async function main() {
   const cache = await loadCache();
   // Cachen kan mangle (fx ny maskine): start fra den genererede fil.
   for (const [id, c] of Object.entries(BANER_VENUE_COORDS)) if (!cache[id]) cache[id] = { lat: c.lat, lng: c.lng };
+  /** Gamle punkter for centre, vi proever igen. Bruges, hvis det nye forsoeg ikke finder noget. */
+  const previous = {};
   if (process.argv.includes('--retry-approx')) {
-    for (const id of Object.keys(BANER_VENUE_COORDS_QUALITY)) delete cache[id];
+    for (const id of Object.keys(BANER_VENUE_COORDS_QUALITY)) {
+      if (cache[id]) previous[id] = cache[id];
+      delete cache[id];
+    }
     console.log(`Prøver ${Object.keys(BANER_VENUE_COORDS_QUALITY).length} upræcise centre igen.`);
   }
   let fetched = 0;
@@ -138,7 +149,11 @@ async function main() {
       console.log('fejl:', err.message);
       failed += 1;
     }
+    // Intet nyt traef: behold det gamle (upraecise) punkt, saa centret ikke forsvinder fra kortet.
+    if (!cache[v.id] && previous[v.id]) cache[v.id] = previous[v.id];
     await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2));
+    // Pause ogsaa efter et traef, saa naeste center ikke spoerger med det samme (1 req/sek).
+    await sleep(1100);
   }
 
   await writeFile(OUT_PATH, renderGenerated(cache));
