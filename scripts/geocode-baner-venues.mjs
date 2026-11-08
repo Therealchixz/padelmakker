@@ -108,8 +108,13 @@ async function main() {
   const cache = await loadCache();
   // Cachen kan mangle (fx ny maskine): start fra den genererede fil.
   for (const [id, c] of Object.entries(BANER_VENUE_COORDS)) if (!cache[id]) cache[id] = { lat: c.lat, lng: c.lng };
+  /** Gamle punkter for centre, vi proever igen. Bruges, hvis det nye forsoeg ikke finder noget. */
+  const previous = {};
   if (process.argv.includes('--retry-approx')) {
-    for (const id of Object.keys(BANER_VENUE_COORDS_QUALITY)) delete cache[id];
+    for (const id of Object.keys(BANER_VENUE_COORDS_QUALITY)) {
+      if (cache[id]) previous[id] = cache[id];
+      delete cache[id];
+    }
     console.log(`Prøver ${Object.keys(BANER_VENUE_COORDS_QUALITY).length} upræcise centre igen.`);
   }
   let fetched = 0;
@@ -138,7 +143,11 @@ async function main() {
       console.log('fejl:', err.message);
       failed += 1;
     }
+    // Intet nyt traef: behold det gamle (upraecise) punkt, saa centret ikke forsvinder fra kortet.
+    if (!cache[v.id] && previous[v.id]) cache[v.id] = previous[v.id];
     await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2));
+    // Pause ogsaa efter et traef, saa naeste center ikke spoerger med det samme (1 req/sek).
+    await sleep(1100);
   }
 
   await writeFile(OUT_PATH, renderGenerated(cache));
