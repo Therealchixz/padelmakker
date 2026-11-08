@@ -1250,20 +1250,19 @@
     "via": "town"
   },
   "matchi_s_nders_hallernespadelcenter": {
-    "lat": 55.489505,
-    "lng": 10.249475,
-    "town": false,
-    "postcode": "5471",
-    "label": "4",
-    "via": "address"
+    "lat": 55.48949899999998,
+    "lng": 10.248889019326786,
+    "via": "source",
+    "source": "https://www.matchi.se/facilities/SøndersøHallernesPadelcenter",
+    "srcKey": "{\"lat\":55.48949899999998,\"lng\":10.248889019326786,\"source\":\"https://www.matchi.se/facilities/SøndersøHallernesPadelcenter\"}"
   },
   "link_marstal_r_marstal_if": {
-    "lat": 54.8558332,
-    "lng": 10.5174056,
-    "town": true,
-    "postcode": "5960",
-    "label": "Marstal",
-    "via": "town"
+    "lat": 54.8511562,
+    "lng": 10.5083474,
+    "via": "source",
+    "label": "Reberbanen",
+    "source": "https://eu.padeliq.io/da/marstal-if/p/om-os",
+    "srcKey": "{\"address\":\"Reberbanen 35B, 5960 Marstal\",\"source\":\"https://eu.padeliq.io/da/marstal-if/p/om-os\"}"
   },
   "link_middelfart_middelfart_firma_og_familieidr_t": {
     "lat": 55.4993014,
@@ -1298,12 +1297,12 @@
     "via": "town"
   },
   "link_tasinge_tasinge_tennis_padel_klub": {
-    "lat": 55.0406129,
-    "lng": 10.6190632,
-    "town": false,
-    "postcode": "5700",
-    "label": "Tåsinge Tennis og Padel Klub",
-    "via": "name"
+    "lat": 55.040639,
+    "lng": 10.619057,
+    "via": "source",
+    "label": "61",
+    "source": "https://ttpk.dk/da/p/om-os/find-os",
+    "srcKey": "{\"address\":\"Eskærvej 61, 5700 Svendborg\",\"source\":\"https://ttpk.dk/da/p/om-os/find-os\"}"
   },
   "link_amager_amager_lawn_tennisklub": {
     "lat": 55.6342308,
@@ -1338,12 +1337,12 @@
     "via": "town"
   },
   "link_tarnby_racket_club_tarnby": {
-    "lat": 55.6246457,
-    "lng": 12.6006252,
-    "town": true,
-    "postcode": "2770",
-    "label": "Tårnby",
-    "via": "town"
+    "lat": 55.619276,
+    "lng": 12.628049,
+    "via": "source",
+    "label": "233",
+    "source": "https://www.racketclub.dk/centre/tarnby",
+    "srcKey": "{\"address\":\"Amager Landevej 233, 2770 Kastrup\",\"source\":\"https://www.racketclub.dk/centre/tarnby\"}"
   },
   "link_k_benhavn_v_vamoz_padel_fisketorvet": {
     "lat": 55.6867243,
@@ -1402,12 +1401,12 @@
     "via": "town"
   },
   "link_n_stved_n_stved_firma_sport": {
-    "lat": 55.2328252,
-    "lng": 11.7674102,
-    "town": true,
-    "postcode": "4700",
-    "label": "Næstved",
-    "via": "town"
+    "lat": 55.232528,
+    "lng": 11.795139,
+    "via": "source",
+    "label": "24",
+    "source": "https://www.naestvedfirmasport.dk/aktiviteter/padeltennis",
+    "srcKey": "{\"address\":\"Kasernevej 24, 4700 Næstved\",\"source\":\"https://www.naestvedfirmasport.dk/aktiviteter/padeltennis\"}"
   },
   "link_slagelse_racket": {
     "lat": 56.7814692,
@@ -1418,20 +1417,20 @@
     "via": "name"
   },
   "link_bagsv_rd_racket_club_ab": {
-    "lat": 55.7583936,
-    "lng": 12.4573112,
-    "town": true,
-    "postcode": "2880",
-    "label": "Bagsværd",
-    "via": "town"
+    "lat": 55.762623,
+    "lng": 12.433886,
+    "via": "source",
+    "label": "1",
+    "source": "https://www.racketclub.dk/centre/ab",
+    "srcKey": "{\"address\":\"Skovdiget 1, 2880 Bagsværd\",\"source\":\"https://www.racketclub.dk/centre/ab\"}"
   },
   "link_roskilde_racket_club_roskilde": {
-    "lat": 55.6433478,
-    "lng": 12.0819247,
-    "town": true,
-    "postcode": "4000",
-    "label": "Roskilde",
-    "via": "town"
+    "lat": 55.623025,
+    "lng": 12.091428,
+    "via": "source",
+    "label": "2",
+    "source": "https://www.racketclub.dk/centre/roskilde",
+    "srcKey": "{\"address\":\"Rønøs Allé 2, 4000 Roskilde\",\"source\":\"https://www.racketclub.dk/centre/roskilde\"}"
   },
   "link_r_dvig_r_dvig_g_i_padel": {
     "lat": 55.2553773,
@@ -1442,12 +1441,12 @@
     "via": "town"
   },
   "link_tune_tune_if_tennis_og_padel": {
-    "lat": 55.5957,
-    "lng": 12.1818152,
-    "town": true,
-    "postcode": "4030",
-    "label": "Tune",
-    "via": "town"
+    "lat": 55.597404,
+    "lng": 12.170365,
+    "via": "source",
+    "label": "7",
+    "source": "https://tune-if.dk/afdelinger/tennis-og-padel/indhold/forside/",
+    "srcKey": "{\"address\":\"Tunehøj 7, 4030 Tune\",\"source\":\"https://tune-if.dk/afdelinger/tennis-og-padel/indhold/forside/\"}"
   },
   "link_fredericia_egif_tennis_og_padel": {
     "lat": 55.565268,
