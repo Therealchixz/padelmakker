@@ -14,7 +14,7 @@
  * Koer efter hver geokodning:  npm run baner:geo-audit
  */
 
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BANER_VENUE_COORDS } from '../src/lib/banerVenuesCoords.generated.js';
@@ -24,6 +24,16 @@ import { BANER_VENUES_RAW } from '../src/lib/banerVenues.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = join(__dirname, '..', 'src', 'lib', 'banerVenuesCoordsQuality.generated.js');
+export const GEOCODE_CACHE_PATH = join(__dirname, 'output', 'baner-venue-coords.json');
+
+/** Geokodningens cache (hvordan hvert center blev fundet). Tom, hvis filen mangler. */
+export async function loadGeocodeCache() {
+  try {
+    return JSON.parse(await readFile(GEOCODE_CACHE_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
 
 /** Hvor taet paa et bypunkt en pind skal ligge, foer vi regner den for "byens midte". */
 const TOWN_CENTER_KM = 0.35;
@@ -85,7 +95,32 @@ export function parseVenueAddress(address) {
   return { postal, city, noStreet };
 }
 
-export function auditVenueCoords(venues, coordsById) {
+/** Almindelige ord, der ikke siger, hvilket center det er. */
+const GENERIC_WORDS = new Set([
+  'padel', 'padelcenter', 'padelklub', 'padelbane', 'padelbaner', 'tennis', 'tennisklub', 'klub', 'club', 'center', 'centre',
+  'sport', 'sports', 'sportscenter', 'idrætscenter', 'idrætsforening', 'idrætsforeningen', 'hallen', 'halbooking', 'matchi', 'playtomic', 'bookli',
+  'racket', 'arena', 'og', 'and', 'the', 'i', 'af', 'ved', 'single', 'double', 'banerne', 'baner',
+]);
+
+/**
+ * Fandt Nominatim selve centret? Navnet paa stedet skal have et ord fra centrets navn,
+ * som hverken er et almindeligt ord (padel, klub ...) eller byens navn.
+ */
+export function placeNameMatchesVenue(label, title, city) {
+  const words = (s) => norm(s).replace(/\([^)]*\)/g, ' ').split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3);
+  const cityWords = new Set(words(city));
+  const distinctive = words(title).filter((w) => !GENERIC_WORDS.has(w) && !cityWords.has(w));
+  if (!distinctive.length) return false;
+  const labelWords = new Set(words(label));
+  return distinctive.some((w) => labelWords.has(w));
+}
+
+/**
+ * @param {{ id: string, title?: string, address?: string }[]} venues
+ * @param {Record<string, { lat: number, lng: number }>} coordsById
+ * @param {Record<string, { via?: string, label?: string }>} [foundById]  geokodningens cache: hvordan hvert center blev fundet
+ */
+export function auditVenueCoords(venues, coordsById, foundById = {}) {
   /** @type {Record<string, { approx: true, reason: string, lat?: number, lng?: number }>} */
   const out = {};
   const sameSpot = new Map();
@@ -126,6 +161,9 @@ export function auditVenueCoords(venues, coordsById) {
       continue;
     }
     const shared = sameSpot.get(`${c.lat.toFixed(5)},${c.lng.toFixed(5)}`) > 1;
+    // 3) Fundet under sit eget navn (fx "Rocket Padel Esbjerg"): en rigtig pind, ogsaa uden gadeadresse.
+    const found = foundById[v.id];
+    if (!shared && found?.via === 'name' && placeNameMatchesVenue(found.label, v.title, city)) continue;
     const atTownPoint = nearestTownPointKm(c.lat, c.lng) <= TOWN_CENTER_KM;
     if (noStreet && (atTownPoint || shared)) out[v.id] = { approx: true, reason: 'town (ingen gadeadresse)' };
     else if (shared) out[v.id] = { approx: true, reason: 'town (samme punkt som andre centre)' };
@@ -151,7 +189,7 @@ function render(quality) {
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {
-  const quality = auditVenueCoords(BANER_VENUES_RAW, BANER_VENUE_COORDS);
+  const quality = auditVenueCoords(BANER_VENUES_RAW, BANER_VENUE_COORDS, await loadGeocodeCache());
   await writeFile(OUT_PATH, render(quality));
   const counts = {};
   for (const q of Object.values(quality)) {
