@@ -417,6 +417,10 @@
 .pm-home-map-pin.is-active { --pm-pin: var(--pm-ink); }
 .pm-home-map-pin.is-active .pm-home-map-pin-head { transform: scale(1.15); }
 [data-theme="dark"] .pm-home-map-pin.is-baner { --pm-pin: #3F7A66; }
+/* Zoomet langt ud (hele landsdele): smaa prikker uden stilk, saa pindene ikke klumper. */
+.pm-home-map-canvas.is-far .pm-home-map-pin.is-dot .pm-home-map-pin-head { transform: scale(0.55); }
+.pm-home-map-canvas.is-far .pm-home-map-pin.is-dot.is-active .pm-home-map-pin-head { transform: scale(0.8); }
+.pm-home-map-canvas.is-far .pm-home-map-pin.is-dot .pm-home-map-pin-stem { visibility: hidden; }
 /* Valgt center under kortet */
 .pm-home-map-sel {
   display: grid;

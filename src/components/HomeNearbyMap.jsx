@@ -11,6 +11,8 @@ import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeN
  *
  * Centre uden praecis placering (kun byens midte) faar ingen pind, saa kortet aldrig
  * viser et center det forkerte sted. De staar stadig i listen med "ca." foran afstanden.
+ * Under "Baner" har alle landets centre med praecis placering en pind (ses, naar man zoomer ud);
+ * kortet starter zoomet ind paa de naermeste, og listen viser kun de naermeste.
  */
 export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, onCreateMatch, onFindCourt }) {
   const me = useMemo(() => parseGeoCoords(user?.latitude, user?.longitude), [user?.latitude, user?.longitude]);
@@ -22,6 +24,13 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     [mode, withMatches, venues],
   );
   const pinned = useMemo(() => shown.filter((v) => !v.approx), [shown]);
+  // Alle centre i landet med praecis placering, saa man ser dem, naar man zoomer ud eller flytter kortet.
+  // Listen under kortet og den foerste udsnit viser stadig kun de naermeste.
+  const everywhere = useMemo(
+    () => buildNearbyVenues(BANER_VENUES, me, openMatches, { maxKm: Infinity, limit: Infinity }).filter((v) => !v.approx),
+    [me, openMatches],
+  );
+  const mapPins = mode === 'kampe' ? pinned : everywhere;
   // Kortet zoomer til de naermeste (ellers trykker et center 30 km vaek alle de naere sammen).
   const framed = useMemo(
     () => (mode === 'kampe' ? pinned : pinned.slice().sort((a, b) => a.km - b.km).slice(0, 4)),
@@ -29,7 +38,9 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
   );
   const pinnedKey = framed.map((v) => v.id).join('|');
   const [selectedId, setSelectedId] = useState(null);
-  const selected = shown.find((v) => v.id === selectedId) || pinned[0] || shown[0] || null;
+  const selected = shown.find((v) => v.id === selectedId)
+    || mapPins.find((v) => v.id === selectedId)
+    || pinned[0] || shown[0] || null;
   const placeName = String(user?.city || user?.area || '').trim();
 
   const containerRef = useRef(null);
@@ -68,6 +79,10 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
       }).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
       mapRef.current = map;
+      // Zoomet langt ud: mindre pinde, saa landets centre ikke klumper sammen.
+      const markFar = () => containerRef.current?.classList.toggle('is-far', map.getZoom() < 10);
+      map.on('zoomend', markFar);
+      markFar();
       // Kortet kan blive vist, foer det har sin endelige stoerrelse (lazy load, skrifttyper).
       // Uden dette regner fitBounds med en forkert stoerrelse, og centrene havner uden for billedet.
       if (typeof ResizeObserver !== 'undefined') {
@@ -101,7 +116,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     if (!L || !map || !layer) return;
     layer.clearLayers();
     markersRef.current = new Map();
-    for (const v of pinned) {
+    for (const v of mapPins) {
       const active = selected?.id === v.id;
       const label = mode === 'kampe' && v.matchCount > 0 ? String(v.matchCount) : '';
       const tone = active ? 'is-active' : mode === 'kampe' ? 'is-kampe' : 'is-baner';
@@ -121,7 +136,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
         .addTo(layer);
       markersRef.current.set(v.id, marker);
     }
-  }, [pinned, selected?.id, mode, mapReady]);
+  }, [mapPins, selected?.id, mode, mapReady]);
 
   // Zoom ud, saa man selv og alle viste centre er med (kun naar udvalget skifter).
   useEffect(() => {
