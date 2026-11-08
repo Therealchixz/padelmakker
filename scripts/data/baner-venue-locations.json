@@ -1,0 +1,379 @@
+{
+  "himmerland_halbooking": {
+    "address": "Lars Larsens Vej 1, 9640 Farsø",
+    "source": "https://himmerland.halbooking.dk/"
+  },
+  "sportshallen_frederikshavn_halbooking": {
+    "address": "Sæbygårdvej 32, 9300 Sæby",
+    "source": "https://www.saebyspektrum.dk/"
+  },
+  "matchi_padel99": {
+    "lat": 57.4625214,
+    "lng": 10.519816,
+    "source": "https://www.matchi.se/facilities/padel99"
+  },
+  "aarstennisklub_booking": {
+    "address": "Sports Allé 6, 9600 Aars",
+    "source": "https://www.aarstennisklub.dk/"
+  },
+  "gug_tennis_padel_booking": {
+    "address": "Borger Alle 11, 9210 Aalborg SØ",
+    "source": "https://gugtennisogpadel.memberlink.dk/"
+  },
+  "oebg_silkeborg_halbooking": {
+    "address": "Bordingvej 17, 8600 Silkeborg",
+    "source": "https://oebgtennis.halbooking.dk/"
+  },
+  "smash_horsens_single": {
+    "lat": 55.85795078058161,
+    "lng": 9.815766715934632,
+    "source": "https://www.smash.dk/kontakt/"
+  },
+  "bjerringbro_padel_halbooking": {
+    "address": "Vestre Ringvej 7, 8850 Bjerringbro",
+    "source": "https://bjerringbroip.halbooking.dk/"
+  },
+  "matchi_jelling_gormshallen": {
+    "lat": 55.7568983,
+    "lng": 9.4059169,
+    "source": "https://jellingfs.dk/kontakt"
+  },
+  "matchi_padel_arena_hedensted": {
+    "lat": 55.794568,
+    "lng": 9.6714473,
+    "source": "https://www.matchi.se/facilities/padelarenahedensted"
+  },
+  "struer_energi_park_halbooking": {
+    "address": "Morten Andersens Passage 7, 7600 Struer",
+    "source": "https://struerhallerne.halbooking.dk/"
+  },
+  "padel_zone_holstebro_halbooking": {
+    "address": "Sletten 33, 7500 Holstebro",
+    "source": "https://padelzone.halbooking.dk/"
+  },
+  "match_padel_bornholm_inde": {
+    "address": "Vibegårdsvej 10, 3700 Rønne",
+    "source": "https://matchpadel.dk/afdelinger/ronne-padelcenter/"
+  },
+  "matchi_nr_lyndelse_padel": {
+    "lat": 55.3017006,
+    "lng": 10.398025,
+    "source": "https://www.matchi.se/facilities/NrLyndelsePadeltennis"
+  },
+  "matchi_odense_padel_center": {
+    "lat": 55.3869406,
+    "lng": 10.4325578,
+    "source": "https://www.matchi.se/facilities/OPC"
+  },
+  "xpadel_helsingor_halbooking": {
+    "lat": 56.022808,
+    "lng": 12.5687131,
+    "source": "https://xpadel.halbooking.dk/"
+  },
+  "padelclub_roskilde_bookli": {
+    "address": "Kildeager 7, 4621 Gadstrup",
+    "source": "https://padelclub.dk/kontakt/"
+  },
+  "padelclub_koge_bookli": {
+    "address": "Lyngvej 20, 4600 Køge",
+    "source": "https://padelclub.dk/kontakt/"
+  },
+  "matchi_padel4alle": {
+    "lat": 55.472815,
+    "lng": 12.1825801,
+    "source": "https://www.matchi.se/facilities/Padel4alle"
+  },
+  "matchi_vipadelslagelse": {
+    "lat": 55.3863858,
+    "lng": 11.3607854,
+    "source": "https://www.matchi.se/facilities/vipadelslagelse"
+  },
+  "tisvilde_tennis_halbooking": {
+    "address": "Godhavnsvej 3, 3220 Tisvildeleje",
+    "source": "https://tisvildetennis.halbooking.dk/"
+  },
+  "match_padel_ballerup_single": {
+    "address": "Telegrafvej 6, 2750 Ballerup",
+    "source": "https://matchpadel.dk/afdelinger/ballerup/"
+  },
+  "match_padel_nykobing_falster": {
+    "address": "Aarhusvej 19, 4800 Nykøbing Falster",
+    "source": "https://matchpadel.dk/afdelinger/nykobing-falster/"
+  },
+  "matchi_racketclub_taastrup": {
+    "lat": 55.65471950000001,
+    "lng": 12.2512489,
+    "source": "https://www.matchi.se/facilities/RacketClubTaastrup"
+  },
+  "matchi_rcm": {
+    "lat": 56.7813657,
+    "lng": 8.8340975,
+    "source": "https://www.matchi.se/facilities/rcm"
+  },
+  "matchi_padel4life": {
+    "lat": 55.3902221,
+    "lng": 10.4466706,
+    "source": "https://www.matchi.se/facilities/padel4life"
+  },
+  "matchi_padelworldherning": {
+    "lat": 56.15660740000001,
+    "lng": 8.9650248,
+    "source": "https://www.matchi.se/facilities/padelworldherning"
+  },
+  "matchi_vedbaekpadelklub": {
+    "lat": 55.84996049999999,
+    "lng": 12.5588663,
+    "source": "https://www.matchi.se/facilities/vedbaekpadelklub"
+  },
+  "matchi_babooncitypadletennis": {
+    "lat": 56.15322432798294,
+    "lng": 8.977869405310042,
+    "source": "https://www.matchi.se/facilities/BaboonCityPadleTennis"
+  },
+  "link_morud_morud_tennis_og_padel": {
+    "address": "Idrætsvej 7, 5462 Morud",
+    "source": "https://tennis.morud.dk/"
+  },
+  "link_s_nders_nordfyns_padel_center_s_nders": {
+    "address": "Ullerupvænget 4, 5471 Søndersø",
+    "source": "https://www.sondersohallerne.dk/"
+  },
+  "link_nyborg_nyborg_tennis_og_padelklub": {
+    "address": "Østerøvej 66, 5800 Nyborg",
+    "source": "https://www.nyborgtennisklub.dk/"
+  },
+  "link_otterup_otterup_pade": {
+    "lat": 55.50639623260435,
+    "lng": 10.388418127485748,
+    "source": "https://www.otterup-padel.dk/"
+  },
+  "link_rudk_bing_langeland_rudk_bing_tennisklub": {
+    "lat": 54.93463148377846,
+    "lng": 10.702734240546082,
+    "source": "https://rudtennis.dk/"
+  },
+  "link_svendborg_svendborg_padel_klub": {
+    "address": "Dyrekredsen 12, 5700 Svendborg",
+    "source": "http://www.erif.dk/"
+  },
+  "link_ullerslev_ullerslev_tennis_klub": {
+    "address": "Skolevej 6, 5540 Ullerslev",
+    "source": "https://www.ullerslevtennis.dk/"
+  },
+  "link_vester_skerninge_vester_skerninge_tennisklub": {
+    "address": "Mads Hansensvej 2, 5762 Vester Skerninge",
+    "source": "https://vstennis.dk/up-to-date-faciliteter/"
+  },
+  "link_k_benhavn_s_sundby_tennisklub": {
+    "address": "Englandsvej 63, 2300 København S",
+    "source": "https://sundbytennisklub.dk/kontakt/"
+  },
+  "link_k_benhavn_s_vamoz_padel_i_field_s_heylo_padel": {
+    "address": "Arne Jacobsens Allé 12, 2300 København S",
+    "source": "https://www.vamoz.dk/"
+  },
+  "link_h_rsholm_dtu_science_park_vamoz_padel": {
+    "address": "Genvej 2, 2970 Hørsholm",
+    "source": "https://www.vamoz.dk/"
+  },
+  "link_br_nderslev_br_nderslev_tennis_og_padelklub": {
+    "address": "Hedelundsgade 11, 9700 Brønderslev",
+    "source": "https://www.bronderslevtennisklub.dk/"
+  },
+  "link_dronninglund_dronninglund_tennis_og_padel": {
+    "address": "Slotsgade 11A, 9330 Dronninglund",
+    "source": "https://www.dronninglundtennisogpadel.dk/"
+  },
+  "link_hobro_hobro_tennis_og_padelklub": {
+    "address": "Amerikavej 7A, 9500 Hobro",
+    "source": "https://www.hobrotennisklub.dk/"
+  },
+  "link_gistrup_lkb_gistrup_idr_tsforening": {
+    "address": "Hadsundvej 407, 9260 Gistrup",
+    "source": "http://lkb-gistrup.dk/"
+  },
+  "link_erslev_mors_midtmors_sport": {
+    "address": "Poulsen Dalsvej 12, 7950 Erslev",
+    "source": "https://www.midtmorssport.dk/"
+  },
+  "link_thisted_thisted_tennis_og_padelklub": {
+    "address": "Winthersmøllevej 6, 7700 Thisted",
+    "source": "http://www.thistedtennisklub.dk/kontakt/"
+  },
+  "link_snedsted_thy_race_padel": {
+    "address": "Skyumvej 72, 7752 Snedsted",
+    "source": "https://thyrace.dk/thy-race-padel/"
+  },
+  "link_hobro_volstrup_golf_center": {
+    "lat": 56.67984,
+    "lng": 9.70752,
+    "source": "https://volstrupgolf.dk/"
+  },
+  "link_albertslund_albertslund_tennis_og_padelklub": {
+    "address": "Skallerne 14, 2620 Albertslund",
+    "source": "https://albertslund-tennis.dk/"
+  },
+  "link_h_jby_sj_borren_padel": {
+    "address": "Nyvej 17, 4573 Højby",
+    "source": "http://www.borren-motion.dk/Borren-Padel"
+  },
+  "link_gladsaxe_gladsaxe_tennis_og_padelklub": {
+    "address": "Gladsaxevej 200A, 2860 Søborg",
+    "source": "https://gladsaxetennisklub.dk/kontakt/"
+  },
+  "link_jyllinge_jyllinge_tennis_padelklub": {
+    "lat": 55.7530736,
+    "lng": 12.1065903,
+    "source": "https://jtk.dk/"
+  },
+  "link_jystrup_jystrup_if_tennis_og_padel": {
+    "address": "Skjoldenæsvej 65, 4174 Jystrup",
+    "source": "http://www.jystrupif.dk/Tennis---Padel"
+  },
+  "link_k_ge_k_ge_padel_center": {
+    "address": "Ravnsborgvej 3D, 4600 Køge",
+    "source": "https://www.koegepadelcenter.dk/"
+  },
+  "link_lynge_lynge_uggel_se_if_tennis_og_padel": {
+    "address": "Idrætsvej 14, 3540 Lynge",
+    "source": "https://www.lui.dk/iul/"
+  },
+  "link_nyk_bing_falster_nyk_bing_f_tennisklub": {
+    "address": "Kringelborg Alle 5, 4800 Nykøbing Falster",
+    "source": "https://www.tennis-klub.dk/"
+  },
+  "link_n_stved_n_stved_tennis_klub": {
+    "address": "Nygårdsvej 102, 4700 Næstved",
+    "source": "https://www.ntk-tennis.dk/"
+  },
+  "link_v_ggerl_se_padel_danmark_marielyst": {
+    "address": "Marielyst Strandpark 1A, 4873 Væggerløse",
+    "source": "https://www.padeldanmark.dk/marielyst/"
+  },
+  "link_humleb_k_simons_padel_club": {
+    "address": "Kromosevej 7, 3050 Humlebæk",
+    "source": "https://simonspadel.dk/"
+  },
+  "link_holb_k_tuse_if_padel_og_tennis": {
+    "address": "Tuse Byvej 8, 4300 Holbæk",
+    "source": "https://tusepadelogtennis.memberlink.dk/"
+  },
+  "link_esbjerg_v_breinholtgard_golf_klub": {
+    "lat": 55.5567722,
+    "lng": 8.3836412,
+    "source": "https://padel-esbjerg.dk/"
+  },
+  "link_esbjerg_hjerting_if_padel": {
+    "address": "Tobølparken 25, 6710 Esbjerg V",
+    "source": "http://hjertingif.dk/Padel/"
+  },
+  "link_l_gumkloster_l_gum_if_tennis": {
+    "lat": 55.06647385208374,
+    "lng": 8.938689952231366,
+    "source": "https://loegumif.dk/idraetstilbud/tennis-padeltennis/"
+  },
+  "link_hvide_sande_hvide_sande_tennisklub": {
+    "lat": 56.015897,
+    "lng": 8.127223,
+    "source": "https://www.hstk.dk/om-klubben-find-vej"
+  },
+  "link_ikast_ikast_fs_tennis": {
+    "address": "Stadion Allé 2C, 7430 Ikast",
+    "source": "https://ikastpadeltennis.dk/"
+  },
+  "link_viborg_bruunshab_tapdrup_if_padel": {
+    "address": "Bruunshåbvej 25B, 8800 Viborg",
+    "source": "https://www.btpadel.dk/"
+  },
+  "link_viborg_viborg_lawn_tennis_forening": {
+    "address": "Liseborgvej 37, 8800 Viborg",
+    "source": "https://www.vltf.dk/"
+  },
+  "link_bredsten_bredsten_if_padel_og_tennis": {
+    "lat": 55.7027778,
+    "lng": 9.3756072,
+    "source": "https://bredstenif.dk/portfolio-item/tennis/"
+  },
+  "link_ebeltoft_ebeltoft_tennis_klub": {
+    "lat": 56.19197083206694,
+    "lng": 10.674830202638097,
+    "source": "https://ebeltofttennisklub.dk/"
+  },
+  "link_ry_gl_rye_if": {
+    "address": "Kastaniealle 3, 8680 Ry",
+    "source": "http://www.glryeif.dk/"
+  },
+  "link_jelling_jelling_forenede_sportsklubber": {
+    "address": "Kathrinelund 1, 7300 Jelling",
+    "source": "https://jellingfs.dk/kontakt"
+  },
+  "link_h_jslev_nr_s_by_if": {
+    "address": "Stoholmvej 20, 7840 Højslev",
+    "source": "https://nsif.dk/"
+  },
+  "link_odder_odder_padel_center": {
+    "address": "Knudsminde 1E, 8300 Odder",
+    "source": "https://www.odderpadelcenter.dk/"
+  },
+  "link_arhus_padel_lounge_skejby": {
+    "address": "Graham Bells Vej 23B, 8200 Aarhus N",
+    "source": "https://padellounge.dk/padel/centre/aarhus/"
+  },
+  "link_rask_m_lle_rask_m_lle_og_omegns_idr_tsforening": {
+    "address": "Kildevej 11, 8763 Rask Mølle",
+    "source": "https://rask-molle.dk/"
+  },
+  "link_randers_sif_assentoft_tennis_padel_klub": {
+    "address": "Stadionvej 41, 8960 Randers SØ",
+    "source": "https://www.sif-assentoft.dk/"
+  },
+  "link_silkeborg_silkeborg_tennis_og_padelklub": {
+    "address": "Parkvej 4, 8600 Silkeborg",
+    "source": "https://www.silkeborg-tennis.dk/"
+  },
+  "link_juelsminde_true_north_efterskole": {
+    "address": "Havnevej 11b, 7130 Juelsminde",
+    "source": "https://truenorthefterskole.com/"
+  },
+  "link_vildbjerg_vildbjerg_tennis_og_padel_klub": {
+    "address": "Sports Alle 6a, 7480 Vildbjerg",
+    "source": "https://www.vtop.dk/"
+  },
+  "link_randers_vorup_fb_padel": {
+    "address": "Møllevangsvej 9, 8940 Randers SV",
+    "source": "https://www.vorupfb.dk/tennis-padel/"
+  },
+  "link_marstal_r_marstal_if": {
+    "address": "Reberbanen 35B, 5960 Marstal",
+    "source": "https://eu.padeliq.io/da/marstal-if/p/om-os"
+  },
+  "link_tasinge_tasinge_tennis_padel_klub": {
+    "address": "Eskærvej 61, 5700 Svendborg",
+    "source": "https://ttpk.dk/da/p/om-os/find-os"
+  },
+  "matchi_s_nders_hallernespadelcenter": {
+    "lat": 55.48949899999998,
+    "lng": 10.248889019326786,
+    "source": "https://www.matchi.se/facilities/SøndersøHallernesPadelcenter"
+  },
+  "link_tarnby_racket_club_tarnby": {
+    "address": "Amager Landevej 233, 2770 Kastrup",
+    "source": "https://www.racketclub.dk/centre/tarnby"
+  },
+  "link_bagsv_rd_racket_club_ab": {
+    "address": "Skovdiget 1, 2880 Bagsværd",
+    "source": "https://www.racketclub.dk/centre/ab"
+  },
+  "link_roskilde_racket_club_roskilde": {
+    "address": "Rønøs Allé 2, 4000 Roskilde",
+    "source": "https://www.racketclub.dk/centre/roskilde"
+  },
+  "link_n_stved_n_stved_firma_sport": {
+    "address": "Kasernevej 24, 4700 Næstved",
+    "source": "https://www.naestvedfirmasport.dk/aktiviteter/padeltennis"
+  },
+  "link_tune_tune_if_tennis_og_padel": {
+    "address": "Tunehøj 7, 4030 Tune",
+    "source": "https://tune-if.dk/afdelinger/tennis-og-padel/indhold/forside/"
+  }
+}

@@ -39,6 +39,8 @@ export async function loadGeocodeCache() {
 const TOWN_CENTER_KM = 0.35;
 /** Hvor langt fra byen i adressen en pind maa ligge, foer den regnes for forkert. */
 const CITY_MISMATCH_KM = 20;
+/** Hvor langt fra postnummerets midte en pind maa ligge (store landpostnumre som 7700 Thisted er ca. 20 km). */
+const POSTAL_MISMATCH_KM = 30;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').trim();
 
@@ -119,6 +121,7 @@ export function placeNameMatchesVenue(label, title, city) {
  * @param {{ id: string, title?: string, address?: string }[]} venues
  * @param {Record<string, { lat: number, lng: number }>} coordsById
  * @param {Record<string, { via?: string, label?: string }>} [foundById]  geokodningens cache: hvordan hvert center blev fundet
+ *   (via 'source' = haandplukket fra centrets egen side, 'address' = gadeadresse, 'name' = centrets navn, 'town' = kun byen)
  */
 export function auditVenueCoords(venues, coordsById, foundById = {}) {
   /** @type {Record<string, { approx: true, reason: string, lat?: number, lng?: number }>} */
@@ -126,7 +129,8 @@ export function auditVenueCoords(venues, coordsById, foundById = {}) {
   const sameSpot = new Map();
   for (const v of venues) {
     const c = coordsById[v.id];
-    if (!c) continue;
+    // Haandplukkede placeringer taeller ikke med: to opslag for samme center maa gerne dele punkt.
+    if (!c || foundById[v.id]?.via === 'source') continue;
     const k = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
     sameSpot.set(k, (sameSpot.get(k) || 0) + 1);
   }
@@ -146,12 +150,22 @@ export function auditVenueCoords(venues, coordsById, foundById = {}) {
     }, null);
     const biggest = places.slice().sort((x, y) => y.pop - x.pop)[0] || null;
 
-    // 1) Langt fra alle steder med byens navn: forkert by.
+    // 1) Langt fra postnummeret i adressen, eller langt fra alle steder med byens navn: forkert by.
+    //    (Postnummeret fanger byer med samme navn, fx Skærbæk ved Tønder og ved Fredericia.)
+    const postalChecked = postal && foundById[v.id]?.postcode === postal; // geokodningen bekraeftede postnummeret
+    const postalKm = pc && !postalChecked ? haversineKm(c.lat, c.lng, pc.lat, pc.lng) : 0;
+    if (postalKm > POSTAL_MISMATCH_KM) {
+      out[v.id] = { approx: true, reason: `mismatch ${Math.round(postalKm)} km fra postnummer ${postal}`, lat: pc.lat, lng: pc.lng };
+      continue;
+    }
     if (nearest && nearest.d > CITY_MISMATCH_KM) {
       const fix = biggest || (pc ? { lat: pc.lat, lng: pc.lng } : null);
       out[v.id] = { approx: true, reason: `mismatch ${Math.round(nearest.d)} km fra ${city || postal}`, ...(fix ? { lat: fix.lat, lng: fix.lng } : {}) };
       continue;
     }
+    // Placering fra centrets egen side (scripts/data/baner-venue-locations.json): stol paa den,
+    // naar den ikke ligger langt fra byen. Flere centre maa godt dele den (fx single- og doublebaner).
+    if (foundById[v.id]?.via === 'source') continue;
     // 2) Ramte en lille landsby, naar der findes en meget stoerre by med samme navn
     //    (Lynge ved Sorø i stedet for Lynge i Nordsjælland, Ullerslev paa Lolland i stedet for Fyn).
     if (nearest && !nearest.postal && biggest && biggest !== nearest

@@ -70,3 +70,42 @@ test('et tilfaeldigt sted fundet ved byens navn giver ingen praecis pind', () =>
   const out = auditVenueCoords(venues, coords, { x: { via: 'town', label: 'Ballerup Jagtforening' } });
   assert.equal(out.x?.approx, true);
 });
+
+test('haandplukkede placeringer: kendte centre, en kilde og enten koordinater eller en adresse', async () => {
+  const { default: locations } = await import('../../scripts/data/baner-venue-locations.json', { with: { type: 'json' } });
+  const ids = new Set(BANER_VENUES.map((v) => v.id));
+  for (const [id, loc] of Object.entries(locations)) {
+    assert.ok(ids.has(id), `ukendt center: ${id}`);
+    assert.match(loc.source, /^https?:\/\//, `${id} mangler kilde`);
+    if (loc.lat != null) {
+      assert.ok(loc.lat > 54.5 && loc.lat < 57.8 && loc.lng > 8 && loc.lng < 15.2, `${id} ligger ikke i Danmark`);
+    } else {
+      assert.match(loc.address, /, \d{4} /, `${id} mangler postnummer i adressen`);
+    }
+  }
+});
+
+test('alle haandplukkede placeringer giver en praecis pind paa kortet', async () => {
+  const { default: locations } = await import('../../scripts/data/baner-venue-locations.json', { with: { type: 'json' } });
+  for (const id of Object.keys(locations)) {
+    assert.equal(byId(id).coordsApprox, undefined, `${id} er stadig "ca."`);
+  }
+});
+
+test('kendte fejl er rettet: Bornholm, Nykøbing Falster, Skærbæk og Padel Lounge Aarhus', () => {
+  const near = (id, lat, lng, km) => {
+    const v = byId(id);
+    assert.ok(haversineKm(v.latitude, v.longitude, lat, lng) < km, `${id} ligger forkert`);
+  };
+  near('match_padel_bornholm_inde', 55.1, 14.7, 5); // Rønne, ikke Sjælland
+  near('match_padel_nykobing_falster', 54.77, 11.87, 5);
+  near('matchi_sk_rb_kpadelogtennis', 55.16, 8.77, 5); // Skærbæk ved Tønder
+  near('padel_lounge_aarhus_halbooking', 56.208, 10.176, 1); // Graham Bells Vej, Skejby
+});
+
+test('pind langt fra postnummeret regnes for forkert, medmindre geokodningen bekraeftede postnummeret', () => {
+  const venues = [{ id: 'x', title: 'Test Padel', address: 'Storegade 46, 6780 , Skærbæk' }];
+  const wrong = { x: { lat: 55.58, lng: 9.7 } }; // en anden Skærbæk-agtig placering ved Fredericia
+  assert.match(auditVenueCoords(venues, wrong, {}).x?.reason || '', /postnummer 6780/);
+  assert.equal(auditVenueCoords(venues, { x: { lat: 55.1586, lng: 8.7598 } }, { x: { via: 'address', postcode: '6780' } }).x, undefined);
+});
