@@ -303,6 +303,10 @@
 .pm-home-map-stage {
   position: relative;
   background: var(--pm-surface-muted);
+  /* Leaflet giver sine lag z-index 400-1000. Hold dem inde i kortet, saa kortet
+     ikke lægger sig oven på bundmenuen, når man scroller. */
+  isolation: isolate;
+  z-index: 0;
 }
 .pm-home-map-canvas {
   height: 220px;
