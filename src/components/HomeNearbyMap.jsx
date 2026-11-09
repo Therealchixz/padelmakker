@@ -33,8 +33,8 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
   const mapPins = mode === 'kampe' ? pinned : everywhere;
   // Kortet zoomer til de naermeste (ellers trykker et center 30 km vaek alle de naere sammen).
   const framed = useMemo(
-    () => (mode === 'kampe' ? pinned : pinned.slice().sort((a, b) => a.km - b.km).slice(0, 4)),
-    [pinned, mode],
+    () => (mode === 'kampe' && withMatches.length > 0 ? pinned : pinned.slice().sort((a, b) => a.km - b.km).slice(0, 4)),
+    [pinned, mode, withMatches.length],
   );
   const pinnedKey = framed.map((v) => v.id).join('|');
   const [selectedId, setSelectedId] = useState(null);
@@ -179,7 +179,6 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
               type="button"
               role="tab"
               aria-selected={mode === 'kampe'}
-              disabled={withMatches.length === 0}
               onClick={() => selectMode('kampe')}
             >
               Kampe
