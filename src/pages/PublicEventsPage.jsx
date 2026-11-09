@@ -5,7 +5,9 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { formatMatchDateDa, formatTimeSlotDa } from '../lib/matchDisplayUtils';
-import { PublicLegalFooter } from '../components/PublicLegalFooter';
+import { PublicSiteHeader } from '../components/PublicSiteHeader';
+import { PublicSiteFooter } from '../components/PublicSiteFooter';
+import '../styles/public-site.css';
 import { buildPublicTournamentPath } from '../lib/publicShareRoutes';
 import { authReturnSignupUrl } from '../lib/authReturnPath';
 
@@ -77,56 +79,31 @@ export function PublicEventsPage() {
   };
 
   return (
-    <main
-      className="pm-root pm-brand"
-      style={{
-        fontFamily: font,
-        background: theme.bg,
-        minHeight: '100dvh',
-        color: theme.text,
-        paddingBottom: 'max(96px, env(safe-area-inset-bottom))',
-      }}
+    <div
+      className="pm-root pm-brand pm-pub"
+      style={{ fontFamily: font, background: theme.bg, minHeight: '100dvh', color: theme.text }}
     >
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: 'max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) clamp(16px, 4vw, 28px) 0' }}>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          style={{ ...btn(false), marginBottom: '20px', padding: '8px 14px', fontSize: '13px' }}
-        >
-          ← Til forsiden
-        </button>
+      <PublicSiteHeader />
+      <main className="pm-pub-inner pm-pub-main">
+        <h1 className="pm-pub-h1">Turneringer & events</h1>
+        <p style={{ fontSize: '17px', color: theme.textMid, lineHeight: 1.6, margin: '16px 0 0', maxWidth: '48ch' }}>
+          Americano- og Mexicano-turneringer med åben tilmelding eller i gang lige nu. Vi viser ikke deltagernes navne her.
+        </p>
 
-        <div
-          style={{
-            background: theme.surface,
-            borderRadius: '14px',
-            border: `1px solid ${theme.border}`,
-            boxShadow: theme.shadow,
-            padding: 'clamp(22px, 5vw, 32px)',
-            marginBottom: '8px',
-          }}
-        >
-          <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), margin: 0, letterSpacing: '-0.02em' }}>
-            Turneringer & events
-          </h1>
-          <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.6, margin: '12px 0 0', maxWidth: '60ch' }}>
-            Americano- og Mexicano-turneringer med åben tilmelding eller i gang lige nu. Vi viser ikke deltagernes navne her.
-          </p>
-
-          {hasEvents && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '22px' }}>
-              <button type="button" onClick={ctaPrimary} style={{ ...btn(true), padding: '12px 20px', fontSize: '14px' }}>
-                {loggedIn ? 'Gå til Kampe' : 'Opret profil og tilmeld dig'}
+        {hasEvents && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '24px' }}>
+            <button type="button" onClick={ctaPrimary} style={{ ...btn(true), minHeight: '48px', padding: '0 22px', fontSize: '17px' }}>
+              {loggedIn ? 'Gå til Kampe' : 'Opret profil og tilmeld dig'}
+            </button>
+            {!loggedIn && (
+              <button type="button" onClick={ctaSecondary} style={{ ...btn(false), minHeight: '48px', padding: '0 22px', fontSize: '14px' }}>
+                Har du allerede en konto? Log ind
               </button>
-              {!loggedIn && (
-                <button type="button" onClick={ctaSecondary} style={{ ...btn(false), padding: '12px 20px', fontSize: '14px' }}>
-                  Har du allerede en konto? Log ind
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
+        <div style={{ maxWidth: '720px', marginTop: 'clamp(28px, 5vw, 44px)', paddingTop: 'clamp(24px, 4vw, 36px)', borderTop: `1px solid ${theme.border}` }}>
         {loading && (
           <div style={{ textAlign: 'center', padding: '40px 16px', color: theme.textMid, fontSize: '14px' }}>
             <div className="pm-spinner" style={{ margin: '0 auto 16px' }} />
@@ -268,8 +245,9 @@ export function PublicEventsPage() {
           Baner bookes hos centrene; PadelMakker viser overblik og turneringer i appen.
         </p>
 
-        <PublicLegalFooter />
-      </div>
-    </main>
+        </div>
+      </main>
+      <PublicSiteFooter />
+    </div>
   );
 }

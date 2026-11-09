@@ -1,0 +1,167 @@
+/* ── Offentlige undersider (Om, FAQ, ELO, Hjælp, Første 200, App, juridiske) ──
+   Forsiden fortsat paa papir: faelles top og bund, store Anton-titler, ingen kasse.
+   Kun farver fra variables.css, saa lys og moerk tilstand virker af sig selv. */
+
+.pm-pub-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(clamp(16px, 5vw, 48px), env(safe-area-inset-left));
+  padding-right: max(clamp(16px, 5vw, 48px), env(safe-area-inset-right));
+}
+
+/* Top */
+.pm-pub-header {
+  border-bottom: 1px solid var(--pm-border);
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+}
+.pm-pub-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 24px;
+  min-height: 68px;
+}
+.pm-pub-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-right: auto;
+}
+.pm-pub-logo img { height: 36px; width: auto; display: block; }
+.pm-pub-nav { display: flex; gap: 0 8px; margin-left: -8px; }
+.pm-pub-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 8px;
+  color: var(--pm-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+.pm-pub-nav a:hover,
+.pm-pub-nav a.active { text-decoration-line: underline; }
+.pm-pub-nav a.active { text-decoration-color: var(--pm-accent-solid); }
+.pm-pub-actions { display: flex; gap: 8px; }
+.pm-pub-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--pm-border);
+  background: transparent;
+  color: var(--pm-text);
+  font: 600 14px/1 var(--pm-font);
+  cursor: pointer;
+}
+.pm-pub-btn--solid {
+  background: var(--pm-accent-solid);
+  border-color: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+}
+@media (max-width: 640px) {
+  /* Telefon: logo og Log ind paa foerste linje, menuen paa linjen under. */
+  .pm-pub-nav {
+    order: 3;
+    width: 100%;
+    border-top: 1px solid var(--pm-border);
+  }
+  .pm-pub-signup { display: none; }
+}
+
+/* Indhold */
+.pm-pub-main {
+  padding-top: clamp(36px, 7vw, 72px);
+  padding-bottom: clamp(40px, 7vw, 72px);
+}
+.pm-pub-h1 {
+  font-family: var(--pm-font-brand);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(30px, 8.5vw, 64px);
+  /* 1.22 i stedet for 0.92: ringen i Å og stregen i Ø ramte linjen over ("SPØRGSMÅL"). */
+  line-height: 1.22;
+  letter-spacing: 0.005em;
+  color: var(--pm-text);
+  margin: 0;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.pm-pub-updated {
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  color: var(--pm-text-light);
+  margin: 16px 0 0;
+}
+.pm-pub-prose {
+  margin-top: clamp(28px, 5vw, 44px);
+  padding-top: clamp(24px, 4vw, 36px);
+  border-top: 1px solid var(--pm-border);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--pm-text-mid);
+}
+.pm-pub-cta {
+  margin-top: clamp(40px, 7vw, 64px);
+  padding-top: 28px;
+  border-top: 1px solid var(--pm-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.pm-pub-cta p {
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  text-transform: uppercase;
+  font-size: clamp(22px, 5vw, 30px);
+  line-height: 1;
+  color: var(--pm-text);
+}
+.pm-pub-cta .pm-pub-btn { min-height: 48px; padding: 0 24px; font-size: 17px; }
+
+/* Bund */
+.pm-pub-footer {
+  border-top: 1px solid var(--pm-border);
+  padding: 36px 0 max(96px, calc(env(safe-area-inset-bottom) + 72px));
+  font-size: 14px;
+  color: var(--pm-text-light);
+}
+.pm-pub-footer-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  max-width: 560px;
+}
+.pm-pub-footer h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+.pm-pub-footer ul { list-style: none; margin: 0; padding: 0; }
+.pm-pub-footer li a,
+.pm-pub-footer-base nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--pm-text-mid);
+  text-decoration: none;
+}
+.pm-pub-footer li a:hover,
+.pm-pub-footer-base nav a:hover { color: var(--pm-text); text-decoration: underline; text-underline-offset: 4px; }
+.pm-pub-footer-base {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pm-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 20px;
+}
+.pm-pub-footer-base nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.pm-pub-mono { font-family: var(--pm-font-mono); font-size: 12px; }
