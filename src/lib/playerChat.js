@@ -91,5 +91,7 @@ export function prefetchDmThread(userId, otherId) {
 
 export function openPlayerChat(navigate, player) {
   if (!player?.id || typeof navigate !== 'function') return;
-  navigate(playerChatPath(player.id), { state: playerChatState(player) });
+  // Aabnes chatten fra spillerkortet, erstatter vi kortets tilbage-skridt.
+  const replace = typeof window !== 'undefined' && Boolean(window.history.state?.pmOverlay);
+  navigate(playerChatPath(player.id), { state: playerChatState(player), ...(replace ? { replace: true } : {}) });
 }

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
  * Telefonens tilbage (Android-knappen, swipe i iOS-appen, browserens pil) lukker et
@@ -9,56 +8,49 @@ import { useLocation, useNavigate } from 'react-router-dom';
  * Tilbage fjerner skridtet, og vinduet lukker. Lukkes vinduet med en knap, fjerner vi
  * selv skridtet igen, saa historikken ikke vokser.
  *
+ * Vi arbejder direkte paa window.history, fordi routeren kan opdatere sin adresse en
+ * gengivelse senere end vinduet lukker. Skifter et valg i vinduet side (navigate), er
+ * historikkens oeverste skridt allerede et andet, og saa lader vi det vaere.
+ *
  * @param {boolean} open
  * @param {(() => void) | undefined} onClose
  * @param {string} key  unikt navn for vinduet, fx "spil"
  */
 export function useCloseOnBack(open, onClose, key) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  // 'idle' = intet skridt; 'pending' = skridtet er bedt om; 'active' = vi staar paa skridtet.
-  const phase = useRef('idle');
+  const active = useRef(false);
   const onCloseRef = useRef(onClose);
-  const locRef = useRef(location);
   useEffect(() => {
     onCloseRef.current = onClose;
-    locRef.current = location;
   });
 
-  // Aabnet: laeg et skridt i historikken.
   useEffect(() => {
-    if (!open || phase.current !== 'idle') return;
-    const loc = locRef.current;
-    phase.current = 'pending';
-    navigate(`${loc.pathname}${loc.search}${loc.hash}`, { state: { ...(loc.state || {}), pmOverlay: key } });
-  }, [open, key, navigate]);
+    if (!open || typeof window === 'undefined') return undefined;
+    const onPop = () => {
+      if (!active.current || window.history.state?.pmOverlay === key) return;
+      active.current = false;
+      onCloseRef.current?.();
+    };
+    // Skridtet laegges lige efter, saa en hurtig aabn-luk (Reacts dobbelte start under udvikling)
+    // ikke efterlader eller fjerner et skridt for meget.
+    const timer = window.setTimeout(() => {
+      const h = window.history;
+      h.pushState({ ...(h.state || {}), pmOverlay: key }, '', window.location.href);
+      active.current = true;
+      window.addEventListener('popstate', onPop);
+    }, 0);
 
-  // Historikken skiftede: staar vi paa vores skridt, er det aktivt; er vi gaaet vaek fra det
-  // (tilbage), lukker vinduet.
-  useEffect(() => {
-    if (phase.current === 'idle') return;
-    if (location.state?.pmOverlay === key) {
-      phase.current = 'active';
-      return;
-    }
-    if (phase.current !== 'active') return; // skridtet er ikke lagt endnu
-    phase.current = 'idle';
-    if (open) onCloseRef.current?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- kun naar historikken skifter
-  }, [location.key]);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('popstate', onPop);
+      if (!active.current) return;
+      active.current = false;
+      // Lukket med en knap eller fjernet fra siden: fjern vores skridt, hvis vi stadig staar paa det.
+      if (window.history.state?.pmOverlay === key) window.history.back();
+    };
+  }, [open, key]);
+}
 
-  // Lukket med en knap: fjern vores skridt igen (kun hvis vi stadig staar paa det).
-  useEffect(() => {
-    if (open || phase.current === 'idle') return;
-    phase.current = 'idle';
-    if (locRef.current.state?.pmOverlay === key) navigate(-1);
-  }, [open, key, navigate]);
-
-  // Fjernet fra siden mens det var aabent (fx valgt noget, der skifter side): ryd op.
-  useEffect(() => () => {
-    if (phase.current !== 'idle' && locRef.current.state?.pmOverlay === key) {
-      phase.current = 'idle';
-      window.history.back();
-    }
-  }, [key]);
+/** Staar vi lige nu paa et skridt, som et aabent vindue har lagt i historikken? */
+export function isOnOverlayHistoryEntry() {
+  return typeof window !== 'undefined' && Boolean(window.history.state?.pmOverlay);
 }
