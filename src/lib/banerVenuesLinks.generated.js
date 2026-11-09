@@ -313,16 +313,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_n_rresundby_rocket_padel_n_rresundby",
-    "title": "Rocket Padel Nørresundby",
-    "address": "Nørresundby — se booking-link",
-    "indoor": true,
-    "region": "Nordjylland",
-    "bookingUrl": "https://rocketpadel.dk/centre/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_thisted_thisted_tennis_og_padelklub",
     "title": "Thisted Tennis- og Padelklub",
     "address": "Thisted — se booking-link",

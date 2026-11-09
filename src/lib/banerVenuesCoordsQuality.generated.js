@@ -18,7 +18,6 @@ export const BANER_VENUE_COORDS_QUALITY = {
   "link_k_benhavn_v_vamoz_padel_fisketorvet": { approx: true, reason: "town (kun byen fundet)" },
   "link_middelfart_middelfart_firma_og_familieidr_t": { approx: true, reason: "town (kun byen fundet)" },
   "link_n_rre_aaby_n_rre_aaby_tennisklub": { approx: true, reason: "town (kun byen fundet)" },
-  "link_n_rresundby_rocket_padel_n_rresundby": { approx: true, reason: "town (kun byen fundet)" },
   "link_odense_odense_eventyr_padel": { approx: true, reason: "town (kun byen fundet)" },
   "link_odense_tennis_club_odense": { approx: true, reason: "town (kun byen fundet)" },
   "link_r_dvig_r_dvig_g_i_padel": { approx: true, reason: "town (kun byen fundet)" },

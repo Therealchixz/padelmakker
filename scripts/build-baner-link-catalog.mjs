@@ -88,7 +88,7 @@ const SECTION_REGION = {
   'padelbaner på sjælland': 'Sjælland',
   'padelbaner på fyn og langeland': 'Fyn',
   'padelbaner på fyn': 'Fyn',
-  'padelbaner i sydjylland': 'Sønderjylland',
+  'padelbaner i sydjylland': 'Sydjylland',
   'padelbaner i midtjylland': '__MIDT__',
   'padelbaner i nordjylland': 'Nordjylland',
   'padelbaner på bornholm': 'Bornholm',
@@ -222,6 +222,12 @@ function slugify(...parts) {
     .slice(0, 72);
 }
 
+/**
+ * Centre i Padellife-oversigten, som ikke findes (endnu), og som derfor ikke skal vises.
+ * Rocket Padel Nørresundby: kun planer (ejeren 9. nov. 2026); står ikke på rocketpadel.dk/centre.
+ */
+const NOT_EXISTING_TITLES = new Set(['Rocket Padel Nørresundby']);
+
 /** Kendte booking-URL’er (Padellife linker ofte til marketing-site, ikke kalender). */
 const BOOKING_URL_OVERRIDES = {
   'Padel Sport Lemvig': 'https://eu.padeliq.io/da/padel-sport-lemvig/booking',
@@ -319,6 +325,7 @@ for (const line of md.split(/\r?\n/)) {
   let bookingUrl = m[3].trim();
   if (BOOKING_URL_OVERRIDES[title]) bookingUrl = BOOKING_URL_OVERRIDES[title];
   if (!title || title === 'All-Padel' || isIntegratedUrl(bookingUrl, title)) continue;
+  if (NOT_EXISTING_TITLES.has(title)) continue;
   if (INTEGRATED_TITLE_KEYS.has(normalizeVenueTitleKey(title))) continue;
 
   let region = currentSection;
@@ -357,6 +364,6 @@ export const BANER_VENUES_LINKS = ${JSON.stringify(venues, null, 2)};
 await mkdir(dirname(OUT), { recursive: true });
 await writeFile(OUT, js, 'utf8');
 console.log(`Wrote ${venues.length} link venues to ${OUT}`);
-for (const r of ['Nordjylland', 'Vestjylland', 'Østjylland', 'Sønderjylland', 'Fyn', 'Sjælland', 'Hovedstaden', 'Bornholm']) {
+for (const r of ['Nordjylland', 'Vestjylland', 'Østjylland', 'Sydjylland', 'Fyn', 'Sjælland', 'Hovedstaden', 'Bornholm']) {
   console.log(`  ${r}:`, venues.filter((v) => v.region === r).length);
 }

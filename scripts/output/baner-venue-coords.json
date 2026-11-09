@@ -1352,14 +1352,6 @@
     "label": "København",
     "via": "town"
   },
-  "link_n_rresundby_rocket_padel_n_rresundby": {
-    "lat": 57.0607251,
-    "lng": 9.9241319,
-    "town": true,
-    "postcode": "9400",
-    "label": "Nørresundby",
-    "via": "town"
-  },
   "link_vestbjerg_vestbjerg_if_tennis_og_padel": {
     "lat": 57.1305808,
     "lng": 9.9666992,

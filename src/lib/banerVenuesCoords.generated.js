@@ -65,7 +65,6 @@ export const BANER_VENUE_COORDS = {
   "link_middelfart_middelfart_firma_og_familieidr_t": { lat: 55.4993014, lng: 9.7392181 },
   "link_morud_morud_tennis_og_padel": { lat: 55.441838, lng: 10.189747 },
   "link_n_rre_aaby_n_rre_aaby_tennisklub": { lat: 55.457787, lng: 9.878534 },
-  "link_n_rresundby_rocket_padel_n_rresundby": { lat: 57.0607251, lng: 9.9241319 },
   "link_n_stved_n_stved_firma_sport": { lat: 55.232528, lng: 11.795139 },
   "link_n_stved_n_stved_tennis_klub": { lat: 55.212654, lng: 11.772846 },
   "link_nordhavn_racket_club_terminalerne": { lat: 55.7049718, lng: 12.5910118 },
