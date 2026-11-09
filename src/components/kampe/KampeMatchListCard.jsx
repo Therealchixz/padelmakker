@@ -248,7 +248,7 @@ export function KampeMatchListCard({
               {teamNameLabel(t1, profilesById, currentUserId)}
             </span>
           </div>
-          <div style={{ flexShrink: 0, alignSelf: 'center', fontFamily: 'var(--pm-font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--pm-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          <div style={{ flexShrink: 0, alignSelf: 'center', fontFamily: 'var(--pm-font-data)', fontSize: 15, fontWeight: 600, color: 'var(--pm-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             {setScoreStr}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>

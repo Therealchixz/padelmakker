@@ -519,13 +519,13 @@ export function CreateAmericanoTournamentForm({
             <div key={row.label} style={{ margin: '0 18px 12px', padding: '13px 15px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
-                <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 2 }}>{row.desc}</div>
+                <div style={{ fontSize: 12, color: theme.textLight, marginTop: 2 }}>{row.desc}</div>
               </div>
               <Toggle on={row.value} onChange={row.set} />
             </div>
           ))}
 
-          <div style={{ margin: '0 18px 16px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>
+          <div style={{ margin: '0 18px 16px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: theme.textLight, lineHeight: 1.6 }}>
             Du får besked, når nogen tilmelder sig. Betalingen afregnes direkte mellem jer — PadelMakker tager ikke gebyr.
           </div>
         </>
@@ -534,16 +534,16 @@ export function CreateAmericanoTournamentForm({
       {/* ── Step 3: Publicér ── */}
       {step === 3 && (
         <>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 10px' }}>Sådan ser den ud for andre</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 10px' }}>Sådan ser den ud for andre</div>
 
           {/* Preview card */}
           <div style={{ margin: '0 18px 16px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--pm-border)', boxShadow: 'var(--pm-shadow)' }}>
             <div style={{ background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '14px 14px 20px' }}>
               <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                <span style={{ background: tournamentFormat === 'mexicano' ? 'var(--pm-amber)' : 'var(--pm-navy-deep)', color: tournamentFormat === 'mexicano' ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)', border: tournamentFormat === 'mexicano' ? 'none' : '1px solid rgba(255,255,255,0.32)', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                <span style={{ background: tournamentFormat === 'mexicano' ? 'var(--pm-amber)' : 'var(--pm-navy-deep)', color: tournamentFormat === 'mexicano' ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)', border: tournamentFormat === 'mexicano' ? 'none' : '1px solid rgba(255,255,255,0.32)', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                   {formatLabel}
                 </span>
-                <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
+                <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
                   Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
                 </span>
               </div>
@@ -581,7 +581,7 @@ export function CreateAmericanoTournamentForm({
           </div>
 
           {/* Summary table */}
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Opsummering</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Opsummering</div>
           <div style={{ margin: '0 18px 14px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
             {[
               { label: 'Format', value: `${formatLabel} · ${pointsPerMatch} point pr. kamp` },
@@ -589,13 +589,13 @@ export function CreateAmericanoTournamentForm({
               { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${formatPrice(pricePerPerson)} · ${paymentLabel}` },
             ].map((row, i, arr) => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
-                <span style={{ fontSize: 12.5, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{row.value}</span>
+                <span style={{ fontSize: 13, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{row.value}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>
+          <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: theme.textLight, lineHeight: 1.6 }}>
             Turneringen bliver synlig under Turneringer og i aktivitetsfeedet for spillere i niveau-intervallet{courtLabel ? ` nær ${courtLabel}` : ''}.
           </div>
 

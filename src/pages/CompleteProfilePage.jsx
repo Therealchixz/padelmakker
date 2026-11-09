@@ -235,7 +235,7 @@ export function CompleteProfilePage() {
 
           <div role="alert">
             {err ? (
-              <p style={{ color: theme.red, fontSize: 13.5, fontWeight: 600, marginBottom: 14, lineHeight: 1.45 }}>{err}</p>
+              <p style={{ color: theme.red, fontSize: 14, fontWeight: 600, marginBottom: 14, lineHeight: 1.45 }}>{err}</p>
             ) : null}
           </div>
 

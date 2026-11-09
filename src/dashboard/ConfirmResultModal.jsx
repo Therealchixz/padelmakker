@@ -10,7 +10,7 @@ function SetDisplay({ set, setNum }) {
       <b style={{ fontSize: 21, fontWeight: 700, color: 'var(--pm-accent)', letterSpacing: 1, display: 'block' }}>
         {g1}–{g2}
       </b>
-      <span style={{ display: 'block', fontSize: '9.5px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
+      <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
         SÆT {setNum}
       </span>
     </div>
@@ -38,7 +38,7 @@ export function ConfirmResultModal({
     <AppModal open onClose={busy ? undefined : onClose} ariaLabel="Bekræft resultat" maxWidthPreset="sm">
       <div className="pm-modal-body" style={{ fontFamily: 'var(--pm-font)' }}>
         {/* Eyebrow */}
-        <div style={{ textAlign: 'center', fontSize: '10.5px', fontWeight: 700, letterSpacing: '1.3px', textTransform: 'uppercase', color: 'var(--pm-text-mid)' }}>
+        <div style={{ textAlign: 'center', fontSize: '11px', fontWeight: 700, letterSpacing: '1.3px', textTransform: 'uppercase', color: 'var(--pm-text-mid)' }}>
           Bekræft resultat
         </div>
 
@@ -82,7 +82,7 @@ export function ConfirmResultModal({
           style={{
             width: '100%', padding: 12, borderRadius: 10, border: 'none',
             background: busy ? 'var(--pm-text-light)' : 'var(--pm-navy)', color: 'var(--pm-on-accent)',
-            fontSize: '14.5px', fontWeight: 600, cursor: busy ? 'default' : 'pointer',
+            fontSize: '15px', fontWeight: 600, cursor: busy ? 'default' : 'pointer',
             fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 14px rgba(22,55,126,0.32)',
           }}
         >
@@ -97,7 +97,7 @@ export function ConfirmResultModal({
           style={{
             width: '100%', padding: 11, borderRadius: 10, marginTop: 9,
             border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
-            color: 'var(--pm-red)', fontSize: '14.5px', fontWeight: 600,
+            color: 'var(--pm-red)', fontSize: '15px', fontWeight: 600,
             cursor: busy ? 'default' : 'pointer', fontFamily: 'inherit',
           }}
         >
@@ -105,7 +105,7 @@ export function ConfirmResultModal({
         </button>
 
         {/* Note */}
-        <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'var(--pm-text-mid)', marginTop: 11 }}>
+        <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--pm-text-mid)', marginTop: 11 }}>
           Elo-point fordeles, når alle har bekræftet
         </div>
       </div>

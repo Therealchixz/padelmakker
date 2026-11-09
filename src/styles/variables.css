@@ -128,8 +128,9 @@
   --pm-transition-ui: 0.18s ease;
   --pm-focus-ring: 0 0 0 3px rgba(192, 80, 58, 0.35);
   --pm-focus-ring-dark: 0 0 0 3px rgba(232, 131, 107, 0.35);
-  --pm-font:        'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  --pm-font-display:'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  /* Tekst og knapper: Figtree (ejerens valg 9. nov. 2026, afloeser Instrument Sans). Hentes som variabel skrift 400-900. */
+  --pm-font:        'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --pm-font-display:'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   /* Brand-overskrifter på de offentlige sider (forside, Om, FAQ, ELO, Events). Anton: smal, kantet grotesk med versaler (redesign v4). */
   --pm-font-brand:  'Anton', 'Arial Narrow', Impact, sans-serif;
   /* Varm accent (den orange fra bane-kortet). --pm-orange kan bruges til tekst på lys baggrund (4.9:1);
@@ -145,11 +146,13 @@
   --pm-court:       #2F5D4E;
   /* "Din placering" paa kort: den kendte blaa prik (eneste blaa i appen). */
   --pm-map-me:      #2A78D6;
-  --pm-display-weight:   700; /* Instrument Sans hentes kun op til 700 */
+  --pm-display-weight:   700;
   --pm-display-tracking: -0.03em;
   --pm-display-case:     none;
   --pm-display-leading:  1.15;
-  --pm-font-mono:   'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Tal og tider (ELO, klokkeslaet, datoer): samme skrift som teksten, med lige brede cifre (tabular-nums),
+     saa tal staar under hinanden. Afloeser IBM Plex Mono (ejerens valg 9. nov. 2026). */
+  --pm-font-data:   'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 
 /* ── Dark mode overrides ── */

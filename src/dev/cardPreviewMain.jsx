@@ -167,7 +167,7 @@ function AmericanoDetailPreview() {
       status="registration"
       participants={parts}
       description="Hyggelig americano for alle niveauer — vi spiller 7 runder og slutter med en øl i baren."
-      actions={<button type="button" style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', fontWeight: 700, fontSize: 14.5 }}>Tilmeld mig</button>}
+      actions={<button type="button" style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', fontWeight: 700, fontSize: 15 }}>Tilmeld mig</button>}
     />
   );
 }

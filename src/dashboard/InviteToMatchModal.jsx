@@ -20,7 +20,7 @@ function DateBadge({ dateStr }) {
       background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0',
     }}>
       <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{day || '—'}</b>
-      <span style={{ fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-mid)', letterSpacing: '0.5px' }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-mid)', letterSpacing: '0.5px' }}>
         {month ? DA_MONTHS_SHORT[month - 1] : '—'}
       </span>
     </div>
@@ -52,7 +52,7 @@ function MatchRow({ item, selected, onSelect }) {
         <b style={{ fontSize: 14, fontWeight: 600, display: 'block', color: 'var(--pm-text)' }}>
           {typeLabel} · {venue}
         </b>
-        <span style={{ fontSize: '11.5px', color: 'var(--pm-text-mid)', display: 'block', marginTop: 2 }}>
+        <span style={{ fontSize: '12px', color: 'var(--pm-text-mid)', display: 'block', marginTop: 2 }}>
           Kl. {fmtClock(time)}
         </span>
       </div>
@@ -153,7 +153,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
             <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.2px' }}>
               Invitér {inviteeName} til en kamp
             </div>
-            <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1 }}>
+            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: 1 }}>
               Vælg en af dine kampe med ledig plads
             </div>
           </div>
@@ -199,7 +199,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             width: '100%', padding: 11, borderRadius: 10, marginBottom: 12,
             border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
-            color: 'var(--pm-accent)', fontSize: '14.5px', fontWeight: 600,
+            color: 'var(--pm-accent)', fontSize: '15px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
           onClick={() => { if (onCreateMatch) onCreateMatch(); else onClose(); }}
@@ -216,7 +216,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
           style={{
             width: '100%', padding: 12, borderRadius: 10, border: 'none',
             background: selected && !sending ? 'var(--pm-navy)' : 'var(--pm-border)',
-            color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
+            color: 'var(--pm-on-accent)', fontSize: '15px', fontWeight: 600,
             cursor: selected && !sending ? 'pointer' : 'default',
             fontFamily: 'inherit',
             boxShadow: selected && !sending ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
@@ -232,7 +232,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
           style={{
             width: '100%', padding: 10, borderRadius: 10, marginTop: 9,
             border: 'none', background: 'none', color: 'var(--pm-text-mid)',
-            fontSize: '14.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
           Annullér

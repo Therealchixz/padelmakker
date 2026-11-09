@@ -89,7 +89,8 @@
   text-wrap: balance;
 }
 .pm-pub-updated {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--pm-text-light);
   margin: 16px 0 0;
@@ -164,4 +165,4 @@
   gap: 4px 20px;
 }
 .pm-pub-footer-base nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
-.pm-pub-mono { font-family: var(--pm-font-mono); font-size: 12px; }
+.pm-pub-mono { font-family: var(--pm-font-data); font-variant-numeric: tabular-nums; font-size: 12px; }

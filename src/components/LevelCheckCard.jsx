@@ -51,7 +51,7 @@ export function LevelCheckCard({ user, showToast }) {
     border: primary ? 'none' : `1.5px solid ${theme.border}`,
     background: primary ? theme.navy : theme.surface,
     color: primary ? 'var(--pm-on-accent)' : theme.text,
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: 700,
     cursor: busy ? 'default' : 'pointer',
     fontFamily: font,

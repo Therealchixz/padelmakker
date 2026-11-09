@@ -63,7 +63,7 @@
       "refersTo": "button-primary",
       "description": "Udfyldt ler med hvid tekst til den vigtigste handling (btn(true)).",
       "html": "<button class=\"ds-btn-primary\">Opret kamp</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--pm-accent-solid, #C0503A); border-radius: 10px; background: var(--pm-accent-solid, #C0503A); color: #fff; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 1px 2px rgba(192, 80, 58, 0.24); cursor: pointer; transition: background-color 0.18s ease, transform 120ms ease-out; } @media (hover: hover) and (pointer: fine) { .ds-btn-primary:hover { background: #A8432D; border-color: #A8432D; } } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--pm-accent-solid, #C0503A); border-radius: 10px; background: var(--pm-accent-solid, #C0503A); color: #fff; font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 1px 2px rgba(192, 80, 58, 0.24); cursor: pointer; transition: background-color 0.18s ease, transform 120ms ease-out; } @media (hover: hover) and (pointer: fine) { .ds-btn-primary:hover { background: #A8432D; border-color: #A8432D; } } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
     },
     {
       "name": "Sekundærknap",
@@ -71,7 +71,7 @@
       "refersTo": "button-secondary",
       "description": "Gennemsigtig med 1,5px blæk-omrids, til sekundære handlinger i v4.",
       "html": "<button class=\"ds-btn-secondary\">Se kamp</button>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 12px; background: transparent; color: #1B1A17; box-shadow: inset 0 0 0 1.5px #1B1A17; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color 0.18s ease, transform 120ms ease-out; } @media (hover: hover) and (pointer: fine) { .ds-btn-secondary:hover { background: #FBF8F2; } } .ds-btn-secondary:active { transform: scale(0.98); } .ds-btn-secondary:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 12px; background: transparent; color: #1B1A17; box-shadow: inset 0 0 0 1.5px #1B1A17; font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color 0.18s ease, transform 120ms ease-out; } @media (hover: hover) and (pointer: fine) { .ds-btn-secondary:hover { background: #FBF8F2; } } .ds-btn-secondary:active { transform: scale(0.98); } .ds-btn-secondary:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
     },
     {
       "name": "Spil-knap",
@@ -87,7 +87,7 @@
       "refersTo": "segmented-control",
       "description": "Faner som et delt felt: dæmpet papir-bund, aktivt segment løftet i kort-papir.",
       "html": "<div class=\"ds-seg\" role=\"tablist\"><button class=\"ds-seg-tab is-active\" role=\"tab\" aria-selected=\"true\">2v2</button><button class=\"ds-seg-tab\" role=\"tab\">Americano</button><button class=\"ds-seg-tab\" role=\"tab\">Liga</button></div>",
-      "css": ".ds-seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: #EAE3D6; } .ds-seg-tab { flex: 1 1 0; min-height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: #4A463E; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 0.15s, color 0.15s, box-shadow 0.15s; } .ds-seg-tab.is-active { background: #FBF8F2; color: #1B1A17; font-weight: 700; box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12); } @media (hover: hover) and (pointer: fine) { .ds-seg-tab:not(.is-active):hover { color: #1B1A17; } } .ds-seg-tab:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
+      "css": ".ds-seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: #EAE3D6; } .ds-seg-tab { flex: 1 1 0; min-height: 44px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: #4A463E; font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 0.15s, color 0.15s, box-shadow 0.15s; } .ds-seg-tab.is-active { background: #FBF8F2; color: #1B1A17; font-weight: 700; box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12); } @media (hover: hover) and (pointer: fine) { .ds-seg-tab:not(.is-active):hover { color: #1B1A17; } } .ds-seg-tab:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
     },
     {
       "name": "Chip",
@@ -95,15 +95,15 @@
       "refersTo": "chip",
       "description": "Lille filter-pille; aktiv er udfyldt ler.",
       "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-active\">Alle</button><button class=\"ds-chip\">Mit niveau</button></div>",
-      "css": ".ds-chips { display: flex; gap: 6px; } .ds-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; min-height: 28px; border: 1px solid #D9D1C2; border-radius: 999px; background: #F7F2E9; color: #4A463E; font-family: 'Instrument Sans', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; } @media (hover: hover) and (pointer: fine) { .ds-chip:not(.ds-chip-active):hover { border-color: #E0C4B9; background: #F6E9E0; } } .ds-chip-active { border-color: #C0503A; background: #C0503A; color: #fff; } .ds-chip:focus-visible { outline: none; border-color: #A8432D; box-shadow: 0 0 0 3px rgba(192, 80, 58, 0.35); }"
+      "css": ".ds-chips { display: flex; gap: 6px; } .ds-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; min-height: 28px; border: 1px solid #D9D1C2; border-radius: 999px; background: #F7F2E9; color: #4A463E; font-family: 'Figtree', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; } @media (hover: hover) and (pointer: fine) { .ds-chip:not(.ds-chip-active):hover { border-color: #E0C4B9; background: #F6E9E0; } } .ds-chip-active { border-color: #C0503A; background: #C0503A; color: #fff; } .ds-chip:focus-visible { outline: none; border-color: #A8432D; box-shadow: 0 0 0 3px rgba(192, 80, 58, 0.35); }"
     },
     {
       "name": "Kampkort",
       "kind": "card",
       "refersTo": "card",
-      "description": "Papirkort med stor Anton-dato og mono-tid; ingen skygge.",
+      "description": "Papirkort med stor Anton-dato og tid med faste cifferbredder; ingen skygge.",
       "html": "<button class=\"ds-match\"><span class=\"ds-match-date\"><b>14</b><span>NOV</span></span><span class=\"ds-match-text\"><span class=\"ds-match-title\">2v2 i Padelhuset</span><span class=\"ds-match-time\">19:00–20:30 · 3/4</span></span></button>",
-      "css": ".ds-match { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid #D9D1C2; border-radius: 16px; background: #FBF8F2; color: #1B1A17; text-align: left; font-family: 'Instrument Sans', sans-serif; cursor: pointer; transition: transform 120ms ease-out, border-color 160ms ease; } .ds-match-date { width: 52px; text-align: center; } .ds-match-date b { display: block; font-family: Anton, 'Arial Narrow', Impact, sans-serif; font-weight: 400; font-size: 30px; line-height: 0.95; font-variant-numeric: tabular-nums; font-synthesis: none; } .ds-match-date span { display: block; margin-top: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.04em; color: #4A463E; } .ds-match-text { display: flex; flex-direction: column; gap: 2px; } .ds-match-title { font-weight: 700; font-size: 15px; } .ds-match-time { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-variant-numeric: tabular-nums; color: #4A463E; } @media (hover: hover) and (pointer: fine) { .ds-match:hover { border-color: #6B655A; } } .ds-match:active { transform: scale(0.98); } .ds-match:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
+      "css": ".ds-match { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid #D9D1C2; border-radius: 16px; background: #FBF8F2; color: #1B1A17; text-align: left; font-family: 'Figtree', sans-serif; cursor: pointer; transition: transform 120ms ease-out, border-color 160ms ease; } .ds-match-date { width: 52px; text-align: center; } .ds-match-date b { display: block; font-family: Anton, 'Arial Narrow', Impact, sans-serif; font-weight: 400; font-size: 30px; line-height: 0.95; font-variant-numeric: tabular-nums; font-synthesis: none; } .ds-match-date span { display: block; margin-top: 2px; font-family: 'Figtree', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.04em; color: #4A463E; } .ds-match-text { display: flex; flex-direction: column; gap: 2px; } .ds-match-title { font-weight: 700; font-size: 15px; } .ds-match-time { font-family: 'Figtree', sans-serif; font-size: 12px; font-variant-numeric: tabular-nums; color: #4A463E; } @media (hover: hover) and (pointer: fine) { .ds-match:hover { border-color: #6B655A; } } .ds-match:active { transform: scale(0.98); } .ds-match:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
     },
     {
       "name": "Invitationskort (blæk)",
@@ -111,7 +111,7 @@
       "refersTo": "card-ink",
       "description": "Omvendt kort til det vigtigste på Hjem: blæk med papirtekst og papirknapper.",
       "html": "<div class=\"ds-invite\"><div class=\"ds-invite-title\">Mads inviterer dig til 2v2 torsdag</div><div class=\"ds-invite-sub\">Padelhuset · bane 3</div><div class=\"ds-invite-actions\"><button class=\"ds-invite-yes\">Ja tak</button><button class=\"ds-invite-no\">Nej tak</button></div></div>",
-      "css": ".ds-invite { padding: 14px; border-radius: 16px; background: #1B1A17; color: #F3EEE4; font-family: 'Instrument Sans', sans-serif; } .ds-invite-title { font-weight: 600; font-size: 14px; line-height: 1.35; } .ds-invite-sub { margin-top: 2px; font-size: 12.5px; opacity: 0.75; } .ds-invite-actions { display: flex; gap: 8px; margin-top: 12px; } .ds-invite-yes, .ds-invite-no { flex: 1; min-height: 44px; border-radius: 12px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 120ms ease-out; } .ds-invite-yes { border: 0; background: #F3EEE4; color: #1B1A17; } .ds-invite-no { border: 1.5px solid rgba(243, 238, 228, 0.45); background: transparent; color: #F3EEE4; } .ds-invite-yes:active, .ds-invite-no:active { transform: scale(0.97); } .ds-invite-yes:focus-visible, .ds-invite-no:focus-visible { outline: 2px solid #E8836B; outline-offset: 2px; }"
+      "css": ".ds-invite { padding: 14px; border-radius: 16px; background: #1B1A17; color: #F3EEE4; font-family: 'Figtree', sans-serif; } .ds-invite-title { font-weight: 600; font-size: 14px; line-height: 1.35; } .ds-invite-sub { margin-top: 2px; font-size: 12.5px; opacity: 0.75; } .ds-invite-actions { display: flex; gap: 8px; margin-top: 12px; } .ds-invite-yes, .ds-invite-no { flex: 1; min-height: 44px; border-radius: 12px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 120ms ease-out; } .ds-invite-yes { border: 0; background: #F3EEE4; color: #1B1A17; } .ds-invite-no { border: 1.5px solid rgba(243, 238, 228, 0.45); background: transparent; color: #F3EEE4; } .ds-invite-yes:active, .ds-invite-no:active { transform: scale(0.97); } .ds-invite-yes:focus-visible, .ds-invite-no:focus-visible { outline: 2px solid #E8836B; outline-offset: 2px; }"
     },
     {
       "name": "Tekstfelt",
@@ -119,7 +119,7 @@
       "refersTo": "input",
       "description": "Papirfelt med hårlinje; fokus giver lerkant og lerring.",
       "html": "<label class=\"ds-field\"><span class=\"ds-label\">Bane</span><input class=\"ds-input\" placeholder=\"Fx Padelhuset Aarhus\" /></label>",
-      "css": ".ds-field { display: block; font-family: 'Instrument Sans', sans-serif; } .ds-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: #4A463E; } .ds-input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #D9D1C2; border-radius: 10px; background: #FBF8F2; color: #1B1A17; font: inherit; font-size: 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: #6B655A; opacity: 1; } .ds-input:focus-visible { border-color: #A8432D; box-shadow: 0 0 0 3px rgba(192, 80, 58, 0.35); }"
+      "css": ".ds-field { display: block; font-family: 'Figtree', sans-serif; } .ds-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: #4A463E; } .ds-input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #D9D1C2; border-radius: 10px; background: #FBF8F2; color: #1B1A17; font: inherit; font-size: 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: #6B655A; opacity: 1; } .ds-input:focus-visible { border-color: #A8432D; box-shadow: 0 0 0 3px rgba(192, 80, 58, 0.35); }"
     },
     {
       "name": "Liste med rækker",
@@ -127,7 +127,7 @@
       "refersTo": "card",
       "description": "Grupper på Mere og åbne kampe på Hjem: blæk-linje øverst, hårlinjer mellem 52px rækker.",
       "html": "<ul class=\"ds-list\"><li><button class=\"ds-row\"><span>Notifikationer</span><span class=\"ds-row-value\">TIL</span></button></li><li><button class=\"ds-row\"><span>Mørk tilstand</span><span class=\"ds-row-value\">FRA</span></button></li></ul>",
-      "css": ".ds-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid #1B1A17; font-family: 'Instrument Sans', sans-serif; } .ds-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 0 2px; border: 0; border-bottom: 1px solid #D9D1C2; background: transparent; color: #1B1A17; font: inherit; font-weight: 600; font-size: 15px; text-align: left; cursor: pointer; transition: background-color 160ms ease; } .ds-row-value { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; color: #6B655A; } @media (hover: hover) and (pointer: fine) { .ds-row:hover { background: #F7F2E9; } } .ds-row:active { background: #EAE3D6; } .ds-row:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
+      "css": ".ds-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid #1B1A17; font-family: 'Figtree', sans-serif; } .ds-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 0 2px; border: 0; border-bottom: 1px solid #D9D1C2; background: transparent; color: #1B1A17; font: inherit; font-weight: 600; font-size: 15px; text-align: left; cursor: pointer; transition: background-color 160ms ease; } .ds-row-value { font-family: 'Figtree', sans-serif; font-size: 12px; font-weight: 500; color: #6B655A; } @media (hover: hover) and (pointer: fine) { .ds-row:hover { background: #F7F2E9; } } .ds-row:active { background: #EAE3D6; } .ds-row:focus-visible { outline: 2px solid #A8432D; outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -136,7 +136,7 @@
     "keyCharacteristics": [
       "Papir, blæk og ler i stedet for navy; én klar handlingsfarve.",
       "Anton-versaler til det, man skal se på afstand: offentlige overskrifter, store tal, navne.",
-      "IBM Plex Mono kun til data: tider, antal, niveauer, sidetal.",
+      "Figtree med faste cifferbredder til data: tider, antal, niveauer, sidetal (ingen maskinskrift).",
       "Rækker med hårfine linjer frem for kort i kort.",
       "Lys og mørk tilstand via `[data-theme=\"dark\"]`; forsiden er altid mørk."
     ],
@@ -145,13 +145,13 @@
       { "name": "Reglen om ingen hex i JSX", "body": "Farver i JSX/TSX skrives som `var(--pm-*)` eller `theme.*`. `scripts/check-ui-hex.mjs` fejler bygget (`STRICT=1`); eneste undtagelse er steder uden CSS-variabler (Leaflet, brand-SVG) med en begrundet `// ui-hex-allow`.", "section": "colors" },
       { "name": "Reglen om rød til fejl", "body": "Tællere og ulæst-mærker er ler. Rød (`danger`) er forbeholdt fejl og advarsler.", "section": "colors" },
       { "name": "Anton-reglen", "body": "Anton findes i én vægt (400) og sættes altid med versaler og `font-synthesis: none`. Den bruges kun til offentlige overskrifter (under `.pm-brand`), store tal og navne; aldrig til brødtekst, knapper eller almindelige app-overskrifter.", "section": "typography" },
-      { "name": "Mono-reglen", "body": "IBM Plex Mono er kun til data. Hvis teksten ikke er et tal, en tid eller et niveau, er den Instrument Sans.", "section": "typography" },
+      { "name": "Tal-reglen", "body": "Tider, antal og niveauer bruger --pm-font-data (Figtree med faste cifferbredder), så tal står under hinanden. Ingen maskinskrift.", "section": "typography" },
       { "name": "Reglen om ingen løft", "body": "Hover ændrer farve eller kant, aldrig position: ingen `translateY` ved hover. Tryk giver en lille skalering (0.94–0.98) på 120ms.", "section": "elevation" }
     ],
     "dos": [
       "Do brug `--pm-accent-solid` bag hvid tekst og `--pm-accent` til tekst og links.",
       "Do sæt Anton med versaler, vægt 400 og `font-synthesis: none`, kun til offentlige overskrifter, store tal og navne.",
-      "Do brug IBM Plex Mono med faste cifferbredder til tider, antal og niveauer.",
+      "Do brug --pm-font-data (faste cifferbredder) til tider, antal og niveauer.",
       "Do læg al hover i `@media (hover: hover) and (pointer: fine)` og giv tryk en `:active`-skalering.",
       "Do gør alle trykflader mindst 44px (`--pm-control-h`, `.pm-hit-44`).",
       "Do stop animationer og overgange under `prefers-reduced-motion: reduce`.",

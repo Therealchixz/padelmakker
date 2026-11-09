@@ -90,7 +90,7 @@ export function ChatInbox({
                 <div className="pm-chat-v2-inbox-row-main" style={{ flex: 1, minWidth: 0 }}>
                   <div className="pm-chat-v2-inbox-row-top">
                     <span className="pm-chat-v2-inbox-row-name" style={{ fontSize: 14, fontWeight: 600 }}>{item.title}</span>
-                    <span className={`pm-chat-v2-inbox-row-time${unread > 0 ? ' pm-chat-v2-inbox-row-time--unread' : ''}`} style={{ fontSize: 10.5 }}>
+                    <span className={`pm-chat-v2-inbox-row-time${unread > 0 ? ' pm-chat-v2-inbox-row-time--unread' : ''}`} style={{ fontSize: 11 }}>
                       {formatInboxTime(item.time)}
                     </span>
                   </div>

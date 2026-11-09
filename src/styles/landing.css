@@ -70,7 +70,7 @@ html:has(.pm-lp) body {
 }
 
 .pm-lp-mono {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
   font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -272,7 +272,8 @@ html:has(.pm-lp) body {
 /* Gul med prik kun naar tallet er rigtigt og aktuelt. */
 .pm-lp-live.is-live {
   color: var(--lp-ball);
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;

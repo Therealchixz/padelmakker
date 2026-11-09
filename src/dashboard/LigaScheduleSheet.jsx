@@ -130,7 +130,7 @@ export function LigaScheduleSheet({
       .sort((a, b) => a - b)
       .map((d) => (
         <div key={d} style={{ marginBottom: 6 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--pm-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '2px 0 6px' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--pm-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '2px 0 6px' }}>
             Division {d}
           </div>
           {byDiv[d].map(renderMatch)}

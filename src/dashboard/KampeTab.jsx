@@ -2642,7 +2642,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     }
     if (joined && withinWindow) {
       return (
-        <p style={{ fontSize: 11.5, color: theme.textLight, textAlign: 'center', margin: '4px 0', lineHeight: 1.45 }}>
+        <p style={{ fontSize: 12, color: theme.textLight, textAlign: 'center', margin: '4px 0', lineHeight: 1.45 }}>
           Er resultatet forkert? Kontakt opretteren, som kan rette det inden for tidsfristen.
         </p>
       );

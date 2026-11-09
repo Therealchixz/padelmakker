@@ -338,7 +338,7 @@ export function NotifikationerPage({ onBack }) {
                   </div>
                 )}
                 {isClickable && !isResultPending && (
-                  <div style={{ fontSize: 10.5, color: theme.accent, marginTop: 6, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: theme.accent, marginTop: 6, fontWeight: 600 }}>
                     {kampeTarget
                       ? kampeFocusFooterLabel(kampeTarget.format, n.type)
                       : clickTarget.kind === 'proposal-popup'
@@ -347,12 +347,12 @@ export function NotifikationerPage({ onBack }) {
                   </div>
                 )}
                 {isExpired && (
-                  <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
                     Udløbet
                   </div>
                 )}
                 {canMarkReadOnly && (
-                  <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
                     Tryk for at markere som læst
                   </div>
                 )}

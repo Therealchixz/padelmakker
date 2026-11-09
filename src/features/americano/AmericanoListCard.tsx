@@ -126,20 +126,20 @@ export function AmericanoListCard({
     >
       {/* Smalt format-bånd — beholder Americano-identiteten uden at koste et helt hero-felt */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '8px 14px' }}>
-        <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+        <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
           {formatLabel}
         </span>
-        <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
+        <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
           {levelLabel(tournament)}
         </span>
         {isPlaying ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(220,38,38,0.9)', color: 'var(--pm-on-accent)', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', marginLeft: 'auto' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(220,38,38,0.9)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', marginLeft: 'auto' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pm-on-accent)' }} />
             LIVE
           </span>
         ) : null}
         {isCompleted ? (
-          <span style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--pm-on-accent)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)', marginLeft: 'auto' }}>
+          <span style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)', marginLeft: 'auto' }}>
             Afsluttet
           </span>
         ) : null}

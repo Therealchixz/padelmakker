@@ -119,7 +119,7 @@ export function LoginPage() {
                   />
                 </div>
               )}
-              <div role="alert">{err && <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
+              <div role="alert">{err && <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
               <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
               </button>
@@ -167,14 +167,14 @@ export function LoginPage() {
               />
             </div>
           )}
-          <div role="alert">{err && <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
+          <div role="alert">{err && <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
           <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
             {submitting ? "Logger ind..." : "Log ind"}
           </button>
         </form>
         <AuthDivider />
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
-        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12.5px", color: theme.textMid }}>
+        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "13px", color: theme.textMid }}>
           Ny her?{" "}
           <Link to={signupUrl} style={{ color: theme.accent, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: "44px", padding: "0 4px" }}>
             Opret en profil

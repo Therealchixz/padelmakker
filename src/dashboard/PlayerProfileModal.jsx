@@ -567,7 +567,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: '12.5px', fontWeight: 600, color: theme.text }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: theme.text }}>
                 I har spillet {sharedHistory.count} kamp{sharedHistory.count !== 1 ? 'e' : ''} sammen
               </div>
               {sharedHistory.wins > 0 && (

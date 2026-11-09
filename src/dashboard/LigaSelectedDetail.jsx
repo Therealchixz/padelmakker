@@ -227,8 +227,8 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
       >
         <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.surfaceMuted, border: '1px solid ' + theme.border, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-          <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 1 }}>{partnerMetaLine(p)}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+          <div style={{ fontSize: 12, color: theme.textLight, marginTop: 1 }}>{partnerMetaLine(p)}</div>
         </div>
         {isSel ? <Check size={18} color={theme.accent} strokeWidth={2.5} /> : null}
       </button>
@@ -254,7 +254,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
       </div>
       {query.length < 2 && suggested.length > 0 ? (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Foreslåede makkere</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Foreslåede makkere</div>
           {suggested.map((p) => <PartnerRow key={p.id} p={p} />)}
         </div>
       ) : null}

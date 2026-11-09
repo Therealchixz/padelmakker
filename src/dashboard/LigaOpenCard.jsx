@@ -286,7 +286,7 @@ export function LigaOpenCard({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
-                <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

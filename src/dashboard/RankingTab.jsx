@@ -657,13 +657,13 @@ export function RankingTab({ user }) {
         {/* ELO stod før både her og i det store tal nedenunder (podiet vises kun
             for "Alle tider", hvor score er ELO), og "Niveau" brød over to linjer. */}
         {p.level ? (
-          <span style={{ display: 'block', fontSize: 10.5, color: 'var(--pm-hero-subtitle)', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'block', fontSize: 11, color: 'var(--pm-hero-subtitle)', whiteSpace: 'nowrap' }}>
             Niveau {formatPlaytomicLevel(p.level)}
           </span>
         ) : null}
         <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)', whiteSpace: 'nowrap' }}>
           {p.score}
-          <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--pm-hero-subtitle)' }}> ELO</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--pm-hero-subtitle)' }}> ELO</span>
         </div>
         <div style={{
           width: 22, height: 22, borderRadius: '50%',
@@ -962,7 +962,7 @@ export function RankingTab({ user }) {
                       style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}`, flexShrink: 0 }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
                         {p.full_name || p.name}{me ? ' (dig)' : ''}
                       </div>
                       <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
@@ -1035,7 +1035,7 @@ export function RankingTab({ user }) {
             style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}`, flexShrink: 0 }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
               Dig
             </div>
             <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
@@ -1049,7 +1049,7 @@ export function RankingTab({ user }) {
               {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
             </div>
             {rankChange !== 0 && (
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.loss, marginTop: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.loss, marginTop: 1 }}>
                 {rankChange > 0 ? <><TrendingUp size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {rankChange} pladser</> : <><TrendingDown size={13} aria-hidden style={{ verticalAlign: '-2px' }} /> {Math.abs(rankChange)} pladser</>}
               </div>
             )}

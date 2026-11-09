@@ -46,7 +46,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
     background: 'transparent',
     color: theme.accent,
     fontWeight: 600,
-    fontSize: 12.5,
+    fontSize: 13,
     cursor: 'pointer',
     padding: '4px 0',
     fontFamily: font,
@@ -55,7 +55,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
   return (
     <div style={box} role="group" aria-label="Find dit niveau">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: theme.textLight }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: theme.textLight }}>
           {done ? 'Dit forslag' : `Spørgsmål ${index + 1} af ${LEVEL_QUIZ.length}`}
         </span>
         <button type="button" onClick={onClose} style={linkBtn}>Luk</button>
@@ -97,7 +97,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
           <div style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 14, padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: 13, opacity: 0.85 }}>Vores bud på dit niveau</div>
             <div style={{ fontSize: 30, fontWeight: 800, margin: '2px 0' }}>ca. {formatPlaytomicLevel(suggestion)}</div>
-            <div style={{ fontSize: 12.5, opacity: 0.85 }}>
+            <div style={{ fontSize: 13, opacity: 0.85 }}>
               Det er kun et forslag, og vi runder lidt ned – de fleste gætter for højt. Ved du, hvad du spiller på, så skriv det selv.
             </div>
           </div>

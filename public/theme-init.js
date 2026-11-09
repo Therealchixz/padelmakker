@@ -10,7 +10,7 @@ try {
   // Ignore storage errors in private/incognito contexts.
 }
 
-// Skrifttyperne (Instrument Sans, Anton, IBM Plex Mono): index.html forhånds-henter den som "preload". Før blev den
+// Skrifttyperne (Figtree og Anton): index.html forhånds-henter den som "preload". Før blev den
 // gjort til et stylesheet med onload="..." direkte i HTML'en, men sidens
 // sikkerhedsregel (CSP) forbyder kode i HTML-attributter, så Inter blev aldrig
 // brugt, og alle så systemskriften (QA 14. okt. 2026). Her, i en fil, er det tilladt.

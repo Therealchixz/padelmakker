@@ -936,7 +936,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
   };
 
   const activitySubtitleStyle = {
-    fontSize: "11.5px",
+    fontSize: "12px",
     color: theme.textMid,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -1330,7 +1330,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
           <h2 className="pm-home-h">Dine kommende</h2>
           {!upcomingLoading && upcomingItems.length > 0 && (
-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           )}
         </div>
         {upcomingLoadError ? (
@@ -1368,7 +1368,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 <CalendarPlus size={20} aria-hidden />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text }}>Ingen kommende kampe</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text }}>Ingen kommende kampe</div>
                 <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>Meld dig på en åben kamp, eller opret din egen.</div>
               </div>
               <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
@@ -1388,7 +1388,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 {it.badge.bottom ? <span className="pm-home-up-badge-bottom">{it.badge.bottom}</span> : null}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
                 <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
               </div>
               {it.statusLabel ? (
