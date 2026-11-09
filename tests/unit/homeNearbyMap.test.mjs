@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../../src/lib/homeNearbyMap.js';
+import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../../src/lib/homeNearbyMap.js';
 
 const me = { latitude: 57.048, longitude: 9.919 }; // Aalborg
 const venues = [
@@ -72,4 +72,17 @@ test('kortet kan vise alle landets centre (maxKm og limit uden graense), stadig 
   assert.deepEqual(buildNearbyVenues(venues, me, []).map((v) => v.id), ['a']);
   const all = buildNearbyVenues(venues, me, [], { maxKm: Infinity, limit: Infinity });
   assert.deepEqual(all.map((v) => v.id), ['a', 'b', 'c']);
+});
+
+test('eksempel-kampe: 3 naermeste praecise centre, et langt vaek og een uden bane, alle maerket demo', () => {
+  const list = [
+    { title: 'A', km: 1 }, { title: 'Ca', km: 1.5, approx: true }, { title: 'B', km: 4 },
+    { title: 'C', km: 9 }, { title: 'D', km: 40 }, { title: 'Fjern', km: 190 },
+  ];
+  const out = buildDemoMatches(list, new Date(2026, 10, 9));
+  const courts = [...new Set(out.map((m) => m.court))];
+  assert.deepEqual(courts, ['A', 'B', 'C', 'Fjern', 'Bane ikke valgt endnu']);
+  assert.ok(out.every((m) => m.demo === true && String(m.matchId).startsWith('demo-')));
+  assert.ok(out.every((m) => m.date > '2026-11-09'), 'kun kommende datoer');
+  assert.equal(new Set(out.map((m) => m.matchId)).size, out.length);
 });

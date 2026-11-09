@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BANER_VENUES } from '../lib/banerVenues';
 import { parseGeoCoords } from '../lib/geoDistance';
-import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';
+import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';
 
 /**
  * Kort paa Hjem (redesign v4, som prototypen): pinde med antal aabne kampe (ler) eller
@@ -17,6 +17,22 @@ import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeN
  */
 export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, onCreateMatch, onFindCourt }) {
   const me = useMemo(() => parseGeoCoords(user?.latitude, user?.longitude), [user?.latitude, user?.longitude]);
+  // Eksempel-visning (kun for den, der aabner Hjem med ?demo=kampe; slaas fra med ?demo=off).
+  // Kampene findes kun i browseren og maerkes "Eksempel".
+  const [demo] = useState(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('demo');
+      if (q === 'kampe') window.sessionStorage.setItem('pmDemoKampe', '1');
+      if (q === 'off') window.sessionStorage.removeItem('pmDemoKampe');
+      return window.sessionStorage.getItem('pmDemoKampe') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const demoMatches = useMemo(
+    () => (demo && me ? buildDemoMatches(buildNearbyVenues(BANER_VENUES, me, [], { maxKm: Infinity, limit: Infinity })) : []),
+    [demo, me],
+  );
   const venues = useMemo(() => buildNearbyVenues(BANER_VENUES, me, openMatches), [me, openMatches]);
   // Forsidens kampliste er kun de 5 nyeste. Kortet henter alle kommende aabne kampe selv
   // (falder tilbage til forsidens liste, hvis det fejler).
@@ -48,12 +64,12 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
   // Begge lister samlet (efter kamp-id), saa kortet aldrig viser faerre kampe end forsiden.
   const matchSource = useMemo(() => {
     const byId = new Map();
-    for (const m of [...(openMatches || []), ...(allOpenMatches || [])]) {
+    for (const m of [...(openMatches || []), ...(allOpenMatches || []), ...demoMatches]) {
       const id = String(m?.matchId ?? '');
       if (id && !byId.has(id)) byId.set(id, m);
     }
     return [...byId.values()];
-  }, [openMatches, allOpenMatches]);
+  }, [openMatches, allOpenMatches, demoMatches]);
   // Alle steder i landet med aabne kampe, naermeste foerst.
   const matchVenues = useMemo(
     () => buildNearbyVenues(BANER_VENUES, me, matchSource, { maxKm: Infinity, limit: Infinity })
@@ -66,7 +82,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     const placed = matchVenues.reduce((n, v) => n + v.matchCount, 0);
     return Math.max(0, (matchSource || []).length - placed);
   }, [matchVenues, matchSource]);
-  const [mode, setMode] = useState(() => (venues.some((v) => v.matchCount > 0) ? 'kampe' : 'baner'));
+  const [mode, setMode] = useState(() => (demo || venues.some((v) => v.matchCount > 0) ? 'kampe' : 'baner'));
   // Kampe: kun steder med aabne kampe. Baner: centrene i naerheden.
   const shown = mode === 'kampe' ? matchVenues : venues;
   const pinned = useMemo(() => shown.filter((v) => !v.approx), [shown]);
@@ -236,6 +252,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
             </button>
           </div>
           {placeName ? <div className="pm-home-map-place" aria-hidden="true">Kort · {placeName}</div> : null}
+          {demo && mode === 'kampe' ? <div className="pm-home-map-demo">Eksempel</div> : null}
         </div>
         {selected ? (
           <div className="pm-home-map-sel" aria-live="polite">

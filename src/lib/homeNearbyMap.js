@@ -97,3 +97,31 @@ export function nearbyVenueMeta(v, mode, now = new Date()) {
   parts.push(dist);
   return parts.join(' · ');
 }
+
+/**
+ * Eksempel-kampe til kortet (kun i eksempel-visningen ?demo=kampe; gemmes aldrig i databasen).
+ * Fordeler kampe paa de 3 naermeste centre med praecis placering og et center langt vaek,
+ * plus een kamp uden kendt bane.
+ * @param {Array<{ title: string, km: number, approx?: boolean }>} venuesByKm  centre med afstand (alle afstande)
+ * @param {Date} [now]
+ */
+export function buildDemoMatches(venuesByKm, now = new Date()) {
+  const precise = (venuesByKm || []).filter((v) => !v.approx).slice().sort((a, b) => a.km - b.km);
+  const picks = [...precise.slice(0, 3)];
+  const far = precise.find((v) => v.km > 80);
+  if (far) picks.push(far);
+  const day = (n) => {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const plan = [[1, 2], [1], [2, 3, 4], [2]];
+  const times = ['17:00', '18:30', '19:30', '20:00'];
+  const out = [];
+  picks.forEach((v, i) => {
+    (plan[i] || [1]).forEach((d, j) => {
+      out.push({ matchId: `demo-${i}-${j}`, court: v.title, date: day(d), time: times[(i + j) % times.length], demo: true });
+    });
+  });
+  out.push({ matchId: 'demo-unplaced', court: 'Bane ikke valgt endnu', date: day(3), time: '18:00', demo: true });
+  return out;
+}
