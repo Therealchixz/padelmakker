@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Gift, Trophy } from 'lucide-react';
-import { theme, font } from '../lib/platformTheme';
+import { Gift } from 'lucide-react';
+import { theme } from '../lib/platformTheme';
 import {
   fetchMyGrowthCampaignStatus,
   formatCampaignSpotsLabel,
@@ -182,38 +182,6 @@ export function GrowthCampaignBanner() {
   }
 
   return null;
-}
-
-export function MonthMasterTeaser({ compact = false }) {
-  return (
-    <div
-      style={{
-        margin: compact ? '0 18px 10px' : '0 18px 12px',
-        padding: compact ? '10px 12px' : '12px 14px',
-        borderRadius: compact ? 10 : 12,
-        background: compact ? theme.surfaceAlt : `linear-gradient(135deg, ${theme.surfaceAlt}, ${theme.surface})`,
-        border: `1px solid ${theme.border}`,
-        fontSize: compact ? 12 : 13,
-        lineHeight: 1.5,
-        color: theme.textMid,
-        fontFamily: font,
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 10,
-      }}
-    >
-      <Trophy
-        size={compact ? 16 : 18}
-        color={theme.amber}
-        style={{ flexShrink: 0, marginTop: 2 }}
-        aria-hidden
-      />
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <strong style={{ color: theme.text }}>Månedens mester</strong>
-        {' '}— kommer snart, når der er flere aktive spillere.
-      </span>
-    </div>
-  );
 }
 
 /** Hook til dashboard auto-enroll uden banner. */

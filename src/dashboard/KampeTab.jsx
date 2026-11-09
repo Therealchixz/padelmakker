@@ -52,7 +52,6 @@ import { useAdminPinSession } from '../lib/useAdminPinSession';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
 import {
   normalizeKampeListFilter,
-  kampeListFilterIsActive,
   getKampeListRegionLabel,
   getKampeListLevelBandLabel,
 } from '../lib/kampeListFilterCore';
@@ -91,7 +90,6 @@ import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import {
   KampeRedesignToolbar,
-  KampeActiveFilterChips,
   KampeCreateHeader,
 } from '../components/kampe/KampeRedesignToolbar';
 import { KampeFilterSheet } from '../components/kampe/KampeFilterSheet';
@@ -2356,11 +2354,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     { id: "open", label: "🔓 Åben kamp" },
     { id: "closed", label: "🔒 Lukket kamp" },
   ];
-  const onScopeChange = (nextScope) => {
+  // Soegningen bevares ved skift mellem "alle" og "kun mine": begge ligger nu i samme filterark.
+  const onScopeChange = useCallback((nextScope) => {
     setKampeScope(nextScope);
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
-    setSearchQuery("");
-  };
+  }, [user.id]);
   const onListFilterChange = useCallback((nextFilter) => {
     const normalized = normalizeKampeListFilter(nextFilter);
     setKampeListFilter(normalized);
@@ -3052,12 +3050,35 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   ];
   const currentPadelMatches =
     viewTab === "open" ? openMatches : viewTab === "active" ? activeMatches : completedMatches;
-  const filterActive =
-    kampeScope === "mine"
-    || kampeListFilterIsActive(kampeListFilter)
-    || (kampeFormat === "padel" && isProfileMatchFeedVisible(user));
+  // Antal aktive filtre paa Filter-knappen: soegning, "kun mine" og listefiltrene for det valgte format.
+  const trimmedSearch = searchQuery.trim();
+  const filterCount =
+    (trimmedSearch ? 1 : 0)
+    + (kampeScope === "mine" ? 1 : 0)
+    + (kampeListFilter.regionId ? 1 : 0)
+    + (kampeFormat === "padel"
+      ? (kampeListFilter.eloBandId ? 1 : 0)
+        + (kampeListFilter.onlyOpen ? 1 : 0)
+        + (kampeListFilter.onlyBooked ? 1 : 0)
+        + (Array.isArray(kampeListFilter.facilities) ? kampeListFilter.facilities.length : 0)
+      : 0);
   const activeFilterChips = useMemo(() => {
     const chips = [];
+    if (trimmedSearch) {
+      chips.push({
+        id: "search",
+        label: `“${trimmedSearch.length > 18 ? `${trimmedSearch.slice(0, 17)}…` : trimmedSearch}” ×`,
+        ariaLabel: `Fjern søgningen ${trimmedSearch}`,
+        onClick: () => setSearchQuery(""),
+      });
+    }
+    if (kampeScope === "mine") {
+      chips.push({
+        id: "scope",
+        label: "Kun mine ×",
+        onClick: () => onScopeChange("alle"),
+      });
+    }
     if (kampeListFilter.regionId) {
       chips.push({
         id: "region",
@@ -3093,7 +3114,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
     }
     return chips;
-  }, [kampeFormat, user, kampeListFilter, myLevel, onListFilterChange]);
+  }, [kampeFormat, user, kampeListFilter, myLevel, onListFilterChange, trimmedSearch, kampeScope, onScopeChange]);
   const showCreatePanel =
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||
@@ -3168,16 +3189,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
               setFilterSheetOpen(false);
               if (isOnKampeDetailPage) navigate(buildKampeListPath(nextFormat));
             }}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder={searchPlaceholder}
             onFilterOpen={() => setFilterSheetOpen(true)}
-            filterActive={filterActive}
+            filterCount={filterCount}
+            filterChips={activeFilterChips}
             onCreate={handleToolbarCreate}
             createLabel={toolbarCreateLabel}
           />
-
-          <KampeActiveFilterChips chips={activeFilterChips} />
 
           {kampeFormat === 'padel' && (
             <>
@@ -3219,6 +3236,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         showRegionFilter
         showEloFilter={kampeFormat === "padel"}
         facilityOptions={availableFacilities}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={searchPlaceholder}
       />
 
       {detailMatchId && !detailMatch ? (

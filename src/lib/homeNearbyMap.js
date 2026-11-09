@@ -11,7 +11,7 @@ function normalizeVenueName(text) {
 }
 
 /**
- * Centre taet paa spilleren til kortet paa Hjem, med antal aabne kampe pr. center.
+ * Centre taet paa spilleren til kortet paa Hjem, naermeste foerst, med antal aabne kampe pr. center.
  * Kampe kobles til et center via banens navn (samme navn som i bane-oversigten).
  *
  * @param {Array<{ id: string, title: string, address?: string, latitude?: number, longitude?: number }>} venues
@@ -57,7 +57,9 @@ export function buildNearbyVenues(venues, me, openMatches = [], opts = {}) {
       nextMatch: nextByTitle.get(key) || null,
     });
   }
-  rows.sort((a, b) => (b.matchCount > 0) - (a.matchCount > 0) || a.km - b.km);
+  // Rent efter afstand: "12 km" maa aldrig staa foer "6 km". Kampe-visningen paa kortet
+  // filtrerer selv til steder med aabne kampe (og er dermed ogsaa naermeste foerst).
+  rows.sort((a, b) => a.km - b.km);
   return rows.slice(0, limit);
 }
 

@@ -279,10 +279,44 @@
   border-top: 1.5px solid var(--pm-text);
 }
 
+/* Hele raekken kan trykkes: knappen (44x44, pil eller taleboble) strakt over raekken med ::after.
+   Ingen sorte knapper i feedet; lerknapperne er det eneste, der staar frem. */
+.pm-home-feed-row { position: relative; background: transparent; }
+.pm-home-feed-row.is-tappable { cursor: pointer; transition: background-color 160ms ease; }
+.pm-home-feed-row.is-tappable:active { background: var(--pm-surface-alt); }
+.pm-home-feed-name { position: relative; z-index: 1; }
+.pm-home-feed-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 44px;
+  height: 44px;
+  margin-right: -4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pm-text-light);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pm-home-feed-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.pm-home-feed-open:focus-visible { outline: none; }
+.pm-home-feed-open:focus-visible::after {
+  outline: 2px solid var(--pm-accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .pm-home-up:hover,
   .pm-home-tile:hover { border-color: var(--pm-text-light); }
   .pm-home-open-row:hover { background: var(--pm-surface-alt); }
+  .pm-home-feed-row.is-tappable:hover { background: var(--pm-surface-alt); }
+  .pm-home-feed-row.is-tappable:hover .pm-home-feed-open { color: var(--pm-text); }
   .pm-home-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 
@@ -290,7 +324,8 @@
   .pm-home-up,
   .pm-home-tile,
   .pm-home-invite-primary,
-  .pm-home-invite-secondary { transition: none; }
+  .pm-home-invite-secondary,
+  .pm-home-feed-row { transition: none; }
 }
 
 /* ── Kort: i naerheden (som prototypen) ── */

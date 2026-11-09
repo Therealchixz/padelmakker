@@ -39,7 +39,7 @@ import {
   isMatchFilterActive,
   countOpenMatchesMatchingFilter,
 } from '../lib/matchSearchFilterUtils';
-import { GrowthCampaignBanner, MonthMasterTeaser } from '../components/GrowthCampaignBanner';
+import { GrowthCampaignBanner } from '../components/GrowthCampaignBanner';
 
 const HOME_FEED_CACHE_BY_USER = new Map();
 
@@ -876,7 +876,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     border: "none",
     borderBottom: "1px solid " + theme.border,
     boxShadow: "none",
-    background: "transparent",
+    // Baggrund styres af .pm-home-feed-row (hover/tryk).
   };
 
   // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
@@ -969,8 +969,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
   };
 
   const activityRightRailStyle = {
-    minWidth: "70px",
     display: "flex",
+    gap: "2px",
     justifyContent: "flex-end",
     alignItems: "center",
     flexShrink: 0,
@@ -1006,10 +1006,12 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     meta,
     title,
     subtitle,
-    action,
+    open,
     stat,
   }) => (
-    <div key={key} style={activityCardStyle(isHighlight)}>
+    // Hele raekken kan trykkes (knappens ::after daekker raekken), saa kun lerknapperne staar frem.
+    // Navne inde i raekken ligger ovenpaa og aabner stadig spillerens profil.
+    <div key={key} className={open ? 'pm-home-feed-row is-tappable' : 'pm-home-feed-row'} style={activityCardStyle(isHighlight)}>
       <div style={activityLeadingSlotStyle}>{leading}</div>
       <div style={activityBodyStyle}>
         {(tag || meta) ? (
@@ -1022,12 +1024,12 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         {subtitle ? <div style={activitySubtitleStyle}>{subtitle}</div> : null}
       </div>
       <div style={activityRightRailStyle}>
-        {stat && action ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-            {stat}
-            {action}
-          </div>
-        ) : (action || stat || null)}
+        {stat || null}
+        {open ? (
+          <button type="button" className="pm-home-feed-open" aria-label={open.label} onClick={open.run}>
+            {open.icon === 'message' ? <MessageCircle size={18} aria-hidden /> : <ChevronRight size={18} aria-hidden />}
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -1196,8 +1198,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       />
       <EmailConfirmReminder user={authUser} />
 
+      {/* Kun rigtige kampagner. "Månedens mester" vises først, når den har rigtige data. */}
       <GrowthCampaignBanner />
-      <MonthMasterTeaser />
 
       {/* "Passede niveauet?" efter de første 1-3 kampe */}
       <LevelCheckCard user={user} showToast={showToast} />
@@ -1409,6 +1411,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             onSeeMatches={() => setTab('kampe')}
             onCreateMatch={() => setTab('kampe', { search: 'create=1' })}
             onFindCourt={(v) => setTab('baner', { search: `venue=${encodeURIComponent(v.id)}` })}
+            onSeeAllCourts={() => setTab('baner')}
           />
         </Suspense>
       ) : null}
@@ -1633,7 +1636,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   meta: formatTimeAgo(row.created_at),
                   title: (
                     <>
-                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt en {formatLabel}
+                      <span className="pm-home-feed-name" onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt en {formatLabel}
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
@@ -1642,7 +1645,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                       {winnerEloChange > 0 ? '+' : ''}{winnerEloChange} ELO
                     </span>
                   ) : undefined,
-                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Detaljer</button>,
+                  open: { label: `Se resultatet: ${row.name} vandt en ${formatLabel}`, run: () => setViewTournament(row) },
                 });
               }
 
@@ -1662,7 +1665,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
                   subtitle: row.leagueName ? `"${row.leagueName}"` : null,
-                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Detaljer</button>,
+                  open: { label: `Se stillingen: ${c.name} vandt ligaen`, run: () => setViewLeague(row) },
                 });
               }
 
@@ -1684,18 +1687,12 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   ),
                   tag: "2v2",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
+                  title: <><span className="pm-home-feed-name" style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
                   subtitle: subtitleParts.join(' · ') || 'Åben kamp',
-                  action: (
-                    <button
-                      onClick={() =>
-                        setViewMatch(openMatchViewPayload(row))
-                      }
-                      style={activityActionBtnStyle(theme.green)}
-                    >
-                      Detaljer
-                    </button>
-                  ),
+                  open: {
+                    label: `Se kampen: ${row.creatorName} søger spillere til 2v2${dateStr ? `, ${dateStr}` : ''}`,
+                    run: () => setViewMatch(openMatchViewPayload(row)),
+                  },
                 });
               }
 
@@ -1721,19 +1718,15 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
                   subtitle: subtitleParts.join(' · '),
-                  action: (
-                    <button
-                      onClick={() => {
-                        mergeKampeSessionPrefs(user.id, { format: 'americano', americanoView: 'open' });
-                        setTab('kampe', {
-                          search: `format=americano&focus=${encodeURIComponent(String(row.tournamentId))}`,
-                        });
-                      }}
-                      style={activityActionBtnStyle(theme.warm)}
-                    >
-                      Tilmeld
-                    </button>
-                  ),
+                  open: {
+                    label: `Se og tilmeld: ${row.name}`,
+                    run: () => {
+                      mergeKampeSessionPrefs(user.id, { format: 'americano', americanoView: 'open' });
+                      setTab('kampe', {
+                        search: `format=americano&focus=${encodeURIComponent(String(row.tournamentId))}`,
+                      });
+                    },
+                  },
                 });
               }
 
@@ -1750,7 +1743,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   ),
                   tag: "ELO",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
+                  title: <><span className="pm-home-feed-name" style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
                   subtitle: "Ny milepæl",
                   stat: <span style={activityStatPillStyle(theme.green)}>{row.milestone}+</span>,
                 });
@@ -1783,9 +1776,10 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   ),
                   tag: isMakker ? "Søger makker" : "Søger kamp",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
+                  title: <><span className="pm-home-feed-name" style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Besked</button>,
+                  // Samme genvej som foer (skriv direkte); taleboblen viser, at raekken aabner en besked.
+                  open: { label: `Skriv til ${row.name}`, run: writeToPlayer, icon: 'message' },
                 });
               }
 
@@ -1804,17 +1798,13 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
                   subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
-                  action: (
-                    <button
-                      onClick={() => {
-                        mergeKampeSessionPrefs(user.id, { format: 'liga' });
-                        setTab('kampe', { search: 'format=liga' });
-                      }}
-                      style={activityActionBtnStyle(theme.accent)}
-                    >
-                      {isReg ? 'Tilmeld' : 'Detaljer'}
-                    </button>
-                  ),
+                  open: {
+                    label: `${isReg ? 'Se og tilmeld' : 'Se ligaen'}: ${row.leagueName}`,
+                    run: () => {
+                      mergeKampeSessionPrefs(user.id, { format: 'liga' });
+                      setTab('kampe', { search: 'format=liga' });
+                    },
+                  },
                 });
               }
 
@@ -1834,25 +1824,20 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   ),
                   title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
                   subtitle: [row.score, row.court, formatTimeAgo(row.created_at)].filter(Boolean).join(' · '),
-                  action: (
-                    <button
-                      onClick={() =>
-                        setViewMatch({
-                          kind: "result",
-                          title: `${winnerNames} slog ${loserNames}`,
-                          createdAt: row.created_at,
-                          court: row.court,
-                          score: row.score,
-                          description: row.description,
-                          winners,
-                          losers,
-                        })
-                      }
-                      style={activityActionBtnStyle(theme.accent)}
-                    >
-                      Detaljer
-                    </button>
-                  ),
+                  open: {
+                    label: `Se kampen: ${winnerNames} slog ${loserNames}`,
+                    run: () =>
+                      setViewMatch({
+                        kind: "result",
+                        title: `${winnerNames} slog ${loserNames}`,
+                        createdAt: row.created_at,
+                        court: row.court,
+                        score: row.score,
+                        description: row.description,
+                        winners,
+                        losers,
+                      }),
+                  },
                 });
               }
               const name = row.profiles?.full_name || row.profiles?.name || "En spiller";

@@ -16,15 +16,16 @@ test('kortet viser kun centre i naerheden, uden dubletter og uden koordinatloese
   assert.deepEqual(rows.map((r) => r.id).sort(), ['a', 'b']);
 });
 
-test('centre med aabne kampe kommer foerst og taeller kampene via banens navn', () => {
+test('centrene sorteres rent efter afstand og taeller kampene via banens navn', () => {
   const rows = buildNearbyVenues(venues, me, [
     { matchId: 1, court: 'Padel Nord' },
     { matchId: 2, court: '  padel nord ' },
     { matchId: 3, court: 'Bane ikke valgt endnu' },
   ]);
-  assert.equal(rows[0].id, 'b');
-  assert.equal(rows[0].matchCount, 2);
-  assert.equal(rows[1].matchCount, 0);
+  // Skansen (under 1 km, ingen kampe) staar foer Padel Nord (3 km, 2 kampe).
+  assert.deepEqual(rows.map((r) => r.id), ['a', 'b']);
+  assert.equal(rows[0].matchCount, 0);
+  assert.equal(rows[1].matchCount, 2);
 });
 
 test('uden spillerens placering er der intet kort', () => {

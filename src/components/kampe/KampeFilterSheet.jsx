@@ -1,4 +1,5 @@
 import { useId, useMemo } from 'react';
+import { Search } from 'lucide-react';
 import {
   KAMPE_LIST_REGION_OPTIONS,
   KAMPE_LIST_ELO_BANDS,
@@ -43,6 +44,9 @@ export function KampeFilterSheet({
   showRegionFilter = true,
   showEloFilter = true,
   facilityOptions = [],
+  searchQuery = '',
+  onSearchChange = undefined,
+  searchPlaceholder = 'Søg',
 }) {
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -80,6 +84,7 @@ export function KampeFilterSheet({
     const def = defaultKampeListFilter();
     onListFilterChange?.(def);
     if (scope !== 'alle') onScopeChange?.('alle');
+    if (searchQuery) onSearchChange?.('');
   };
 
   if (!open) return null;
@@ -128,6 +133,25 @@ export function KampeFilterSheet({
             </button>
           </div>
         </div>
+
+        {onSearchChange ? (
+          <div className="pm-kampe-v2-sheet-section">
+            <label className="pm-kampe-v2-sheet-label" htmlFor="pm-kampe-filter-search">Søg</label>
+            <div className="pm-kampe-v2-search-wrap">
+              <Search size={16} className="pm-kampe-v2-search-icon" aria-hidden />
+              <input
+                id="pm-kampe-filter-search"
+                type="search"
+                enterKeyHint="search"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                placeholder={searchPlaceholder}
+                className="pm-kampe-v2-search-input pm-kampe-v4-sheet-search"
+              />
+            </div>
+          </div>
+        ) : null}
 
         <div className="pm-kampe-v2-sheet-section">
           <div className="pm-kampe-v2-sheet-label">Visning</div>

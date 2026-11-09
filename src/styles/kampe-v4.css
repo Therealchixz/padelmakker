@@ -60,6 +60,67 @@
   opacity: 0.65;
 }
 
+/* Filter-linjen: én knap (med antal aktive filtre) + chips for de aktive filtre.
+   Soegning og "Besked om nye kampe" ligger i filterarket. */
+.pm-kampe-v4 .pm-kampe-v4-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.pm-kampe-v4 .pm-kampe-v4-filterbar .pm-kampe-v2-active-chips { display: contents; }
+.pm-kampe-v4 .pm-kampe-v4-filter-btn {
+  width: auto;
+  height: 44px;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1.5px solid var(--pm-text);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pm-text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 120ms ease-out;
+}
+.pm-kampe-v4 .pm-kampe-v4-filter-btn:active { transform: scale(0.97); }
+.pm-kampe-v4 .pm-kampe-v4-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pm-accent-solid);
+  color: var(--pm-on-accent);
+  font-family: var(--pm-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pm-kampe-v4 .pm-kampe-v4-filterbar .pm-kampe-v2-active-chip {
+  min-height: 36px;
+  font-size: 13px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pm-kampe-v4 .pm-kampe-v4-filter-btn:hover { background: var(--pm-surface-alt); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-kampe-v4 .pm-kampe-v4-filter-btn { transition: none; }
+}
+
+/* Soegefeltet i filterarket: 16px, saa iPhone ikke zoomer ind */
+label.pm-kampe-v2-sheet-label { display: block; }
+.pm-kampe-v2-sheet .pm-kampe-v4-sheet-search {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+/* "Besked om nye kampe" i filterarket: uden ekstra luft under raekken */
+.pm-kampe-v2-sheet .pm-active-seeking-row--compact { margin-bottom: 0; }
+
 /* Kampkort: roligt papir, stor dato, tydelig hovedknap */
 .pm-kampe-v4-root .pm-kampe-v2-list-card {
   border-radius: 16px;

@@ -1,4 +1,4 @@
-import { Plus, Search, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
+import { Plus, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
 import '../../styles/kampe-v4.css';
 import { ScreenHeader } from '../ScreenHeader';
 
@@ -18,11 +18,9 @@ export function KampeRedesignToolbar({
   formatTabs,
   format,
   onFormatChange,
-  searchQuery,
-  onSearchChange,
-  searchPlaceholder,
   onFilterOpen,
-  filterActive = false,
+  filterCount = 0,
+  filterChips = [],
   onCreate,
   createLabel = 'Opret kamp',
   createBusy = false,
@@ -69,26 +67,23 @@ export function KampeRedesignToolbar({
         })}
       </div>
 
-      <div className="pm-kampe-v2-search-row">
-        <label className="pm-kampe-v2-search-wrap">
-          <Search size={16} className="pm-kampe-v2-search-icon" aria-hidden />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            className="pm-kampe-v2-search-input"
-          />
-        </label>
+      {/* Én indgang til søgning og filtre (begge ligger i filterarket).
+          Aktive filtre står som chips ved siden af, så man kan se og fjerne dem med ét tryk. */}
+      <div className="pm-kampe-v4-filterbar">
         <button
           type="button"
-          className={`pm-kampe-v2-filter-btn${filterActive ? ' pm-kampe-v2-filter-btn--active' : ''}`}
+          className="pm-kampe-v2-filter-btn pm-kampe-v4-filter-btn"
           onClick={onFilterOpen}
-          aria-label="Filtrer kampe"
+          aria-haspopup="dialog"
+          aria-label={filterCount > 0
+            ? `Filter og søgning, ${filterCount === 1 ? '1 aktivt filter' : `${filterCount} aktive filtre`}`
+            : 'Filter og søgning'}
         >
-          <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
+          <SlidersHorizontal size={17} strokeWidth={2} aria-hidden />
+          <span>Filter</span>
+          {filterCount > 0 ? <span className="pm-kampe-v4-filter-count" aria-hidden>{filterCount}</span> : null}
         </button>
+        <KampeActiveFilterChips chips={filterChips} />
       </div>
     </div>
   );
@@ -130,8 +125,9 @@ export function KampeActiveFilterChips({ chips }) {
         <button
           key={chip.id}
           type="button"
-          className={`pm-kampe-v2-active-chip${chip.tone ? ` pm-kampe-v2-active-chip--${chip.tone}` : ''}`}
+          className={`pm-kampe-v2-active-chip pm-hit-44${chip.tone ? ` pm-kampe-v2-active-chip--${chip.tone}` : ''}`}
           onClick={chip.onClick}
+          aria-label={chip.ariaLabel || undefined}
         >
           {chip.label}
         </button>
