@@ -733,16 +733,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_s_nderborg_rocket_padel_s_nderborg",
-    "title": "Rocket Padel Sønderborg",
-    "address": "Sønderborg — se booking-link",
-    "indoor": true,
-    "region": "Sydjylland",
-    "bookingUrl": "https://rocketpadel.dk/centre/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_varde_sig_tennis_og_padelklub",
     "title": "Sig Tennis og Padelklub",
     "address": "Varde — se booking-link",

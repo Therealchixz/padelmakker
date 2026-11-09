@@ -25,7 +25,6 @@ export const BANER_VENUE_COORDS_QUALITY = {
   "link_roskilde_gunds_lille_sg_if": { approx: true, reason: "town (kun byen fundet)" },
   "link_roskilde_himmelev_padel_klub": { approx: true, reason: "town (kun byen fundet)" },
   "link_s_nderborg_padel_club_s_nderborg": { approx: true, reason: "town (kun byen fundet)" },
-  "link_s_nderborg_rocket_padel_s_nderborg": { approx: true, reason: "town (kun byen fundet)" },
   "link_silkeborg_virklund_tennis_og_padelklub": { approx: true, reason: "town (kun byen fundet)" },
   "link_skanderborg_skanderborg_lawn_tennis_klub": { approx: true, reason: "town (kun byen fundet)" },
   "link_slagelse_racket": { approx: true, reason: "mismatch 218 km fra Slagelse", lat: 55.4061, lng: 11.3525 },

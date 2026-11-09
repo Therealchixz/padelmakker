@@ -224,9 +224,9 @@ function slugify(...parts) {
 
 /**
  * Centre i Padellife-oversigten, som ikke findes (endnu), og som derfor ikke skal vises.
- * Rocket Padel Nørresundby: kun planer (ejeren 9. nov. 2026); står ikke på rocketpadel.dk/centre.
+ * Rocket Padel Nørresundby og Sønderborg: kun planer (ejeren 9. nov. 2026); står ikke på rocketpadel.dk/centre.
  */
-const NOT_EXISTING_TITLES = new Set(['Rocket Padel Nørresundby']);
+const NOT_EXISTING_TITLES = new Set(['Rocket Padel Nørresundby', 'Rocket Padel Sønderborg']);
 
 /** Kendte booking-URL’er (Padellife linker ofte til marketing-site, ikke kalender). */
 const BOOKING_URL_OVERRIDES = {

@@ -1464,14 +1464,6 @@
     "label": "Tønder",
     "via": "town"
   },
-  "link_s_nderborg_rocket_padel_s_nderborg": {
-    "lat": 54.9089186,
-    "lng": 9.7897999,
-    "town": true,
-    "postcode": "6400",
-    "label": "Sønderborg",
-    "via": "town"
-  },
   "link_varde_sig_tennis_og_padelklub": {
     "lat": 55.6176702,
     "lng": 8.4811757,
