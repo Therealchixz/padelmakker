@@ -1,12 +1,11 @@
-import { Link } from 'react-router-dom';
 import { LegalPageLayout } from '../components/LegalPageLayout';
 import { theme } from '../lib/platformTheme';
 
 function Rule({ title, children }) {
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: 700, color: theme.text, margin: '0 0 8px', lineHeight: 1.35 }}>{title}</h2>
-      <div style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.65 }}>{children}</div>
+    <div style={{ marginTop: '28px' }}>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '0 0 8px', lineHeight: 1.35 }}>{title}</h2>
+      <div style={{ color: theme.textMid, lineHeight: 1.65 }}>{children}</div>
     </div>
   );
 }
@@ -59,11 +58,6 @@ export function CampaignRulesPage() {
         </p>
       </Rule>
 
-      <p style={{ margin: '28px 0 0', fontSize: '13px', color: theme.textLight }}>
-        <Link to="/" style={{ color: theme.accent, fontWeight: 600, textDecoration: 'none' }}>
-          ← Til forsiden
-        </Link>
-      </p>
     </LegalPageLayout>
   );
 }
