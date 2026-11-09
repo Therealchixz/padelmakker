@@ -51,6 +51,13 @@ function HeroPhoto({ eager = false }) {
   );
 }
 
+
+/** Teksten om praemien kommer fra databasen og mangler nogle gange punktum. */
+function withFinalPeriod(text) {
+  const t = String(text || '').trim();
+  return t && !/[.!?]$/.test(t) ? `${t}.` : t;
+}
+
 export function LandingPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -58,6 +65,8 @@ export function LandingPage() {
 
   const [publicStats, setPublicStats] = useState(null);
   const [campaign, setCampaign] = useState(null);
+  // Det rullende baand kan stoppes med et tryk (WCAG 2.2.2); det stopper ogsaa ved hover/fokus i CSS.
+  const [tickerPaused, setTickerPaused] = useState(false);
   const [events, setEvents] = useState([]);
   const [inviteNote, setInviteNote] = useState('');
   const [storyStep, setStoryStep] = useState(0);
@@ -220,14 +229,17 @@ export function LandingPage() {
 
         <nav className="pm-lp-nav" aria-label="Hovedmenu">
           <div className="pm-lp-inner">
-            <Link to="/" aria-label="PadelMakker forsiden">
-              <img
-                className="pm-lp-nav-logo"
-                src="/logo-brand-dark.png"
-                width={320}
-                height={120}
-                alt="PadelMakker logo"
-              />
+            <Link to="/" aria-label="PadelMakker forsiden" className="pm-lp-nav-home">
+              <picture>
+                <source srcSet="/logo-brand-dark-nav.webp" type="image/webp" />
+                <img
+                  className="pm-lp-nav-logo"
+                  src="/logo-brand-dark.png"
+                  width={320}
+                  height={120}
+                  alt="PadelMakker logo"
+                />
+              </picture>
             </Link>
             <div className="pm-lp-nav-links">
               <Link className="pm-lp-nav-text" to="/events">Events</Link>
@@ -276,7 +288,20 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="pm-lp-ticker">
+        <div
+          className={'pm-lp-ticker' + (tickerPaused ? ' is-paused' : '')}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tickerPaused}
+          aria-label={tickerPaused ? 'Start det rullende bånd' : 'Stop det rullende bånd'}
+          onClick={() => setTickerPaused((p) => !p)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setTickerPaused((p) => !p);
+            }
+          }}
+        >
           <div className="pm-lp-ticker-track">
             {ticker.map((t) => <span key={t}>{t}</span>)}
             {ticker.map((t) => <span key={`dup-${t}`} aria-hidden="true">{t}</span>)}
@@ -398,7 +423,7 @@ export function LandingPage() {
                 <h2 id="pm-lp-close-title" className="pm-lp-display">Vær med fra start.</h2>
                 <p>
                   {spotsTaken} af {spotsTotal} pladser er taget blandt de første 200 med fuld profil.
-                  {campaign.prize_description ? ` ${String(campaign.prize_description).trim()}` : ''}
+                  {campaign.prize_description ? ` ${withFinalPeriod(campaign.prize_description)}` : ''}
                 </p>
                 <div
                   className="pm-lp-progress"

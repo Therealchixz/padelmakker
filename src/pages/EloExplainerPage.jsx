@@ -4,7 +4,7 @@ import { theme, displayFont } from '../lib/platformTheme';
 import { landingEloScoreExample as ex } from '../lib/landingEloExplainer';
 
 const strong = { color: theme.text };
-const h2 = { fontFamily: displayFont, fontSize: '19px', fontWeight: 700, color: theme.text, margin: '28px 0 10px' };
+const h2 = { fontFamily: displayFont, fontWeight: 'var(--pm-display-weight, 700)', letterSpacing: 'var(--pm-display-tracking)', textTransform: 'var(--pm-display-case)', fontSize: '22px', color: theme.text, margin: '28px 0 10px' };
 
 /**
  * ELO forklaret: først et eksempel og den korte version i almindeligt dansk,

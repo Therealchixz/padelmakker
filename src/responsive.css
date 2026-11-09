@@ -12057,8 +12057,9 @@ button,
 }
 .pm-legal-prose p,
 .pm-legal-prose li {
-  /* 60ch i Inter giver ca. 70-75 tegn pr. linje ("ch" er bredden af et 0, bredere end et gennemsnitsbogstav). */
-  max-width: 60ch;
+  /* Instrument Sans er smallere end Inter: 60ch gav ca. 90 tegn pr. linje (maalt 9. nov. 2026).
+     48ch giver ca. 70 tegn ("ch" er bredden af et 0, bredere end et gennemsnitsbogstav). */
+  max-width: 48ch;
   text-wrap: pretty; /* undgår et enkelt ord alene på sidste linje */
 }
 .pm-legal-prose h2,

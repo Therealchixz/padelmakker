@@ -42,7 +42,7 @@ export function LegalPageLayout({ title, children, showUpdated = true, showSignu
             marginBottom: '24px',
           }}
         >
-          <Link to="/" aria-label="PadelMakker forsiden" style={{ display: 'inline-flex' }}>
+          <Link to="/" aria-label="PadelMakker forsiden" style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px' }}>
             <picture>
               <source srcSet={dark ? '/logo-brand-dark-nav.webp' : '/logo-brand-nav.webp'} type="image/webp" />
               <img
@@ -62,6 +62,7 @@ export function LegalPageLayout({ title, children, showUpdated = true, showSignu
             {backLabel}
           </button>
         </div>
+        <main>
         <article
           style={{
             background: theme.surface,
@@ -117,6 +118,7 @@ export function LegalPageLayout({ title, children, showUpdated = true, showSignu
             </div>
           ) : null}
         </article>
+        </main>
         <PublicLegalFooter />
       </div>
     </div>

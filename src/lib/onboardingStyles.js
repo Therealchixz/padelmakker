@@ -126,8 +126,10 @@ export const circleBtn = {
 export const topbarTitle = {
   flex: 1,
   fontSize: 20,
-  fontWeight: 700,
-  letterSpacing: '-0.3px',
+  // Under .pm-brand: Anton, altid versaler (DESIGN.md). Uden .pm-brand: som foer.
+  fontWeight: 'var(--pm-display-weight, 700)',
+  letterSpacing: 'var(--pm-display-tracking, -0.3px)',
+  textTransform: 'var(--pm-display-case, none)',
   color: theme.text,
   margin: 0,
   // Brand-skriften (Bricolage) under .pm-brand; ellers Inter.
@@ -160,8 +162,9 @@ export const stepDot = (on) => ({
 /** Centreret skærm-intro: overskrift 18px/600/-0.3px + undertekst */
 export const screenHeading = {
   fontSize: 20,
-  fontWeight: 700,
-  letterSpacing: '-0.3px',
+  fontWeight: 'var(--pm-display-weight, 700)',
+  letterSpacing: 'var(--pm-display-tracking, -0.3px)',
+  textTransform: 'var(--pm-display-case, none)',
   color: theme.text,
   fontFamily: displayFont,
 };

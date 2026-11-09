@@ -77,7 +77,7 @@ export function PublicEventsPage() {
   };
 
   return (
-    <div
+    <main
       className="pm-root pm-brand"
       style={{
         fontFamily: font,
@@ -270,6 +270,6 @@ export function PublicEventsPage() {
 
         <PublicLegalFooter />
       </div>
-    </div>
+    </main>
   );
 }

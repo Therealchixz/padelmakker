@@ -1123,7 +1123,7 @@ export function OnboardingPage() {
   ];
 
   return (
-    <div
+    <main
       ref={onboardingTopRef}
       className="pm-root pm-brand"
       style={{
@@ -1238,7 +1238,6 @@ export function OnboardingPage() {
         </div>
         <PublicLegalFooter />
       </div>
-    </div>
+    </main>
   );
 }
-
