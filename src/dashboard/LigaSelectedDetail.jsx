@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Play, Plus, Search, Check, Trash2 } from 'lucide-react';
-import { eloToLevel, formatPlaytomicLevel } from '../lib/padelLevelUtils';
+import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -148,7 +148,8 @@ export function LigaMatchSystemRulesBox({ league, collapsible = true }) {
 }
 
 function partnerMetaLine(p) {
-  const lvl = formatPlaytomicLevel(eloToLevel(Number(p.elo_rating) || 1000));
+  // Spillerens valgte niveau (som resten af appen), ikke omregnet fra ELO.
+  const lvl = formatPlaytomicLevel(profilePlaytomicLevel(p));
   const games = Number(p.gamesTogether) || 0;
   return games > 0 ? `Niveau ${lvl} · spillet ${games} ${games === 1 ? 'kamp' : 'kampe'} sammen` : `Niveau ${lvl}`;
 }
@@ -179,7 +180,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
         (co || []).forEach((r) => { if (r.user_id) counts[r.user_id] = (counts[r.user_id] || 0) + 1; });
         const topIds = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
         if (topIds.length === 0) return;
-        const { data: profs } = await supabase.from('profiles').select('id, full_name, name, avatar, elo_rating').in('id', topIds);
+        const { data: profs } = await supabase.from('profiles').select('id, full_name, name, avatar, elo_rating, level').in('id', topIds);
         const byId = Object.fromEntries((profs || []).map((p) => [p.id, p]));
         const list = topIds.map((id) => ({ ...(byId[id] || { id }), gamesTogether: counts[id] })).filter((p) => p.full_name || p.name);
         if (!cancelled) setSuggested(list);
@@ -198,7 +199,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
       }
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, name, avatar, elo_rating')
+        .select('id, full_name, name, avatar, elo_rating, level')
         .or(orFilter)
         .neq('id', userId)
         .limit(6);

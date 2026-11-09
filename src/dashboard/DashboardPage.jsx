@@ -15,6 +15,7 @@ const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab }
 import { ShieldCheck } from 'lucide-react';
 import { MereTab } from './MereTab';
 import { SpilChooser } from '../components/SpilChooser';
+import { isOnOverlayHistoryEntry } from '../lib/useCloseOnBack';
 import '../styles/mere.css';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
@@ -681,7 +682,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const setTab = useCallback((tabId, opts = {}) => {
     const raw = opts.search != null ? String(opts.search) : "";
     const q = raw ? (raw.startsWith("?") ? raw : `?${raw}`) : "";
-    navigate(`/dashboard/${tabId}${q}`, opts.state != null ? { state: opts.state } : undefined);
+    // Vaelges noget i et aabent ark (fx Spil), erstatter vi arkets tilbage-skridt, saa tilbage ikke skal trykkes to gange.
+    const replace = opts.replace ?? isOnOverlayHistoryEntry();
+    navigate(`/dashboard/${tabId}${q}`, { ...(opts.state != null ? { state: opts.state } : {}), ...(replace ? { replace: true } : {}) });
   }, [navigate]);
 
   useEffect(() => {
@@ -1547,7 +1550,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${tab === "makker-filter" || tab === "kamp-filter" ? " pm-dash-main--filter" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}${hideMobileBottomNavForKampeCreate ? " pm-dash-main--kampe-create" : ""}`}>
+      <div role="main" className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${tab === "makker-filter" || tab === "kamp-filter" ? " pm-dash-main--filter" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}${hideMobileBottomNavForKampeCreate ? " pm-dash-main--kampe-create" : ""}`}>
         <Suspense
           fallback={
             <div

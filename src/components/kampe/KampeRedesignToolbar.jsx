@@ -77,6 +77,7 @@ export function KampeRedesignToolbar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             className="pm-kampe-v2-search-input"
           />
         </label>

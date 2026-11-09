@@ -164,7 +164,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <h2 className="pm-subpage-head-title">Filtre</h2>
+        <h1 className="pm-subpage-head-title">Filtre</h1>
         <button
           type="button"
           className="pm-subpage-head-action"

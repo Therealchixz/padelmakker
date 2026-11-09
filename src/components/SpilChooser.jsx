@@ -1,5 +1,6 @@
 import { ChevronRight, Swords, Shuffle, Trophy } from 'lucide-react';
 import { AppModal } from './AppModal';
+import { useCloseOnBack } from '../lib/useCloseOnBack';
 
 const OPTIONS = [
   {
@@ -32,6 +33,7 @@ const OPTIONS = [
  * Paa telefonen glider det op nedefra som et ark; paa computer er det en lille dialog.
  */
 export function SpilChooser({ open, onClose, onPick, asSheet = false, canCreateLiga = false }) {
+  useCloseOnBack(open, onClose, 'spil');
   return (
     <AppModal
       open={open}

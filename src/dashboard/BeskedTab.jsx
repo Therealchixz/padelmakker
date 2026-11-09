@@ -799,7 +799,9 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     setSelectedId(otherId);
     setSelectedTeamId(null);
     setTeamMeta(null);
-    navigate('/dashboard/beskeder', { replace: true });
+    // Samtalen er et skridt i historikken (uden ny adresse), saa telefonens tilbage lukker
+    // samtalen og viser indbakken i stedet for at springe til den forrige fane.
+    navigate('/dashboard/beskeder', { replace: Boolean(location.state?.pmThread), state: { pmThread: `dm:${otherId}` } });
     ensureProfile(otherId);
     setComposeOpen(false);
     setComposeQuery('');
@@ -809,7 +811,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const openTeamConversation = (teamId) => {
     setSelectedTeamId(teamId);
     setSelectedId(null);
-    navigate(`/dashboard/beskeder?hold=${teamId}`, { replace: true });
+    navigate(`/dashboard/beskeder?hold=${teamId}`, { replace: Boolean(location.state?.pmThread), state: { pmThread: `hold:${teamId}` } });
     setComposeOpen(false);
     setComposeQuery('');
     setComposeResults([]);
@@ -820,7 +822,9 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       setSelectedId(null);
       setSelectedTeamId(null);
       setTeamMeta(null);
-      navigate('/dashboard/beskeder', { replace: true });
+      // Aabnet herfra: gaa et skridt tilbage (samme som telefonens tilbage). Ellers (direkte link) erstat.
+      if (location.state?.pmThread) navigate(-1);
+      else navigate('/dashboard/beskeder', { replace: true });
     };
     if (isMobileView) {
       blurActiveMobileChatFocus();
@@ -831,6 +835,17 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     }
     finishClose();
   };
+
+  // Telefonens tilbage (eller browserens) fra en aabnet samtale: luk samtalen.
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (location.state?.pmThread || q.get('med') || q.get('hold')) return;
+    if (!selectedId && !selectedTeamId) return;
+    setSelectedId(null);
+    setSelectedTeamId(null);
+    setTeamMeta(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- kun naar historikken skifter
+  }, [location.key]);
 
   const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
 
@@ -1178,7 +1193,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     if (mobileChatActive) {
       return (
         <>
-          <MobileChatOverlay header={threadHeader} footer={threadFooter}>
+          <MobileChatOverlay header={threadHeader} footer={threadFooter} onClose={closeThread}>
             <div className="pm-chat-v2-thread pm-chat-v2-thread--mobile">
               {threadMessages}
             </div>

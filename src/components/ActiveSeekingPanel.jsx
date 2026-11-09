@@ -265,7 +265,7 @@ export function ActiveSeekingPanel({
               background: theme.surface,
             }}
           >
-            Juster
+            Justér
           </button>
         </div>
       );
@@ -363,7 +363,7 @@ export function ActiveSeekingPanel({
         {homeExpanded ? (
           <div className="pm-active-seeking-home-body">
             <p className="pm-active-seeking-home-intro">
-              Makker og kamp har hver sin switch — synlighed og notifikationer slås til sammen. Juster
+              Makker og kamp har hver sin switch — synlighed og notifikationer slås til sammen. Justér
               kriterier under Find makker og Kampe.
             </p>
             {channels.map(renderRow)}

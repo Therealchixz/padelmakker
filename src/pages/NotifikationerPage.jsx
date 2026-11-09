@@ -260,7 +260,7 @@ export function NotifikationerPage({ onBack }) {
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <h2 className="pm-subpage-head-title">Notifikationer</h2>
+        <h1 className="pm-subpage-head-title">Notifikationer</h1>
         <button
           type="button"
           className="pm-subpage-head-action pm-notifikationer-mark-all"

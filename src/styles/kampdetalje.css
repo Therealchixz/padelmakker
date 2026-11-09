@@ -60,7 +60,7 @@
 
 /* ── Foto-chips på hero (mockup .chip-photo) ── */
 .pm-kd-chip {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 4px 10px;
@@ -142,7 +142,7 @@
 
 .pm-kd-price small {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--pm-text-light);
   font-weight: 400;
   margin-top: 3px;
@@ -211,7 +211,7 @@
   flex-shrink: 0;
   padding: 1px 6px;
   border-radius: 999px;
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -275,7 +275,7 @@
 /* ── Holdlabel (mockup .team-label) ── */
 .pm-kd-team-label {
   margin: 14px 2px 8px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.2px;
   color: var(--pm-text-light);
@@ -379,7 +379,7 @@
   background: var(--pm-amber-bg);
   color: var(--pm-amber-text);
   border: 1px solid var(--pm-amber-border);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 5px;
@@ -427,7 +427,7 @@
 
 .pm-kd-slot--empty .pm-kd-empty-sub {
   display: block;
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--pm-kd-ghost-fg);
@@ -542,7 +542,7 @@
 }
 
 .pm-kd-slot-new-elo small {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   margin-left: 2px;
 }
@@ -716,7 +716,7 @@
 
 .pm-kd-stat .pm-kd-stat-sub {
   display: block;
-  font-size: 9.5px;
+  font-size: 11px;
   color: var(--pm-text-light);
   margin-top: 1px;
 }

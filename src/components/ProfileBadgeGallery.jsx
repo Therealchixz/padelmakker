@@ -303,7 +303,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
       <div style={{ marginTop: 4, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
           <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>
-            Badges
+            Mærker
           </h3>
           <button
             className="pm-hit-44"
@@ -382,7 +382,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
       <AppModal
         open={open}
         onClose={closeModal}
-        ariaLabel={`Badges for ${modeLabel}`}
+        ariaLabel={`Mærker for ${modeLabel}`}
         maxWidthPreset="sm"
         contentStyle={{ overflow: 'hidden', maxHeight: 'min(82vh, 720px)' }}
       >
@@ -390,7 +390,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: selectedBadge ? 10 : 14 }}>
             <div style={{ minWidth: 0 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.3px' }}>
-                Badges · {modeLabel}
+                Mærker · {modeLabel}
               </h2>
               <p style={{ margin: 0, fontSize: 12.5, color: theme.textMid, lineHeight: 1.45 }}>
                 {earnedCount} af {badges.length} opnået. Tryk på et badge for at læse mere.

@@ -117,7 +117,7 @@ export function ChatBubble({
             <span className="pm-chat-v2-bubble-read">· Læst</span>
           ) : null}
           {onReact && messageType === CHAT_MESSAGE_TYPES.TEXT ? (
-            <button type="button" className="pm-chat-v2-bubble-react-btn" onClick={() => setShowReactions((v) => !v)}>
+            <button type="button" className="pm-chat-v2-bubble-react-btn" aria-label="Reagér på beskeden" aria-expanded={showReactions} onClick={() => setShowReactions((v) => !v)}>
               +
             </button>
           ) : null}

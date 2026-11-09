@@ -125,7 +125,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <h2 className="pm-subpage-head-title">Kamp-filter</h2>
+        <h1 className="pm-subpage-head-title">Kamp-filter</h1>
       </div>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>

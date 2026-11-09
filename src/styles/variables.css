@@ -280,6 +280,11 @@ a:focus-visible {
    ::after tæller som klik på selve elementet. Virker ikke, hvis elementet
    selv eller en tæt forælder har overflow: hidden/auto. */
 .pm-hit-44,
+.pm-subpage-head-back,
+.pm-chat-v2-bubble-react-btn,
+.pm-chat-v2-input-emoji-btn,
+.pm-kd-slot-side--btn,
+.pm-home-link,
 .pm-kampe-v2-create--icon,
 .pm-kampe-v2-filter-btn,
 .pm-kampe-v2-format-pill,
@@ -290,6 +295,11 @@ a:focus-visible {
 }
 
 .pm-hit-44::after,
+.pm-subpage-head-back::after,
+.pm-chat-v2-bubble-react-btn::after,
+.pm-chat-v2-input-emoji-btn::after,
+.pm-kd-slot-side--btn::after,
+.pm-home-link::after,
 .pm-kampe-v2-create--icon::after,
 .pm-kampe-v2-filter-btn::after,
 .pm-kampe-v2-format-pill::after,
