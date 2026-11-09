@@ -17,8 +17,10 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
     textDecoration: 'none',
     display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'center',
     minHeight: '44px',
-    padding: '0 4px',
+    minWidth: '44px',
+    padding: '0 6px',
   }
   return (
     <footer

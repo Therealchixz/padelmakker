@@ -79,7 +79,7 @@ function PlayScreen() {
             <div key={m.t} className="pm-lp-phone-row">
               <span className="pm-lp-phone-big">{m.t}</span>
               <b>{m.c}</b>
-              <span className="pm-lp-mono" style={{ color: 'var(--pm-clay)' }}>{m.f}</span>
+              <span className="pm-lp-mono" style={{ color: 'var(--lp-green)' }}>{m.f}</span>
             </div>
           ))}
         </div>
@@ -131,7 +131,7 @@ export const LANDING_STORY_STEPS = [
   },
   {
     key: 'spil',
-    title: 'Tryk "Spil"',
+    title: 'Tryk på “Spil”',
     text: 'Vælg hvornår og hvor. Du ser kampe, der passer, eller opretter din egen.',
     Screen: PlayScreen,
   },

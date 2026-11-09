@@ -17,7 +17,7 @@ function Q({ title, children }) {
 function Group({ id, title, children }) {
   return (
     <section aria-labelledby={id} style={{ marginTop: '28px' }}>
-      <h2 id={id} style={{ fontFamily: displayFont, fontSize: '19px', fontWeight: 700, color: theme.text, margin: '0 0 6px' }}>
+      <h2 id={id} style={{ fontFamily: displayFont, fontWeight: 'var(--pm-display-weight, 700)', letterSpacing: 'var(--pm-display-tracking)', textTransform: 'var(--pm-display-case)', fontSize: '22px', color: theme.text, margin: '0 0 6px' }}>
         {title}
       </h2>
       {children}

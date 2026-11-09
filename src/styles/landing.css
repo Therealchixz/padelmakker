@@ -19,6 +19,8 @@ html:has(.pm-lp) body {
   /* Lysere ler til lille tekst paa blaek (ler selv giver kun 4:1). */
   --lp-clay-text: #E8836B;
   --lp-ball: var(--pm-ball);
+  /* Groen til "ledige pladser" i eksempelskaermene (altid lyst papir, ogsaa i moerk tilstand). */
+  --lp-green: #2F5D4E;
   --lp-muted: rgba(243, 238, 228, 0.72);
   --lp-faint: rgba(243, 238, 228, 0.62);
   --lp-line: rgba(243, 238, 228, 0.14);
@@ -191,6 +193,11 @@ html:has(.pm-lp) body {
   justify-content: space-between;
   gap: 12px;
 }
+.pm-lp-nav-home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 .pm-lp-nav-logo {
   display: block;
   height: 40px;
@@ -300,6 +307,11 @@ html:has(.pm-lp) body {
   padding-left: var(--lp-gutter);
   animation: pm-lp-tick 40s linear infinite;
 }
+.pm-lp-ticker { cursor: pointer; }
+.pm-lp-ticker:hover .pm-lp-ticker-track,
+.pm-lp-ticker:focus-visible .pm-lp-ticker-track,
+.pm-lp-ticker.is-paused .pm-lp-ticker-track { animation-play-state: paused; }
+.pm-lp-ticker:focus-visible { outline: 2px solid var(--lp-ball); outline-offset: -2px; }
 .pm-lp-ticker-track > span {
   display: inline-flex;
   align-items: center;
@@ -363,7 +375,7 @@ html:has(.pm-lp) body {
   gap: 12px;
 }
 .pm-lp-h2 { font-size: clamp(34px, 9vw, 64px); }
-.pm-lp-story-count { color: var(--lp-clay-text); }
+.pm-lp-story-count { color: var(--lp-muted); }
 .pm-lp-story-bar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -545,7 +557,7 @@ html:has(.pm-lp) body {
   font-size: 20px;
 }
 .pm-lp-phone-row.is-me {
-  background: var(--lp-clay);
+  background: var(--lp-ink);
   color: #fff;
   border-radius: 10px;
   padding: 9px 8px;
@@ -556,7 +568,7 @@ html:has(.pm-lp) body {
   margin-top: auto;
   height: 46px;
   border-radius: 12px;
-  background: var(--lp-clay);
+  background: var(--lp-clay-solid);
   color: #fff;
   font-weight: 700;
   display: flex;
@@ -750,7 +762,8 @@ html:has(.pm-lp) body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
+  min-width: 44px;
   text-decoration: none;
   color: var(--lp-muted) !important;
 }
@@ -773,7 +786,8 @@ html:has(.pm-lp) body {
 .pm-lp-footer-legal a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
+  min-width: 44px;
   color: var(--lp-faint) !important;
   text-decoration: none;
 }
