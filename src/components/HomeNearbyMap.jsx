@@ -14,8 +14,11 @@ import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } 
  * Under "Baner" har alle landets centre med praecis placering en pind (ses, naar man zoomer ud);
  * kortet starter zoomet ind paa de naermeste, og listen viser kun de naermeste.
  * Under "Kampe" vises kun steder med aabne kampe (hele landet), og listen viser de naermeste.
+ * Listen holdes kort (3 naermeste); resten ligger under Baner/Kampe via linket i overskriften.
  */
-export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, onCreateMatch, onFindCourt }) {
+const LIST_ROWS = 3;
+
+export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, onCreateMatch, onFindCourt, onSeeAllCourts }) {
   const me = useMemo(() => parseGeoCoords(user?.latitude, user?.longitude), [user?.latitude, user?.longitude]);
   // Eksempel-visning (kun for den, der aabner Hjem med ?demo=kampe; slaas fra med ?demo=off).
   // Kampene findes kun i browseren og maerkes "Eksempel".
@@ -234,6 +237,11 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     <section className="pm-home-section pm-home-map" aria-labelledby="pm-home-map-title">
       <div className="pm-home-section-head">
         <h2 id="pm-home-map-title" className="pm-home-h">I nærheden</h2>
+        {mode === 'kampe' ? (
+          <button type="button" className="pm-home-link" onClick={() => onSeeMatches?.(null)}>Se alle kampe</button>
+        ) : (
+          <button type="button" className="pm-home-link" onClick={() => onSeeAllCourts?.()}>Se alle baner</button>
+        )}
       </div>
       <div className="pm-home-map-card">
         <div className="pm-home-map-stage">
@@ -276,7 +284,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
       </div>
       {/* Listen er den tilgaengelige udgave af kortet: alt paa kortet kan ogsaa vaelges her. */}
       <ul className="pm-home-map-list">
-        {shown.slice(0, 5).map((v) => (
+        {shown.slice(0, LIST_ROWS).map((v) => (
           <li key={v.id}>
             <button
               type="button"
