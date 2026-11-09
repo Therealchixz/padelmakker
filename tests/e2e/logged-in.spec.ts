@@ -47,8 +47,10 @@ test.describe('Logged-in dashboard flows', () => {
   test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {
     await page.goto('/dashboard')
     await page.getByRole('button', { name: 'Kampe' }).first().click()
+    await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible({ timeout: 20_000 })
+    // Soegningen ligger i filterarket bag Filter-knappen.
+    await page.getByRole('button', { name: /^Filter og søgning/ }).first().click()
     await expect(page.getByPlaceholder(/Søg spiller, bane/i).first()).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible()
   })
 
   test('marketing-forside viser Gå til appen (ikke Opret/Log ind)', async ({ page }) => {
