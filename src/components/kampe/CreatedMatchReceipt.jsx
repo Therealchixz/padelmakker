@@ -64,7 +64,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         {/* Title */}
         <div style={{ textAlign: 'center', padding: '16px 32px 0' }}>
           <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', color: theme.text }}>Kamp oprettet!</div>
-          <p style={{ fontSize: 12.5, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>
+          <p style={{ fontSize: 13, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>
             {isClosed ? 'Din lukkede kamp er klar – invitér dine spillere.' : 'Din kamp er nu synlig for andre spillere.'}
           </p>
         </div>
@@ -72,11 +72,11 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         {/* Summary card */}
         <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 16, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>
               {isClosed ? 'LUKKET' : '2V2'}
             </span>
             {levelStr && (
-              <span style={{ background: theme.surfaceMuted, color: theme.text, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>
+              <span style={{ background: theme.surfaceMuted, color: theme.text, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>
                 {levelStr}
               </span>
             )}
@@ -88,7 +88,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
               <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <CalendarDays size={14} color={theme.textMid} />
               </div>
-              <div style={{ fontSize: 12.5, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 13, lineHeight: 1.55 }}>
                 {datePart && <b style={{ color: theme.text, display: 'block' }}>{datePart}</b>}
                 {timeStr && <span style={{ color: theme.textMid }}>{timeStr}</span>}
               </div>
@@ -101,7 +101,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
               <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <MapPin size={14} color={theme.textMid} />
               </div>
-              <div style={{ fontSize: 12.5, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 13, lineHeight: 1.55 }}>
                 <b style={{ color: theme.text }}>{court}</b>
               </div>
             </div>
@@ -114,7 +114,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
                 <AvatarCircle avatar={user?.avatar} size={28} emojiSize="14px" style={{ background: 'transparent', color: 'var(--pm-on-accent)' }} />
               </div>
             </div>
-            <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>1/4 pladser optaget</span>
+            <span style={{ fontSize: 12, color: theme.textMid, fontWeight: 600 }}>1/4 pladser optaget</span>
           </div>
         </div>
 

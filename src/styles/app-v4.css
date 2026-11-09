@@ -23,7 +23,7 @@
 
 /* Smaa tal og data (sidetal, tider) */
 .pm-v4-mono {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -61,7 +61,8 @@
 .pm-chat-v2-inbox-unread {
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Notifikationer (redesign v4) ─────────────────────────────────────────
@@ -185,7 +186,8 @@
   border: 0;
   background: none;
   color: var(--pm-accent);
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -249,7 +251,8 @@ button.pm-notif-v4-item { cursor: pointer; }
 }
 .pm-notif-v4-cta,
 .pm-notif-v4-time {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -286,7 +289,8 @@ button.pm-notif-v4-item { cursor: pointer; }
   border: 0;
   background: none;
   color: var(--pm-accent);
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -343,6 +347,7 @@ button.pm-notif-v4-item { cursor: pointer; }
   .pm-swipe-slide, .pm-swipe-row.is-removing { transition: none; }
 }
 
-/* Tekstsider (Om, FAQ, privatliv m.m.): hold linjerne i en behagelig laengde. */
+/* Tekstsider (Om, FAQ, privatliv m.m.): hold linjerne i en behagelig laengde.
+   Med Figtree giver 54ch ca. 65-70 tegn pr. linje (60ch gav ca. 80; maalt 9. nov. 2026). */
 .pm-legal-page p,
-.pm-legal-page li { max-width: 60ch; }
+.pm-legal-page li { max-width: 54ch; }

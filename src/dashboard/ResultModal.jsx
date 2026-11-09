@@ -28,7 +28,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
         <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.3, color: theme.text }}>
           Resultatet er indsendt<br />til godkendelse
         </div>
-        <p style={{ fontSize: '12.5px', color: theme.textMid, lineHeight: 1.6, marginTop: 9 }}>
+        <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.6, marginTop: 9 }}>
           Dine modstandere har modtaget resultatet og skal godkende det, før det tæller med i jeres statistikker og Elo-rating.
         </p>
       </div>
@@ -39,7 +39,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
         boxShadow: theme.shadowSoft, padding: 16, margin: '18px 0 0',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '13.5px', fontWeight: 700, color: theme.text }}>Kamp-opsummering</span>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: theme.text }}>Kamp-opsummering</span>
           {wonLabel && (
             <span style={{
               fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
@@ -80,7 +80,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
           <div style={{
             display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6,
             marginTop: 14, paddingTop: 12, borderTop: `1px solid ${theme.border}`,
-            fontSize: '11.5px', color: theme.textMid, fontWeight: 600,
+            fontSize: '12px', color: theme.textMid, fontWeight: 600,
           }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
@@ -107,7 +107,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
         style={{
           marginTop: 20, width: '100%', padding: '13px', borderRadius: 'var(--pm-radius-md)',
           border: `1.5px solid ${theme.border}`, background: theme.surface, color: theme.accent,
-          fontSize: '14.5px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           minHeight: 48,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}

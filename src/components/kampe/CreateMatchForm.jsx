@@ -376,7 +376,7 @@ export function CreateMatchForm({
         }
         return (
           <>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "1.2px", margin: "0 0 10px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "1.2px", margin: "0 0 10px" }}>
               Opsummering
             </div>
             <div style={{ margin: "0 0 14px", border: `1px solid ${theme.border}`, borderRadius: 14, background: theme.surface, overflow: "hidden" }}>
@@ -392,12 +392,12 @@ export function CreateMatchForm({
                     borderBottom: i < summaryRows.length - 1 ? `1px solid ${theme.border}` : "none",
                   }}
                 >
-                  <span style={{ fontSize: 12.5, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: theme.text, textAlign: "right" }}>{row.value}</span>
+                  <span style={{ fontSize: 13, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text, textAlign: "right" }}>{row.value}</span>
                 </div>
               ))}
             </div>
-            <div style={{ background: "var(--pm-surface-muted)", border: "1px solid var(--pm-americano-tie-border)", borderRadius: 12, padding: "12px 14px", fontSize: 11.5, color: theme.textLight, lineHeight: 1.6, marginBottom: 4 }}>
+            <div style={{ background: "var(--pm-surface-muted)", border: "1px solid var(--pm-americano-tie-border)", borderRadius: 12, padding: "12px 14px", fontSize: 12, color: theme.textLight, lineHeight: 1.6, marginBottom: 4 }}>
               Kampen bliver synlig for spillere i dit område og niveau-interval. Du kan redigere detaljer ved at gå tilbage.
             </div>
           </>

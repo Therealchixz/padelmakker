@@ -462,10 +462,10 @@ export default function PadelMatchResultInput({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <b style={{ fontSize: '13.5px', fontWeight: 700 }}>
+          <b style={{ fontSize: '14px', fontWeight: 700 }}>
             Sæt {n}{n === 3 ? ' (Tiebreak)' : ''}
           </b>
-          <span style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
             {reqLabel}
           </span>
         </div>
@@ -477,7 +477,7 @@ export default function PadelMatchResultInput({
 
         {tb && (
           <div style={{ marginTop: 14, background: 'var(--pm-amber-bg)', borderRadius: 10, padding: 12, border: '1px solid var(--pm-amber-border)' }}>
-            <p style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-amber-text)', marginBottom: 10 }}>Tiebreak-point</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--pm-amber-text)', marginBottom: 10 }}>Tiebreak-point</p>
             <div style={{ display: 'flex', gap: 10 }}>
               {scoreCol('tb1', t1Name, 99)}
               {scoreCol('tb2', t2Name, 99)}
@@ -499,7 +499,7 @@ export default function PadelMatchResultInput({
       {playersEditable && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           <div>
-            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 1</label>
+            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 1</label>
             <input
               id="padel-team1"
               type="text"
@@ -510,7 +510,7 @@ export default function PadelMatchResultInput({
             />
           </div>
           <div>
-            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 2</label>
+            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 2</label>
             <input
               id="padel-team2"
               type="text"
@@ -527,7 +527,7 @@ export default function PadelMatchResultInput({
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 10px' }}>
-        <h3 style={{ fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
         {(setsWon.t1 > 0 || setsWon.t2 > 0) && (
           <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pm-accent)' }} role="status" aria-live="polite">
             {setsWon.t1}–{setsWon.t2} sæt
@@ -550,7 +550,7 @@ export default function PadelMatchResultInput({
       {setCard(1)}
       {setCard(2)}
 
-      <p style={{ textAlign: 'center', fontSize: '11.5px', color: 'var(--pm-text-mid)', lineHeight: 1.6, padding: '4px 16px 12px' }}>
+      <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--pm-text-mid)', lineHeight: 1.6, padding: '4px 16px 12px' }}>
         Resultatet sendes til modstanderne til godkendelse. Sørg for at begge hold er enige før indsendelse.
       </p>
 
@@ -561,7 +561,7 @@ export default function PadelMatchResultInput({
             onClick={onCancel}
             style={{
               flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid var(--pm-border)',
-              background: 'var(--pm-surface)', color: 'var(--pm-accent)', fontSize: '14.5px', fontWeight: 600,
+              background: 'var(--pm-surface)', color: 'var(--pm-accent)', fontSize: '15px', fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
@@ -573,7 +573,7 @@ export default function PadelMatchResultInput({
           style={{
             flex: 2, padding: '14px', borderRadius: 10, border: 'none',
             background: formValid ? 'var(--pm-navy)' : 'var(--pm-text-light)',
-            color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
+            color: 'var(--pm-on-accent)', fontSize: '15px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
             boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

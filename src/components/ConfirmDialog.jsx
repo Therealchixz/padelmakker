@@ -57,11 +57,11 @@ export function ConfirmDialog({
 
         {hasStructuredContent ? (
           <>
-            <div style={{ fontSize: '16.5px', fontWeight: 700, letterSpacing: '-0.2px', color: theme.text, marginBottom: 7 }}>
+            <div style={{ fontSize: '17px', fontWeight: 700, letterSpacing: '-0.2px', color: theme.text, marginBottom: 7 }}>
               {title || message}
             </div>
             {description && (
-              <p style={{ fontSize: '12.5px', color: theme.textMid, lineHeight: 1.6, marginBottom: 4 }}>
+              <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.6, marginBottom: 4 }}>
                 {description}
               </p>
             )}
@@ -80,7 +80,7 @@ export function ConfirmDialog({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: '100%', padding: 12, minHeight: 48, borderRadius: 'var(--pm-radius-md)', border: 'none',
               background: danger ? theme.red : theme.accent,
-              color: theme.onAccent, fontSize: '14.5px', fontWeight: 700,
+              color: theme.onAccent, fontSize: '15px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: danger ? 'none' : theme.shadowAccent,
             }}
@@ -93,7 +93,7 @@ export function ConfirmDialog({
               style={{
                 width: '100%', padding: 11, minHeight: 48, borderRadius: 'var(--pm-radius-md)',
                 border: `1.5px solid ${theme.border}`, background: theme.surface,
-                color: theme.textMid, fontSize: '14.5px', fontWeight: 700,
+                color: theme.textMid, fontSize: '15px', fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >

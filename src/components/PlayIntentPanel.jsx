@@ -160,7 +160,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
             marginBottom: 12,
             padding: '3px 9px',
             borderRadius: 999,
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: 700,
             color: deadline.urgent ? theme.red : theme.textMid,
             background: 'transparent',

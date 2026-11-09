@@ -814,7 +814,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               )}
             </div>
             <h2 className="pm-v4-display" style={{ fontSize: 30, color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
-            <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
+            <p style={{ color: theme.textLight, fontSize: 13, marginTop: 3 }}>
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
@@ -1584,7 +1584,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         {/* Tilgængelighed */}
         {(() => {
           const chip = (active) => ({
-            padding: '8px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer',
             border: `1.5px solid ${active ? theme.navy : theme.border}`,
             background: active ? theme.navy : theme.surface,
             color: active ? 'var(--pm-on-accent)' : theme.textMid, fontFamily: 'inherit',

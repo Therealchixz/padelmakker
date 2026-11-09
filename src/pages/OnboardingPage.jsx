@@ -541,7 +541,7 @@ export function OnboardingPage() {
         <div style={screenSub}>Fire korte trin og en SMS-kode. Så er du inde.</div>
       </div>
       {oauthSession ? (
-        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
+        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "13px", color: theme.textMid, lineHeight: 1.55 }}>
           Du er logget ind med <strong style={{ color: theme.text }}>{user?.email || "din konto"}</strong>. Udfyld resten af
           profilen herunder. Du skal stadig bekræfte telefon med SMS (og e-mail, hvis den ikke er bekræftet).
         </div>
@@ -688,7 +688,7 @@ export function OnboardingPage() {
         <div style={fieldHint}>Bruges kun til aldersbekræftelse og vises ikke offentligt.</div>
       </div>
       {phoneExemptResolved && phoneExempt ? (
-        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
+        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "13px", color: theme.textMid, lineHeight: 1.55 }}>
           Denne konto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
         </div>
       ) : phoneExemptResolved ? (
@@ -710,12 +710,12 @@ export function OnboardingPage() {
           )}
         </div>
       ) : (
-        <p style={{ color: theme.textMid, fontSize: "12.5px", marginBottom: "14px", lineHeight: 1.5 }}>
+        <p style={{ color: theme.textMid, fontSize: "13px", marginBottom: "14px", lineHeight: 1.5 }}>
           Tjekker telefon-krav…
         </p>
       )}
       {oauthSession && phoneExemptResolved && !phoneExempt && (
-        <div style={{ ...insetCard, fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
+        <div style={{ ...insetCard, fontSize: "13px", color: theme.textMid, lineHeight: 1.55 }}>
           Dit telefonnummer bekræftes med en SMS-kode til sidst.
         </div>
       )}
@@ -772,7 +772,7 @@ export function OnboardingPage() {
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: "14px", fontWeight: 600, color: theme.text }}>{c.title}</span>
-              <span style={{ display: "block", fontSize: "11.5px", color: theme.textLight, lineHeight: 1.45, marginTop: "2px" }}>
+              <span style={{ display: "block", fontSize: "12px", color: theme.textLight, lineHeight: 1.45, marginTop: "2px" }}>
                 {c.desc}
               </span>
             </span>
@@ -812,7 +812,7 @@ export function OnboardingPage() {
             background: "transparent",
             color: theme.accent,
             fontWeight: 700,
-            fontSize: "13.5px",
+            fontSize: "14px",
             borderRadius: "12px",
             padding: "11px 14px",
             margin: "2px 0 10px",
@@ -831,7 +831,7 @@ export function OnboardingPage() {
           background: "transparent",
           color: theme.accent,
           fontWeight: 600,
-          fontSize: "12.5px",
+          fontSize: "13px",
           cursor: "pointer",
           padding: "4px 0",
           fontFamily: font,
@@ -981,7 +981,7 @@ export function OnboardingPage() {
             : <span style={{ fontSize: "30px", lineHeight: 1 }}>{form.avatar}</span>}
         </div>
         <div style={{ fontSize: "12px", fontWeight: 600, color: theme.accent, marginTop: "8px" }}>Vælg profilbillede</div>
-        <div style={{ fontSize: "10.5px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
+        <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
         <div style={{ fontSize: "12px", fontWeight: 600, color: theme.green, marginTop: "10px" }}>Din profil er klar til at finde makkere 🎾</div>
       </div>
       <div style={{ marginBottom: "10px" }}>
@@ -1080,7 +1080,7 @@ export function OnboardingPage() {
       <p
         style={{
           margin: "-6px 0 14px 31px",
-          fontSize: "11.5px",
+          fontSize: "12px",
           color: theme.textLight,
           lineHeight: 1.5,
         }}
@@ -1186,7 +1186,7 @@ export function OnboardingPage() {
 
         <div role="alert">
           {err && (
-            <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, lineHeight: 1.5, marginTop: "14px" }}>
+            <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, lineHeight: 1.5, marginTop: "14px" }}>
               {err}
               {errSuggestsLogin && (
                 <>

@@ -701,12 +701,12 @@ export function MakkereTab({ user, showToast }) {
       {activeSuggestions.length > 0 && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
-            <h2 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
             {activeSuggestions.length > 3 && (
               <button
                 className="pm-hit-44"
                 onClick={() => setShowAllSuggestions(v => !v)}
-                style={{ fontSize: '12.5px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                style={{ fontSize: '13px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
               >
                 {showAllSuggestions ? 'Vis færre' : `Se alle ${activeSuggestions.length}`}
               </button>
@@ -714,7 +714,7 @@ export function MakkereTab({ user, showToast }) {
           </div>
 
           {suggestionResult.relaxed && visibleSuggestions.some(s => s.beyondPreferredRadius) && (
-            <p style={{ margin: '0 18px 10px', fontSize: 12.5, lineHeight: 1.45, color: theme.textMid }}>
+            <p style={{ margin: '0 18px 10px', fontSize: 13, lineHeight: 1.45, color: theme.textMid }}>
               Der er få spillere tæt på dig lige nu, så vi har udvidet søgningen. Afstanden står på hvert forslag.
             </p>
           )}
@@ -742,8 +742,8 @@ export function MakkereTab({ user, showToast }) {
 
       {/* Søg blandt alle spillere */}
       <div ref={seekingResultsRef} style={{ margin: '0 18px 8px', scrollMarginTop: '86px' }}>
-        <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Søg makker</h3>
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.45, color: theme.textMid }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Søg makker</h3>
+        <p style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.45, color: theme.textMid }}>
           Alle spillere på appen, rangeret efter hvor godt I passer — tæt på først, længere væk længere nede.
         </p>
       </div>
@@ -753,7 +753,7 @@ export function MakkereTab({ user, showToast }) {
           <SlidersHorizontal size={15} color={theme.textMid} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dine makker-kriterier</div>
-            <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 12, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {describeMakkerFilter(makkerFilterPrefs, user).summary}
             </div>
           </div>
@@ -957,7 +957,7 @@ export function MakkereTab({ user, showToast }) {
                   {quality.dot ? <span aria-hidden style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.dot, flexShrink: 0 }} /> : null}
                   {quality.label}
                 </span>
-                <span style={{ fontSize: 11.5, color: theme.textMid, flex: '1 1 140px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 12, color: theme.textMid, flex: '1 1 140px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {reason}
                 </span>
                 <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>

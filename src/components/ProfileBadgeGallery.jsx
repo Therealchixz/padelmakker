@@ -50,7 +50,7 @@ function BadgeDetailPanel({ badge, onClose }) {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, letterSpacing: '-0.2px' }}>{badge.label}</div>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {badge.categoryLabel || PROFILE_BADGE_CATEGORY_LABELS[badge.category] || badge.category}
               </div>
             </div>
@@ -77,7 +77,7 @@ function BadgeDetailPanel({ badge, onClose }) {
             style={{
               display: 'inline-block',
               marginTop: 8,
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 999,
@@ -90,7 +90,7 @@ function BadgeDetailPanel({ badge, onClose }) {
           </div>
         </div>
       </div>
-      <p style={{ margin: '12px 0 0', fontSize: 12.5, color: theme.textMid, lineHeight: 1.5 }}>
+      <p style={{ margin: '12px 0 0', fontSize: 13, color: theme.textMid, lineHeight: 1.5 }}>
         {badgeDetailBody(badge)}
       </p>
       <div
@@ -166,7 +166,7 @@ function BadgeItem({ badge, compact = false, selected = false, onSelect }) {
         <span
           style={{
             display: 'block',
-            fontSize: 8.5,
+            fontSize: 9,
             lineHeight: 1.25,
             marginTop: 2,
             color: badge.earned ? theme.green : theme.textLight,
@@ -302,7 +302,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
     <>
       <div style={{ marginTop: 4, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>
             Mærker
           </h3>
           <button
@@ -392,7 +392,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
               <h2 style={{ fontSize: 18, fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.3px' }}>
                 Mærker · {modeLabel}
               </h2>
-              <p style={{ margin: 0, fontSize: 12.5, color: theme.textMid, lineHeight: 1.45 }}>
+              <p style={{ margin: 0, fontSize: 13, color: theme.textMid, lineHeight: 1.45 }}>
                 {earnedCount} af {badges.length} opnået. Tryk på et badge for at læse mere.
               </p>
             </div>

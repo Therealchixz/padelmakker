@@ -55,7 +55,7 @@
   white-space: nowrap;
 }
 .pm-mere-profile-stats {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -112,7 +112,8 @@
   border-radius: 10px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   display: grid;
@@ -164,7 +165,8 @@
   flex-shrink: 0;
 }
 .pm-mere-row-value {
-  font-family: var(--pm-font-mono);
+  font-family: var(--pm-font-data);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 500;
 }

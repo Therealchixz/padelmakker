@@ -47,7 +47,7 @@ export const btnNavy = {
   cursor: 'pointer',
   fontFamily: font,
   fontWeight: 600,
-  fontSize: 14.5,
+  fontSize: 15,
   borderRadius: 10,
   padding: 14,
   width: '100%',
@@ -66,7 +66,7 @@ export const btnGhost = {
   cursor: 'pointer',
   fontFamily: font,
   fontWeight: 600,
-  fontSize: 14.5,
+  fontSize: 15,
   borderRadius: 10,
   padding: 13,
   width: '100%',
@@ -79,7 +79,7 @@ export const chipStyle = (active, extra = {}) => ({
   background: active ? theme.navy : theme.surface,
   color: active ? '#fff' : theme.textLight,
   fontWeight: 600,
-  fontSize: 12.5,
+  fontSize: 13,
   padding: '8px 15px',
   borderRadius: 999,
   whiteSpace: 'nowrap',
@@ -170,7 +170,7 @@ export const screenHeading = {
 };
 
 export const screenSub = {
-  fontSize: 13.5,
+  fontSize: 14,
   color: theme.textLight,
   marginTop: 5,
   lineHeight: 1.5,
@@ -178,7 +178,7 @@ export const screenSub = {
 
 /** .field-hint */
 export const fieldHint = {
-  fontSize: 12.5,
+  fontSize: 13,
   color: theme.textLight,
   marginTop: 6,
   lineHeight: 1.5,

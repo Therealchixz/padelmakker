@@ -51,7 +51,7 @@ export function ResetPasswordPage({ onDone }) {
         <input id="reset-password" autoComplete="new-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 8 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
         <label htmlFor="reset-confirm" style={labelStyle}>Gentag adgangskode</label>
         <input id="reset-confirm" autoComplete="new-password" value={confirm} onChange={e => { setConfirm(e.target.value); setErr(""); }} placeholder="Gentag adgangskode" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
-        <div role="alert">{err && <p style={{ color: theme.red, fontSize: "13.5px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
+        <div role="alert">{err && <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
         <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
           {submitting ? "Opdaterer..." : <><KeyRound size={14} /> Gem ny adgangskode</>}
         </button>

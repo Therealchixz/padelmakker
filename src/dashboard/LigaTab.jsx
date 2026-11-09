@@ -1127,7 +1127,7 @@ export function LigaTab({
               />
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.55 }}>Du kan konfigurere specifikke regler og kampsystem i de næste trin.</span>
+                <span style={{ fontSize: 12, color: theme.textLight, lineHeight: 1.55 }}>Du kan konfigurere specifikke regler og kampsystem i de næste trin.</span>
               </div>
               <div className="pm-format-card">
                 <b>Skab dit fællesskab</b>
@@ -1139,7 +1139,7 @@ export function LigaTab({
           {/* Step 2: Divisionsindstillinger / Regler */}
           {createStep === 2 && (
             <>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Kampsystem</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Kampsystem</div>
               {MATCH_SYSTEMS.map(ms => (
                 <div
                   key={ms.id}
@@ -1148,7 +1148,7 @@ export function LigaTab({
                 >
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: theme.text }}>{ms.label}</div>
-                    <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 2 }}>{ms.desc}</div>
+                    <div style={{ fontSize: 12, color: theme.textLight, marginTop: 2 }}>{ms.desc}</div>
                   </div>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {createForm.match_system === ms.id && <svg style={{ width: 10, height: 10 }} viewBox="0 0 24 24" fill="none" stroke="var(--pm-on-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
@@ -1162,7 +1162,7 @@ export function LigaTab({
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
                   <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
                     {[
                       { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
@@ -1240,7 +1240,7 @@ export function LigaTab({
               </div>
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>&quot;Opret liga&quot;</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
+                <span style={{ fontSize: 12, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>&quot;Opret liga&quot;</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
               </div>
             </>
           )}
@@ -1301,7 +1301,7 @@ export function LigaTab({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
-            <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
             {myActiveLeagueHero.league.name}
@@ -1719,17 +1719,17 @@ export function LigaTab({
               {/* Title */}
               <div style={{ textAlign: 'center', padding: '16px 32px 0' }}>
                 <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', color: theme.text }}>Liga oprettet!</div>
-                <p style={{ fontSize: 12.5, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>Ligaen er synlig i oversigten, og hold kan tilmelde sig nu.</p>
+                <p style={{ fontSize: 13, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>Ligaen er synlig i oversigten, og hold kan tilmelde sig nu.</p>
               </div>
 
               {/* Summary card */}
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
                   {Number(r.num_divisions) > 1 ? (
-                    <span style={{ background: theme.navyBg || 'var(--pm-navy-bg)', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
+                    <span style={{ background: theme.navyBg || 'var(--pm-navy-bg)', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
                   ) : null}
-                  <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>Tilmelding åben</span>
+                  <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>Tilmelding åben</span>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginTop: 10 }}>{r.name}</div>
                 {(() => {
@@ -1756,7 +1756,7 @@ export function LigaTab({
                 })()}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
                   <span style={{ fontSize: 12, color: theme.textMid }}>Hold tilmeldt</span>
-                  <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>0 hold</span>
+                  <span style={{ fontSize: 12, color: theme.textMid, fontWeight: 600 }}>0 hold</span>
                 </div>
               </div>
 

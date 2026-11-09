@@ -96,9 +96,9 @@ test.describe('Public smoke flows', () => {
       'as',
       'style'
     )
-    // Redesign v4: Anton (overskrifter), Instrument Sans (tekst) og IBM Plex Mono hentes i én forespørgsel.
+    // Anton (overskrifter) og Figtree (tekst, tal og tider) hentes i én forespørgsel.
     await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Anton/)
-    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /Instrument\+Sans/)
+    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Figtree/)
     await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
     await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
       'media',

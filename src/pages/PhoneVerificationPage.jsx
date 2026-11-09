@@ -460,7 +460,7 @@ export function PhoneVerificationPage() {
               onComplete={(code) => { void verifyCode(code) }}
             />
             <div role="alert" aria-live="assertive" style={{ minHeight: err ? undefined : 0 }}>
-              {err && <p style={{ color: theme.red, fontSize: '13.5px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
+              {err && <p style={{ color: theme.red, fontSize: '14px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
             </div>
             <button
               type="submit"
@@ -543,7 +543,7 @@ export function PhoneVerificationPage() {
               }}
             />
             {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
-              <p id="verify-phone-error" style={{ color: theme.red, fontSize: '12.5px', marginBottom: '12px', fontWeight: 600 }}>
+              <p id="verify-phone-error" style={{ color: theme.red, fontSize: '13px', marginBottom: '12px', fontWeight: 600 }}>
                 Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
               </p>
             )}
@@ -558,7 +558,7 @@ export function PhoneVerificationPage() {
               </div>
             )}
             <div role="alert" aria-live="assertive">
-              {err && <p style={{ color: theme.red, fontSize: '13.5px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
+              {err && <p style={{ color: theme.red, fontSize: '14px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 12px' }}>{err}</p>}
             </div>
             <button
               type="submit"

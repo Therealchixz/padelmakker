@@ -45,28 +45,28 @@ typography:
     letterSpacing: "0.005em"
     fontFeature: "tnum"
   title:
-    fontFamily: "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+    fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
     fontSize: "22px"
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.02em"
   section:
-    fontFamily: "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+    fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
     fontSize: "17px"
     fontWeight: 700
     letterSpacing: "-0.01em"
   body:
-    fontFamily: "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+    fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.4
   label:
-    fontFamily: "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+    fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
     fontSize: "12px"
     fontWeight: 600
     letterSpacing: "0.01em"
   data:
-    fontFamily: "'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace"
+    fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
     fontSize: "12px"
     fontWeight: 500
     fontFeature: "tnum"
@@ -154,14 +154,14 @@ components:
 
 PadelMakker ligner et padel-klubhus, når lyset tændes over banen: varmt papir, sort blæk og den røde lerfarve fra banekanten. Ejeren valgte retningen 4. nov. 2026 (Claude Design-prototypen "PadelMakker Prototype v4"), og den bygges i trin; dele af appen bærer stadig den ældre stil under v4-laget.
 
-To registre deler samme materialer. De offentlige sider (forside, Om, FAQ, ELO, Events) taler højt: forsiden står altid på blæk, med det rigtige banefoto i fuld bredde og store Anton-versaler. Appen efter login er roligere: papirflader, Instrument Sans, tynde linjer mellem rækker og lerfarve kun der, hvor man skal trykke. Tal er altid rigtige; eksempeldata mærkes "Eksempel".
+To registre deler samme materialer. De offentlige sider (forside, Om, FAQ, ELO, Events) taler højt: forsiden står altid på blæk, med det rigtige banefoto i fuld bredde og store Anton-versaler. Appen efter login er roligere: papirflader, Figtree, tynde linjer mellem rækker og lerfarve kun der, hvor man skal trykke. Tal er altid rigtige; eksempeldata mærkes "Eksempel".
 
 Appen skal føles som en app på telefonen: 44 px trykflader, øjeblikkelig trykrespons (skalering ved `:active`), hover kun med mus, og bevægelse der står stille ved "reducér bevægelse".
 
 **Key Characteristics:**
 - Papir, blæk og ler i stedet for navy; én klar handlingsfarve.
 - Anton-versaler til det, man skal se på afstand: offentlige overskrifter, store tal, navne.
-- IBM Plex Mono kun til data: tider, antal, niveauer, sidetal.
+- Figtree med faste cifferbredder til data: tider, antal, niveauer, sidetal (ingen maskinskrift).
 - Rækker med hårfine linjer frem for kort i kort.
 - Lys og mørk tilstand via `[data-theme="dark"]`; forsiden er altid mørk.
 
@@ -218,25 +218,25 @@ Testet med en side, der viser de rigtige komponenter i lys og mørk: 6 → 4 far
 ## Typography
 
 **Display Font:** Anton (med 'Arial Narrow', Impact)
-**Body Font:** Instrument Sans (med -apple-system, Segoe UI, Arial)
-**Label/Mono Font:** IBM Plex Mono (med ui-monospace, Menlo)
+**Body Font:** Figtree (variabel 400–900, med -apple-system, Segoe UI, Arial)
+**Data Font:** Figtree med `font-variant-numeric: tabular-nums` (token `--pm-font-data`)
 
-**Character:** En smal, råbende plakatskrift over en venlig, moderne grotesk; mono'en giver tal og tider resultattavlens præcision.
+**Character:** En smal, råbende plakatskrift over en rund, venlig grotesk. Ejeren valgte Figtree 9. nov. 2026 i stedet for Instrument Sans og IBM Plex Mono.
 
 ### Hierarchy
 - **Display** (Anton 400, clamp(56px, 19vw, 96px), 0.9, versaler): forsidens hovedoverskrift, linje for linje.
 - **Headline** (Anton 400, clamp(34px, 9vw, 64px), 0.92, versaler): sektionsoverskrifter på offentlige sider; ark-titler i appen (Spil-valget 30px).
 - **Number** (Anton 400, 22–30px, 1, faste cifferbredder): ELO, placering, datoer i kampkort, tider på Hjem. Navne på profilkort (26px, versaler).
-- **Title** (Instrument Sans 700, 22px, 1.2, -0.02em): sidetitlen i den fælles toplinje.
-- **Section** (Instrument Sans 700, 17px, -0.01em): sektionsoverskrifter i appen, almindelig skrivemåde.
-- **Body** (Instrument Sans 400, 13–15px, ca. 1.4): tekst og rækker; prosa på offentlige sider holdes på 60ch.
-- **Label** (Instrument Sans 600, 12px): feltetiketter og grupperubrikker (13px/700 på Mere).
-- **Data** (IBM Plex Mono 500, 10–12px, faste cifferbredder): tider, antal, niveauer, tællere.
+- **Title** (Figtree 700, 22px, 1.2, -0.02em): sidetitlen i den fælles toplinje.
+- **Section** (Figtree 700, 17px, -0.01em): sektionsoverskrifter i appen, almindelig skrivemåde.
+- **Body** (Figtree 400, 13–15px, ca. 1.4): tekst og rækker; prosa på offentlige sider holdes på 60ch.
+- **Label** (Figtree 600, 12px): feltetiketter og grupperubrikker (13px/700 på Mere).
+- **Data** (Figtree 500–600, 11–15px, faste cifferbredder): tider, antal, niveauer, tællere.
 
 ### Named Rules
 **Anton-reglen.** Anton findes i én vægt (400) og sættes altid med versaler og `font-synthesis: none`. Den bruges kun til offentlige overskrifter (under `.pm-brand`), store tal og navne; aldrig til brødtekst, knapper eller almindelige app-overskrifter.
 
-**Mono-reglen.** IBM Plex Mono er kun til data. Hvis teksten ikke er et tal, en tid eller et niveau, er den Instrument Sans.
+**Tal-reglen.** Tider, antal og niveauer bruger `--pm-font-data` (Figtree med faste cifferbredder), så tal står under hinanden. Ingen maskinskrift.
 
 ## Layout
 
@@ -268,7 +268,7 @@ Venlige, faste hjørner: 10px på knapper og felter, 12px på mindre knapper og 
 
 ### Buttons
 - **Shape:** let afrundet (10px); forsidens store CTA 16px; kampkortenes knapper 12px.
-- **Primary:** `accent-solid` med hvid tekst, Instrument Sans 700 14px, 10px 16px, mindst 44px (`btn(true)`). Forsidens CTA er fuld bredde, 60px høj, 17px.
+- **Primary:** `accent-solid` med hvid tekst, Figtree 700 14px, 10px 16px, mindst 44px (`btn(true)`). Forsidens CTA er fuld bredde, 60px høj, 17px.
 - **Hover / Focus:** hover kun under `(hover: hover) and (pointer: fine)`: ler bliver mørkere (`#A8432D` eller `color-mix` med 14 % sort). Fokus er en 2px outline i `accent` med 2px afstand; på forsiden boldgul med 3px afstand. Deaktiveret: 55 % gennemsigtighed.
 - **Secondary:** kort-papir med hårlinje (`btn(false)`), eller i v4 gennemsigtig med 1,5px blæk-omrids. På blæk-kort: papir-knap og gennemsigtig knap med papirkant.
 
@@ -300,7 +300,7 @@ Den eneste store handling i appen: en 68px lerfarvet cirkel med "SPIL" i Anton, 
 ### Do:
 - **Do** brug `--pm-accent-solid` bag hvid tekst og `--pm-accent` til tekst og links.
 - **Do** sæt Anton med versaler, vægt 400 og `font-synthesis: none`, kun til offentlige overskrifter, store tal og navne.
-- **Do** brug IBM Plex Mono med faste cifferbredder til tider, antal og niveauer.
+- **Do** brug `--pm-font-data` (faste cifferbredder) til tider, antal og niveauer.
 - **Do** læg al hover i `@media (hover: hover) and (pointer: fine)` og giv tryk en `:active`-skalering.
 - **Do** gør alle trykflader mindst 44px (`--pm-control-h`, `.pm-hit-44`).
 - **Do** stop animationer og overgange under `prefers-reduced-motion: reduce`.

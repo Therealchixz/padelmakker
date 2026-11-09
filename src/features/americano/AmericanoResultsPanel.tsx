@@ -629,7 +629,7 @@ export function AmericanoResultsPanel({
             <div style={{ fontSize: 12, fontWeight: 700, color: c.muted }}>
               Bane {m.court_index + 1} · Runde {m.round_number}
             </div>
-            <span style={{ fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: statusTag.bg, color: statusTag.color }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: statusTag.bg, color: statusTag.color }}>
               {statusTag.label}
             </span>
           </div>
@@ -756,7 +756,7 @@ export function AmericanoResultsPanel({
               <div style={rankCircleStyle(idx)}>{idx + 1}</div>
               <AvatarCircle avatar={avatarOfPart(row.id)} size={34} emojiSize="14px" style={{ background: 'var(--pm-border)' }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: isMe ? 800 : 700, color: c.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: isMe ? 800 : 700, color: c.text, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
                   {isMe ? <span style={{ fontSize: 9, fontWeight: 800, color: c.onAccent, background: c.accent, padding: '1px 6px', borderRadius: 999, letterSpacing: '0.04em' }}>DIG</span> : null}
                 </div>
@@ -845,7 +845,7 @@ export function AmericanoResultsPanel({
       {/* Header + rundestatus (erstatter nedtællings-ur) */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>Resultater ({formatLabel}-ELO)</div>
-        <div style={{ fontSize: 11.5, color: c.muted, marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
           {roundStatusLabel}{mexicanoProgress ? ` · ${mexicanoProgress}` : ''}
         </div>
       </div>
@@ -864,7 +864,7 @@ export function AmericanoResultsPanel({
               border: 'none',
               cursor: 'pointer',
               fontFamily: font,
-              fontSize: 12.5,
+              fontSize: 13,
               fontWeight: 700,
               background: tab === id ? 'var(--pm-surface)' : 'transparent',
               color: tab === id ? c.text : c.muted,

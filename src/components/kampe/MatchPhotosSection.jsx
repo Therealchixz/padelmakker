@@ -70,7 +70,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
             type="button"
             onClick={onPick}
             disabled={busy}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: theme.accent, fontWeight: 600, fontSize: 12.5, cursor: busy ? 'wait' : 'pointer', padding: 0 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: theme.accent, fontWeight: 600, fontSize: 13, cursor: busy ? 'wait' : 'pointer', padding: 0 }}
           >
             <ImagePlus size={14} aria-hidden />
             {busy ? 'Uploader…' : 'Tilføj'}
@@ -93,7 +93,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
           type="button"
           onClick={onPick}
           disabled={busy}
-          style={{ width: '100%', padding: '18px', borderRadius: 14, border: `1.5px dashed ${theme.border}`, background: 'var(--pm-surface-muted)', color: theme.textLight, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+          style={{ width: '100%', padding: '18px', borderRadius: 14, border: `1.5px dashed ${theme.border}`, background: 'var(--pm-surface-muted)', color: theme.textLight, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
         >
           <ImagePlus size={20} aria-hidden />
           Tilføj det første billede fra kampen

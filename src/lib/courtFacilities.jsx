@@ -58,7 +58,7 @@ export function CourtFacilitiesGrid({ facilities, title = 'Faciliteter på centr
         ...style,
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--pm-text)', marginBottom: 10 }}>
+      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--pm-text)', marginBottom: 10 }}>
         {title}
       </div>
       <div
@@ -72,7 +72,7 @@ export function CourtFacilitiesGrid({ facilities, title = 'Faciliteter på centr
           const meta = FACILITY_BY_KEY[key];
           const Icon = meta.Icon;
           return (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
               <Icon size={16} strokeWidth={2} style={{ flexShrink: 0, color: 'var(--pm-accent)' }} aria-hidden />
               {meta.label}
             </div>

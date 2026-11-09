@@ -27,16 +27,16 @@ const hourTabs = (choices, current) => [...new Set([...choices, current])]
   .map((h) => ({ id: String(h), label: hourLabel(h) }));
 
 const sectionStyle = { padding: '16px 18px', borderTop: '1px solid ' + theme.border };
-const sectionTitleStyle = { fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '0 0 10px' };
-const helpStyle = { fontSize: 12.5, color: theme.textLight, lineHeight: 1.5, margin: '8px 0 0' };
-const smallLabelStyle = { fontSize: 12.5, fontWeight: 600, color: theme.textMid, margin: '12px 0 6px' };
+const sectionTitleStyle = { fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '0 0 10px' };
+const helpStyle = { fontSize: 13, color: theme.textLight, lineHeight: 1.5, margin: '8px 0 0' };
+const smallLabelStyle = { fontSize: 13, fontWeight: 600, color: theme.textMid, margin: '12px 0 6px' };
 
 function SettingRow({ title, hint, checked, onChange, disabled }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44, padding: '6px 0' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{title}</div>
-        {hint ? <div style={{ fontSize: 12.5, color: theme.textLight, lineHeight: 1.45, marginTop: 2 }}>{hint}</div> : null}
+        {hint ? <div style={{ fontSize: 13, color: theme.textLight, lineHeight: 1.45, marginTop: 2 }}>{hint}</div> : null}
       </div>
       <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} ariaLabel={`${checked ? 'Slå fra' : 'Slå til'}: ${title}`} />
     </div>

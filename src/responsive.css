@@ -256,7 +256,7 @@ body {
   color: #061529;
   font-size: 19px;
   font-style: italic;
-  font-weight: 950;
+  font-weight: 900;
   line-height: 0.86;
   letter-spacing: -0.055em;
   text-transform: uppercase;
@@ -389,7 +389,7 @@ body {
   display: block;
   color: rgba(255, 255, 255, 0.78);
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.35;
 }
 
@@ -706,7 +706,7 @@ body {
   margin-top: 8px;
   color: var(--pm-text);
   font-size: 17px;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .pm-elo-player-card b {
@@ -787,7 +787,7 @@ body {
   margin-top: 5px;
   color: var(--pm-text);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .pm-elo-step-item em {
@@ -2591,7 +2591,7 @@ button,
 
 .pm-feed-filter-chip {
   white-space: nowrap;
-  font-size: 12.5px;
+  font-size: 13px;
   padding: 8px 15px;
   border-width: 1.5px;
 }
@@ -4456,7 +4456,7 @@ button,
   background: var(--pm-surface-muted);
   color: var(--pm-text);
   font-family: var(--pm-font);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -4744,7 +4744,7 @@ button,
 
 .pm-active-seeking-onboarding__note {
   margin: 0 0 20px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--pm-text-mid);
   line-height: 1.5;
 }
@@ -6800,7 +6800,7 @@ button,
   cursor: pointer;
   flex-shrink: 0;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--pm-accent) 35%, transparent);
 }
@@ -7139,7 +7139,7 @@ button,
   border: none;
   background: transparent;
   color: var(--pm-accent);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -7389,7 +7389,7 @@ button,
   flex-shrink: 0;
   padding: 9px 16px;
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   font-family: inherit;
   border: none;
@@ -7528,7 +7528,7 @@ button,
   align-items: center;
   gap: 5px;
   width: 100%;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--pm-text-light);
   line-height: 1.3;
@@ -7547,7 +7547,7 @@ button,
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--pm-text-light);
   line-height: 1.3;
@@ -7574,7 +7574,7 @@ button,
   display: inline-flex;
   align-items: center;
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.25;
   padding: 4px 8px;
   border-radius: 7px;
@@ -7712,7 +7712,7 @@ button,
   border-radius: 999px;
   background: var(--pm-surface-alt);
   color: var(--pm-text-mid);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
@@ -7799,7 +7799,7 @@ button,
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.3;
 }
 
@@ -9983,7 +9983,7 @@ button,
 }
 
 .pm-liga-v2-round-future {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pm-text-light);
   padding: 12px 14px;
   background: var(--pm-surface-alt);
@@ -10028,7 +10028,7 @@ button,
 }
 
 .pm-liga-v2-match-detail {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pm-text-mid);
   margin-top: 3px;
 }
@@ -10043,7 +10043,7 @@ button,
 }
 
 .pm-liga-v2-schedule-note {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pm-text-light);
   line-height: 1.55;
   padding: 12px 14px;
@@ -10424,7 +10424,7 @@ button,
 }
 
 .pm-chat-v2-inbox-row-name {
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--pm-text);
   white-space: nowrap;
@@ -10450,7 +10450,7 @@ button,
 
 .pm-chat-v2-inbox-row-preview {
   margin-top: 3px;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--pm-text-mid);
   white-space: nowrap;
   overflow: hidden;
@@ -10470,7 +10470,7 @@ button,
   padding: 0 6px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -11146,7 +11146,7 @@ button,
   border-radius: 999px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -11535,14 +11535,14 @@ button,
 }
 
 .pm-liga-schedule-title {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--pm-text);
   line-height: 26px;
 }
 
 .pm-liga-schedule-hint {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pm-text-light);
   margin: -2px 0 8px;
   line-height: 1.4;
@@ -11651,7 +11651,7 @@ button,
   color: var(--pm-text-mid);
   font-family: inherit;
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 13px;
   padding: 7px 14px;
   border-radius: 999px;
   white-space: nowrap;
@@ -11737,7 +11737,7 @@ button,
 
 .pm-slot-name {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--pm-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11941,7 +11941,7 @@ button,
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--pm-accent);
   text-decoration: none;
@@ -12015,7 +12015,7 @@ button,
   background: var(--pm-surface-alt);
   color: var(--pm-text);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -12059,9 +12059,8 @@ button,
 }
 .pm-legal-prose p,
 .pm-legal-prose li {
-  /* Instrument Sans er smallere end Inter: 60ch gav ca. 90 tegn pr. linje (maalt 9. nov. 2026).
-     48ch giver ca. 70 tegn ("ch" er bredden af et 0, bredere end et gennemsnitsbogstav). */
-  max-width: 48ch;
+  /* Samme laengde som .pm-legal-page i app-v4.css: 54ch er ca. 65-70 tegn med Figtree (maalt 9. nov. 2026). */
+  max-width: 54ch;
   text-wrap: pretty; /* undgår et enkelt ord alene på sidste linje */
 }
 .pm-legal-prose h2,

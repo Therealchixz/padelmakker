@@ -35,7 +35,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
           <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: theme.text, margin: 0 }}>
             Velkommen, {firstName}!
           </h1>
-          <p style={{ fontSize: 13.5, color: theme.textMid, marginTop: 8, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: theme.textMid, marginTop: 8, lineHeight: 1.5 }}>
             Din profil er klar{levelText ? ` — du starter på niveau ${levelText}` : ''}. Sådan kommer du hurtigt i gang:
           </p>
         </div>
@@ -71,7 +71,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
             onClick={onGoToApp}
             style={{
               width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-              background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14.5, fontWeight: 700,
+              background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 15, fontWeight: 700,
               cursor: 'pointer', fontFamily: font,
             }}
           >
