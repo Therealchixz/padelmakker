@@ -37,8 +37,8 @@ test('byer med samme navn: Lynge i Nordsjaelland og Ullerslev paa Fyn', () => {
 });
 
 test('centre uden gadeadresse faar kun en pind, hvis kortet kender selve centret', () => {
-  // Rocket Padel Nørresundby findes ikke under sit navn paa kortet: kun byens midte.
-  assert.equal(byId('link_n_rresundby_rocket_padel_n_rresundby').coordsApprox, true);
+  // Vestbjerg IF har hverken adresse eller et sted paa kortet under sit navn: kun byens midte.
+  assert.equal(byId('link_vestbjerg_vestbjerg_if_tennis_og_padel').coordsApprox, true);
   assert.equal(byId('skansen_ntsc').coordsApprox, undefined);
 });
 
@@ -108,4 +108,8 @@ test('pind langt fra postnummeret regnes for forkert, medmindre geokodningen bek
   const wrong = { x: { lat: 55.58, lng: 9.7 } }; // en anden Skærbæk-agtig placering ved Fredericia
   assert.match(auditVenueCoords(venues, wrong, {}).x?.reason || '', /postnummer 6780/);
   assert.equal(auditVenueCoords(venues, { x: { lat: 55.1586, lng: 8.7598 } }, { x: { via: 'address', postcode: '6780' } }).x, undefined);
+});
+
+test('centre, der ikke findes endnu, er ikke med (Rocket Padel Nørresundby er kun planer)', () => {
+  assert.equal(BANER_VENUES.some((v) => /rocket padel nørresundby/i.test(v.title)), false);
 });
