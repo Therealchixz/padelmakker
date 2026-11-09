@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BANER_VENUES } from '../lib/banerVenues';
 import { parseGeoCoords } from '../lib/geoDistance';
-import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';
+import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';
 
 /**
  * Kort paa Hjem (redesign v4, som prototypen): pinde med antal aabne kampe (ler) eller
@@ -13,30 +13,94 @@ import { buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeN
  * viser et center det forkerte sted. De staar stadig i listen med "ca." foran afstanden.
  * Under "Baner" har alle landets centre med praecis placering en pind (ses, naar man zoomer ud);
  * kortet starter zoomet ind paa de naermeste, og listen viser kun de naermeste.
+ * Under "Kampe" vises kun steder med aabne kampe (hele landet), og listen viser de naermeste.
  */
 export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, onCreateMatch, onFindCourt }) {
   const me = useMemo(() => parseGeoCoords(user?.latitude, user?.longitude), [user?.latitude, user?.longitude]);
-  const venues = useMemo(() => buildNearbyVenues(BANER_VENUES, me, openMatches), [me, openMatches]);
-  const withMatches = useMemo(() => venues.filter((v) => v.matchCount > 0), [venues]);
-  const [mode, setMode] = useState(() => (withMatches.length > 0 ? 'kampe' : 'baner'));
-  const shown = useMemo(
-    () => (mode === 'kampe' && withMatches.length > 0 ? withMatches : venues),
-    [mode, withMatches, venues],
+  // Eksempel-visning (kun for den, der aabner Hjem med ?demo=kampe; slaas fra med ?demo=off).
+  // Kampene findes kun i browseren og maerkes "Eksempel".
+  const [demo] = useState(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('demo');
+      if (q === 'kampe') window.sessionStorage.setItem('pmDemoKampe', '1');
+      if (q === 'off') window.sessionStorage.removeItem('pmDemoKampe');
+      return window.sessionStorage.getItem('pmDemoKampe') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const demoMatches = useMemo(
+    () => (demo && me ? buildDemoMatches(buildNearbyVenues(BANER_VENUES, me, [], { maxKm: Infinity, limit: Infinity })) : []),
+    [demo, me],
   );
+  const venues = useMemo(() => buildNearbyVenues(BANER_VENUES, me, openMatches), [me, openMatches]);
+  // Forsidens kampliste er kun de 5 nyeste. Kortet henter alle kommende aabne kampe selv
+  // (falder tilbage til forsidens liste, hvis det fejler).
+  const [allOpenMatches, setAllOpenMatches] = useState(null);
+  useEffect(() => {
+    if (!me) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase } = await import('../lib/supabase');
+        const today = new Date().toISOString().slice(0, 10);
+        const { data, error } = await supabase
+          .from('matches')
+          .select('id, date, time, court_name')
+          .eq('status', 'open')
+          .gte('date', today)
+          .order('date', { ascending: true })
+          .limit(300);
+        if (error) throw error;
+        if (!cancelled) {
+          setAllOpenMatches((data || []).map((m) => ({ matchId: m.id, court: m.court_name || '', date: m.date, time: m.time })));
+        }
+      } catch {
+        /* behold forsidens liste */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [me]);
+  // Begge lister samlet (efter kamp-id), saa kortet aldrig viser faerre kampe end forsiden.
+  const matchSource = useMemo(() => {
+    const byId = new Map();
+    for (const m of [...(openMatches || []), ...(allOpenMatches || []), ...demoMatches]) {
+      const id = String(m?.matchId ?? '');
+      if (id && !byId.has(id)) byId.set(id, m);
+    }
+    return [...byId.values()];
+  }, [openMatches, allOpenMatches, demoMatches]);
+  // Alle steder i landet med aabne kampe, naermeste foerst.
+  const matchVenues = useMemo(
+    () => buildNearbyVenues(BANER_VENUES, me, matchSource, { maxKm: Infinity, limit: Infinity })
+      .filter((v) => v.matchCount > 0)
+      .sort((a, b) => a.km - b.km),
+    [me, matchSource],
+  );
+  // Kampe uden en kendt bane kan ikke vises paa kortet; de taelles, saa man kan se dem under Kampe.
+  const unplacedMatches = useMemo(() => {
+    const placed = matchVenues.reduce((n, v) => n + v.matchCount, 0);
+    return Math.max(0, (matchSource || []).length - placed);
+  }, [matchVenues, matchSource]);
+  const [mode, setMode] = useState(() => (demo || venues.some((v) => v.matchCount > 0) ? 'kampe' : 'baner'));
+  // Kampe: kun steder med aabne kampe. Baner: centrene i naerheden.
+  const shown = mode === 'kampe' ? matchVenues : venues;
   const pinned = useMemo(() => shown.filter((v) => !v.approx), [shown]);
   // Alle centre i landet med praecis placering, saa man ser dem, naar man zoomer ud eller flytter kortet.
   // Listen under kortet og den foerste udsnit viser stadig kun de naermeste.
   const everywhere = useMemo(
-    () => buildNearbyVenues(BANER_VENUES, me, openMatches, { maxKm: Infinity, limit: Infinity }).filter((v) => !v.approx),
-    [me, openMatches],
+    () => buildNearbyVenues(BANER_VENUES, me, matchSource, { maxKm: Infinity, limit: Infinity }).filter((v) => !v.approx),
+    [me, matchSource],
   );
   const mapPins = mode === 'kampe' ? pinned : everywhere;
-  // Kortet zoomer til de naermeste (ellers trykker et center 30 km vaek alle de naere sammen).
-  const framed = useMemo(
-    () => (mode === 'kampe' && withMatches.length > 0 ? pinned : pinned.slice().sort((a, b) => a.km - b.km).slice(0, 4)),
-    [pinned, mode, withMatches.length],
-  );
-  const pinnedKey = framed.map((v) => v.id).join('|');
+  // Kortet zoomer til de 4 naermeste (ellers trykker et sted langt vaek alle de naere sammen).
+  // Kun steder inden for 30 km; er der ingen, saa det naermeste (resten ses ved at zoome ud).
+  const framed = useMemo(() => {
+    const byKm = pinned.slice().sort((a, b) => a.km - b.km);
+    const near = byKm.filter((v) => v.km <= 30).slice(0, 4);
+    return near.length ? near : byKm.slice(0, 1);
+  }, [pinned]);
+  const pinnedKey = `${mode}:${framed.map((v) => v.id).join('|')}`;
   const [selectedId, setSelectedId] = useState(null);
   const selected = shown.find((v) => v.id === selectedId)
     || mapPins.find((v) => v.id === selectedId)
@@ -188,6 +252,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
             </button>
           </div>
           {placeName ? <div className="pm-home-map-place" aria-hidden="true">Kort · {placeName}</div> : null}
+          {demo && mode === 'kampe' ? <div className="pm-home-map-demo">Eksempel</div> : null}
         </div>
         {selected ? (
           <div className="pm-home-map-sel" aria-live="polite">
@@ -198,6 +263,14 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
             {cta ? (
               <button type="button" className="pm-home-map-sel-cta" onClick={cta.run}>{cta.label}</button>
             ) : null}
+          </div>
+        ) : mode === 'kampe' ? (
+          <div className="pm-home-map-sel" aria-live="polite">
+            <div className="pm-home-map-sel-text">
+              <div className="pm-home-map-sel-name">Ingen åbne kampe lige nu</div>
+              <div className="pm-home-map-sel-meta">Opret en, så kan andre melde sig på</div>
+            </div>
+            <button type="button" className="pm-home-map-sel-cta" onClick={() => onCreateMatch?.(null)}>Opret kamp</button>
           </div>
         ) : null}
       </div>
@@ -219,6 +292,16 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
             </button>
           </li>
         ))}
+        {mode === 'kampe' && unplacedMatches > 0 ? (
+          <li>
+            <button type="button" className="pm-home-map-row" onClick={() => onSeeMatches?.(null)}>
+              <span className="pm-home-map-row-name">
+                {unplacedMatches} {unplacedMatches === 1 ? 'kamp' : 'kampe'} uden kendt bane
+              </span>
+              <span className="pm-home-map-row-meta">Se under Kampe</span>
+            </button>
+          </li>
+        ) : null}
       </ul>
     </section>
   );
