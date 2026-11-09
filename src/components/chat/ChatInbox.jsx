@@ -51,6 +51,7 @@ export function ChatInbox({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Søg i beskeder…"
+              aria-label="Søg i beskeder"
             />
             {searchQuery ? (
               <button type="button" className="pm-chat-v2-inbox-search-clear" onClick={() => onSearchChange('')} aria-label="Ryd søgning">

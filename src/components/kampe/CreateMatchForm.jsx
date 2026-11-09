@@ -193,8 +193,9 @@ export function CreateMatchForm({
               )}
             </div>
             <div ref={padelCreateTimeFieldRef}>
-              <label style={labelStyle}>Starttid</label>
+              <label htmlFor="padel-create-time" style={labelStyle}>Starttid</label>
               <select
+                id="padel-create-time"
                 value={newMatch.time}
                 onChange={(e) => {
                   setNewMatch((m) => ({ ...m, time: e.target.value }));
@@ -215,8 +216,9 @@ export function CreateMatchForm({
               )}
             </div>
             <div ref={padelCreateDurationFieldRef} style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Varighed</label>
+              <label htmlFor="padel-create-duration" style={labelStyle}>Varighed</label>
               <select
+                id="padel-create-duration"
                 value={newMatch.duration}
                 onChange={(e) => {
                   setNewMatch((m) => ({ ...m, duration: e.target.value }));

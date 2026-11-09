@@ -17,7 +17,7 @@ import { AppModal } from '../components/AppModal';
 
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
-import { formatPlaytomicLevel, formatMatchLevelRangeLabel } from '../lib/padelLevelUtils';
+import { formatPlaytomicLevel, formatMatchLevelRangeLabel, profilePlaytomicLevel, eloRangeToLevelRange } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
@@ -952,7 +952,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     border: "1px solid " + tone + "44",
     background: theme.surfaceAlt,
     color: tone,
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 700,
     letterSpacing: "0.04em",
     textTransform: "uppercase",
@@ -1102,19 +1102,27 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
-  // Aabne 2v2-kampe, hvor du kan vaere med: ikke dine egne, ikke fyldt, og din ELO passer.
+  // Aabne 2v2-kampe, hvor du kan vaere med: ikke dine egne, ikke fyldt, og dit niveau passer.
+  // Dit valgte niveau (profilen), ikke ELO: samme regel som kamp-filteret og notifikationerne
+  // (matchFitsWatcherLevel / match_fits_watcher_level). Foer brugte vi ELO, og alle starter paa
+  // 1000 = "niveau 4,0", saa en spiller paa 2,5 fik kampe for 4-7 og aldrig dem for 2-3.
   const homeOpenMatches = useMemo(() => {
-    const myElo = Number(user?.elo_rating) || 1000;
+    const myLevel = profilePlaytomicLevel(user);
+    const fitsMyLevel = (r) => {
+      if (r.eloMin == null || r.eloMax == null) return true;
+      const { min, max } = eloRangeToLevelRange(r.eloMin, r.eloMax);
+      return myLevel >= min - 0.05 && myLevel <= max + 0.05;
+    };
     const today = DateTime.now().toISODate();
     return openMatchFeed
       .filter((r) => String(r.creatorId) !== String(user?.id))
       .filter((r) => (r.playerCount || 0) < 4)
       .filter((r) => !(r.players || []).some((pl) => String(pl.userId) === String(user?.id)))
       .filter((r) => !r.date || r.date >= today)
-      .filter((r) => (r.eloMin == null || myElo >= r.eloMin) && (r.eloMax == null || myElo <= r.eloMax))
+      .filter(fitsMyLevel)
       .sort((a, b) => `${a.date || ''} ${a.time || ''}`.localeCompare(`${b.date || ''} ${b.time || ''}`))
       .slice(0, 3);
-  }, [openMatchFeed, user?.id, user?.elo_rating]);
+  }, [openMatchFeed, user]);
 
   return (
     <div className="pm-home">
@@ -1290,7 +1298,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                     <div className="pm-home-invite-title">{it.title}</div>
                     {it.subtitle ? <div className="pm-home-invite-sub">{it.subtitle}</div> : null}
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
                 </div>
                 {it.kind === 'inbound' ? (
                   <div className="pm-home-invite-actions">
@@ -1901,7 +1909,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {getTournamentFormatLabel(viewTournament.format)} resultat
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
@@ -1926,7 +1934,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", minWidth: "78px" }}>
                       <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? theme.warm : theme.text }}>
-                        {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
+                        {p.points} <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
                       </div>
                       {Number.isFinite(Number(p.eloChange)) ? (
                         <div
@@ -1945,7 +1953,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                           {Number(p.eloChange)} ELO
                         </div>
                       ) : (
-                        <div style={{ fontSize: "10px", color: theme.textLight }}>ELO -</div>
+                        <div style={{ fontSize: "11px", color: theme.textLight }}>ELO -</div>
                       )}
                     </div>
                   </div>
@@ -1971,7 +1979,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {viewMatch.kind === "result" ? "Kampresultat" : "Åben kamp"}
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -2177,7 +2185,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
               </div>
               <button type="button" aria-label="Luk ligastilling detaljer" onClick={closeViewLeague} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
@@ -2200,8 +2208,8 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{t.player1_name} & {t.player2_name}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? theme.green : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>{t.wins}W · {t.losses}L</div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? theme.green : theme.text }}>{t.points} <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{t.wins}W · {t.losses}L</div>
                     </div>
                   </div>
                 );

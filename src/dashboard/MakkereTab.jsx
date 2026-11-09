@@ -701,7 +701,7 @@ export function MakkereTab({ user, showToast }) {
       {activeSuggestions.length > 0 && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h3>
+            <h2 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
             {activeSuggestions.length > 3 && (
               <button
                 className="pm-hit-44"
@@ -773,6 +773,7 @@ export function MakkereTab({ user, showToast }) {
           value={search}
           onChange={e => handleFilterChange(() => setSearch(e.target.value))}
           placeholder="Søg efter navn eller by…"
+          aria-label="Søg efter makker på navn eller by"
           style={{ ...inputStyle, paddingLeft: '36px' }}
         />
       </div>

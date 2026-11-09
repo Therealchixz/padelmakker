@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import {
   KAMPE_LIST_REGION_OPTIONS,
   KAMPE_LIST_ELO_BANDS,
@@ -6,18 +6,21 @@ import {
   defaultKampeListFilter,
 } from '../../lib/kampeListFilterCore';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
+import { useDialogFocus } from '../../lib/useDialogFocus';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 
 import { COURT_FACILITY_CATALOG } from '../../lib/courtFacilities.jsx';
 
 function FilterToggle({ checked, onChange, label }) {
+  const labelId = useId();
   return (
     <div className="pm-kampe-v2-filter-toggle-row">
-      <span className="pm-kampe-v2-filter-toggle-label">{label}</span>
+      <span id={labelId} className="pm-kampe-v2-filter-toggle-label">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-labelledby={labelId}
         onClick={() => onChange(!checked)}
         className={`pm-kampe-v2-filter-toggle${checked ? ' pm-kampe-v2-filter-toggle--on' : ''}`}
       >
@@ -45,6 +48,7 @@ export function KampeFilterSheet({
     onClose,
     enabled: open,
   });
+  useDialogFocus(open, sheetRef, onClose);
 
   const filter = useMemo(() => normalizeKampeListFilter(listFilter), [listFilter]);
 
@@ -116,7 +120,7 @@ export function KampeFilterSheet({
             </div>
             <button
               type="button"
-              className="pm-kampe-v2-filter-reset"
+              className="pm-kampe-v2-filter-reset pm-hit-44"
               onClick={handleReset}
               onPointerDown={(event) => event.stopPropagation()}
             >
@@ -131,6 +135,7 @@ export function KampeFilterSheet({
             <button
               type="button"
               className={`pm-kampe-v2-sheet-pill${scope === 'alle' ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+              aria-pressed={scope === 'alle'}
               onClick={() => onScopeChange('alle')}
             >
               {scopeAllLabel}
@@ -138,6 +143,7 @@ export function KampeFilterSheet({
             <button
               type="button"
               className={`pm-kampe-v2-sheet-pill${scope === 'mine' ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+              aria-pressed={scope === 'mine'}
               onClick={() => onScopeChange('mine')}
             >
               {scopeMineLabel}
@@ -154,6 +160,7 @@ export function KampeFilterSheet({
                   key={opt.id || 'alle'}
                   type="button"
                   className={`pm-kampe-v2-sheet-pill${filter.regionId === opt.id ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+              aria-pressed={filter.regionId === opt.id}
                   onClick={() => setRegion(opt.id)}
                 >
                   {opt.label}
@@ -184,6 +191,7 @@ export function KampeFilterSheet({
                   key={band.id || 'alle'}
                   type="button"
                   className={`pm-kampe-v2-sheet-pill${filter.eloBandId === band.id ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+              aria-pressed={filter.eloBandId === band.id}
                   onClick={() => setEloBand(band.id)}
                 >
                   {band.label}
@@ -207,6 +215,7 @@ export function KampeFilterSheet({
                     key={key}
                     type="button"
                     className={`pm-kampe-v2-sheet-pill${active ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+              aria-pressed={active}
                     onClick={() => toggleFacility(key)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >

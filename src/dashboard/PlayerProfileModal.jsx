@@ -20,6 +20,7 @@ import { BeskedChatActions } from '../components/BeskedChatActions';
 import { fetchUsersIBlocked } from '../lib/userModeration';
 import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
 import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
+import { useCloseOnBack } from '../lib/useCloseOnBack';
 import {
   prefetchBeskedTabChunk,
   prefetchDmThread,
@@ -28,6 +29,7 @@ import {
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined, closeOnEscape = true }) {
   const open = !!player;
+  useCloseOnBack(open, onClose, 'spiller');
   const { profile: currentProfile } = useAuth();
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -422,11 +424,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
           {activeOverviewCards.map((s, i) => (
             <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
-              <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
+              <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
               {s.form ? (
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
                   {s.form.length > 0 ? s.form.map((r, j) => (
-                    <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
+                    <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
                   )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
                 </div>
               ) : (
@@ -449,7 +451,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             >
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   color: theme.textLight,
                   textTransform: 'uppercase',
@@ -471,7 +473,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           )
         ) : statsMode === 'americano' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Americano/Mexicano-form</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Americano/Mexicano-form</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
               {americanoForm.length > 0 ? (
                 americanoForm.map((row) => (
@@ -490,7 +492,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
         ) : statsMode === '2v2' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sejrsstreak</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sejrsstreak</div>
             {streakError ? (
               <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
                 Kamphistorik kunne ikke hentes.
@@ -563,7 +565,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
 
         {sharedHistory && sharedHistory.count > 0 && (
           <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: '12.5px', fontWeight: 600, color: theme.text }}>
                 I har spillet {sharedHistory.count} kamp{sharedHistory.count !== 1 ? 'e' : ''} sammen
