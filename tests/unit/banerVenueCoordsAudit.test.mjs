@@ -110,6 +110,6 @@ test('pind langt fra postnummeret regnes for forkert, medmindre geokodningen bek
   assert.equal(auditVenueCoords(venues, { x: { lat: 55.1586, lng: 8.7598 } }, { x: { via: 'address', postcode: '6780' } }).x, undefined);
 });
 
-test('centre, der ikke findes endnu, er ikke med (Rocket Padel Nørresundby er kun planer)', () => {
-  assert.equal(BANER_VENUES.some((v) => /rocket padel nørresundby/i.test(v.title)), false);
+test('centre, der ikke findes endnu, er ikke med (Rocket Padel Nørresundby og Sønderborg er kun planer)', () => {
+  assert.equal(BANER_VENUES.some((v) => /rocket padel (nørresundby|sønderborg)/i.test(v.title)), false);
 });

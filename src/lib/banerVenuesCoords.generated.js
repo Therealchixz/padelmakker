@@ -90,7 +90,6 @@ export const BANER_VENUE_COORDS = {
   "link_rudk_bing_langeland_rudk_bing_tennisklub": { lat: 54.93463148377846, lng: 10.702734240546082 },
   "link_ry_gl_rye_if": { lat: 56.076286, lng: 9.698245 },
   "link_s_nderborg_padel_club_s_nderborg": { lat: 54.9089186, lng: 9.7897999 },
-  "link_s_nderborg_rocket_padel_s_nderborg": { lat: 54.9089186, lng: 9.7897999 },
   "link_s_nders_nordfyns_padel_center_s_nders": { lat: 55.489505, lng: 10.249475 },
   "link_silkeborg_silkeborg_tennis_og_padelklub": { lat: 56.156877, lng: 9.535474 },
   "link_silkeborg_virklund_tennis_og_padelklub": { lat: 56.169453, lng: 9.5495141 },
