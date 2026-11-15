@@ -146,6 +146,8 @@ components:
     height: "44px"
 ---
 
+> **Bemærk (15. nov. 2026):** Ejeren har valgt designet "H" (lys blågrå bund, hvide kort, navy, blå knapper, lime til "spil nu"; Bricolage Grotesque + Schibsted Grotesk). Det bygges i etaper, se `CLAUDE.md`. Farver og skrift nedenfor beskriver det tidligere papir/ler-design og bliver skrevet om, når etaperne er færdige. Ved tvivl gælder `src/styles/variables.css`.
+
 # Design System: PadelMakker
 
 ## Overview

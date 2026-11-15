@@ -96,9 +96,9 @@ test.describe('Public smoke flows', () => {
       'as',
       'style'
     )
-    // Anton (overskrifter) og Figtree (tekst, tal og tider) hentes i én forespørgsel.
-    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Anton/)
-    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Figtree/)
+    // Bricolage Grotesque (overskrifter) og Schibsted Grotesk (tekst) hentes i én forespørgsel.
+    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Bricolage\+Grotesque/)
+    await expect(page.locator('link[data-critical-font="brand"]')).toHaveAttribute('href', /family=Schibsted\+Grotesk/)
     await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
     await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
       'media',
