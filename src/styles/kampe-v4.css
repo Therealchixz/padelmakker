@@ -25,9 +25,8 @@
 
 /* 2v2 · Americano · Liga som en delt vaelger */
 .pm-kampe-v4 .pm-kampe-v2-format-row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  /* Fanerne deler pladsen efter tekstens laengde ("Americano/Mexicano" er laengst). */
+  display: flex;
   gap: 0;
   padding: 3px;
   margin: 0 0 12px;
@@ -36,6 +35,7 @@
   overflow: visible;
 }
 .pm-kampe-v4 .pm-kampe-v2-format-pill {
+  flex: 1 1 auto;
   justify-content: center;
   gap: 4px;
   min-height: 38px;
@@ -223,3 +223,6 @@ label.pm-kampe-v2-sheet-label { display: block; }
   .pm-kampe-v4 .pm-kampe-v4-create,
   .pm-kampe-v4 .pm-kampe-v2-format-pill { transition: none; }
 }
+
+/* Kort-siden: kortet oeverst. Sektionen er bygget til Hjem (med 18px indryk), her flugter den med listen. */
+.pm-kort-map .pm-home-section { margin: 8px 0 16px; }

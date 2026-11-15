@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+// Kortet bruges baade paa Hjem og paa Kort-siden, saa det henter selv sine stilarter.
+import '../styles/home.css';
 import { BANER_VENUES } from '../lib/banerVenues';
 import { parseGeoCoords } from '../lib/geoDistance';
 import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';

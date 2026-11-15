@@ -16,6 +16,7 @@ const AmericanoTab = lazy(() =>
 const LigaTabLazyEmbed = lazy(() =>
   import('./LigaTab').then((m) => ({ default: m.LigaTab }))
 );
+const KortNearbyMapLazy = lazy(() => import('../components/HomeNearbyMap'));
 import { theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -3164,6 +3165,23 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
           {kampeFormat === 'padel' && (
             <>
+              {/* Kort-siden (H-designet): kortet med aabne kampe og baner staar oeverst, listen nedenunder. */}
+              {user?.latitude != null && user?.longitude != null ? (
+                <Suspense fallback={null}>
+                  <div className="pm-kort-map">
+                    <KortNearbyMapLazy
+                      user={user}
+                      onSeeMatches={() => {
+                        setViewTab('open');
+                        document.querySelector('.pm-kampe-v2-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      onCreateMatch={() => setShowCreate(true)}
+                      onFindCourt={(v) => navigate(`/dashboard/baner?venue=${encodeURIComponent(v.id)}`)}
+                      onSeeAllCourts={() => navigate('/dashboard/baner')}
+                    />
+                  </div>
+                </Suspense>
+              ) : null}
               {/* Samme "Jeg vil spille" som på Hjem: dag + tidsrum → en åben kamp, og spillere på samme niveau får besked. */}
               <PlayIntentPanel
                 user={user}

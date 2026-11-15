@@ -17,7 +17,7 @@ Ejerens valg går altid forud for en skills egen husstil. Ejeren valgte 15. nov.
 - skrift: Bricolage Grotesque (fed, almindelige store/små bogstaver) til overskrifter og store tal, Schibsted Grotesk til tekst. Ingen versaler-overskrifter og ingen `tabular-nums` (giver huller i "19:30")
 - det gamle baggrundsfoto på forsiden (ikke en tegnet bane)
 - padel-ikonet "B" (skrå, fyldt ketsjer) som standardbillede
-- den fælles toplinje (`ScreenHeader`) på appens hovedsider, sammen med bundmenuen Hjem · Kampe · Spil · Makkere · Mere, hvor Spil er en lime knap
+- den fælles toplinje (`ScreenHeader`) på appens hovedsider, sammen med bundmenuen Hjem · Kort · Spil · Makkere · Profil (ejeren 15. nov. 2026), hvor Spil er en lime knap. "Kort" er den tidligere Kampe-side med kortet øverst; "Profil" er den tidligere Mere-side og rummer alt derfra. Beskeder har en knap i toplinjen på alle hovedsider. Adresserne er uændrede (`/dashboard/kampe`, `/dashboard/mere`)
 - kun rigtige tal og navne på offentlige sider; eksempeldata mærkes "Eksempel"
 
 Etaper: 1) farver, skrift og bundmenu i hele appen, 2) Hjem og Spil/opret-siderne, 3) resten af skærmene. Hver etape er sin egen kladde-PR, som ejeren ser og godkender, før den merges (undtagelse fra "Merge selv").

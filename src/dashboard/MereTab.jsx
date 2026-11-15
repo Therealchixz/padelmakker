@@ -84,7 +84,7 @@ export function MereTab({
 
   return (
     <div className="pm-mere">
-      <ScreenHeader title="Mere" />
+      <ScreenHeader title="Profil" />
 
       <button type="button" className="pm-mere-profile" onClick={() => setTab('profil')}>
         <AvatarCircle avatar={user?.avatar} size={56} emojiSize="24px" style={{ background: 'var(--pm-accent-bg)', flexShrink: 0 }} />
