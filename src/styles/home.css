@@ -570,3 +570,92 @@
 @media (prefers-reduced-motion: reduce) {
   .pm-home-map-sel-cta { transition: none; }
 }
+
+/* ── H-designet: naeste kamp som moerkt kort, og tal-striben ── */
+.pm-home-next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 18px 18px;
+  border: 0;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-ink);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.pm-home-next:active { transform: scale(0.98); }
+.pm-home-next-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #E3ECFF;
+}
+.pm-home-next-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pm-home-next-title {
+  margin-top: 4px;
+  font-family: var(--pm-font-brand);
+  font-size: clamp(28px, 9vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+.pm-home-next-name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-home-next-sub { font-size: 14px; color: #E3ECFF; }
+.pm-home-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: calc(100% - 36px);
+  margin: 0 18px 18px;
+  padding: 14px 6px;
+  border: 0;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-ink);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.pm-home-stats:active { transform: scale(0.98); }
+.pm-home-stats > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pm-home-stats > span + span { border-left: 1px solid rgba(255, 255, 255, 0.16); }
+.pm-home-stats b {
+  font-family: var(--pm-font-brand);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.pm-home-stats small { font-size: 12px; color: #B8C4D9; }
+.pm-home-stats-lime { color: var(--pm-lime); }
+@media (prefers-reduced-motion: reduce) {
+  .pm-home-next,
+  .pm-home-stats { transition: none; }
+  .pm-home-next:active,
+  .pm-home-stats:active { transform: none; }
+}

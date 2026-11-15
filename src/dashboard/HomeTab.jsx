@@ -1181,9 +1181,6 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         bellTourForceOpen={tourForceNotificationOpen}
         actions={(
           <>
-            <button type="button" className="pm-home-elo-pill" onClick={() => setTab('ranking')} aria-label={`ELO ${Math.round(Number(user?.elo_rating) || 1000)}. Se ranglisten`}>
-              ELO {Math.round(Number(user?.elo_rating) || 1000)}
-            </button>
             <button
               type="button"
               className="pm-home-chat-btn"
@@ -1376,7 +1373,25 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           </div>
         ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-          {upcomingItems.map((it) => (
+          {upcomingItems.map((it, idx) => (idx === 0 ? (
+            // Den naeste kamp staar som et moerkt kort oeverst (H-designet); resten er rolige raekker.
+            <button
+              key={it.key}
+              type="button"
+              onClick={() => setTab(it.target.tab, { search: it.target.search })}
+              className="pm-home-next"
+            >
+              <span className="pm-home-next-top">
+                <span>Din næste kamp</span>
+                {it.statusLabel ? <span className="pm-home-next-pill">{it.statusLabel}</span> : null}
+              </span>
+              <span className="pm-home-next-title">
+                {it.kind === 'liga' ? `${it.badge.top} · Liga` : `${it.badge.top}. ${it.badge.bottom}`}
+              </span>
+              <span className="pm-home-next-name">{it.tag} · {it.title}</span>
+              {it.subtitle ? <span className="pm-home-next-sub">{it.subtitle}</span> : null}
+            </button>
+          ) : (
             <button
               key={it.key}
               type="button"
@@ -1397,7 +1412,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 </span>
               ) : null}
             </button>
-          ))}
+          )))}
         </div>
         )}
       </div>
@@ -1415,6 +1430,25 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           />
         </Suspense>
       ) : null}
+
+      {/* Dine tal som en moerk stribe (H-designet). Kun rigtige tal fra profilen. */}
+      {(() => {
+        const elo = Math.round(Number(user?.elo_rating) || 1000);
+        const games = Number(user?.games_played) || 0;
+        const wins = Number(user?.games_won) || 0;
+        return (
+          <button
+            type="button"
+            className="pm-home-stats"
+            onClick={() => setTab('ranking')}
+            aria-label={`ELO ${elo}. ${games} ${games === 1 ? 'kamp' : 'kampe'}, ${wins} ${wins === 1 ? 'sejr' : 'sejre'}. Se ranglisten`}
+          >
+            <span><b>{elo}</b><small>din ELO</small></span>
+            <span><b>{games}</b><small>{games === 1 ? 'kamp' : 'kampe'}</small></span>
+            <span><b className="pm-home-stats-lime">{wins}</b><small>{wins === 1 ? 'sejr' : 'sejre'}</small></span>
+          </button>
+        );
+      })()}
 
       {/* Åbne kampe på dit niveau (fra de samme data som aktiviteten) */}
       {homeOpenMatches.length > 0 && (
