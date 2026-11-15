@@ -11,7 +11,7 @@ test('alle hovedsider bruger den fælles toplinje', async () => {
     'src/dashboard/HomeTab.jsx': null,
     'src/dashboard/MakkereTab.jsx': 'Find makker',
     'src/dashboard/BanerTab.jsx': 'Baner',
-    'src/components/kampe/KampeRedesignToolbar.jsx': 'Kampe',
+    'src/components/kampe/KampeRedesignToolbar.jsx': 'Kort',
     'src/dashboard/RankingTab.jsx': 'Rangliste',
     'src/dashboard/BeskedTab.jsx': 'Beskeder',
     'src/dashboard/ProfilTab.jsx': 'Min profil',

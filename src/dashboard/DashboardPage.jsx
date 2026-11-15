@@ -7,7 +7,8 @@ import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
-import { Home, Users, Swords, Settings, LogOut, ChevronDown, MoreHorizontal, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
+import { Home, Users, MapPin, UserRound, Settings, LogOut, ChevronDown, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
+import { MessagesShortcutContext } from '../lib/messagesShortcut';
 import { NotificationBell } from '../components/NotificationBell';
 
 const loadHomeTab = () => import('./HomeTab');
@@ -801,9 +802,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'kampe',
         tab: 'kampe',
         selector: tabTourSelector('kampe'),
-        title: 'Kampe',
+        title: 'Kort',
         description:
-          'I Kampe opretter du 2v2-kampe, Americano/Mexicano og liga — her tilmelder du dig, ser invitationer og håndterer resultater.',
+          'Under Kort ser du åbne kampe og baner nær dig. Her finder du også 2v2-kampe, Americano/Mexicano og liga, tilmelder dig og håndterer resultater.',
       },
     ];
 
@@ -812,8 +813,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'mere',
         tab: 'mere',
         selector: tabTourSelector('mere'),
-        title: 'Mere',
-        description: 'Under Mere finder du Beskeder, Rangliste, Baner, Liga, Americano, din profil og indstillinger.',
+        title: 'Profil',
+        description: 'Under Profil finder du din profil, Rangliste, Baner, Liga, Americano, Events og indstillinger. Beskeder har sin egen knap øverst på alle sider.',
       });
 
       base.push({
@@ -832,8 +833,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
           id: 'mere',
           tab: 'mere',
           selector: tabTourSelector('mere'),
-          title: 'Mere',
-          description: 'Under Mere finder du Beskeder, Rangliste, Baner, Liga, Americano, din profil og indstillinger.',
+          title: 'Profil',
+          description: 'Under Profil finder du din profil, Rangliste, Baner, Liga, Americano, Events og indstillinger. Beskeder har sin egen knap øverst på alle sider.',
         },
         {
           id: 'account-menu',
@@ -1248,10 +1249,15 @@ export function DashboardPage({ user, onLogout, showToast }) {
   // Redesign v4: Hjem · Kampe · Spil · Makkere · Mere. Beskeder, Baner, Rangliste og Profil ligger under Mere.
   const navTabs = [
     { id: "hjem",     label: "Hjem",    icon: <Home size={18} /> },
-    { id: "kampe",    label: "Kampe",   icon: <Swords size={18} />, badge: kampeTabBadge, attention: hasKampeAttention },
+    { id: "kampe",    label: "Kort",    icon: <MapPin size={18} />, badge: kampeTabBadge, attention: hasKampeAttention },
     { id: "makkere",  label: "Makkere", icon: <Users size={18} /> },
-    { id: "mere",     label: "Mere",    icon: <MoreHorizontal size={18} />, badge: mereBadge > 0 ? mereBadge : null },
+    { id: "mere",     label: "Profil",  icon: <UserRound size={18} />, badge: mereBadge > 0 ? mereBadge : null },
   ];
+  // Besked-knappen i toplinjen paa alle hovedsider (Beskeder har ikke egen plads i bundmenuen).
+  const messagesShortcut = useMemo(
+    () => ({ unread: unreadMessages, open: () => setTab('beskeder') }),
+    [unreadMessages, setTab],
+  );
   const isNavTabActive = (id) => (id === "mere" ? moreTabIds.includes(tab) : tab === id);
   // Spil lader brugeren vaelge: 2v2-kamp, Americano/Mexicano eller Liga.
   const openSpil = () => setSpilChooserOpen(true);
@@ -1551,6 +1557,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       </div>
 
       <div role="main" className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${tab === "makker-filter" || tab === "kamp-filter" ? " pm-dash-main--filter" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}${hideMobileBottomNavForKampeCreate ? " pm-dash-main--kampe-create" : ""}`}>
+        <MessagesShortcutContext.Provider value={messagesShortcut}>
         <Suspense
           fallback={
             <div
@@ -1567,7 +1574,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
           }
         >
-          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} deferOnboardingPrompt={onboardingThisVisit || welcomeOpen || tourOpen}  unreadMessages={unreadMessages} />}
+          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} tourForceNotificationOpen={tourOnNotificationStep} deferOnboardingPrompt={onboardingThisVisit || welcomeOpen || tourOpen} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive onCreatePanelChange={setKampeCreatePanelOpen} />}
@@ -1622,6 +1629,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               <NotifikationerPageLazy onBack={() => setTab("hjem")} />
             )}
           </Suspense>
+        </MessagesShortcutContext.Provider>
       </div>
 
       {tab === "admin" && isAdmin && !adminPinUnlocked && (

@@ -187,7 +187,7 @@ function openMatchViewPayload(row) {
   };
 }
 
-export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false, deferOnboardingPrompt = false, unreadMessages = 0 }) {
+export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = false, deferOnboardingPrompt = false }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
@@ -1179,19 +1179,6 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         // Kort hilsen (redesign v4), saa der er plads til ELO, beskeder og klokken paa telefonen.
         title={firstName ? `Hej, ${firstName}` : greetingText}
         bellTourForceOpen={tourForceNotificationOpen}
-        actions={(
-          <>
-            <button
-              type="button"
-              className="pm-home-chat-btn"
-              onClick={() => setTab('beskeder')}
-              aria-label={unreadMessages > 0 ? `Beskeder, ${unreadMessages} ulæste` : 'Beskeder'}
-            >
-              <MessageCircle size={19} aria-hidden />
-              {unreadMessages > 0 ? <span className="pm-home-chat-badge" aria-hidden>{unreadMessages > 9 ? '9+' : unreadMessages}</span> : null}
-            </button>
-          </>
-        )}
       />
       <EmailConfirmReminder user={authUser} />
 

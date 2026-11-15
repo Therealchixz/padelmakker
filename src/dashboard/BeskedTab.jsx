@@ -1218,6 +1218,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     <div className="pm-besked-page">
       <ScreenHeader
         title="Beskeder"
+        showMessages={false}
         actions={(
           <ChatComposeButton
             composeOpen={composeOpen}

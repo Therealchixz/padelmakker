@@ -44,9 +44,9 @@ test.describe('Logged-in dashboard flows', () => {
     await expect(page.getByRole('button', { name: /ELO \d+\..*Se ranglisten/ })).toBeVisible()
   })
 
-  test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {
+  test('kan skifte til Kort og se 2v2-overblik', async ({ page }) => {
     await page.goto('/dashboard')
-    await page.getByRole('button', { name: 'Kampe' }).first().click()
+    await page.getByRole('button', { name: 'Kort' }).first().click()
     await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible({ timeout: 20_000 })
     // Soegningen ligger i filterarket bag Filter-knappen.
     await page.getByRole('button', { name: /^Filter og søgning/ }).first().click()
@@ -93,13 +93,13 @@ test.describe('Logged-in dashboard flows', () => {
     })
   })
 
-  test('bundmenuen har Spil og Mere, og Mere viser genvejene', async ({ page }) => {
+  test('bundmenuen har Spil og Profil, og Profil viser genvejene', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/dashboard/hjem')
     const nav = page.getByRole('navigation', { name: 'Mobil navigation' })
     await expect(nav.getByRole('button', { name: /Spil/ })).toBeVisible({ timeout: 20_000 })
-    await nav.getByRole('button', { name: /^Mere/ }).click()
-    await expect(page.getByRole('heading', { level: 1, name: 'Mere' })).toBeVisible({ timeout: 20_000 })
+    await nav.getByRole('button', { name: /^Profil/ }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Profil' })).toBeVisible({ timeout: 20_000 })
     for (const name of ['Beskeder', 'Rangliste', 'Baner']) {
       await expect(page.getByRole('navigation', { name: 'Genveje' }).getByRole('button', { name: new RegExp(name) })).toBeVisible()
     }
