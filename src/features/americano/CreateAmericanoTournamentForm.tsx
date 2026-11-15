@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { Check } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useScrollToFieldOnError } from '../../lib/formValidationScroll'
 import { nearestHalfHour, TIME_OPTIONS } from '../../lib/timeSlotOptions.js'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
@@ -18,7 +18,8 @@ const PAYMENT_OPTIONS = [
 const PLAYER_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
 import { supabase } from '../../lib/supabase'
-import { theme, btn } from '../../lib/platformTheme'
+import { theme } from '../../lib/platformTheme'
+import '../../styles/opret-h.css'
 import type { AmericanoPoints, AmericanoOpponentPasses, AmericanoTournamentFormat } from './types'
 import {
   getMatchVenueOptions,
@@ -60,37 +61,77 @@ const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
 export const AMERICANO_COURT_NONE = AMERICANO_VENUE_NONE
 
-// ── Wizard indicator ──
-function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
+const STEP_LABELS = ['Info', 'Pris', 'Publicér'] as const
+const DURATION_OPTIONS = [
+  { value: 60, label: '1 time' },
+  { value: 90, label: '1½ time' },
+  { value: 120, label: '2 timer' },
+  { value: 150, label: '2½ timer' },
+  { value: 180, label: '3 timer' },
+]
+/** De mest brugte starttider som knapper; resten ligger i "Andet tidspunkt". */
+const QUICK_TIMES = (TIME_OPTIONS as string[]).filter((t) => {
+  const [h, m] = t.split(':').map(Number)
+  const mins = h * 60 + m
+  return mins >= 16 * 60 && mins <= 21 * 60 + 30
+})
+
+function isoDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** I dag + de næste seks dage som knapper. */
+function nextDays() {
+  const base = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i)
+    const short = d.toLocaleDateString('da-DK', { weekday: 'short' }).replace('.', '')
+    return { iso: isoDate(d), top: i === 0 ? 'I dag' : short.charAt(0).toUpperCase() + short.slice(1), num: d.getDate() }
+  })
+}
+
+// ── En række, der folder ud på stedet (samme mønster som Opret 2v2-kamp) ──
+function Row({ id, label, value, open, onToggle, wide, error, children }: {
+  id: string
+  label: string
+  value: React.ReactNode
+  open: boolean
+  onToggle: () => void
+  wide?: boolean
+  error?: string | null
+  children: React.ReactNode
+}) {
   return (
-    <div className="pm-wiz">
-      {([{ n: 1, label: 'Info' }, { n: 2, label: 'Pris' }, { n: 3, label: 'Publicér' }] as const).map((s, i) => {
-        const state = s.n < step ? 'done' : s.n === step ? 'on' : ''
-        return (
-          <span key={s.n} style={{ display: 'contents' }}>
-            <div className={`pm-wiz-step${state ? ' ' + state : ''}`}>
-              <div className="pm-wiz-num">{state === 'done' ? <Check size={14} strokeWidth={3} aria-label="Færdig" /> : s.n}</div>
-              <span className="pm-wiz-label">{s.label}</span>
-            </div>
-            {i < 2 && <div className="pm-wiz-line" />}
-          </span>
-        )
-      })}
+    <div className="pm-opret-row-wrap">
+      <button
+        type="button"
+        className={wide ? 'pm-opret-row pm-opret-row--wide' : 'pm-opret-row'}
+        aria-expanded={open}
+        aria-controls={`pm-opret-am-panel-${id}`}
+        onClick={onToggle}
+      >
+        <span className="pm-opret-row-label">{label}</span>
+        <span className="pm-opret-row-value">{value}</span>
+        <ChevronDown size={18} aria-hidden className="pm-opret-row-chev" data-open={open ? 'true' : 'false'} />
+      </button>
+      {error ? <div id={`pm-opret-am-error-${id}`} role="alert" className="pm-opret-error">{error}</div> : null}
+      {open ? <div id={`pm-opret-am-panel-${id}`} className="pm-opret-panel">{children}</div> : null}
     </div>
   )
 }
 
-// ── Toggle ──
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+// ── Til/fra-række ──
+function SwitchRow({ title, desc, on, onChange }: { title: string; desc: string; on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
-      className={`pm-kampe-v2-toggle${on ? ' pm-kampe-v2-toggle--on' : ''}`}
-      onClick={() => onChange(!on)}
-      aria-pressed={on}
-    >
-      <span className="pm-kampe-v2-toggle-knob" />
-    </button>
+    <div className="pm-opret-row-wrap">
+      <button type="button" role="switch" aria-checked={on} className="pm-opret-row pm-opret-row--switch" onClick={() => onChange(!on)}>
+        <span className="pm-opret-row-text">
+          <span className="pm-opret-row-title">{title}</span>
+          <span className="pm-opret-row-desc">{desc}</span>
+        </span>
+        <span className="pm-opret-switch" data-on={on ? 'true' : 'false'} aria-hidden><span /></span>
+      </button>
+    </div>
   )
 }
 
@@ -102,6 +143,9 @@ export function CreateAmericanoTournamentForm({
   onCancel,
 }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  // Navnet er det eneste, der skal skrives, så den række er åben fra start.
+  const [open, setOpen] = useState<string | null>('navn')
+  const toggle = (id: string) => setOpen((cur) => (cur === id ? null : id))
 
   // Step 1 state
   const [tournamentFormat, setTournamentFormat] = useState<AmericanoTournamentFormat>('americano')
@@ -175,6 +219,10 @@ export function CreateAmericanoTournamentForm({
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
+  // Mangler navnet, foldes rækken ud, så feltet kan udfyldes med det samme.
+  useEffect(() => {
+    if (step1Error) setOpen('navn')
+  }, [step1Error])
   useScrollToFieldOnError(step1Error, nameFieldRef, nameInputRef)
 
   const syncPrice = (raw: string) => {
@@ -256,13 +304,6 @@ export function CreateAmericanoTournamentForm({
     }
   }
 
-  const formatDanishDate = (d: string) => {
-    const dt = new Date(d + 'T12:00:00')
-    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-    const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
-    return `${days[dt.getDay()]} d. ${dt.getDate()}. ${months[dt.getMonth()]}`
-  }
-
   const formatPrice = (p: number) =>
     p === 0 ? 'Gratis' : (p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`)
 
@@ -276,207 +317,262 @@ export function CreateAmericanoTournamentForm({
     return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
   })()
 
-  return (
-    <div style={{ paddingBottom: 8 }}>
-      <WizardIndicator step={step} />
+  const todayIso = isoDate(new Date())
+  const days = nextDays()
+  const dayInQuick = days.some((d) => d.iso === date)
+  const shortDate = (() => {
+    const dt = new Date(date + 'T12:00:00')
+    const txt = dt.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' })
+    return txt.charAt(0).toUpperCase() + txt.slice(1)
+  })()
+  const courtsLabel = `${courtsPerRound} ${courtsPerRound === 1 ? 'bane' : 'baner'}`
+  const durationLabel = DURATION_OPTIONS.find((d) => d.value === durationMinutes)?.label ?? `${durationMinutes} min`
+  const levelLabel = formatPlaytomicLevelRange(levelMin, levelMax)
+  const priceLabel = pricePerPerson === 0 ? 'Gratis' : `${formatPrice(pricePerPerson)} · ${paymentLabel}`
+  const resume = [`${shortDate} · ${timeSlot}–${endTime}`, `${playerSlots} spillere`, courtsLabel].join(' · ')
+  const goBack = () => {
+    if (step > 1) setStep((s) => (s - 1) as 1 | 2 | 3)
+    else onCancel?.()
+  }
+  const editAt = (target: 1 | 2, row?: string) => {
+    setStep(target)
+    setOpen(row ?? null)
+  }
 
-      {/* ── Step 1: Info ── */}
+  return (
+    <div className="pm-opret" style={{ marginBottom: 0 }}>
+      <div className="pm-opret-head">
+        <span className="pm-opret-head-kicker">
+          Trin {step} af 3 · {STEP_LABELS[step - 1]}
+        </span>
+        <div className="pm-opret-steps" role="img" aria-label={`Trin ${step} af 3: ${STEP_LABELS[step - 1]}`}>
+          {[1, 2, 3].map((n) => <span key={n} data-done={n <= step ? 'true' : 'false'} />)}
+        </div>
+        <p className="pm-opret-head-title" aria-live="polite">{name.trim() || `Ny ${formatLabel}`}</p>
+        <p className="pm-opret-head-resume">{resume}</p>
+      </div>
+
+      {/* ── Trin 1: Info ── */}
       {step === 1 && (
         <>
-          <div className="pm-field">
-            <label>Format</label>
-            <div className="pm-seg">
-              {([{ id: 'americano', label: 'Americano' }, { id: 'mexicano', label: 'Mexicano' }] as const).map(o => (
-                <button key={o.id} type="button" className={`pm-seg-btn${tournamentFormat === o.id ? ' active' : ''}`} onClick={() => setTournamentFormat(o.id)}>
-                  {o.label}
-                </button>
-              ))}
-            </div>
-            <div className="pm-field-hint">
-              {tournamentFormat === 'mexicano'
-                ? 'Efter runden parres spillere ud fra stilling. Runder genereres løbende.'
-                : 'Hele planen genereres når turneringen startes — alle møder er planlagt på forhånd.'}
-            </div>
-          </div>
-
-          <div className="pm-field" ref={nameFieldRef}>
-            <label htmlFor="americano-create-name">Turneringens navn</label>
-            <input
-              id="americano-create-name"
-              ref={nameInputRef}
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value)
-                if (step1Error) setStep1Error(null)
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-              placeholder={`F.eks. Fredags ${formatLabel}`}
-              style={{
-                ...inputStyle,
-                ...(step1Error ? { borderColor: theme.red, boxShadow: `0 0 0 1px color-mix(in srgb, ${theme.red} 27%, transparent)` } : {}),
-              }}
-              aria-invalid={step1Error ? true : undefined}
-              aria-describedby={step1Error ? 'americano-create-name-error' : undefined}
-            />
-            {step1Error && (
-              <div id="americano-create-name-error" role="alert" style={{ color: theme.red, fontSize: 12, marginTop: 6 }}>
-                {step1Error}
+          <div className="pm-opret-card">
+            <Row id="format" label="Format" value={formatLabel} open={open === 'format'} onToggle={() => toggle('format')}>
+              <div className="pm-opret-options" role="group" aria-label="Vælg format">
+                {([
+                  { id: 'americano', label: 'Americano', desc: 'Makkerne skifter efter en fast plan, så alle spiller med alle.' },
+                  { id: 'mexicano', label: 'Mexicano', desc: 'Makkerne skifter efter stillingen, så kampene bliver jævne.' },
+                ] as const).map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    className="pm-opret-option"
+                    aria-pressed={tournamentFormat === o.id}
+                    onClick={() => { setTournamentFormat(o.id); setOpen(null) }}
+                  >
+                    <b>{o.label}</b>
+                    <span>{o.desc}</span>
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+            </Row>
 
-          <div className="pm-field">
-            <label>Vælg padel-center</label>
-            <VenueRegionPicker
-              value={courtId}
-              onChange={setCourtId}
-              options={selectOptions}
-              placeholder="Ikke valgt endnu"
-              ariaLabel="Vælg bane til turnering"
-            />
-            {isMatchVenueCustom(courtId) ? (
-              <input
-                type="text"
-                value={customCourt}
-                onChange={(e) => setCustomCourt(e.target.value.slice(0, CUSTOM_COURT_NAME_MAX))}
-                placeholder="Skriv banens navn, fx Padelhallen Køge"
-                aria-label="Banens navn"
-                maxLength={CUSTOM_COURT_NAME_MAX}
-                style={{ ...inputStyle, marginTop: 8 }}
+            <div ref={nameFieldRef}>
+              <Row
+                id="navn"
+                label="Navn"
+                value={name.trim() || <span style={{ fontWeight: 600, color: theme.textLight }}>Skriv et navn</span>}
+                open={open === 'navn'}
+                onToggle={() => toggle('navn')}
+                error={step1Error}
+              >
+                <input
+                  id="americano-create-name"
+                  ref={nameInputRef}
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    if (step1Error) setStep1Error(null)
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                  placeholder={`Fx Fredags ${formatLabel}`}
+                  aria-label="Turneringens navn"
+                  style={{
+                    ...inputStyle,
+                    ...(step1Error ? { borderColor: theme.red, boxShadow: `0 0 0 1px color-mix(in srgb, ${theme.red} 27%, transparent)` } : {}),
+                  }}
+                  aria-invalid={step1Error ? true : undefined}
+                  aria-describedby={step1Error ? 'pm-opret-am-error-navn' : undefined}
+                />
+              </Row>
+            </div>
+
+            <Row id="center" label="Center" value={chosenCourtName || 'Ikke valgt endnu'} open={open === 'center'} onToggle={() => toggle('center')}>
+              <VenueRegionPicker
+                value={courtId}
+                onChange={setCourtId}
+                options={selectOptions}
+                placeholder="Ikke valgt endnu"
+                ariaLabel="Vælg bane til turnering"
               />
-            ) : null}
-          </div>
+              {isMatchVenueCustom(courtId) ? (
+                <input
+                  type="text"
+                  value={customCourt}
+                  onChange={(e) => setCustomCourt(e.target.value.slice(0, CUSTOM_COURT_NAME_MAX))}
+                  placeholder="Skriv banens navn, fx Padelhallen Køge"
+                  aria-label="Banens navn"
+                  maxLength={CUSTOM_COURT_NAME_MAX}
+                  style={{ ...inputStyle, marginTop: 8 }}
+                />
+              ) : null}
+            </Row>
 
-          <div className="pm-field">
-            <label>Antal spillere</label>
-            <select
-              value={playerSlots}
-              onChange={(e) => handlePlayerSlotsChange(Number(e.target.value))}
-              style={inputStyle}
-            >
-              {PLAYER_OPTIONS.map((p) => (
-                <option key={p} value={p}>{p} spillere</option>
-              ))}
-            </select>
-            <div className="pm-field-hint">
-              {playerSlots % 4 !== 0
-                ? `${benchCountPerRound(playerSlots, courtsPerRound)} sidder over pr. runde`
-                : 'Alle er på banen hver runde'}
-            </div>
-          </div>
+            <Row id="dag" label="Dag" value={shortDate} open={open === 'dag'} onToggle={() => toggle('dag')}>
+              <div className="pm-opret-chips pm-opret-chips--days" role="group" aria-label="Vælg dag">
+                {days.map((d) => (
+                  <button
+                    key={d.iso}
+                    type="button"
+                    className="pm-opret-chip pm-opret-chip--day"
+                    aria-pressed={date === d.iso}
+                    onClick={() => { setDate(d.iso); setOpen(null) }}
+                  >
+                    <span className="pm-opret-chip-top">{d.top}</span>
+                    <span className="pm-opret-chip-num">{d.num}</span>
+                  </button>
+                ))}
+              </div>
+              <label style={{ ...labelSmall, marginTop: 12 }}>{dayInQuick ? 'Eller vælg en anden dato' : 'Dato'}</label>
+              <DateInputField
+                value={date}
+                min={todayIso}
+                onChange={(e: { target: { value: string } }) => setDate(e.target.value)}
+                inputStyle={{ ...inputStyle, marginBottom: 0 }}
+                aria-label="Dato"
+              />
+            </Row>
 
-          <div className="pm-field">
-            <label>Baner</label>
-            <div className="pm-field-note">
-              {courtsPerRound} {courtsPerRound === 1 ? 'bane' : 'baner'} · alle spiller hver runde
-            </div>
-            <div className="pm-field-hint">Antal baner følger spillerantallet (4 spillere pr. bane).</div>
-          </div>
-
-          <div className="pm-field">
-            <label>Dato</label>
-            <DateInputField
-              value={date}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={(e: { target: { value: string } }) => setDate(e.target.value)}
-              inputStyle={{ ...inputStyle, marginBottom: 0 }}
-              aria-label="Dato"
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, margin: '0 18px 14px' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <label style={labelSmall}>Starttid</label>
-              <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={{ ...inputStyle, margin: 0 }}>
+            <Row id="tid" label="Tid" value={`${timeSlot}–${endTime}`} open={open === 'tid'} onToggle={() => toggle('tid')}>
+              <div className="pm-opret-chips" role="group" aria-label="Vælg starttid">
+                {QUICK_TIMES.map((t) => (
+                  <button key={t} type="button" className="pm-opret-chip" aria-pressed={timeSlot === t} onClick={() => { setTimeSlot(t); setOpen(null) }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <label htmlFor="americano-create-time" style={{ ...labelSmall, marginTop: 12 }}>Andet tidspunkt</label>
+              <select id="americano-create-time" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={inputStyle}>
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <label style={labelSmall}>Varighed</label>
-              <select value={durationMinutes} onChange={e => setDurationMinutes(Number(e.target.value))} style={{ ...inputStyle, margin: 0 }}>
-                <option value={60}>1 time</option>
-                <option value={90}>1½ time</option>
-                <option value={120}>2 timer</option>
-                <option value={150}>2½ timer</option>
-                <option value={180}>3 timer</option>
-              </select>
-            </div>
+            </Row>
+
+            <Row id="varighed" label="Varighed" value={durationLabel} open={open === 'varighed'} onToggle={() => toggle('varighed')}>
+              <div className="pm-opret-chips" role="group" aria-label="Vælg varighed">
+                {DURATION_OPTIONS.map((d) => (
+                  <button key={d.value} type="button" className="pm-opret-chip" aria-pressed={durationMinutes === d.value} onClick={() => { setDurationMinutes(d.value); setOpen(null) }}>
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </Row>
+
+            <Row id="spillere" label="Spillere" value={`${playerSlots} spillere · ${courtsLabel}`} open={open === 'spillere'} onToggle={() => toggle('spillere')}>
+              <div className="pm-opret-stepper">
+                <button
+                  type="button"
+                  className="pm-opret-step-btn"
+                  aria-label="Færre spillere"
+                  disabled={playerSlots <= PLAYER_OPTIONS[0]}
+                  onClick={() => handlePlayerSlotsChange(Math.max(PLAYER_OPTIONS[0], playerSlots - 1))}
+                >−</button>
+                <span className="pm-opret-step-num" aria-live="polite">{playerSlots}</span>
+                <button
+                  type="button"
+                  className="pm-opret-step-btn pm-opret-step-btn--plus"
+                  aria-label="Flere spillere"
+                  disabled={playerSlots >= PLAYER_OPTIONS[PLAYER_OPTIONS.length - 1]}
+                  onClick={() => handlePlayerSlotsChange(Math.min(PLAYER_OPTIONS[PLAYER_OPTIONS.length - 1], playerSlots + 1))}
+                >+</button>
+                <p className="pm-opret-hint" style={{ margin: 0, flex: 1 }}>
+                  4 til 16 spillere. Antal baner følger spillerantallet.{' '}
+                  {playerSlots % 4 !== 0
+                    ? `${benchCountPerRound(playerSlots, courtsPerRound)} sidder over pr. runde.`
+                    : 'Alle er på banen hver runde.'}
+                </p>
+              </div>
+            </Row>
+
+            <Row id="point" label="Point" value={`${pointsPerMatch} point pr. kamp`} open={open === 'point'} onToggle={() => toggle('point')}>
+              <div className="pm-opret-chips pm-opret-chips--3" role="group" aria-label="Vælg point pr. kamp">
+                {POINT_OPTIONS.map((p) => (
+                  <button key={p} type="button" className="pm-opret-chip" aria-pressed={pointsPerMatch === p} onClick={() => { setPointsPerMatch(p); setOpen(null) }}>
+                    {p} point
+                  </button>
+                ))}
+              </div>
+              <p className="pm-opret-hint">Pointene fordeles mellem holdene i hver kamp, fx 10–6 ved 16 point.</p>
+            </Row>
           </div>
 
-          <div className="pm-field">
-            <label>Niveau-interval</label>
-            <div className="pm-level-range-box">
-              <LevelRangeSlider
-                minVal={levelMin}
-                maxVal={levelMax}
-                onMinChange={setLevelMin}
-                onMaxChange={setLevelMax}
-              />
-            </div>
-            <p className="pm-level-range-hint">
-              Spillere på niveau {formatPlaytomicLevelRange(levelMin, levelMax)} matcher turneringen. Kan håndhæves ved tilmelding (slås til i næste trin).
-            </p>
-          </div>
-
-          <div className="pm-field">
-            <label>Point pr. kamp</label>
-            <div className="pm-chips-row">
-              {POINT_OPTIONS.map((p) => (
-                <button key={p} type="button" className={`pm-chip-btn${pointsPerMatch === p ? ' active' : ''}`} onClick={() => setPointsPerMatch(p)}>
-                  {p} point
+          <h3 className="pm-opret-section">Valgfrit</h3>
+          <div className="pm-opret-card">
+            <Row id="niveau" label="Niveau" wide value={levelLabel} open={open === 'niveau'} onToggle={() => toggle('niveau')}>
+              <div className="pm-level-range-box">
+                <LevelRangeSlider minVal={levelMin} maxVal={levelMax} onMinChange={setLevelMin} onMaxChange={setLevelMax} />
+              </div>
+              <p className="pm-opret-hint">
+                Spillere på niveau {levelLabel} matcher turneringen. Du kan kræve niveauet ved tilmelding i trin 3.
+              </p>
+            </Row>
+            <Row
+              id="laengde"
+              label="Kamplængde"
+              wide
+              value={opponentPasses === 2 ? `Lang · ${schedulePreview.longRounds} runder` : `Normal · ${schedulePreview.normalRounds} runder`}
+              open={open === 'laengde'}
+              onToggle={() => toggle('laengde')}
+            >
+              <div className="pm-opret-chips pm-opret-chips--2" role="group" aria-label="Vælg kamplængde">
+                <button type="button" className="pm-opret-chip" aria-pressed={opponentPasses === 1} onClick={() => setOpponentPasses(1)}>
+                  Normal ({schedulePreview.normalRounds} runder)
                 </button>
-              ))}
-            </div>
-            <div className="pm-field-hint">Pointene fordeles mellem holdene pr. kamp — fx 10–6 ved 16 point.</div>
-          </div>
-
-          <div className="pm-field">
-            <label>Kamplængde</label>
-            <div className="pm-chips-row">
-              <button type="button" className={`pm-chip-btn${opponentPasses === 1 ? ' active' : ''}`} onClick={() => setOpponentPasses(1)}>
-                Normal ({schedulePreview.normalRounds} runder)
-              </button>
-              <button type="button" className={`pm-chip-btn${opponentPasses === 2 ? ' active' : ''}`} onClick={() => setOpponentPasses(2)}>
-                Lang ({schedulePreview.longRounds} runder)
-              </button>
-            </div>
-            <div className="pm-field-hint">
-              Estimeret: <strong>{schedulePreview.estSelectedLabel}</strong> (~{schedulePreview.minPerRound} min pr. runde)
-            </div>
-          </div>
-
-          <div className="pm-field">
-            <label>Særlige regler <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span></label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="F.eks. golden point, tidsbegrænsning på 15 min, etc."
-              style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
-            />
-          </div>
-
-          <div className="pm-format-card">
-            <b>{formatLabel}-format</b>
-            <p>
-              {tournamentFormat === 'mexicano'
-                ? 'Et spændende format hvor banerne skifter baseret på spillernes point — vinderne rykker op, og alle får jævnbyrdige kampe.'
-                : 'Klassisk format med fast rundeplan — alle møder alle, med skiftende makkere.'}
-            </p>
+                <button type="button" className="pm-opret-chip" aria-pressed={opponentPasses === 2} onClick={() => setOpponentPasses(2)}>
+                  Lang ({schedulePreview.longRounds} runder)
+                </button>
+              </div>
+              <p className="pm-opret-hint">
+                Estimeret: <strong>{schedulePreview.estSelectedLabel}</strong> (ca. {schedulePreview.minPerRound} min pr. runde)
+              </p>
+            </Row>
+            <Row id="regler" label="Særlige regler" wide value={description.trim() ? 'Udfyldt' : 'Ingen'} open={open === 'regler'} onToggle={() => toggle('regler')}>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Fx golden point eller tidsbegrænsning på 15 min"
+                aria-label="Særlige regler"
+                style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
+              />
+            </Row>
           </div>
         </>
       )}
 
-      {/* ── Step 2: Pris & tilmelding ── */}
+      {/* ── Trin 2: Pris ── */}
       {step === 2 && (
         <>
-          <div className="pm-field">
-            <label>Pris pr. person</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 18px' }}>
-              <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
-                onClick={() => { const n = Math.max(0, Math.round((pricePerPerson - 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)) }}>−</button>
+          <div className="pm-opret-card" style={{ padding: 16 }}>
+            <label htmlFor="americano-create-price" style={labelSmall}>Pris pr. person</label>
+            <div className="pm-opret-stepper">
+              <button
+                type="button"
+                className="pm-opret-step-btn"
+                aria-label="10 kr. mindre"
+                onClick={() => { const n = Math.max(0, Math.round((pricePerPerson - 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)) }}
+              >−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
+                  id="americano-create-price"
                   type="text"
                   inputMode="decimal"
                   value={priceInput}
@@ -486,149 +582,106 @@ export function CreateAmericanoTournamentForm({
                     const display = pricePerPerson === 0 ? '0' : pricePerPerson % 1 === 0 ? String(pricePerPerson) : pricePerPerson.toFixed(2).replace('.', ',')
                     setPriceInput(display)
                   }}
-                  style={{ ...inputStyle, margin: 0, textAlign: 'center', fontWeight: 700, fontSize: 18, paddingRight: 30 }}
+                  style={{ ...inputStyle, height: 48, textAlign: 'center', fontWeight: 800, fontSize: 20, paddingRight: 36 }}
                 />
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: theme.textLight, pointerEvents: 'none' }}>kr.</span>
+                <span className="pm-opret-suffix">kr.</span>
               </div>
-              <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
-                onClick={() => { const n = Math.min(5000, Math.round((pricePerPerson + 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)); if (paymentMethod === 'free') setPaymentMethod('mobilepay') }}>+</button>
+              <button
+                type="button"
+                className="pm-opret-step-btn pm-opret-step-btn--plus"
+                aria-label="10 kr. mere"
+                onClick={() => { const n = Math.min(5000, Math.round((pricePerPerson + 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)); if (paymentMethod === 'free') setPaymentMethod('mobilepay') }}
+              >+</button>
             </div>
-            <div className="pm-field-hint">Sæt til 0 kr., hvis turneringen er gratis.</div>
-          </div>
+            <p className="pm-opret-hint">Sæt til 0 kr., hvis turneringen er gratis.</p>
 
-          <div className="pm-field">
-            <label>Betaling</label>
-            <div className="pm-chips-row">
+            <span style={{ ...labelSmall, marginTop: 16 }}>Betaling</span>
+            <div className="pm-opret-chips pm-opret-chips--3" role="group" aria-label="Vælg betaling">
               {PAYMENT_OPTIONS.map(o => (
-                <button key={o.id} type="button"
-                  className={`pm-chip-btn${paymentMethod === o.id ? ' active' : ''}`}
+                <button
+                  key={o.id}
+                  type="button"
+                  className="pm-opret-chip"
+                  aria-pressed={paymentMethod === o.id}
                   onClick={() => {
                     setPaymentMethod(o.id as typeof paymentMethod)
                     if (o.id === 'free') { setPricePerPerson(0); setPriceInput('0') }
-                  }}>
+                  }}
+                >
                   {o.label}
                 </button>
               ))}
             </div>
           </div>
-
-          {[
-            { label: 'Offentlig turnering', desc: 'Alle kan se og tilmelde sig', value: isPublic, set: setIsPublic },
-            { label: 'Kun niveau-interval kan tilmelde sig', desc: `Niveau ${levelMin.toFixed(1)}–${levelMax.toFixed(1)} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
-          ].map(row => (
-            <div key={row.label} style={{ margin: '0 18px 12px', padding: '13px 15px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
-                <div style={{ fontSize: 12, color: theme.textLight, marginTop: 2 }}>{row.desc}</div>
-              </div>
-              <Toggle on={row.value} onChange={row.set} />
-            </div>
-          ))}
-
-          <div style={{ margin: '0 18px 16px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: theme.textLight, lineHeight: 1.6 }}>
-            Du får besked, når nogen tilmelder sig. Betalingen afregnes direkte mellem jer — PadelMakker tager ikke gebyr.
-          </div>
+          <p className="pm-opret-note">
+            Du får besked, når nogen tilmelder sig. Betalingen afregnes direkte mellem jer. PadelMakker tager ikke gebyr.
+          </p>
         </>
       )}
 
-      {/* ── Step 3: Publicér ── */}
+      {/* ── Trin 3: Publicér ── */}
       {step === 3 && (
         <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 10px' }}>Sådan ser den ud for andre</div>
-
-          {/* Preview card */}
-          <div style={{ margin: '0 18px 16px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--pm-border)', boxShadow: 'var(--pm-shadow)' }}>
-            <div style={{ background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '14px 14px 20px' }}>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                <span style={{ background: tournamentFormat === 'mexicano' ? 'var(--pm-amber)' : 'var(--pm-navy-deep)', color: tournamentFormat === 'mexicano' ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)', border: tournamentFormat === 'mexicano' ? 'none' : '1px solid rgba(255,255,255,0.32)', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
-                  {formatLabel}
-                </span>
-                <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
-                  Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
-                </span>
-              </div>
-              {/* Padel court illustration */}
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 20px' }}>
-                <div style={{ width: '100%', maxWidth: 220, height: 70, background: 'rgba(255,255,255,0.13)', borderRadius: 8, border: '2px solid rgba(255,255,255,0.22)', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1.5, background: 'rgba(255,255,255,0.35)', transform: 'translateX(-50%)' }} />
-                  <div style={{ position: 'absolute', left: '50%', top: '25%', bottom: '25%', width: 1.5, background: 'rgba(255,255,255,0.22)', transform: 'translateX(-50%)' }} />
-                </div>
-              </div>
-            </div>
-            <div style={{ padding: '12px 14px' }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: theme.text, marginBottom: 6 }}>{name || `Fredags ${formatLabel}`}</div>
-              <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                <svg style={{ width: 12, height: 12, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                {formatDanishDate(date)} · {timeSlot}–{endTime}
-              </div>
-              {courtLabel && (
-                <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <svg style={{ width: 12, height: 12, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {courtLabel}
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--pm-border)' }}>
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pris</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{formatPrice(pricePerPerson)}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pladser</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>0 / {playerSlots}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Summary table */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Opsummering</div>
-          <div style={{ margin: '0 18px 14px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
+          <div className="pm-opret-card">
             {[
-              { label: 'Format', value: `${formatLabel} · ${pointsPerMatch} point pr. kamp` },
-              { label: 'Spillere & baner', value: `${playerSlots} spillere · ${courtsPerRound} ${courtsPerRound === 1 ? 'bane' : 'baner'}` },
-              { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${formatPrice(pricePerPerson)} · ${paymentLabel}` },
-            ].map((row, i, arr) => (
-              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
-                <span style={{ fontSize: 13, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{row.value}</span>
+              { label: 'Format', value: `${formatLabel} · ${pointsPerMatch} point`, target: 1 as const, row: 'format' },
+              { label: 'Hvornår', value: `${shortDate} · ${timeSlot}–${endTime}`, target: 1 as const, row: 'dag' },
+              { label: 'Center', value: courtLabel || 'Ikke valgt endnu', target: 1 as const, row: 'center' },
+              { label: 'Spillere', value: `${playerSlots} spillere · ${courtsLabel}`, target: 1 as const, row: 'spillere' },
+              { label: 'Niveau', value: levelLabel, target: 1 as const, row: 'niveau' },
+              { label: 'Betaling', value: priceLabel, target: 2 as const, row: undefined },
+            ].map((r) => (
+              <div key={r.label} className="pm-opret-row-wrap">
+                <button type="button" className="pm-opret-row" onClick={() => editAt(r.target, r.row)} aria-label={`Ret ${r.label.toLowerCase()}: ${r.value}`}>
+                  <span className="pm-opret-row-label">{r.label}</span>
+                  <span className="pm-opret-row-value">{r.value}</span>
+                  <span className="pm-opret-row-edit">Ret</span>
+                </button>
               </div>
             ))}
           </div>
 
-          <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: theme.textLight, lineHeight: 1.6 }}>
-            Turneringen bliver synlig under Turneringer og i aktivitetsfeedet for spillere i niveau-intervallet{courtLabel ? ` nær ${courtLabel}` : ''}.
+          <h3 className="pm-opret-section">Hvem kan se og tilmelde sig</h3>
+          <div className="pm-opret-card">
+            <SwitchRow
+              title="Offentlig turnering"
+              desc="Alle kan se og tilmelde sig"
+              on={isPublic}
+              onChange={setIsPublic}
+            />
+            <SwitchRow
+              title={`Kun niveau ${levelLabel} kan tilmelde sig`}
+              desc={enforceLevelInterval ? 'Niveauet håndhæves ved tilmelding' : 'Alle niveauer kan tilmelde sig'}
+              on={enforceLevelInterval}
+              onChange={setEnforceLevelInterval}
+            />
           </div>
 
-          {error && <div style={{ margin: '0 18px 12px', color: theme.red, fontSize: 13 }}>{error}</div>}
+          {error && <div role="alert" className="pm-opret-error pm-opret-error--general">{error}</div>}
         </>
       )}
 
       {/* ── Navigation ── */}
-      <div style={{ display: 'flex', gap: 10, padding: '4px 18px 4px' }}>
-        {step > 1 ? (
-          <button type="button" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
-            ← Tilbage
-          </button>
-        ) : onCancel ? (
-          <button type="button" onClick={onCancel} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
-            Annullér
-          </button>
-        ) : null}
-
+      <div className="pm-opret-actions">
         {step < 3 ? (
-          <button type="button" onClick={goNext} style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}>
-            {step === 1 ? 'Næste: Pris & tilmelding →' : 'Næste: Publicér →'}
+          <button type="button" className="pm-opret-cta" onClick={goNext}>
+            {step === 1 ? 'Næste: Pris' : 'Næste: Publicér'}
           </button>
         ) : (
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={doSubmit}
-            style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2, cursor: submitting ? 'wait' : 'pointer' }}
-          >
-            {submitting ? 'Publicerer…' : <><Check size={14} strokeWidth={3} aria-hidden /> Publicér {formatLabel}</>}
+          <button type="button" className="pm-opret-cta" disabled={submitting} onClick={doSubmit}>
+            {submitting ? 'Publicerer…' : `Publicér ${formatLabel}`}
           </button>
         )}
+        <p className="pm-opret-foot">
+          {step < 3
+            ? 'Turneringen bliver først synlig, når du publicerer i trin 3.'
+            : 'Du kan rette bane, dato og tid bagefter.'}
+        </p>
+        {step > 1 || onCancel ? (
+          <button type="button" className="pm-opret-cancel" onClick={goBack} disabled={submitting}>
+            {step > 1 ? 'Tilbage' : 'Annullér'}
+          </button>
+        ) : null}
       </div>
     </div>
   )
@@ -646,9 +699,9 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
   padding: '10px 12px',
-  height: 42,
+  height: 44,
   lineHeight: '20px',
-  borderRadius: 8,
+  borderRadius: 12,
   border: '1.5px solid var(--pm-border)',
   fontSize: 14,
   fontFamily: "var(--pm-font)",

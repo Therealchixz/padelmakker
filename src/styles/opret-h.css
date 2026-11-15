@@ -127,6 +127,92 @@
   color: var(--pm-text-light);
 }
 
+.pm-opret-row-edit {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-accent);
+}
+.pm-opret-note {
+  margin: 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pm-text-light);
+}
+/* Trin-streger i det moerke hoved (turnering har tre trin). */
+.pm-opret-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.pm-opret-steps > span {
+  height: 5px;
+  border-radius: 999px;
+  background: #5C6B85;
+}
+.pm-opret-steps > span[data-done="true"] { background: var(--pm-lime); }
+/* To store valg med forklaring (Americano / Mexicano). */
+.pm-opret-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-opret-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1.5px solid #7A879D;
+  border-radius: 16px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-opret-option b { font-size: 16px; font-weight: 800; }
+.pm-opret-option span { font-size: 12px; line-height: 1.4; }
+.pm-opret-option[aria-pressed="true"] {
+  border: 2px solid var(--pm-ink);
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+}
+[data-theme="dark"] .pm-opret-option[aria-pressed="true"] { border-color: var(--pm-lime); }
+/* Plus/minus med tallet imellem. */
+.pm-opret-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pm-opret-step-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid var(--pm-ink);
+  border-radius: 50%;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pm-opret-step-btn--plus {
+  background: var(--pm-ink);
+  color: #fff;
+}
+[data-theme="dark"] .pm-opret-step-btn { border-color: var(--pm-text-light); }
+[data-theme="dark"] .pm-opret-step-btn--plus { background: var(--pm-accent-solid); border-color: var(--pm-accent-solid); }
+.pm-opret-step-num {
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--pm-font-brand);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
 /* Valg som knapper: valgt = lime med moerk kant, ikke valgt = hvid med graa kant. */
 .pm-opret-chips {
   display: grid;
@@ -134,6 +220,8 @@
   gap: 8px;
 }
 .pm-opret-chips--days { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.pm-opret-chips--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pm-opret-chips--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pm-opret-chip {
   min-height: 44px;
   padding: 0 4px;
@@ -241,4 +329,13 @@
   .pm-opret-switch > span,
   .pm-opret-cta { transition: none; }
   .pm-opret-cta:active { transform: none; }
+}
+
+/* Turnerings-formularen ligger i en ramme fra den gamle opbygning; kampkortet har sine egne kort. */
+.pm-kampe-v4-root .pm-create-form-panel:has(> .pm-opret),
+.pm-create-form-panel:has(> .pm-opret) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
