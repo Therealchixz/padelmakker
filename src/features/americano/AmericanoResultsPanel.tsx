@@ -658,7 +658,7 @@ export function AmericanoResultsPanel({
               </div>
             ) : resolved != null ? (
               <div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: c.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: c.text, letterSpacing: '-0.02em', }}>
                   {resolved.a} - {resolved.b}
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>SCORE</div>
@@ -765,7 +765,7 @@ export function AmericanoResultsPanel({
                 ) : null}
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: isMe ? c.accent : c.text, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{row.points}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: isMe ? c.accent : c.text, lineHeight: 1, }}>{row.points}</div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>PTS</div>
               </div>
             </div>

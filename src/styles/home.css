@@ -42,7 +42,6 @@
   font-family: var(--pm-font-data);
   font-size: 12px;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -70,7 +69,6 @@
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   display: grid;
@@ -103,17 +101,16 @@
 .pm-home-up-badge-top {
   display: block;
   font-family: var(--pm-font-brand);
+  font-weight: 800;
+  letter-spacing: -0.035em;
   font-size: 24px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  font-synthesis: none;
 }
 .pm-home-up-badge-top.is-small { font-size: 16px; }
 .pm-home-up-badge-bottom {
   display: block;
   margin-top: 3px;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
@@ -197,14 +194,13 @@
 .pm-home-open-when { display: flex; flex-direction: column; gap: 2px; }
 .pm-home-open-time {
   font-family: var(--pm-font-brand);
+  font-weight: 800;
+  letter-spacing: -0.035em;
   font-size: 22px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  font-synthesis: none;
 }
 .pm-home-open-day {
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
@@ -223,7 +219,6 @@
   align-items: center;
   gap: 8px;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: var(--pm-text-mid);
 }
@@ -370,7 +365,7 @@
   border-radius: 12px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
-  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.12);
+  box-shadow: 0 2px 8px rgba(11, 27, 51, 0.12);
 }
 .pm-home-map-modes > button {
   min-height: 34px;
@@ -397,10 +392,9 @@
   z-index: 500;
   padding: 4px 8px;
   border-radius: 6px;
-  background: var(--pm-ink, #1b1a17);
+  background: var(--pm-ink, #0B1B33);
   color: var(--pm-bg, #f3efe6);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -415,7 +409,6 @@
   border-radius: 6px;
   background: color-mix(in srgb, var(--pm-surface) 85%, transparent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -456,11 +449,10 @@
   background: var(--pm-pin, var(--pm-accent-solid));
   color: #FFFFFF;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 12px;
   line-height: 1;
-  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.28);
+  box-shadow: 0 2px 6px rgba(11, 27, 51, 0.28);
   border: 2px solid #FFFFFF;
 }
 .pm-home-map-pin-stem {
@@ -503,7 +495,6 @@
 .pm-home-map-sel-meta {
   margin-top: 2px;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -569,7 +560,6 @@
 .pm-home-map-row-meta {
   flex-shrink: 0;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: var(--pm-text-mid);
 }

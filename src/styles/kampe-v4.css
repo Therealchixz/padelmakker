@@ -37,8 +37,11 @@
 }
 .pm-kampe-v4 .pm-kampe-v2-format-pill {
   justify-content: center;
+  gap: 4px;
   min-height: 38px;
-  padding: 0 10px;
+  padding: 0 4px;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -48,7 +51,7 @@
 .pm-kampe-v4 .pm-kampe-v2-format-pill--active {
   background: var(--pm-surface);
   color: var(--pm-text);
-  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
+  box-shadow: 0 1px 3px rgba(11, 27, 51, 0.12);
 }
 [data-theme="dark"] .pm-kampe-v4 .pm-kampe-v2-format-pill--active {
   background: color-mix(in srgb, var(--pm-paper) 16%, transparent);
@@ -56,7 +59,6 @@
 }
 .pm-kampe-v4 .pm-kampe-v2-format-count {
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   opacity: 0.65;
 }
@@ -99,7 +101,6 @@
   font-family: var(--pm-font-data);
   font-size: 12px;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 .pm-kampe-v4 .pm-kampe-v4-filterbar .pm-kampe-v2-active-chip {
   min-height: 36px;
@@ -135,17 +136,15 @@ label.pm-kampe-v2-sheet-label { display: block; }
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-date-badge b {
   font-family: var(--pm-font-brand);
-  font-weight: 400;
+  font-weight: 800;
+  letter-spacing: -0.035em;
   font-size: 30px;
   line-height: 0.95;
-  font-variant-numeric: tabular-nums;
-  font-synthesis: none;
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-date-badge span {
   display: block;
   margin-top: 2px;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -155,7 +154,6 @@ label.pm-kampe-v2-sheet-label { display: block; }
 .pm-kampe-v4-root .pm-kampe-v2-list-meta-time {
   font-family: var(--pm-font-data);
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-cta {
   min-height: 44px;
@@ -199,7 +197,6 @@ label.pm-kampe-v2-sheet-label { display: block; }
   width: 30px;
   height: 30px;
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 13px;
 }
 .pm-kampe-v4-root .pm-wiz-step.on .pm-wiz-num {

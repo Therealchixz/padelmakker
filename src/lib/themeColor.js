@@ -2,9 +2,9 @@
  * Farven paa telefonens statusbjaelke og browserens top (meta theme-color).
  * Skal matche det oeverste paa siden, ellers ser appen ud som en hjemmeside (skill: mobile-native).
  */
-export const THEME_COLOR_LIGHT = '#F3EEE4';
-export const THEME_COLOR_DARK = '#141311';
-export const THEME_COLOR_INK = '#1B1A17';
+export const THEME_COLOR_LIGHT = '#EDF1F8';
+export const THEME_COLOR_DARK = '#070F1E';
+export const THEME_COLOR_INK = '#0B1B33';
 
 /** @param {string} color */
 export function setThemeColor(color) {

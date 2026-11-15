@@ -325,7 +325,7 @@ export function PendingResultConfirmModal({ user }) {
               {match.court_name}
             </div>
           )}
-          <div style={{ fontSize: '15px', fontWeight: 700, color: theme.text, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: theme.text, }}>
             {scoreDisplay}
           </div>
         </div>

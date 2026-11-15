@@ -38,11 +38,10 @@
 }
 .pm-mere-profile-name {
   font-family: var(--pm-font-brand);
-  text-transform: uppercase;
+  font-weight: 800;
   font-size: 26px;
   line-height: 1;
-  letter-spacing: 0.005em;
-  font-synthesis: none;
+  letter-spacing: -0.035em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -58,8 +57,7 @@
   font-family: var(--pm-font-data);
   font-size: 12px;
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--pm-ball);
+  color: var(--pm-lime);
 }
 [data-theme="dark"] .pm-mere-profile-stats { color: var(--pm-accent-solid); }
 .pm-mere-profile-go {
@@ -113,7 +111,6 @@
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   display: grid;
@@ -166,7 +163,6 @@
 }
 .pm-mere-row-value {
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 500;
 }
@@ -210,7 +206,7 @@
   .pm-mobile-bottom-nav.pm-nav-v4 {
     grid-template-columns: 1fr 1fr 84px 1fr 1fr;
     align-items: end;
-    background: color-mix(in srgb, var(--pm-bg) 94%, transparent);
+    background: color-mix(in srgb, var(--pm-surface) 94%, transparent);
     box-shadow: none;
   }
   .pm-nav-v4 .pm-mobile-bottom-btn[data-active="true"] { color: var(--pm-text); }
@@ -226,17 +222,17 @@
   width: 68px;
   height: 68px;
   margin-top: -30px;
-  border: 5px solid var(--pm-bg);
+  border: 5px solid var(--pm-surface);
   border-radius: 50%;
-  background: var(--pm-accent-solid);
-  color: var(--pm-on-accent);
+  /* Lime med moerk tekst: den eneste lime flade i menuen (H-designet). */
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
   font-family: var(--pm-font-brand);
-  font-size: 20px;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  font-synthesis: none;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
   cursor: pointer;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--pm-accent-solid) 35%, transparent);
+  box-shadow: 0 6px 16px rgba(11, 27, 51, 0.22);
   transition: transform 120ms ease-out, background-color 160ms ease;
 }
 .pm-spil-btn:active { transform: scale(0.94); }
@@ -249,18 +245,18 @@
   padding: 0 20px;
   border: 0;
   border-radius: 999px;
-  font-size: 18px;
+  font-size: 16px;
   align-self: center;
   box-shadow: none;
 }
 @media (hover: hover) and (pointer: fine) {
-  .pm-spil-btn:hover { background: color-mix(in srgb, var(--pm-accent-solid) 86%, black); }
+  .pm-spil-btn:hover { background: color-mix(in srgb, var(--pm-lime) 88%, black); }
 }
 
 /* Tal paa menuen i lerfarven, som paa Beskeder-feltet. Roed er til fejl og advarsler. */
 .pm-nav-v4 .pm-mobile-bottom-badge {
   background: var(--pm-accent-solid);
-  border-color: var(--pm-bg);
+  border-color: var(--pm-surface);
 }
 
 /* Reducér bevægelse: de to evige animationer (live-prik og "skriver...") staar stille. */
@@ -292,12 +288,10 @@
 .pm-spil-sheet-title {
   margin: 0;
   font-family: var(--pm-font-brand);
-  font-weight: 400;
-  text-transform: uppercase;
+  font-weight: 800;
   font-size: 30px;
   line-height: 1;
-  letter-spacing: 0.005em;
-  font-synthesis: none;
+  letter-spacing: -0.035em;
 }
 .pm-spil-sheet-list {
   list-style: none;

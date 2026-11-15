@@ -1,77 +1,77 @@
 /* ── PadelMakker design tokens — light mode ──
-   Farvekort (nov. 2026): papir + blaek baerer alt. Ler er eneste staerke farve og
-   betyder "tryk her". Tre stille signalfarver fra banen bruges kun til status:
-   groen (godt/vundet/aabent), rosa-roed (tabt/fejl/farligt), okker (afventer).
-   Blaa og lilla er udfaset; info er neutral blaek. */
+   Farvekort "H" (ejerens valg 15. nov. 2026): lys blaagraa bund, hvide kort og
+   moerk navy baerer alt. Blaa betyder "tryk her" (knapper, links). Lime er
+   "det er dit / spil nu" og bruges sparsomt, altid med moerk tekst ovenpaa.
+   Tre stille signalfarver bruges kun til status: groen (godt/vundet/aabent),
+   roed (tabt/fejl/farligt), okker (afventer). */
 :root {
-  --pm-bg:          #F3EEE4;
-  --pm-surface:     #FBF8F2;
-  --pm-surface-alt: #F7F2E9;
-  --pm-text:        #1B1A17;
-  --pm-text-mid:    #4A463E;
+  --pm-bg:          #EDF1F8;
+  --pm-surface:     #FFFFFF;
+  --pm-surface-alt: #F6F8FC;
+  --pm-text:        #0B1B33;
+  --pm-text-mid:    #3A4760;
   /* #6B7A8F gav 4,37:1 paa hvid og 3,4-4,1:1 paa de farvede bokse. #596579
      holder 4,5:1 paa alle overflader og er stadig tydeligt lysere end text-mid. */
-  --pm-text-light:  #6B655A;
+  --pm-text-light:  #4A5568;
 
-  --pm-accent:      #A8432D;
+  --pm-accent:      #0F52D6;
   /* Udfyldte flader (knapper, bobler, badges) med hvid tekst ovenpaa.
      I lys tilstand er den identisk med --pm-accent, saa intet aendrer sig.
      I moerk tilstand er accenten lys nok til at hvid tekst falder til 2,5:1,
      og derfor har udfyldte flader brug for deres egen, moerkere farve. */
-  --pm-accent-solid: #C0503A;
-  --pm-accent-hover:#A8432D;
-  --pm-accent-bg:   #F6E4DC;
-  --pm-landing-cta-blue: #C0503A;
+  --pm-accent-solid: #1463F3;
+  --pm-accent-hover:#0B3FA8;
+  --pm-accent-bg:   #E3ECFF;
+  --pm-landing-cta-blue: #1463F3;
 
   /* Kun som fyld bag hvid tekst: navy har ingen moerk udgave og giver 1,3:1
      som tekst paa moerke kort. Brug --pm-accent til tekst og kanter. */
-  --pm-navy:        #1B1A17;
-  --pm-navy-bg:     #ECE5D8;
-  --pm-navy-deep:   #0F0E0C;
-  --pm-navy-soft:   #2E2B25;
+  --pm-navy:        #0B1B33;
+  --pm-navy-bg:     #E6ECF5;
+  --pm-navy-deep:   #06101F;
+  --pm-navy-soft:   #1A2D4D;
   /* Orange og groen bruges som tekstfarve paa lyse flader; #D97706 og #059669
      gav kun 2,9-3,8:1. De moerkere nuancer holder 4,5:1 paa hvid og paa deres
      egne -bg-flader. */
   /* Okker = afventer / kraever opmaerksomhed. Holdt gul-brun, saa den ikke ligner ler. */
   --pm-amber:       #8C6400;
-  --pm-amber-bg:    #F6ECCB;
+  --pm-amber-bg:    #FBF1CF;
   --pm-amber-text:  #6B4D00;
-  --pm-amber-border:#E3CF95;
+  --pm-amber-border:#E8D48F;
 
   --pm-warm:        #7A5700;
-  --pm-warm-bg:     #F6ECCB;
-  --pm-blue:        #4A463E;
-  --pm-blue-bg:     #EAE3D6;
-  --pm-red:         #B4234A;
+  --pm-warm-bg:     #FBF1CF;
+  --pm-blue:        #0F52D6;
+  --pm-blue-bg:     #E3ECFF;
+  --pm-red:         #C4213F;
   /* Udfyldte roede maerker med hvid tekst (antal ulaeste m.m.). Samme ide som
-     --pm-accent-solid: i moerk tilstand er --pm-red for lys til hvid tekst. */
-  --pm-red-solid:   #B4234A;
-  --pm-red-bg:      #F8E3E7;
+     --pm-accent-solid: #1463F3;
+  --pm-red-bg:      #FCE6EA;
 
-  --pm-green:       #2F5D4E;
-  --pm-green-bg:    #E2EBE5;
+  --pm-green:       #1E6B45;
+  --pm-green-bg:    #E1F2E8;
   /* Tabt / minus-point: rosa-roed (crimson). Holdt koeligere end ler (#C0503A),
      saa de to ikke forveksles. */
-  --pm-loss:        #B4234A;
-  --pm-loss-bg:     #F8E3E7;
-  --pm-purple:      #2F5D4E;
-  --pm-purple-bg:   #E2EBE5;
-  --pm-info:        #4A463E;
-  --pm-info-bg:     #EAE3D6;
-  --pm-info-border: #D9D1C2;
-  --pm-success:     #2F5D4E;
-  --pm-success-bg:  #E2EBE5;
-  --pm-success-border:#B9CDC2;
+  --pm-loss:        #C4213F;
+  --pm-loss-bg:     #FCE6EA;
+  --pm-purple:      #1E6B45;
+  --pm-purple-bg:   #E1F2E8;
+  --pm-info:        #3A4760;
+  --pm-info-bg:     #EEF3FB;
+  --pm-info-border: #DCE3EF;
+  --pm-success:     #1E6B45;
+  --pm-success-bg:  #E1F2E8;
+  --pm-success-border:#B5D9C4;
   --pm-warning:     #7A5700;
-  --pm-warning-bg:  #F6ECCB;
-  --pm-warning-border:#E3CF95;
-  --pm-danger:      #B4234A;
-  --pm-danger-bg:   #F8E3E7;
-  --pm-danger-border:#E8B9C4;
-  --pm-danger-strong:#8E1A39;
+  --pm-warning-bg:  #FBF1CF;
+  --pm-warning-border:#E8D48F;
+  --pm-danger:      #C4213F;
+  --pm-danger-bg:   #FCE6EA;
+  --pm-danger-border:#F0BCC6;
+  --pm-danger-strong:#96172F;
   --pm-on-accent:   #FFFFFF;
   --pm-podium-gold:   #8C6400;
-  --pm-podium-silver: #6B655A;
+  --pm-podium-silver: #5C6B85;
   --pm-podium-bronze: #7E5236;
   /* Americano: groen = vundet, papir = uafgjort, dempet = tabt (ikke roed). */
   --pm-americano-win-bg: var(--pm-green-bg);
@@ -83,39 +83,39 @@
   --pm-americano-loss-bg: var(--pm-loss-bg);
   --pm-americano-loss-border: color-mix(in srgb, var(--pm-loss) 35%, var(--pm-border));
   --pm-americano-loss-text: var(--pm-loss);
-  --pm-americano-neutral-bg: #FBF8F2;
-  --pm-americano-neutral-border: #D9D1C2;
-  --pm-americano-neutral-text: #1B1A17;
-  --pm-elo-gradient-start:#1B1A17;
-  --pm-elo-gradient-end:#2E2B25;
+  --pm-americano-neutral-bg: #FFFFFF;
+  --pm-americano-neutral-border: #DCE3EF;
+  --pm-americano-neutral-text: #0B1B33;
+  --pm-elo-gradient-start:#0B1B33;
+  --pm-elo-gradient-end:#14294A;
   --pm-brand-gradient: linear-gradient(135deg, var(--pm-elo-gradient-start), var(--pm-elo-gradient-end));
-  --pm-hero-gradient: linear-gradient(160deg, #1B1A17 0%, #2E2B25 100%);
-  --pm-cta-gradient: linear-gradient(135deg, #C0503A 0%, #A8432D 100%);
-  --pm-accent-gradient-end: #A8432D;
-  --pm-hero-subtitle: rgba(243, 238, 228, 0.85);
-  --pm-rank-hero-gradient: linear-gradient(135deg, #1B1A17, #2E2B25);
-  --pm-surface-muted: #EAE3D6;
-  --pm-video-bg: #1B1A17;
+  --pm-hero-gradient: linear-gradient(160deg, #0B1B33 0%, #14294A 100%);
+  --pm-cta-gradient: linear-gradient(135deg, #1463F3 0%, #0F52D6 100%);
+  --pm-accent-gradient-end: #0F52D6;
+  --pm-hero-subtitle: rgba(227, 236, 255, 0.85);
+  --pm-rank-hero-gradient: linear-gradient(135deg, #0B1B33, #14294A);
+  --pm-surface-muted: #E6ECF5;
+  --pm-video-bg: #0B1B33;
   /* Form-prikkerne har hvide bogstaver (V/T/U); de lyse nuancer gav 2,3-3,8:1. */
-  --pm-form-win: #2F5D4E;
-  --pm-form-loss: #B4234A;
-  --pm-form-draw: #6B655A;
+  --pm-form-win: #1E6B45;
+  --pm-form-loss: #C4213F;
+  --pm-form-draw: #5C6B85;
   --pm-elo-progress-track: rgba(255,255,255,0.15);
   --pm-overlay:     rgba(0,0,0,0.35);
   --pm-overlay-strong: rgba(0,0,0,0.5);
-  --pm-shadow-soft: 0 1px 4px rgba(27, 26, 23, 0.06);
-  --pm-shadow-accent: 0 6px 18px rgba(192, 80, 58, 0.12);
+  --pm-shadow-soft: 0 1px 4px rgba(11, 27, 51, 0.06);
+  --pm-shadow-accent: 0 6px 18px rgba(20, 99, 243, 0.16);
   --pm-menu-shadow: 0 8px 32px rgba(0,0,0,0.14);
   --pm-modal-shadow: 0 12px 40px rgba(0,0,0,0.22);
 
-  --pm-border:      #D9D1C2;
-  --pm-shadow:      0 2px 8px rgba(27, 26, 23, 0.06);
-  --pm-shadow-lg:   0 10px 28px rgba(27, 26, 23, 0.16);
-  --pm-shadow-btn:  0 1px 2px rgba(192, 80, 58, 0.24);
-  --pm-radius-sm:   8px;
-  --pm-radius-md:   10px;
-  --pm-radius-lg:   16px;
-  --pm-radius-xl:   18px;
+  --pm-border:      #DCE3EF;
+  --pm-shadow:      0 2px 8px rgba(11, 27, 51, 0.06);
+  --pm-shadow-lg:   0 10px 28px rgba(11, 27, 51, 0.16);
+  --pm-shadow-btn:  0 1px 2px rgba(20, 99, 243, 0.24);
+  --pm-radius-sm:   10px;
+  --pm-radius-md:   12px;
+  --pm-radius-lg:   18px;
+  --pm-radius-xl:   24px;
   --pm-radius:      var(--pm-radius-md);
   --pm-space-1:     8px;
   --pm-space-2:     12px;
@@ -126,55 +126,59 @@
      Google 48x48 for noget, man rammer med en finger. */
   --pm-control-h:   44px;
   --pm-transition-ui: 0.18s ease;
-  --pm-focus-ring: 0 0 0 3px rgba(192, 80, 58, 0.35);
-  --pm-focus-ring-dark: 0 0 0 3px rgba(232, 131, 107, 0.35);
-  /* Tekst og knapper: Figtree (ejerens valg 9. nov. 2026, afloeser Instrument Sans). Hentes som variabel skrift 400-900. */
-  --pm-font:        'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  --pm-font-display:'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  /* Brand-overskrifter på de offentlige sider (forside, Om, FAQ, ELO, Events). Anton: smal, kantet grotesk med versaler (redesign v4). */
-  --pm-font-brand:  'Anton', 'Arial Narrow', Impact, sans-serif;
+  --pm-focus-ring: 0 0 0 3px rgba(20, 99, 243, 0.35);
+  --pm-focus-ring-dark: 0 0 0 3px rgba(122, 166, 255, 0.4);
+  /* Tekst og knapper: Schibsted Grotesk (H-designet, ejerens valg 15. nov. 2026, afloeser Figtree). */
+  --pm-font:        'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --pm-font-display:'Bricolage Grotesque', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  /* Overskrifter og store tal: Bricolage Grotesque, fed, almindelige store/smaa bogstaver (afloeser Anton med versaler). */
+  --pm-font-brand:  'Bricolage Grotesque', 'Schibsted Grotesk', Arial, sans-serif;
   /* Varm accent (den orange fra bane-kortet). --pm-orange kan bruges til tekst på lys baggrund (4.9:1);
      --pm-orange-bright er til mørk baggrund og store tal. */
-  --pm-orange:        #A8432D;
-  --pm-orange-bright: #E9B44C;
-  /* Redesign v4 (klubhus): faste brandfarver, der ikke skifter med lys/moerk. */
-  --pm-ink:         #1B1A17;
-  --pm-ink-raised:  #26241F;
-  --pm-paper:       #F3EEE4;
-  --pm-clay:        #C8553D;
-  --pm-ball:        #E9B44C;
-  --pm-court:       #2F5D4E;
-  /* "Din placering" paa kort: den kendte blaa prik (eneste blaa i appen). */
-  --pm-map-me:      #2A78D6;
-  --pm-display-weight:   700;
-  --pm-display-tracking: -0.03em;
+  --pm-orange:        #0F52D6;
+  --pm-orange-bright: #D8F34A;
+  /* Faste brandfarver, der ikke skifter med lys/moerk. Navnene er fra det gamle design:
+     ink = navy, paper = lys bund, clay = blaa ("tryk her"), ball = lime, court = groen. */
+  --pm-ink:         #0B1B33;
+  --pm-ink-raised:  #14294A;
+  --pm-paper:       #EDF1F8;
+  --pm-clay:        #1463F3;
+  /* H-designet: lime er "det er dit / spil nu". Altid med moerk tekst (--pm-on-lime) ovenpaa. */
+  --pm-lime:        #D8F34A;
+  --pm-on-lime:     #0B1B33;
+  --pm-ball:        #D8F34A;
+  --pm-court:       #1E6B45;
+  /* "Din placering" paa kort: moerk prik, saa den ikke forveksles med de blaa kampe. */
+  --pm-map-me:      #0B1B33;
+  --pm-display-weight:   800;
+  --pm-display-tracking: -0.035em;
   --pm-display-case:     none;
-  --pm-display-leading:  1.15;
-  /* Tal og tider (ELO, klokkeslaet, datoer): samme skrift som teksten, med lige brede cifre (tabular-nums),
-     saa tal staar under hinanden. Afloeser IBM Plex Mono (ejerens valg 9. nov. 2026). */
-  --pm-font-data:   'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --pm-display-leading:  1.1;
+  /* Tal og tider (ELO, klokkeslaet, datoer): samme skrift som teksten. Brug IKKE tabular-nums:
+     i Schibsted Grotesk faar punktum og kolon ogsaa fast bredde, saa "3.0" og "19:30" faar huller. */
+  --pm-font-data:   'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 
 /* ── Dark mode overrides ── */
 [data-theme="dark"] {
-  --pm-surface-muted: #2A2722;
-  --pm-bg:          #141311;
-  --pm-surface:     #1F1D19;
-  --pm-surface-alt: #191815;
+  --pm-surface-muted: #16233B;
+  --pm-bg:          #070F1E;
+  --pm-surface:     #0F1B30;
+  --pm-surface-alt: #0B1626;
 
-  --pm-text:        #F3EEE4;
+  --pm-text:        #EDF1F8;
   /* #94A3B8/#64748B gav 4,49:1 og 3,07:1 paa kortene og de blaa bokse. */
-  --pm-text-mid:    #CFC7B8;
-  --pm-text-light:  #A39B8C;
+  --pm-text-mid:    #C3CDE0;
+  --pm-text-light:  #9AA8C2;
 
-  --pm-accent:      #E8836B;
+  --pm-accent:      #7AA6FF;
   /* Hvid tekst paa #60A5FA giver 2,5:1 og falder for WCAG AA. #2563EB giver
      5,2:1 med hvid tekst og staar stadig 3,5:1 mod baggrunden, saa knappen
      kan ses som form. --pm-accent bliver lys, fordi den bruges til links. */
-  --pm-accent-solid: #C0503A;
-  --pm-accent-hover:#F09A84;
-  --pm-accent-bg:   #3A2119;
-  --pm-landing-cta-blue: #C0503A;
+  --pm-accent-solid: #1463F3;
+  --pm-accent-hover:#A3C1FF;
+  --pm-accent-bg:   #12264A;
+  --pm-landing-cta-blue: #1463F3;
 
   --pm-amber:       #E9B44C;
   --pm-amber-bg:    #2A2210;
@@ -182,25 +186,25 @@
   --pm-amber-border:#5E4A1A;
   --pm-warm:        #E9B44C;
   --pm-warm-bg:     #2A2210;
-  --pm-orange:      #E8836B;
-  --pm-blue:        #CFC7B8;
-  --pm-blue-bg:     #2A2722;
+  --pm-orange:      #7AA6FF;
+  --pm-blue:        #7AA6FF;
+  --pm-blue-bg:     #12264A;
   --pm-red:         #F27A96;
-  --pm-red-solid:   #B4234A;
+  --pm-red-solid:   #C4213F;
   --pm-red-bg:      #3A1822;
 
-  --pm-green:       #7FBFA4;
-  --pm-green-bg:    #14261F;
+  --pm-green:       #7FCFA4;
+  --pm-green-bg:    #10261C;
   --pm-loss:        #F27A96;
   --pm-loss-bg:     #3A1822;
-  --pm-purple:      #7FBFA4;
-  --pm-purple-bg:   #14261F;
-  --pm-info:        #CFC7B8;
-  --pm-info-bg:     #2A2722;
-  --pm-info-border: #3A362F;
-  --pm-success:     #7FBFA4;
-  --pm-success-bg:  #14261F;
-  --pm-success-border:#2E5546;
+  --pm-purple:      #7FCFA4;
+  --pm-purple-bg:   #10261C;
+  --pm-info:        #C3CDE0;
+  --pm-info-bg:     #16233B;
+  --pm-info-border: #26344F;
+  --pm-success:     #7FCFA4;
+  --pm-success-bg:  #10261C;
+  --pm-success-border:#2A5540;
   --pm-warning:     #E9B44C;
   --pm-warning-bg:  #2A2210;
   --pm-warning-border:#5E4A1A;
@@ -210,7 +214,7 @@
   --pm-danger-strong:#F8A5B8;
   --pm-on-accent:   #FFFFFF;
   --pm-podium-gold:   #E9B44C;
-  --pm-podium-silver: #A39B8C;
+  --pm-podium-silver: #9AA8C2;
   --pm-podium-bronze: #C08A68;
   --pm-americano-win-bg: var(--pm-green-bg);
   --pm-americano-win-border: color-mix(in srgb, var(--pm-green) 45%, var(--pm-border));
@@ -221,12 +225,12 @@
   --pm-americano-loss-bg: var(--pm-loss-bg);
   --pm-americano-loss-border: color-mix(in srgb, var(--pm-loss) 35%, var(--pm-border));
   --pm-americano-loss-text: var(--pm-loss);
-  --pm-americano-neutral-bg: #1F1D19;
-  --pm-americano-neutral-border: #3A362F;
-  --pm-americano-neutral-text: #F3EEE4;
-  --pm-elo-gradient-start:#141311;
-  --pm-elo-gradient-end:#2E2B25;
-  --pm-elo-progress-track: rgba(243, 238, 228, 0.18);
+  --pm-americano-neutral-bg: #0F1B30;
+  --pm-americano-neutral-border: #26344F;
+  --pm-americano-neutral-text: #EDF1F8;
+  --pm-elo-gradient-start:#0B1626;
+  --pm-elo-gradient-end:#14294A;
+  --pm-elo-progress-track: rgba(237, 241, 248, 0.18);
   --pm-overlay:     rgba(0,0,0,0.5);
   --pm-overlay-strong: rgba(0,0,0,0.65);
   --pm-shadow-soft: 0 1px 5px rgba(0,0,0,0.38);
@@ -234,7 +238,7 @@
   --pm-menu-shadow: 0 10px 34px rgba(0,0,0,0.42);
   --pm-modal-shadow: 0 14px 42px rgba(0,0,0,0.5);
 
-  --pm-border:      #3A362F;
+  --pm-border:      #26344F;
   --pm-shadow:      0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
   --pm-shadow-lg:   0 8px 32px rgba(0,0,0,0.5);
   --pm-shadow-btn:  0 1px 2px rgba(0, 0, 0, 0.4);
@@ -275,7 +279,7 @@ a:focus-visible {
 [data-theme="dark"] button:focus-visible,
 [data-theme="dark"] [role="button"]:focus-visible,
 [data-theme="dark"] a:focus-visible {
-  outline-color: #E8836B !important;
+  outline-color: #7AA6FF !important;
 }
 
 /* ── Trykflade på mindst 44x44 uden at ændre udseende eller layout ──

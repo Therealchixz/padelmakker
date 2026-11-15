@@ -5,12 +5,12 @@ try {
   if (t) document.documentElement.setAttribute('data-theme', t)
   // Statusbjaelken foelger lys/moerk; forsiden (/) er altid moerk.
   var tc = document.querySelector('meta[name="theme-color"]')
-  if (tc) tc.setAttribute('content', location.pathname === '/' ? '#1B1A17' : (t === 'dark' ? '#141311' : '#F3EEE4'))
+  if (tc) tc.setAttribute('content', location.pathname === '/' ? '#0B1B33' : (t === 'dark' ? '#070F1E' : '#EDF1F8'))
 } catch {
   // Ignore storage errors in private/incognito contexts.
 }
 
-// Skrifttyperne (Figtree og Anton): index.html forhånds-henter den som "preload". Før blev den
+// Skrifttyperne (Schibsted Grotesk og Bricolage Grotesque): index.html forhånds-henter den som "preload". Før blev den
 // gjort til et stylesheet med onload="..." direkte i HTML'en, men sidens
 // sikkerhedsregel (CSP) forbyder kode i HTML-attributter, så Inter blev aldrig
 // brugt, og alle så systemskriften (QA 14. okt. 2026). Her, i en fil, er det tilladt.
