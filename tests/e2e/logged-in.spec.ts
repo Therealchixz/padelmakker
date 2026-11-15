@@ -41,7 +41,7 @@ test.describe('Logged-in dashboard flows', () => {
     // Redesign v4: genvejene paa Hjem er "Find makker" og "Find ledig bane", og ELO-pillen sidder i toplinjen.
     await expect(page.getByRole('button', { name: /Find ledig bane/ })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('button', { name: /Find makker/ }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /ELO \d+\. Se ranglisten/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /ELO \d+\..*Se ranglisten/ })).toBeVisible()
   })
 
   test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {

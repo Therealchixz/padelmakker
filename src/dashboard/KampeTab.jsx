@@ -1094,36 +1094,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     scrollFormFieldIntoView(refMap[field]?.current);
   };
 
-  const validatePadelCreateStep = (step) => {
-    if (step === 1) {
-      if (venueOptions.length === 0) return { message: "Ingen baner tilgængelige i dit område endnu.", field: "general" };
-      if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
-        return { message: "Vælg hvilken bane der er booket.", field: "venue" };
-      }
-      if (isMatchVenueCustom(newMatch.court_id) && !cleanCustomCourtName(newMatch.custom_court)) {
-        return { message: "Skriv navnet på banen.", field: "venue" };
-      }
-      if (!newMatch.date) return { message: "Angiv en dato.", field: "date" };
-      const startM = timeToMinutes(newMatch.time);
-      if (!Number.isFinite(startM)) return { message: "Vælg en gyldig starttid.", field: "time" };
-      const dur = parseInt(newMatch.duration, 10);
-      if (!dur || dur < 60) return { message: "Varighed skal være mindst 1 time.", field: "duration" };
-      return null;
-    }
-    return null;
-  };
-
-  const goPadelCreateNext = () => {
-    const result = validatePadelCreateStep(padelCreateStep);
-    if (result) {
-      setPadelCreateFieldError({ field: result.field ?? 'general', message: result.message });
-      scrollPadelCreateField(result.field ?? 'general');
-      return;
-    }
-    setPadelCreateFieldError(null);
-    setPadelCreateStep((s) => Math.min(2, s + 1));
-  };
-
   const joinMatchWithTeam = async (matchId, teamNum, courtSide = null) => {
     setTeamSelectMatch(null);
     setBusyId(matchId);
@@ -2346,10 +2316,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const searchPlaceholder = kampeFormat === "liga"
     ? "Søg liga..."
     : "Søg spiller, bane eller beskrivelse...";
-  const courtBookedTabs = [
-    { id: "yes", label: "Ja, booket" },
-    { id: "no", label: "Nej, ikke endnu" },
-  ];
   const matchTypeTabs = [
     { id: "open", label: "🔓 Åben kamp" },
     { id: "closed", label: "🔒 Lukket kamp" },
@@ -3408,12 +3374,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           createMatch={createMatch}
           venueOptions={venueOptions}
           createVenueOptions={createVenueOptions}
-          courtBookedTabs={courtBookedTabs}
           matchTypeTabs={matchTypeTabs}
           defaultLevelElo={defaultMatchLevelEloRange(user)}
-          padelCreateStep={padelCreateStep}
-          setPadelCreateStep={setPadelCreateStep}
-          goPadelCreateNext={goPadelCreateNext}
           padelCreateFieldError={padelCreateFieldError}
           setPadelCreateFieldError={setPadelCreateFieldError}
           setShowCreate={setShowCreate}

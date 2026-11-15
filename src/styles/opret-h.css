@@ -1,0 +1,341 @@
+/* ── Opret som "kampkort" (H-designet) ──
+   Faelles for Opret 2v2-kamp og Opret turnering: et moerkt hoved, der hele tiden
+   viser hvad man er ved at oprette, og hvide kort med raekker, der folder ud. */
+.pm-opret {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.pm-opret-head {
+  padding: 18px 18px 20px;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-ink);
+  color: #fff;
+}
+.pm-opret-head-kicker {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #E3ECFF;
+}
+.pm-opret-head-title {
+  margin: 6px 0 4px;
+  font-family: var(--pm-font-brand);
+  font-size: clamp(26px, 8vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.pm-opret-head-resume {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #E3ECFF;
+}
+.pm-opret-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-surface);
+  box-shadow: var(--pm-shadow);
+}
+.pm-opret-row-wrap + .pm-opret-row-wrap,
+.pm-opret-row--switch + .pm-opret-row-wrap {
+  border-top: 1px solid var(--pm-border);
+}
+.pm-opret-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-opret-row-label {
+  flex: 0 0 76px;
+  font-size: 14px;
+  color: var(--pm-text-light);
+}
+.pm-opret-row-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.pm-opret-row-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pm-text-light);
+}
+/* Valgfrie raekker: lang etiket til venstre, nuvaerende valg til hoejre. */
+.pm-opret-row--wide .pm-opret-row-label {
+  flex: 1 1 auto;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+.pm-opret-row--wide .pm-opret-row-value {
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--pm-text-mid);
+}
+.pm-opret-row-chev {
+  flex-shrink: 0;
+  color: var(--pm-text-mid);
+  transition: transform 0.2s ease;
+}
+.pm-opret-row-chev[data-open="true"] { transform: rotate(180deg); }
+.pm-opret-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pm-opret-row-title { font-size: 15px; font-weight: 700; }
+.pm-opret-row-desc { font-size: 12px; color: var(--pm-text-light); }
+.pm-opret-panel { padding: 2px 0 16px; }
+.pm-opret-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--pm-text-light);
+}
+.pm-opret-error {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-red);
+}
+.pm-opret-error--general { margin: 0 4px; }
+.pm-opret-section {
+  margin: 6px 4px -4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pm-text-light);
+}
+
+.pm-opret-row-edit {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-accent);
+}
+.pm-opret-note {
+  margin: 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pm-text-light);
+}
+/* Trin-streger i det moerke hoved (turnering har tre trin). */
+.pm-opret-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.pm-opret-steps > span {
+  height: 5px;
+  border-radius: 999px;
+  background: #5C6B85;
+}
+.pm-opret-steps > span[data-done="true"] { background: var(--pm-lime); }
+/* To store valg med forklaring (Americano / Mexicano). */
+.pm-opret-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-opret-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1.5px solid #7A879D;
+  border-radius: 16px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-opret-option b { font-size: 16px; font-weight: 800; }
+.pm-opret-option span { font-size: 12px; line-height: 1.4; }
+.pm-opret-option[aria-pressed="true"] {
+  border: 2px solid var(--pm-ink);
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+}
+[data-theme="dark"] .pm-opret-option[aria-pressed="true"] { border-color: var(--pm-lime); }
+/* Plus/minus med tallet imellem. */
+.pm-opret-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pm-opret-step-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid var(--pm-ink);
+  border-radius: 50%;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pm-opret-step-btn--plus {
+  background: var(--pm-ink);
+  color: #fff;
+}
+[data-theme="dark"] .pm-opret-step-btn { border-color: var(--pm-text-light); }
+[data-theme="dark"] .pm-opret-step-btn--plus { background: var(--pm-accent-solid); border-color: var(--pm-accent-solid); }
+.pm-opret-step-num {
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--pm-font-brand);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* Valg som knapper: valgt = lime med moerk kant, ikke valgt = hvid med graa kant. */
+.pm-opret-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-opret-chips--days { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.pm-opret-chips--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pm-opret-chips--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pm-opret-chip {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 1.5px solid #7A879D;
+  border-radius: 999px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-opret-chip[aria-pressed="true"] {
+  border: 2px solid var(--pm-ink);
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+}
+[data-theme="dark"] .pm-opret-chip[aria-pressed="true"] { border-color: var(--pm-lime); }
+.pm-opret-chip--day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 54px;
+  border-radius: 16px;
+}
+.pm-opret-chip-top { font-size: 11px; font-weight: 600; }
+.pm-opret-chip-num { font-family: var(--pm-font-brand); font-size: 18px; font-weight: 800; line-height: 1.1; }
+.pm-opret-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--pm-text-light);
+  pointer-events: none;
+}
+
+/* Til/fra: fra er moerkegraa (ses tydeligt mod hvidt), til er blaa. */
+.pm-opret-switch {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 30px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #6B7890;
+  transition: background-color 0.18s ease;
+}
+.pm-opret-switch > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s ease;
+}
+.pm-opret-switch[data-on="true"] { background: var(--pm-accent-solid); }
+.pm-opret-switch[data-on="true"] > span { transform: translateX(22px); }
+
+.pm-opret-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 4px;
+}
+.pm-opret-cta {
+  min-height: 58px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+  font-family: var(--pm-font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(11, 27, 51, 0.18);
+}
+.pm-opret-cta:active { transform: scale(0.98); }
+.pm-opret-foot {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--pm-text-light);
+}
+.pm-opret-cancel {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  color: var(--pm-accent);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-opret-row-chev,
+  .pm-opret-switch,
+  .pm-opret-switch > span,
+  .pm-opret-cta { transition: none; }
+  .pm-opret-cta:active { transform: none; }
+}
+
+/* Turnerings-formularen ligger i en ramme fra den gamle opbygning; kampkortet har sine egne kort. */
+.pm-kampe-v4-root .pm-create-form-panel:has(> .pm-opret),
+.pm-create-form-panel:has(> .pm-opret) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
