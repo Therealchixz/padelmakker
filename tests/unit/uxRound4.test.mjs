@@ -33,15 +33,19 @@ test('punkt 10: standard-niveau er dit eget niveau ± 0,5', () => {
   assert.equal(eloToLevel(r.max).toFixed(1), '3.7');
 });
 
-test('punkt 10: to trin, valgfrit foldet sammen, og gratis indtil der er en pris', () => {
+test('punkt 10: een skaerm (kampkort), valgfrit for sig, og gratis indtil der er en pris', () => {
+  // H-designet (15. nov. 2026): de to trin Info/Bekraeft er afloest af een skaerm,
+  // hvor et resume oeverst viser hvad der oprettes, og hvert valg folder ud paa stedet.
   const form = read('src/components/kampe/CreateMatchForm.jsx');
-  assert.match(form, /\{ n: 1, label: "Info" \}, \{ n: 2, label: "Bekræft" \}/);
-  assert.match(form, /Flere valg/);
+  assert.doesNotMatch(form, /label: "Bekræft"/);
+  assert.match(form, /pm-opret-head-title/, 'resume oeverst');
+  assert.match(form, /aria-expanded=\{open\}/, 'raekker folder ud');
+  assert.match(form, /Valgfrit/);
   assert.match(form, /\{hasPrice \? \(/, 'betaling vises kun med en pris');
   assert.match(form, /paid \? \(m\.payment_method === 'free' \? 'mobilepay' : m\.payment_method\) : 'free'/);
+  assert.match(form, /onClick=\{createMatch\}/, 'eet tryk opretter');
   const tab = read('src/dashboard/KampeTab.jsx');
   assert.match(tab, /payment_method: "free",/);
-  assert.match(tab, /Math\.min\(2, s \+ 1\)/);
 });
 
 test('punkt 11: kampene kommer før forklaringen', () => {
