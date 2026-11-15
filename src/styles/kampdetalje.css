@@ -8,7 +8,7 @@
 
 :root {
   --pm-kd-card-border: var(--pm-border);
-  --pm-kd-card-shadow: 0 2px 8px rgba(27, 26, 23, 0.07);
+  --pm-kd-card-shadow: 0 2px 8px rgba(11, 27, 51, 0.07);
   --pm-kd-inset: var(--pm-surface-alt);
   --pm-kd-ghost-bg: var(--pm-surface-muted);
   --pm-kd-ghost-fg: var(--pm-text-light);
@@ -69,9 +69,9 @@
   white-space: nowrap;
 }
 
-.pm-kd-chip--navy { background: #1B1A17; color: #fff; }
-.pm-kd-chip--amber { background: #F2A93B; color: #0F0E0C; }
-.pm-kd-chip--light { background: rgba(255, 255, 255, 0.93); color: #0F0E0C; }
+.pm-kd-chip--navy { background: #0B1B33; color: #fff; }
+.pm-kd-chip--amber { background: #D8F34A; color: #0B1B33; }
+.pm-kd-chip--light { background: rgba(255, 255, 255, 0.93); color: #0B1B33; }
 .pm-kd-chip--live {
   background: #E5484D;
   color: #fff;
@@ -577,7 +577,6 @@
   font-size: 30px;
   font-weight: 700;
   color: var(--pm-text);
-  font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -661,7 +660,7 @@
   border-radius: 10px;
   padding: 14px;
   width: 100%;
-  box-shadow: 0 6px 14px rgba(27, 26, 23, 0.32);
+  box-shadow: 0 6px 14px rgba(11, 27, 51, 0.32);
 }
 
 .pm-kd-btn-navy:disabled {

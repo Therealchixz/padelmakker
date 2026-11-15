@@ -77,12 +77,11 @@
 }
 .pm-pub-h1 {
   font-family: var(--pm-font-brand);
-  font-weight: 400;
-  text-transform: uppercase;
+  font-weight: 800;
   font-size: clamp(30px, 8.5vw, 64px);
   /* 1.22 i stedet for 0.92: ringen i Å og stregen i Ø ramte linjen over ("SPØRGSMÅL"). */
   line-height: 1.22;
-  letter-spacing: 0.005em;
+  letter-spacing: -0.035em;
   color: var(--pm-text);
   margin: 0;
   max-width: 22ch;
@@ -90,7 +89,6 @@
 }
 .pm-pub-updated {
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--pm-text-light);
   margin: 16px 0 0;
@@ -116,7 +114,8 @@
 .pm-pub-cta p {
   margin: 0;
   font-family: var(--pm-font-brand);
-  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: -0.035em;
   font-size: clamp(22px, 5vw, 30px);
   line-height: 1;
   color: var(--pm-text);
@@ -165,4 +164,4 @@
   gap: 4px 20px;
 }
 .pm-pub-footer-base nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
-.pm-pub-mono { font-family: var(--pm-font-data); font-variant-numeric: tabular-nums; font-size: 12px; }
+.pm-pub-mono { font-family: var(--pm-font-data); font-size: 12px; }

@@ -1,31 +1,26 @@
 /* ── Faelles v4-byggeklodser i appen (redesign trin 5) ──
    Bruges af Makkere, Beskeder, Rangliste, Profil og spillerprofilen. */
 
-/* Store tal (ELO, placering, streaks): Anton, faste cifferbredder */
+/* Store tal (ELO, placering, streaks): Bricolage Grotesque, fed */
 .pm-v4-num {
   font-family: var(--pm-font-brand);
-  font-weight: 400;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.005em;
-  font-variant-numeric: tabular-nums;
-  font-synthesis: none;
+  letter-spacing: -0.035em;
 }
 
-/* Navne og store overskrifter: Anton med versaler */
+/* Navne og store overskrifter: Bricolage Grotesque, fed, ikke versaler */
 .pm-v4-display {
   font-family: var(--pm-font-brand);
-  font-weight: 400;
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.005em;
-  font-synthesis: none;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
 }
 
 /* Smaa tal og data (sidetal, tider) */
 .pm-v4-mono {
   font-family: var(--pm-font-data);
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Faneblade (PillTabs): en delt vaelger som i v4 i stedet for en blaek-knap */
@@ -38,7 +33,7 @@
 .pm-pill-tabs .pm-pill-tab[aria-selected="true"] {
   background: var(--pm-surface);
   color: var(--pm-text);
-  box-shadow: 0 1px 3px rgba(27, 26, 23, 0.12);
+  box-shadow: 0 1px 3px rgba(11, 27, 51, 0.12);
 }
 [data-theme="dark"] .pm-pill-tabs .pm-pill-tab-active,
 [data-theme="dark"] .pm-pill-tabs .pm-pill-tab[aria-selected="true"] {
@@ -62,7 +57,6 @@
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ── Notifikationer (redesign v4) ─────────────────────────────────────────
@@ -91,7 +85,7 @@
   overscroll-behavior: contain;
   border: 1px solid var(--pm-border);
   border-radius: 18px;
-  box-shadow: 0 18px 48px rgba(27, 26, 23, 0.18);
+  box-shadow: 0 18px 48px rgba(11, 27, 51, 0.18);
   padding: 16px 16px 12px;
   z-index: 200;
 }
@@ -103,7 +97,7 @@
   z-index: 1000;
   display: flex;
   align-items: flex-end;
-  background: rgba(27, 26, 23, 0.4);
+  background: rgba(11, 27, 51, 0.4);
   animation: pm-sheet-fade-in 200ms ease both;
 }
 .pm-sheet-backdrop.is-closing { animation: pm-sheet-fade-out 220ms ease both; }
@@ -114,7 +108,7 @@
   display: flex;
   flex-direction: column;
   border-radius: 26px 26px 0 0;
-  box-shadow: 0 -12px 40px rgba(27, 26, 23, 0.2);
+  box-shadow: 0 -12px 40px rgba(11, 27, 51, 0.2);
   outline: none;
   transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Kun "backwards": naar indgangen er faerdig, maa traek-koden flytte arket. */
@@ -173,11 +167,10 @@
 .pm-notif-v4-title {
   margin: 0;
   font-family: var(--pm-font-brand);
-  font-weight: 400;
+  font-weight: 800;
   font-size: 28px;
   line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.035em;
 }
 .pm-notif-v4--dropdown .pm-notif-v4-title { font-size: 24px; }
 .pm-notif-v4-read {
@@ -187,7 +180,6 @@
   background: none;
   color: var(--pm-accent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -252,7 +244,6 @@ button.pm-notif-v4-item { cursor: pointer; }
 .pm-notif-v4-cta,
 .pm-notif-v4-time {
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -290,7 +281,6 @@ button.pm-notif-v4-item { cursor: pointer; }
   background: none;
   color: var(--pm-accent);
   font-family: var(--pm-font-data);
-  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;

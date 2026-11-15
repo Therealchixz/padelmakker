@@ -202,7 +202,7 @@ body {
     var(--pm-surface);
   border: 9px solid #0a2755;
   box-shadow:
-    0 30px 80px rgba(27, 26, 23, 0.38),
+    0 30px 80px rgba(11, 27, 51, 0.38),
     inset 0 0 0 1px rgba(255, 255, 255, 0.55);
   overflow: hidden;
 }
@@ -224,7 +224,7 @@ body {
   height: 7px;
   border-radius: 999px;
   margin: 0 auto 18px;
-  background: rgba(27, 26, 23, 0.14);
+  background: rgba(11, 27, 51, 0.14);
 }
 
 .pm-app-mockup-appbar,
@@ -267,7 +267,7 @@ body {
 }
 
 .pm-app-mockup-brand-text small {
-  color: #1B1A17;
+  color: #0B1B33;
   font-size: 6.6px;
   font-style: italic;
   font-weight: 900;
@@ -325,8 +325,8 @@ body {
   border-radius: 24px;
   padding: 18px;
   color: white;
-  background: linear-gradient(135deg, #0F0E0C, #1B1A17);
-  box-shadow: 0 18px 38px rgba(27, 26, 23, 0.26);
+  background: linear-gradient(135deg, #06101F, #0B1B33);
+  box-shadow: 0 18px 38px rgba(11, 27, 51, 0.26);
   overflow: hidden;
 }
 
@@ -421,7 +421,7 @@ body {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: 0 10px 28px rgba(27, 26, 23, 0.07);
+  box-shadow: 0 10px 28px rgba(11, 27, 51, 0.07);
 }
 
 .pm-app-mockup-screen-card-dot {
@@ -431,7 +431,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1B1A17;
+  color: #0B1B33;
   background: rgba(232, 238, 249, 0.95);
   font-size: 12px;
   font-weight: 900;
@@ -549,7 +549,6 @@ body {
   line-height: 0.9;
   letter-spacing: -0.04em;
   color: var(--pm-orange);
-  font-variant-numeric: tabular-nums;
   margin-bottom: 14px;
 }
 
@@ -977,7 +976,6 @@ body {
 
 /* ─── Stat counter animation ─── */
 .pm-stat-number {
-  font-variant-numeric: tabular-nums;
 }
 
 .pm-root {
@@ -1361,7 +1359,7 @@ button,
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(27, 26, 23, 0.4) transparent;
+  scrollbar-color: rgba(11, 27, 51, 0.4) transparent;
 }
 
 .pm-tab-strip::-webkit-scrollbar {
@@ -1373,7 +1371,7 @@ button,
 }
 
 .pm-tab-strip::-webkit-scrollbar-thumb {
-  background: rgba(27, 26, 23, 0.2);
+  background: rgba(11, 27, 51, 0.2);
   border-radius: 10px;
 }
 
@@ -1782,7 +1780,7 @@ button,
     -webkit-backdrop-filter: blur(14px) saturate(1.05);
     border-top: 1px solid var(--pm-border);
     padding: 8px 8px max(10px, env(safe-area-inset-bottom));
-    box-shadow: 0 -10px 28px rgba(27, 26, 23, 0.12);
+    box-shadow: 0 -10px 28px rgba(11, 27, 51, 0.12);
   }
 
   .pm-mobile-bottom-btn {
@@ -1815,11 +1813,11 @@ button,
   }
 
   .pm-mobile-bottom-btn[data-active="true"] {
-    color: var(--pm-navy, #1B1A17);
+    color: var(--pm-navy, #0B1B33);
   }
 
   .pm-mobile-bottom-btn[data-active="true"]::after {
-    background: var(--pm-navy, #1B1A17);
+    background: var(--pm-navy, #0B1B33);
   }
 
   .pm-mobile-bottom-btn:active {
@@ -1873,7 +1871,7 @@ button,
     font-weight: 800;
     padding: 0 5px;
     line-height: 1;
-    box-shadow: 0 1px 4px rgba(27, 26, 23, 0.2);
+    box-shadow: 0 1px 4px rgba(11, 27, 51, 0.2);
   }
 
   .pm-mobile-more-backdrop {
@@ -1884,7 +1882,7 @@ button,
     border: none;
     margin: 0;
     padding: 0;
-    background: rgba(27, 26, 23, 0.2);
+    background: rgba(11, 27, 51, 0.2);
   }
 
   .pm-mobile-more-sheet {
@@ -1899,7 +1897,7 @@ button,
     border: 1px solid var(--pm-border);
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 14px 38px rgba(27, 26, 23, 0.16);
+    box-shadow: 0 14px 38px rgba(11, 27, 51, 0.16);
   }
 
   .pm-mobile-more-sheet--tour {
@@ -3042,7 +3040,7 @@ button,
 .pm-pill-tab[aria-selected="true"] {
   background: var(--pm-navy, var(--pm-accent-solid));
   color: var(--pm-on-accent, #fff);
-  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.22);
+  box-shadow: 0 2px 6px rgba(11, 27, 51, 0.22);
   font-weight: 700;
 }
 
@@ -7015,7 +7013,7 @@ button,
   border: none;
   margin: 0;
   padding: 0;
-  background: rgba(27, 26, 23, 0.35);
+  background: rgba(11, 27, 51, 0.35);
 }
 
 .pm-kampe-v2-sheet {
@@ -7027,7 +7025,7 @@ button,
   background: var(--pm-surface);
   border-radius: 18px 18px 0 0;
   padding: max(12px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom));
-  box-shadow: 0 -12px 40px rgba(27, 26, 23, 0.18);
+  box-shadow: 0 -12px 40px rgba(11, 27, 51, 0.18);
   max-height: min(85vh, 640px);
   overflow-y: auto;
   transform: translateY(var(--sheet-drag-y, 0px));
@@ -7312,7 +7310,7 @@ button,
   height: 24px;
   border-radius: 50%;
   background: var(--pm-surface);
-  box-shadow: 0 1px 4px rgba(27, 26, 23, 0.15);
+  box-shadow: 0 1px 4px rgba(11, 27, 51, 0.15);
   transition: transform 140ms ease;
 }
 
@@ -7338,7 +7336,7 @@ button,
   padding: 14px;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(11, 27, 51, 0.04);
   transition: border-color 140ms ease, box-shadow 140ms ease;
   overflow: hidden;
 }
@@ -7396,7 +7394,7 @@ button,
   background: var(--pm-navy);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(27, 26, 23, 0.22);
+  box-shadow: 0 2px 6px rgba(11, 27, 51, 0.22);
   max-width: 100%;
   white-space: nowrap;
 }
@@ -7421,7 +7419,7 @@ button,
 
 .pm-kampe-v2-list-cta--on-waitlist {
   background: var(--pm-surface, #fff);
-  color: var(--pm-navy, #1B1A17);
+  color: var(--pm-navy, #0B1B33);
   border: 1.5px solid var(--pm-green, #059669);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-green, #059669) 12%, transparent);
 }
@@ -8468,7 +8466,7 @@ button,
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(11, 27, 51, 0.04);
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -9216,7 +9214,7 @@ button,
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(27, 26, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(11, 27, 51, 0.04);
   transition: transform 0.15s ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -10852,9 +10850,9 @@ button,
 }
 
 .pm-chat-v2-quick-action--blue {
-  border-color: rgba(27, 26, 23, 0.25);
-  background: rgba(27, 26, 23, 0.08);
-  color: #1B1A17;
+  border-color: rgba(11, 27, 51, 0.25);
+  background: rgba(11, 27, 51, 0.08);
+  color: #0B1B33;
 }
 
 .pm-chat-v2-quick-action--green {
@@ -11636,7 +11634,7 @@ button,
 .pm-seg-btn.active {
   background: var(--pm-navy);
   color: #fff;
-  box-shadow: 0 3px 8px rgba(27, 26, 23, 0.28);
+  box-shadow: 0 3px 8px rgba(11, 27, 51, 0.28);
 }
 
 .pm-chips-row {
@@ -11780,7 +11778,7 @@ button,
   border-radius: 14px;
   padding: 16px;
   color: #fff;
-  background: linear-gradient(120deg, #0F0E0C 55%, #2E2B25 100%);
+  background: linear-gradient(120deg, #06101F 55%, #14294A 100%);
   position: relative;
   overflow: hidden;
 }
@@ -11868,7 +11866,7 @@ button,
 
 .pm-range-input::-webkit-slider-thumb:active {
   cursor: grabbing;
-  box-shadow: 0 0 0 4px rgba(27, 26, 23, 0.18);
+  box-shadow: 0 0 0 4px rgba(11, 27, 51, 0.18);
 }
 
 .pm-range-input::-moz-range-thumb {
@@ -12068,15 +12066,13 @@ button,
   text-wrap: balance;
 }
 
-/* Offentlige sider: overskrifter i brand-skriften (Anton, versaler). Appen efter login er uændret. */
+/* Offentlige sider: samme overskrift-skrift som appen (Bricolage Grotesque, fed). */
 .pm-brand {
   --pm-font-display: var(--pm-font-brand);
-  --pm-display-weight: 400;
-  --pm-display-tracking: 0.005em;
-  --pm-display-case: uppercase;
-  --pm-display-leading: 0.95;
-  /* Ingen falsk fed Anton, hvis en overskrift beder om vaegt 700/800. */
-  font-synthesis: none;
+  --pm-display-weight: 800;
+  --pm-display-tracking: -0.035em;
+  --pm-display-case: none;
+  --pm-display-leading: 1.05;
 }
 .pm-brand h1,
 .pm-brand h2 {
