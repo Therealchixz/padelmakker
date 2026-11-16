@@ -150,19 +150,34 @@ function writeDismissedSugg(userId, set) {
 
 // ----- Suggested player card -----
 
-export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor, displayGamesFor }) {
+/**
+ * `featured`: det bedste forslag vises som et lime kort (H-designet), saa det er
+ * tydeligt, hvem man skal skrive til foerst. Lime har altid moerk tekst ovenpaa.
+ */
+export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor, displayGamesFor, featured = false }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p, viewer);
   const quality = makkerMatchBadge(score);
+  const ink = 'var(--pm-on-lime)';
+  const chip = featured ? tag(ink, 'var(--pm-lime)') : tag(theme.surfaceMuted, theme.text);
 
   return (
-    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px', position: 'relative' }}>
+    <div
+      className="pm-ui-card"
+      style={{
+        padding: '14px 16px', margin: '0 18px', position: 'relative',
+        ...(featured ? { background: 'var(--pm-lime)', color: ink, borderColor: 'transparent' } : {}),
+      }}
+    >
+      {featured ? (
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Bedste match lige nu</div>
+      ) : null}
       {onDismiss ? (
         <button
           type="button"
           onClick={() => onDismiss(p.id)}
           aria-label="Skjul forslag"
-          style={{ position: 'absolute', top: 0, right: 0, width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
+          style={{ position: 'absolute', top: 0, right: 0, width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: featured ? ink : theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
         >
           <X size={18} aria-hidden />
         </button>
@@ -173,7 +188,8 @@ export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage
             avatar={p.avatar}
             size={50}
             emojiSize="16px"
-            style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
+            // Paa det lime kort er billedet altid lyst med moerk ketsjer, ogsaa i moerk tilstand.
+            style={featured ? { background: 'var(--pm-on-accent)', color: ink, border: '1px solid transparent' } : { background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
           />
         </div>
 
@@ -185,14 +201,14 @@ export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage
             >
               {p.full_name || p.name}
             </span>
-            <span style={tag(theme.surfaceMuted, theme.text)}>
+            <span style={chip}>
               ELO {Math.round(Number(displayEloFor ? displayEloFor(p) : p.elo_rating) || 1000)}
             </span>
             {p.level != null && p.level !== '' ? (
-              <span style={tag(theme.surfaceMuted, theme.text)}>Niveau {formatPlaytomicLevel(p.level)}</span>
+              <span style={chip}>Niveau {formatPlaytomicLevel(p.level)}</span>
             ) : null}
           </div>
-          <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 12, color: featured ? ink : theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
             <MapPin size={10} />
             {[
               formatProfileLocationLine(viewer, p),
@@ -209,25 +225,25 @@ export function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginTop: '11px', paddingTop: '11px',
-        borderTop: '1px solid ' + theme.border,
+        borderTop: '1px solid ' + (featured ? 'color-mix(in srgb, var(--pm-on-lime) 25%, transparent)' : theme.border),
         gap: 8,
       }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: '5px',
-          background: quality.bg, color: quality.color,
-          border: '1px solid ' + quality.border,
+          background: featured ? 'transparent' : quality.bg, color: featured ? ink : quality.color,
+          border: '1px solid ' + (featured ? 'transparent' : quality.border),
           borderRadius: '6px', padding: '3px 8px',
           fontSize: '11px', fontWeight: 700,
           whiteSpace: 'nowrap', flexShrink: 0,
         }}>
-          {quality.dot ? <span aria-hidden style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.dot, flexShrink: 0 }} /> : null}
+          {quality.dot && !featured ? <span aria-hidden style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.dot, flexShrink: 0 }} /> : null}
           {quality.label}
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
+          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', minHeight: 44, ...(featured ? { background: 'transparent', color: ink, borderColor: ink } : {}) }}>
             Besked
           </button>
-          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
+          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', minHeight: 44, ...(featured ? { background: ink, color: 'var(--pm-lime)', borderColor: ink, boxShadow: 'none' } : {}) }}>
             Invitér
           </button>
         </div>
@@ -720,9 +736,10 @@ export function MakkereTab({ user, showToast }) {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {visibleSuggestions.map(s => (
+            {visibleSuggestions.map((s, idx) => (
               <SuggestionCard
                 key={s.profile.id}
+                featured={idx === 0}
                 suggestion={s}
                 viewer={user}
                 displayEloFor={displayElo}
