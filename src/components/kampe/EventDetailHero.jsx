@@ -3,10 +3,11 @@
  * (ejeren 25. sep. 2026: "2v2 og americano kamp kortet er lidt forskellige").
  *
  * Banen set oppefra med spillernes profilbilleder på deres pladser og mærker
- * (type · niveau · ledige pladser). Derunder et kort med banens navn,
- * "Vis på kort", små mærker (booket/pris/ulæst) og dato + tidsrum.
+ * (type · niveau · ledige pladser). Derunder et kort, hvor dag og tidsrum er
+ * overskriften (H-designet: "hvornår" er det, man kigger efter først), og
+ * banens navn, "Vis på kort" og små mærker (booket/pris/ulæst) står under.
  */
-import { ArrowUpRight, CalendarDays } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { PadelCourtTopView } from './PadelCourtTopView';
 
@@ -56,7 +57,11 @@ export function EventDetailHero({
 
       <div className="pm-kd-card pm-kd-price-card">
         <div className="pm-kd-title-block">
-          <h2 className="pm-kd-title">{venue}</h2>
+          <h2 className="pm-kd-title">
+            {dateHeadline}
+            {timeLabel ? <span className="pm-kd-title-time">{timeLabel}</span> : null}
+          </h2>
+          <p className="pm-kd-venue">{venue}</p>
           {directionsQuery ? (
             <a
               className="pm-kd-maplink pm-kd-maplink--under-title"
@@ -76,13 +81,6 @@ export function EventDetailHero({
             ))}
           </div>
         ) : null}
-        <div className="pm-kd-info-row">
-          <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
-          <div>
-            <b>{dateHeadline}</b>
-            {timeLabel ? <span className="pm-kd-info-sub">{timeLabel}</span> : null}
-          </div>
-        </div>
       </div>
     </>
   );

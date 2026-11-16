@@ -163,8 +163,9 @@ export function KampeMatchDetailSheet({
       {primaryAction ? (
         <button
           type="button"
-          className="pm-kampe-v2-detail-primary"
-          style={btn(primaryAction.variant !== 'secondary', { size: 'md', fontWeight: 600 })}
+          // Hovedhandlingen er lime med moerk tekst (H-designet); sekundaere beholder den rolige knap.
+          className={primaryAction.variant !== 'secondary' ? 'pm-kampe-v2-detail-primary pm-kd-primary' : 'pm-kampe-v2-detail-primary'}
+          style={primaryAction.variant !== 'secondary' ? undefined : btn(false, { size: 'md', fontWeight: 600 })}
           onClick={primaryAction.onClick}
           disabled={primaryAction.disabled}
         >
