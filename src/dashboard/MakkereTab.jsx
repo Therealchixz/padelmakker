@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles, fetchMakkerePlayerProfileById } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, makkerMatchBadge } from '../lib/platformTheme';
@@ -38,7 +38,8 @@ import {
   toggleFavoriteForUser,
   writeLocalFavoritesSet,
 } from '../lib/userFavorites';
-import { formatProfileLocationLine } from '../lib/profileLocationLabel.js';
+import { formatProfileLocationLine, distanceBetweenProfiles } from '../lib/profileLocationLabel.js';
+import { formatApproxKm } from '../lib/geoDistance.js';
 import { loadInviteMatchOptions } from '../lib/inviteMatchOptions';
 import { openPlayerChat, prefetchBeskedTabChunk } from '../lib/playerChat';
 
@@ -147,6 +148,8 @@ function writeDismissedSugg(userId, set) {
   if (!key) return;
   try { localStorage.setItem(key, JSON.stringify([...set])); } catch { /* quota */ }
 }
+
+const MakkerMapLazy = lazy(() => import('../components/MakkerMap'));
 
 // ----- Suggested player card -----
 
@@ -524,8 +527,8 @@ export function MakkereTab({ user, showToast }) {
     [suggestions, dismissedSugg]
   );
   const visibleSuggestions = useMemo(
-    () => (showAllSuggestions ? activeSuggestions : activeSuggestions.slice(0, 3)),
-    [showAllSuggestions, activeSuggestions]
+    () => activeSuggestions,
+    [activeSuggestions]
   );
   const dismissSuggestion = useCallback((id) => {
     setDismissedSugg((prev) => {
@@ -662,6 +665,102 @@ export function MakkereTab({ user, showToast }) {
     <div>
       <ScreenHeader title="Find makker" />
 
+      {/* H-designet: kort over de foreslåede makkere øverst, og under det et ark med
+          det bedste match som lime kort og en kort liste. "Se alle" viser de fulde kort. */}
+      {activeSuggestions.length > 0 && !showAllSuggestions ? (() => {
+        const lvl = (p) => (p.level != null && p.level !== '' ? formatPlaytomicLevel(p.level) : null);
+        const kmOf = (p) => {
+          const km = distanceBetweenProfiles(user, p);
+          return km != null ? formatApproxKm(km) : null;
+        };
+        const top = activeSuggestions[0];
+        const rest = activeSuggestions.slice(1, 5);
+        const tp = top.profile;
+        const hasMap = user?.latitude != null && user?.longitude != null;
+        const mapPlayers = activeSuggestions.slice(0, 12).map((x) => ({
+          id: x.profile.id,
+          name: x.profile.full_name || x.profile.name,
+          level: lvl(x.profile),
+          latitude: x.profile.latitude,
+          longitude: x.profile.longitude,
+        }));
+        const byId = new Map(activeSuggestions.map((x) => [String(x.profile.id), x.profile]));
+        const count = activeSuggestions.length;
+        return (
+          <>
+            {hasMap ? (
+              <Suspense fallback={null}>
+                <MakkerMapLazy
+                  me={user}
+                  players={mapPlayers}
+                  selectedId={tp.id}
+                  onSelect={(id) => {
+                    const hit = byId.get(String(id));
+                    if (hit) setViewPlayer(hit);
+                  }}
+                />
+              </Suspense>
+            ) : null}
+            <section className={hasMap ? 'pm-makker-sheet' : 'pm-makker-sheet pm-makker-sheet--flat'} aria-labelledby="pm-makker-sheet-title">
+              <div className="pm-makker-sheet-head">
+                <h2 id="pm-makker-sheet-title">
+                  {count === 1 ? '1 makker på dit niveau' : `${count} makkere på dit niveau`}
+                </h2>
+                {count > 1 ? (
+                  <button type="button" className="pm-makker-sheet-link" onClick={() => setShowAllSuggestions(true)}>
+                    Se alle
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="pm-makker-best">
+                <button type="button" className="pm-makker-best-main" onClick={() => setViewPlayer(tp)}>
+                  <AvatarCircle
+                    avatar={tp.avatar}
+                    size={48}
+                    emojiSize="16px"
+                    style={{ background: 'var(--pm-on-accent)', color: 'var(--pm-on-lime)', border: '1px solid transparent', flexShrink: 0 }}
+                  />
+                  <span className="pm-makker-best-copy">
+                    <span className="pm-makker-best-kicker">
+                      {isSeekingActiveProfile(tp) ? 'Søger makker nu' : 'Bedste match lige nu'}
+                    </span>
+                    <span className="pm-makker-best-name">
+                      {tp.full_name || tp.name}
+                    </span>
+                    <span className="pm-makker-best-sub">
+                      {[lvl(tp) ? `Niveau ${lvl(tp)}` : null, formatProfileLocationLine(user, tp), tp.court_side ? `spiller ${String(tp.court_side).toLowerCase()}` : null].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                </button>
+                <button type="button" className="pm-makker-best-cta" onClick={() => openPlayerChat(navigate, tp)}>
+                  Skriv
+                </button>
+              </div>
+
+              {rest.length > 0 ? (
+                <div className="pm-makker-rows">
+                  {rest.map((x) => {
+                    const p = x.profile;
+                    return (
+                      <button key={p.id} type="button" className="pm-makker-row" onClick={() => setViewPlayer(p)}>
+                        <AvatarCircle avatar={p.avatar} size={40} emojiSize="14px" style={{ background: theme.surface, border: '1px solid ' + theme.border, flexShrink: 0 }} />
+                        <span className="pm-makker-row-copy">
+                          <span className="pm-makker-row-name">{p.full_name || p.name}</span>
+                          <span className="pm-makker-row-info">{matchReason(x.breakdown, p, user)}</span>
+                        </span>
+                        {lvl(p) ? <span className="pm-makker-row-lvl">{lvl(p)}</span> : null}
+                        <span className="pm-makker-row-km">{kmOf(p) || ''}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </section>
+          </>
+        );
+      })() : null}
+
       <ActiveSeekingPanel
         variant="compact"
         channel="makker"
@@ -713,12 +812,12 @@ export function MakkereTab({ user, showToast }) {
         </button>
       )}
 
-      {/* Foreslåede makkere */}
-      {activeSuggestions.length > 0 && (
+      {/* Foreslåede makkere som fulde kort (med Besked, Invitér og Skjul) — vises efter "Se alle" */}
+      {activeSuggestions.length > 0 && showAllSuggestions && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
-            {activeSuggestions.length > 3 && (
+            {(
               <button
                 className="pm-hit-44"
                 onClick={() => setShowAllSuggestions(v => !v)}
