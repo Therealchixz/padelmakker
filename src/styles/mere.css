@@ -355,3 +355,141 @@
   .pm-spil-sheet--sheet { animation: none; }
   .pm-spil-option { transition: none; }
 }
+
+/* ── Profil-toppen (H-designet) ── */
+.pm-prof-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+.pm-prof-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pm-prof-name {
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--pm-text);
+  overflow-wrap: anywhere;
+}
+.pm-prof-where { font-size: 14px; color: var(--pm-text-light); }
+.pm-prof-edit {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--pm-text);
+  border-radius: 999px;
+  background: none;
+  color: var(--pm-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-prof-elo {
+  padding: 18px 18px 14px;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-ink);
+  color: #fff;
+}
+.pm-prof-elo-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pm-prof-elo-label { font-size: 13px; font-weight: 600; color: #B8C4D9; }
+.pm-prof-elo-num {
+  font-family: var(--pm-font-brand);
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.pm-prof-elo-empty { margin: 14px 0 6px; font-size: 13px; color: #B8C4D9; }
+.pm-prof-elo-facts {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+.pm-prof-elo-facts > span,
+.pm-prof-elo-facts > button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  justify-content: center;
+}
+.pm-prof-elo-facts > button { cursor: pointer; }
+.pm-prof-elo-facts b { font-size: 15px; font-weight: 700; }
+.pm-prof-elo-facts small { font-size: 12px; color: #B8C4D9; }
+.pm-prof-lime { color: var(--pm-lime); }
+.pm-prof-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.pm-prof-tiles > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 4px;
+  border-radius: 18px;
+  background: var(--pm-surface);
+  box-shadow: var(--pm-shadow-soft);
+}
+.pm-prof-tiles b {
+  font-family: var(--pm-font-brand);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--pm-text);
+  white-space: nowrap;
+}
+.pm-prof-tiles span { font-size: 12px; color: var(--pm-text-light); }
+.pm-prof-card {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-surface);
+  box-shadow: var(--pm-shadow-soft);
+}
+.pm-prof-card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 800; color: var(--pm-text); }
+.pm-prof-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px 64px;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 34px;
+}
+.pm-prof-bar-name { font-size: 14px; font-weight: 600; color: var(--pm-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-prof-bar-track { height: 8px; border-radius: 999px; background: var(--pm-surface-muted); }
+.pm-prof-bar-track > span { display: block; height: 100%; border-radius: 999px; background: var(--pm-accent-solid); }
+.pm-prof-bar-count { font-size: 13px; color: var(--pm-text-light); text-align: right; white-space: nowrap; }
+.pm-prof-partner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--pm-radius-xl);
+  background: var(--pm-accent-bg);
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-prof-partner-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pm-prof-partner small { font-size: 12px; color: var(--pm-text-mid); }
+.pm-prof-partner b { font-size: 15px; font-weight: 700; }
