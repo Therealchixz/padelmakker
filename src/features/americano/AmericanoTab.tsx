@@ -1856,7 +1856,7 @@ export function AmericanoTab({
               </div>
 
               {/* Share section */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase' as const, padding: '16px 18px 8px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, padding: '16px 18px 8px' }}>
                 Del turnering
               </div>
               <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>

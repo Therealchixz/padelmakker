@@ -26,7 +26,7 @@ export function LandingTourVideo() {
             fontWeight: 700,
             color: theme.textLight,
             letterSpacing: '0.12em',
-            textTransform: 'uppercase',
+
             marginBottom: '10px',
           }}
         >

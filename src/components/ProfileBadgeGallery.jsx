@@ -50,7 +50,7 @@ function BadgeDetailPanel({ badge, onClose }) {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, letterSpacing: '-0.2px' }}>{badge.label}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginTop: 3 }}>
                 {badge.categoryLabel || PROFILE_BADGE_CATEGORY_LABELS[badge.category] || badge.category}
               </div>
             </div>
@@ -230,7 +230,7 @@ function ProfileBadgeGalleryFull({ badges, selectedKey, onSelectBadge }) {
             style={{
               fontSize: 10,
               fontWeight: 700,
-              textTransform: 'uppercase',
+
               letterSpacing: '0.08em',
               color: theme.textLight,
               marginBottom: 10,

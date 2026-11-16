@@ -146,7 +146,7 @@ export function LigaDivisionStandings({ standings, myTeamId, numDivisions = 1 })
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {groups.map(([division, rows]) => (
         <div key={division}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--pm-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 8px' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--pm-accent)', margin: '0 0 8px' }}>
             Division {division}
           </div>
           <LigaStandingsTable standings={rows} myTeamId={myTeamId} />

@@ -20,7 +20,7 @@ function DateBadge({ dateStr }) {
       background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0',
     }}>
       <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{day || '—'}</b>
-      <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-mid)', letterSpacing: '0.5px' }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--pm-text-mid)' }}>
         {month ? DA_MONTHS_SHORT[month - 1] : '—'}
       </span>
     </div>

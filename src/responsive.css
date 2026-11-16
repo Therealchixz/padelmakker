@@ -259,7 +259,6 @@ body {
   font-weight: 900;
   line-height: 0.86;
   letter-spacing: -0.055em;
-  text-transform: uppercase;
 }
 
 .pm-app-mockup-brand-text strong span {
@@ -272,8 +271,6 @@ body {
   font-style: italic;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .pm-app-mockup-live {
@@ -286,8 +283,6 @@ body {
   color: #065f46;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .pm-app-mockup-carousel {
@@ -371,8 +366,6 @@ body {
   color: rgba(255, 255, 255, 0.76);
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   margin-bottom: 9px;
 }
 
@@ -456,8 +449,6 @@ body {
   color: #64748b;
   font-size: 8px;
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   margin-bottom: 3px;
 }
 
@@ -658,8 +649,6 @@ body {
   color: var(--pm-text-light);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .pm-elo-explainer-card-head strong {
@@ -696,8 +685,6 @@ body {
   color: var(--pm-text-light);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .pm-elo-player-card strong {
@@ -1145,8 +1132,6 @@ button,
   margin: 0;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 
@@ -2026,8 +2011,6 @@ button,
   font-size: 11px;
   color: var(--pm-text-light);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .pm-home-stat-icon {
@@ -2498,8 +2481,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .pm-data-table-cell {
@@ -2707,8 +2688,6 @@ button,
   border-radius: 999px;
   padding: 3px 9px;
   z-index: 3;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   pointer-events: none;
 }
 
@@ -2745,8 +2724,6 @@ button,
   gap: 6px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   line-height: 1.2;
 }
 .pm-court-header-label { font-weight: 800; }
@@ -4651,8 +4628,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
 }
 
 .pm-active-seeking-home-status {
@@ -4920,8 +4895,6 @@ button,
   opacity: 0.65;
   margin-bottom: 6px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .pm-rank-list-pill {
@@ -5701,7 +5674,6 @@ button,
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 100px;
-  text-transform: uppercase;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text-mid);
@@ -5802,7 +5774,6 @@ button,
   font-size: 11px;
   color: var(--pm-text-light);
   font-weight: 700;
-  text-transform: uppercase;
 }
 
 .pm-admin-card-footer {
@@ -5881,7 +5852,6 @@ button,
   font-weight: 800;
   color: var(--pm-text-light);
   margin-bottom: 4px;
-  text-transform: uppercase;
 }
 
 .pm-admin-list {
@@ -5940,9 +5910,7 @@ button,
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 999px;
-  text-transform: uppercase;
   font-size: 11px;
-  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -6157,9 +6125,7 @@ button,
 .pm-admin-match-dates {
   font-size: 11px;
   color: var(--pm-text-mid);
-  text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.5px;
   margin-bottom: 8px;
   line-height: 1.4;
 }
@@ -6330,7 +6296,6 @@ button,
 .pm-admin-stat-label {
   font-size: 11px;
   color: var(--pm-text-mid);
-  text-transform: uppercase;
   font-weight: 700;
 }
 
@@ -6438,9 +6403,7 @@ button,
 .pm-admin-kpi-label {
   font-size: 11px;
   color: var(--pm-text-mid);
-  text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 .pm-admin-kpi-chevron {
@@ -6488,7 +6451,6 @@ button,
 .pm-admin-info-label {
   font-size: 11px;
   color: var(--pm-text-mid);
-  text-transform: uppercase;
   font-weight: 700;
 }
 
@@ -7218,8 +7180,6 @@ button,
 .pm-kampe-v2-sheet-label {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 8px;
 }
@@ -7468,9 +7428,7 @@ button,
 .pm-kampe-v2-list-date-badge span {
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
   color: var(--pm-text-light);
-  letter-spacing: 0.5px;
 }
 
 .pm-kampe-v2-list-card-main {
@@ -7862,8 +7820,6 @@ button,
   padding: 0 10px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   line-height: 1;
   user-select: none;
@@ -8154,8 +8110,6 @@ button,
 .pm-kampe-v2-detail-type {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 0;
   line-height: 1.2;
@@ -8281,8 +8235,6 @@ button,
 .pm-kampe-v2-detail-team-label {
   font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--pm-text-light);
   margin-bottom: 8px;
   text-align: center;
@@ -8521,8 +8473,6 @@ button,
 .pm-americano-v2-list-type {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   opacity: 0.88;
   margin-bottom: 2px;
 }
@@ -8742,8 +8692,6 @@ button,
 .pm-americano-v2-detail-type {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 2px;
 }
@@ -8801,8 +8749,6 @@ button,
   display: block;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 4px;
 }
@@ -8889,8 +8835,6 @@ button,
 .pm-americano-v2-detail-players-label {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 10px;
 }
@@ -9078,8 +9022,6 @@ button,
 .pm-americano-v2-standings-title {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   padding: 12px 14px 8px;
 }
@@ -9116,8 +9058,6 @@ button,
 .pm-americano-v2-matches-title {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
   margin-bottom: 8px;
 }
@@ -9149,8 +9089,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-light);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .pm-americano-v2-match-status {
@@ -9179,8 +9117,6 @@ button,
   font-size: 11px;
   color: var(--pm-text-light);
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   margin: 4px 0;
 }
 
@@ -9251,8 +9187,6 @@ button,
 .pm-liga-v2-list-type {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   opacity: 0.85;
 }
 
@@ -9428,8 +9362,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-mid);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .pm-liga-v2-my-name {
@@ -9542,8 +9474,6 @@ button,
 .pm-liga-v2-detail-type {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 
@@ -9723,8 +9653,6 @@ button,
   background: var(--pm-surface-alt);
   font-weight: 700;
   color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   font-size: 11px;
 }
 
@@ -9784,8 +9712,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   margin-bottom: 3px;
 }
 
@@ -9927,8 +9853,6 @@ button,
 .pm-liga-v2-schedule-kicker {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 
@@ -9960,8 +9884,6 @@ button,
 .pm-liga-v2-round-label-title {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--pm-text);
 }
 
@@ -10104,8 +10026,6 @@ button,
 .pm-liga-v2-team-kicker {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 
@@ -10152,8 +10072,6 @@ button,
   font-weight: 600;
   color: var(--pm-text-light);
   margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .pm-liga-v2-team-players-label {
@@ -10161,8 +10079,6 @@ button,
   font-weight: 700;
   color: var(--pm-text-light);
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .pm-liga-v2-team-players {
@@ -10224,8 +10140,6 @@ button,
   font-size: 11px;
   font-weight: 700;
   color: var(--pm-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   padding: 10px 12px 0;
 }
 
@@ -11001,8 +10915,6 @@ button,
   gap: 6px;
   font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--pm-text-light);
 }
 
@@ -11758,8 +11670,6 @@ button,
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 5px;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
 }
 
 .pm-slot-sub {

@@ -62,10 +62,8 @@
 .pm-kd-chip {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.5px;
   padding: 4px 10px;
   border-radius: 999px;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -484,8 +482,6 @@
 .pm-kd-winner-tag {
   margin-top: 6px;
   font-size: 9px;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
 }
 
 .pm-kd-avstack {
@@ -642,8 +638,6 @@
 .pm-kd-eyebrow {
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 

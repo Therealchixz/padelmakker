@@ -1139,7 +1139,7 @@ export function LigaTab({
           {/* Step 2: Divisionsindstillinger / Regler */}
           {createStep === 2 && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Kampsystem</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, margin: '0 18px 8px' }}>Kampsystem</div>
               {MATCH_SYSTEMS.map(ms => (
                 <div
                   key={ms.id}
@@ -1162,7 +1162,7 @@ export function LigaTab({
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, margin: '4px 18px 8px' }}>Pointsystem</div>
                   <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
                     {[
                       { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
@@ -1301,7 +1301,7 @@ export function LigaTab({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
-            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
             {myActiveLeagueHero.league.name}
@@ -1314,7 +1314,7 @@ export function LigaTab({
           ) : null}
           <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Placering</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Placering</div>
               <div style={{ fontSize: '20px', fontWeight: 700 }}>
                 {myActiveLeagueHero.rank != null ? (
                   <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: 'var(--pm-hero-subtitle)', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
@@ -1323,12 +1323,12 @@ export function LigaTab({
             </div>
             {myActiveLeagueHero.nextMatchDate ? (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Næste kamp</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Næste kamp</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.nextMatchDate}</div>
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Hold</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Hold</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.myTeam?.name || '—'}</div>
               </div>
             )}
@@ -1359,7 +1359,7 @@ export function LigaTab({
             const busy = busyId === invite.id + '-accept' || busyId === invite.id + '-decline';
             return (
               <div key={invite.id} className="pm-feedback-panel pm-feedback-panel--warning" style={{ borderRadius: theme.radius, padding: '14px 16px', marginBottom: '8px', textAlign: 'left' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.warm, marginBottom: '6px' }}>
                   ⚡ Holdinvitation
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>{invite.name}</div>
@@ -1761,7 +1761,7 @@ export function LigaTab({
               </div>
 
               {/* Share section */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, padding: '16px 18px 8px' }}>
                 Del liga
               </div>
               <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>

@@ -977,7 +977,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     fontSize: "11px",
     fontWeight: 700,
     letterSpacing: "0.04em",
-    textTransform: "uppercase",
+
     flexShrink: 0,
   });
 
@@ -1658,7 +1658,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                       color: theme.textMid,
                       fontWeight: 700,
                       letterSpacing: "0.05em",
-                      textTransform: "uppercase",
+
                       marginTop: entry.label === "Nyeste" ? 0 : "4px",
                     }}
                   >
@@ -1948,7 +1948,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "4px" }}>
                   {getTournamentFormatLabel(viewTournament.format)} resultat
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
@@ -2018,7 +2018,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "4px" }}>
                   {viewMatch.kind === "result" ? "Kampresultat" : "Åben kamp"}
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -2079,7 +2079,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               {viewMatch.kind === "result" ? (
                 <>
                   <div className="pm-ui-card" style={{ padding: "12px" }}>
-                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Vindere</div>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "8px" }}>Vindere</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {(viewMatch.winners || []).map((p, idx) => (
                         <div key={`w-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -2094,7 +2094,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </div>
 
                   <div className="pm-ui-card" style={{ padding: "12px" }}>
-                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Tabere</div>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "8px" }}>Tabere</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {(viewMatch.losers || []).map((p, idx) => (
                         <div key={`l-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -2129,7 +2129,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   </div>
 
                   <div className="pm-ui-card" style={{ padding: "12px" }}>
-                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "8px" }}>
                       Spillere ({viewMatch.playerCount ?? 0}/4)
                     </div>
                     {(viewMatch.players || []).length > 0 ? (
@@ -2157,7 +2157,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
 
                   {viewMatch.description ? (
                     <div className="pm-ui-card" style={{ padding: "12px" }}>
-                      <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+                      <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "6px" }}>
                         Beskrivelse
                       </div>
                       <div style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.45 }}>
@@ -2224,7 +2224,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
+                <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, marginBottom: "4px" }}>Ligaresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
               </div>
               <button type="button" aria-label="Luk ligastilling detaljer" onClick={closeViewLeague} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>

@@ -254,7 +254,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
       </div>
       {query.length < 2 && suggested.length > 0 ? (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Foreslåede makkere</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>Foreslåede makkere</div>
           {suggested.map((p) => <PartnerRow key={p.id} p={p} />)}
         </div>
       ) : null}
@@ -595,7 +595,7 @@ function ActiveDetail({
 
       {teams.length > 0 ? (
         <>
-          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>
             Holdrangliste
           </div>
           <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />
@@ -604,7 +604,7 @@ function ActiveDetail({
 
       {joined && myMatch ? (
         <div className="pm-card-subpanel pm-card-subpanel--accent" style={{ padding: 14, marginTop: 16, marginBottom: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 10 }}>
             Jeres kamp — runde {league.current_round}
           </div>
           {myMatch.team2_id === null ? (
@@ -713,7 +713,7 @@ function ActiveDetail({
 
                       return (
                         <>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 2px 8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: theme.textLight, margin: '0 2px 8px' }}>
                             <span>{myTeam.name.split(' & ')[0]} …</span>
                             <span>Score pr. sæt</span>
                             <span>{opponentTeam.name.split(' & ')[0]} …</span>
@@ -829,14 +829,14 @@ function CompletedDetail({ league, standings, myTeam, isCreator }) {
               <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ marginBottom: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 28, lineHeight: 1 }}>🏆</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Vinder</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: theme.warm, marginBottom: 3 }}>Vinder</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
                   <div style={{ fontSize: 11, color: theme.textMid, marginTop: 4 }}>{w.wins}W · {w.losses}L · {w.points} pt</div>
                 </div>
               </div>
             );
           })()}
-          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>
             Slutstilling
           </div>
           <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />

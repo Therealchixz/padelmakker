@@ -69,7 +69,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
     <AppModal open onClose={onClose} ariaLabel={`Ligakamp runde ${rn}`} maxWidth={520} zIndex={200} contentStyle={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ overflow: 'hidden' }}>
         <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.textLight, fontWeight: 600 }}>
+          <div style={{ fontSize: '11px', color: theme.textLight, fontWeight: 600 }}>
             Runde {rn}
           </div>
           <button
@@ -98,7 +98,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
               <div style={{ marginTop: '8px', fontSize: '12px', color: theme.textLight }}>
                 {t1?.player1_name} · {t1?.player2_name}
               </div>
-              <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
+              <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textMid }}>Fri runde</div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: `1px solid ${theme.border}` }}>
@@ -298,7 +298,7 @@ export function LigaSwissBracket({
       </div>
       {teams.length > 1 && (
         <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
+          <span style={{ fontSize: '11px', color: theme.textLight, marginRight: 4 }}>Hold:</span>
           {teams.map((t) => (
             <span
               key={t.id}
@@ -398,7 +398,7 @@ export function LigaSwissBracket({
                       marginBottom: '6px',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.green : isCurrent ? theme.textMid : theme.textLight }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: isDone ? theme.green : isCurrent ? theme.textMid : theme.textLight }}>
                       Runde {rn}
                       {totalRounds ? ` / ${totalRounds}` : ''}
                     </span>
@@ -493,7 +493,7 @@ export function LigaSwissBracket({
                                 </span>
                               </div>
                               <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
-                              <div style={{ textAlign: 'center', fontSize: '11px', color: theme.textLight, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
+                              <div style={{ textAlign: 'center', fontSize: '11px', color: theme.textLight, padding: '2px 0' }}>Fri runde</div>
                             </>
                           ) : (
                             <>

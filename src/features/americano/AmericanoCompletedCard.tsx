@@ -704,7 +704,7 @@ export function AmericanoCompletedCard({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
-                <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase' as const, color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -765,7 +765,7 @@ export function AmericanoCompletedCard({
                 fontSize: 10,
                 fontWeight: 700,
                 color: theme.textLight,
-                textTransform: 'uppercase',
+
                 letterSpacing: '0.04em',
               }}
             >
@@ -788,7 +788,7 @@ export function AmericanoCompletedCard({
                 fontSize: 10,
                 fontWeight: 700,
                 color: theme.textLight,
-                textTransform: 'uppercase',
+
                 letterSpacing: '0.04em',
               }}
             >
@@ -811,7 +811,7 @@ export function AmericanoCompletedCard({
                 fontSize: 10,
                 fontWeight: 700,
                 color: theme.textLight,
-                textTransform: 'uppercase',
+
                 letterSpacing: '0.04em',
               }}
             >
@@ -843,7 +843,7 @@ export function AmericanoCompletedCard({
               fontSize: 10,
               fontWeight: 700,
               color: theme.textLight,
-              textTransform: 'uppercase',
+
               letterSpacing: '0.06em',
               marginBottom: 8,
             }}
@@ -966,7 +966,7 @@ export function AmericanoCompletedCard({
               fontSize: 10,
               fontWeight: 700,
               color: theme.textLight,
-              textTransform: 'uppercase',
+
               letterSpacing: '0.06em',
               marginBottom: 8,
             }}
@@ -1129,7 +1129,7 @@ export function AmericanoCompletedCard({
                   color: theme.textLight,
                   marginTop: 12,
                   marginBottom: 8,
-                  textTransform: 'uppercase',
+
                   letterSpacing: '0.04em',
                 }}
               >
@@ -1290,7 +1290,7 @@ export function AmericanoCompletedCard({
                   color: theme.textLight,
                   marginTop: 16,
                   marginBottom: 8,
-                  textTransform: 'uppercase',
+
                   letterSpacing: '0.04em',
                 }}
               >
@@ -1375,7 +1375,7 @@ export function AmericanoCompletedCard({
                                 fontWeight: 700,
                                 color: theme.textLight,
                                 letterSpacing: '0.04em',
-                                textTransform: 'uppercase',
+
                                 background: theme.surfaceAlt,
                                 border: `1px solid ${theme.border}`,
                                 borderRadius: 999,
@@ -1453,7 +1453,7 @@ export function AmericanoCompletedCard({
                               fontSize: 10,
                               color: theme.textLight,
                               textAlign: 'center',
-                              textTransform: 'uppercase',
+
                               letterSpacing: '0.04em',
                             }}
                           >

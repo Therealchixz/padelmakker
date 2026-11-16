@@ -119,7 +119,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         </div>
 
         {/* Share section: det hurtigste sted at finde de sidste tre er ens egne venner */}
-        <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, padding: '16px 18px 8px' }}>
           Del kamp
         </div>
         <div style={{ margin: '0 18px 10px', fontSize: 13, color: theme.textMid, lineHeight: 1.5 }}>

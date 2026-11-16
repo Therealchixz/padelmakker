@@ -75,7 +75,7 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
       />
 
       {/* Emoji-alternativ */}
-      <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+      <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, marginBottom: '8px' }}>
         Eller vælg et ikon
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
