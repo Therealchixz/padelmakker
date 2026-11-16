@@ -2,7 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { font, theme, btn } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
-import { ChevronDown, Check, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { ChevronDown, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
@@ -652,7 +652,7 @@ export function RankingTab({ user }) {
           style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
         />
         <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
-          {firstName}{isMe ? <Check size={12} strokeWidth={3} aria-label=" (dig)" style={{ marginLeft: 3, verticalAlign: '-1px' }} /> : null}
+          {firstName}{isMe ? <span style={{ fontWeight: 500, opacity: 0.8 }}> (dig)</span> : null}
         </b>
         {/* ELO stod før både her og i det store tal nedenunder (podiet vises kun
             for "Alle tider", hvor score er ELO), og "Niveau" brød over to linjer. */}
