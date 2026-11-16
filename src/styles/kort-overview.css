@@ -1,0 +1,226 @@
+/* Toppen af Kort-siden (H-designet): kort med klokkeslaet-naale og et ark under. */
+.pm-kort-over { margin: 6px 0 14px; }
+.pm-kort-over-map { margin: 0 0 -26px; }
+.pm-kort-over-stage {
+  height: 290px;
+  background: var(--pm-surface-muted);
+  border-radius: var(--pm-radius-xl) var(--pm-radius-xl) 0 0;
+  z-index: 0;
+}
+@media (min-width: 769px) { .pm-kort-over-stage { height: 340px; } }
+
+/* Naal: klokkeslaet i en blaa pille med en lille stilk. Valgt = lime med antal ledige. */
+.leaflet-marker-icon.pm-kort-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+.pm-kort-pin-head {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  background: #1463F3;
+  color: #fff;
+  font-family: var(--pm-font-brand);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(11, 27, 51, 0.28);
+}
+.pm-kort-pin-stem {
+  width: 3px;
+  height: 9px;
+  border-radius: 0 0 2px 2px;
+  background: #1463F3;
+}
+.pm-kort-pin.is-active .pm-kort-pin-head {
+  border-color: #0B1B33;
+  background: #D8F34A;
+  color: #0B1B33;
+}
+.pm-kort-pin.is-active .pm-kort-pin-stem { background: #0B1B33; }
+
+.pm-kort-sheet {
+  position: relative;
+  z-index: 1;
+  padding: 18px 0 4px;
+  border-radius: 26px 26px 0 0;
+  background: var(--pm-bg);
+}
+.pm-kort-sheet--flat { border-radius: 0; padding-top: 4px; }
+.pm-kort-sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 4px 12px;
+}
+.pm-kort-sheet-head h2 {
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--pm-text);
+}
+.pm-kort-sheet-link {
+  min-height: 44px;
+  margin: -12px -6px -12px 0;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--pm-accent);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pm-kort-card {
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--pm-surface);
+  box-shadow: var(--pm-shadow);
+}
+.pm-kort-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-kort-card-time,
+.pm-kort-row-time {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+.pm-kort-card-time b {
+  font-family: var(--pm-font-brand);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.pm-kort-card-time small,
+.pm-kort-row-time small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-text-light);
+}
+.pm-kort-card-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-kort-card-venue {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.pm-kort-card-meta { font-size: 13px; color: var(--pm-text-light); }
+.pm-kort-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pm-border);
+}
+.pm-kort-faces { display: flex; }
+.pm-kort-face {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-left: -8px;
+  border: 2px solid var(--pm-surface);
+  border-radius: 50%;
+  background: var(--pm-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pm-kort-face:first-child { margin-left: 0; }
+.pm-kort-face--empty {
+  background: var(--pm-surface);
+  border: 2px dashed #7A879D;
+}
+.pm-kort-card-left {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-accent);
+  white-space: nowrap;
+}
+.pm-kort-card-cta {
+  flex-shrink: 0;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pm-kort-rows { display: flex; flex-direction: column; margin: 6px 4px 0; }
+.pm-kort-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--pm-border);
+  background: none;
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-kort-row:last-child { border-bottom: 0; }
+.pm-kort-row-time { min-width: 52px; }
+.pm-kort-row-time b {
+  font-family: var(--pm-font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.pm-kort-row-venue {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-kort-row-left {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--pm-accent-bg);
+  color: var(--pm-accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+/* Moerk tilstand: navy ansigter forsvinder mod den moerke flade, saa de bliver blaa. */
+[data-theme="dark"] .pm-kort-face:not(.pm-kort-face--empty) { background: var(--pm-accent-solid); }

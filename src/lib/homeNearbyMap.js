@@ -1,7 +1,7 @@
 import { haversineKm, parseGeoCoords } from './geoDistance.js';
 
 /** Samme normalisering som bane-soegningen (smaa bogstaver, uden accenter), plus trim. */
-function normalizeVenueName(text) {
+export function normalizeVenueName(text) {
   return String(text || '')
     .toLowerCase()
     .normalize('NFD')

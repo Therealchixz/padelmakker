@@ -17,6 +17,7 @@ const LigaTabLazyEmbed = lazy(() =>
   import('./LigaTab').then((m) => ({ default: m.LigaTab }))
 );
 const KortNearbyMapLazy = lazy(() => import('../components/HomeNearbyMap'));
+const KortOverviewLazy = lazy(() => import('../components/kampe/KortOverview'));
 import { theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -2945,6 +2946,37 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     );
   };
 
+  // Kort-sidens top (H-designet): de åbne kampe som nåle på kortet og som ark under kortet.
+  const kortItems = useMemo(() => {
+    const todayYmd = DateTime.now().toISODate();
+    const dayLabel = (ymd) => {
+      const d = String(ymd || '').slice(0, 10);
+      if (!d) return '';
+      if (d === todayYmd) return 'i dag';
+      const dt = DateTime.fromISO(d);
+      if (!dt.isValid) return '';
+      const diff = Math.round(dt.diff(DateTime.fromISO(todayYmd), 'days').days);
+      if (diff === 1) return 'i morgen';
+      return dt.setLocale('da').toFormat(diff > 1 && diff < 7 ? 'cccc' : 'd. LLL');
+    };
+    return openMatches.slice(0, 20).map((m) => {
+      const players = matchPlayers[String(m.id)] || [];
+      const max = Number(m.max_players) || 4;
+      const mins = Number(m.duration) || 0;
+      return {
+        id: m.id,
+        time: fmtClock(m.time) || '—',
+        dayLabel: dayLabel(m.date),
+        court: m.court_name || '',
+        durationLabel: mins ? `${mins} min` : null,
+        levelLabel: m.level_range ? String(m.level_range).replace('-', '–') : null,
+        left: Math.max(0, max - players.length),
+        players: players.map((p) => p.user_name || ''),
+        joined: players.some((p) => String(p.user_id) === myUidStr),
+      };
+    });
+  }, [openMatches, matchPlayers, myUidStr]);
+
   const renderPadelListItem = useCallback((m) => {
     const bundle = getMatchCardBundle(m);
     const { cardState, matchPrefs, status, mr, winnerTeam } = bundle;
@@ -3165,8 +3197,21 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
           {kampeFormat === 'padel' && (
             <>
-              {/* Kort-siden (H-designet): kortet med aabne kampe og baner staar oeverst, listen nedenunder. */}
-              {user?.latitude != null && user?.longitude != null ? (
+              {/* Kort-siden (H-designet): er der åbne kampe, vises de som nåle med klokkeslæt og et ark
+                  under kortet. Er der ingen, vises kortet over baner i nærheden i stedet. */}
+              {kortItems.length > 0 ? (
+                <Suspense fallback={null}>
+                  <KortOverviewLazy
+                    me={user}
+                    matches={kortItems}
+                    onOpen={(id) => open2v2Detail(id)}
+                    onShowList={() => {
+                      setViewTab('open');
+                      document.querySelector('.pm-kampe-v2-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                  />
+                </Suspense>
+              ) : user?.latitude != null && user?.longitude != null ? (
                 <Suspense fallback={null}>
                   <div className="pm-kort-map">
                     <KortNearbyMapLazy
