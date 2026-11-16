@@ -214,7 +214,7 @@ export function MatchCourtView({
         <div>
           <b>Ledig plads</b>
           <span className="pm-kd-slot-side">{courtSideLabel(side)}</span>
-          <span className="pm-kd-empty-sub">{clickable ? 'SKIFT HIT' : 'BLIV DEN NÆSTE!'}</span>
+          <span className="pm-kd-empty-sub">{clickable ? 'Skift hertil' : 'Bliv den næste'}</span>
         </div>
       </button>
     );

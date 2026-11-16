@@ -125,10 +125,21 @@
 }
 
 .pm-kd-title {
-  font-size: 18px;
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  font-size: clamp(24px, 7vw, 28px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--pm-text);
+  text-wrap: balance;
+}
+/* Tidsrummet staar paa sin egen linje, saa datoen ikke knaekker midt i. */
+.pm-kd-title-time { display: block; white-space: nowrap; }
+.pm-kd-venue {
+  margin: 6px 0 0;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.3px;
   color: var(--pm-text);
 }
 
@@ -213,8 +224,6 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
   color: var(--pm-text);
   background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
@@ -275,11 +284,9 @@
 /* ── Holdlabel (mockup .team-label) ── */
 .pm-kd-team-label {
   margin: 14px 2px 8px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 1.2px;
   color: var(--pm-text-light);
-  text-transform: uppercase;
 }
 
 .pm-kd-slot-side {
@@ -376,15 +383,13 @@
 }
 
 .pm-kd-lvl-badge {
-  background: var(--pm-amber-bg);
-  color: var(--pm-amber-text);
-  border: 1px solid var(--pm-amber-border);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 5px;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  /* Niveau er oplysning, ikke advarsel: rolig blaa i stedet for okker. */
+  background: var(--pm-accent-bg);
+  color: var(--pm-accent);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
   white-space: nowrap;
 }
 
@@ -427,12 +432,10 @@
 
 .pm-kd-slot--empty .pm-kd-empty-sub {
   display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--pm-kd-ghost-fg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-text-light);
   margin-top: 2px;
-  text-transform: uppercase;
 }
 
 /* Slot-handlinger (kick / flyt hold) */
@@ -868,4 +871,28 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
+}
+
+/* Hovedhandlingen paa kampdetaljen (H-designet): lime, stor og rund. */
+.pm-kd-primary {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+  font-family: var(--pm-font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(11, 27, 51, 0.18);
+  transition: transform 120ms ease-out;
+}
+.pm-kd-primary:active { transform: scale(0.98); }
+.pm-kd-primary:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pm-kd-primary { transition: none; }
+  .pm-kd-primary:active { transform: none; }
 }

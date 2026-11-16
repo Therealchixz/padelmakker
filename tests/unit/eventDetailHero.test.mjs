@@ -19,12 +19,13 @@ test('begge detaljesider bruger EventDetailHero', () => {
   }
 });
 
-test('toppen har bane-billede, banens navn som overskrift og dato + tidsrum', () => {
+test('toppen har bane-billede, dag og tidsrum som overskrift og banens navn under', () => {
   const hero = read('src/components/kampe/EventDetailHero.jsx');
   assert.match(hero, /<PadelCourtTopView/);
-  assert.match(hero, /<h2 className="pm-kd-title">\{venue\}<\/h2>/);
+  assert.match(hero, /<h2 className="pm-kd-title">\s*\{dateHeadline\}/);
+  assert.match(hero, /className="pm-kd-venue">\{venue\}/);
   assert.match(hero, /Vis på kort/);
-  assert.match(hero, /CalendarDays/);
+  assert.match(hero, /pm-kd-title-time/);
 });
 
 test('Americano viser tidsrum ud fra varighed, og "7 ledige" som på 2v2', () => {
