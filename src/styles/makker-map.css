@@ -207,3 +207,11 @@
   color: var(--pm-text-light);
 }
 .pm-makker-row[aria-current="true"] .pm-makker-row-name { color: var(--pm-accent); }
+
+/* Øvrige spillere i nærheden: mindre og rolige, så forslagene stadig træder frem. */
+.leaflet-marker-icon.pm-makker-pin--other {
+  border: 2px solid #7A879D;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(11, 27, 51, 0.18);
+}
+.pm-makker-pin--other .pm-makker-pin-init { font-size: 11px; }

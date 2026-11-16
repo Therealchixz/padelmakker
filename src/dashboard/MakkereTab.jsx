@@ -684,7 +684,21 @@ export function MakkereTab({ user, showToast }) {
           latitude: x.profile.latitude,
           longitude: x.profile.longitude,
         }));
-        const byId = new Map(activeSuggestions.map((x) => [String(x.profile.id), x.profile]));
+        // Øvrige spillere i nærheden (ikke kun forslagene), nærmeste først. Højst 60 nåle, så kortet kan læses.
+        const suggestedIds = new Set(mapPlayers.map((x) => String(x.id)));
+        const otherPlayers = hasMap
+          ? players
+            .filter((p) => p?.id != null && String(p.id) !== String(user.id) && !suggestedIds.has(String(p.id)) && p.latitude != null && p.longitude != null)
+            .map((p) => ({ p, km: distanceBetweenProfiles(user, p) }))
+            .filter((x) => x.km != null && x.km <= 60)
+            .sort((x, y) => x.km - y.km)
+            .slice(0, 60)
+            .map(({ p }) => ({ id: p.id, name: p.full_name || p.name, latitude: p.latitude, longitude: p.longitude }))
+          : [];
+        const byId = new Map([
+          ...players.map((p) => [String(p.id), p]),
+          ...activeSuggestions.map((x) => [String(x.profile.id), x.profile]),
+        ]);
         const count = activeSuggestions.length;
         return (
           <>
@@ -693,6 +707,7 @@ export function MakkereTab({ user, showToast }) {
                 <MakkerMapLazy
                   me={user}
                   players={mapPlayers}
+                  others={otherPlayers}
                   selectedId={tp.id}
                   onSelect={(id) => {
                     const hit = byId.get(String(id));
