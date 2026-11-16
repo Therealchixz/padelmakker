@@ -1,0 +1,209 @@
+/* Kort over foreslaaede makkere (H-designet). */
+.pm-makker-map {
+  position: relative;
+  margin: 0 0 -26px;
+}
+.pm-makker-map-stage {
+  height: 280px;
+  background: var(--pm-surface-muted);
+  z-index: 0;
+}
+@media (min-width: 769px) {
+  .pm-makker-map-stage { height: 320px; border-radius: var(--pm-radius-xl); }
+}
+.pm-makker-map-note {
+  position: absolute;
+  left: 10px;
+  bottom: 34px;
+  z-index: 400;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pm-surface) 92%, transparent);
+  color: var(--pm-text-mid);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+/* Naal: initialer i en hvid cirkel med blaa kant, niveau som lille maerke. Valgt = lime. */
+/* .leaflet-marker-icon saetter display: block, saa vi skal vaere mere specifikke for at centrere. */
+.leaflet-marker-icon.pm-makker-pin {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2.5px solid #1463F3;
+  background: #fff;
+  color: #0B1B33;
+  box-shadow: 0 3px 10px rgba(11, 27, 51, 0.25);
+  cursor: pointer;
+}
+.pm-makker-pin.is-active {
+  border-color: #0B1B33;
+  background: #D8F34A;
+}
+.pm-makker-pin-init {
+  font-family: var(--pm-font-brand);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.pm-makker-pin-lvl {
+  position: absolute;
+  right: -8px;
+  bottom: -6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #0B1B33;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Arket under kortet: overskrift, bedste match og en kort liste. */
+.pm-makker-sheet {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 22px;
+  padding: 18px 18px 6px;
+  border-radius: 26px 26px 0 0;
+  background: var(--pm-bg);
+}
+.pm-makker-sheet--flat {
+  border-radius: 0;
+  padding-top: 8px;
+}
+.pm-makker-sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.pm-makker-sheet-head h2 {
+  margin: 0;
+  font-family: var(--pm-font-brand);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--pm-text);
+}
+.pm-makker-sheet-link {
+  min-height: 44px;
+  margin: -12px -6px -12px 0;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--pm-accent);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pm-makker-best {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--pm-lime);
+  color: var(--pm-on-lime);
+}
+.pm-makker-best-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-makker-best-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-makker-best-kicker { font-size: 12px; font-weight: 700; }
+.pm-makker-best-name {
+  font-family: var(--pm-font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.pm-makker-best-sub { font-size: 13px; }
+.pm-makker-best-cta {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-on-lime);
+  color: var(--pm-lime);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-makker-rows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+.pm-makker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--pm-border);
+  background: none;
+  color: var(--pm-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-makker-row:last-child { border-bottom: 0; }
+.pm-makker-row-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pm-makker-row-name { font-size: 15px; font-weight: 700; }
+.pm-makker-row-info {
+  font-size: 13px;
+  color: var(--pm-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-makker-row-lvl {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--pm-accent-bg);
+  color: var(--pm-accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+.pm-makker-row-km {
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--pm-text-light);
+}
+.pm-makker-row[aria-current="true"] .pm-makker-row-name { color: var(--pm-accent); }
