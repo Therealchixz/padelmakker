@@ -66,6 +66,28 @@ function openMatchLocationChipLabel(court, creatorArea) {
   return regionDisplayLabel(area) || area;
 }
 
+/** "I dag kl. 19:30", "I morgen kl. 10:00", "Onsdag kl. 10:00" eller "Ons. 25. nov. kl. 10:00" til kortet "Din næste kamp". */
+function homeNextWhen(dateStr, timeStr) {
+  if (!dateStr) return '';
+  const d = new Date(`${String(dateStr).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  const diff = Math.round((d - today) / 86400000);
+  let day;
+  if (diff === 0) day = 'I dag';
+  else if (diff === 1) day = 'I morgen';
+  else if (diff > 1 && diff < 7) {
+    const w = d.toLocaleDateString('da-DK', { weekday: 'long' });
+    day = w.charAt(0).toUpperCase() + w.slice(1);
+  } else {
+    const w = d.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
+    day = w.charAt(0).toUpperCase() + w.slice(1);
+  }
+  const t = String(timeStr || '').slice(0, 5);
+  return /^\d{2}:\d{2}$/.test(t) ? `${day} kl. ${t}` : day;
+}
+
 function homeDayMonBadge(ymd) {
   if (!ymd) return { top: '–', bottom: '' };
   const d = new Date(`${ymd}T00:00:00`);
@@ -114,7 +136,7 @@ async function fetchHomeUpcomingItems(userId) {
     const statusBg = m.status === 'in_progress' ? theme.surfaceMuted : m.status === 'full' ? theme.surfaceMuted : theme.greenBg;
     const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
     items.push({
-      key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: homeDayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+      key: `m-${m.id}`, kind: 'match', when: homeNextWhen(m.date, m.time), tone: statusTone, bg: statusBg, badge: homeDayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
       title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
       statusLabel,
       subtitle: [m.time ? `Kl. ${m.time}` : null, players].filter(Boolean).join(' · '),
@@ -128,7 +150,7 @@ async function fetchHomeUpcomingItems(userId) {
     const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
     const statusLabel = t.status === 'registration' ? 'Tilmelding' : 'Tilmeldt';
     items.push({
-      key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: homeDayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
+      key: `am-${t.id}`, kind: 'americano', when: homeNextWhen(t.tournament_date, t.time_slot), tone: theme.warm, bg: theme.warmBg, badge: homeDayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
       title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
       statusLabel,
       subtitle: t.time_slot ? `Kl. ${t.time_slot}` : 'Planlagt',
@@ -1085,6 +1107,10 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     if (h < 18) return 'God eftermiddag';
     return 'God aften';
   }, []);
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'short' }),
+    [],
+  );
   const matchFilterPrefs = useMemo(
     () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
     [user],
@@ -1175,9 +1201,13 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
         </div>
       )}
       {/* Fælles toplinje: hilsen med fornavn + klokken (mobil) */}
+      {/* Hvor og hvornaar, over hilsenen (H-designet). Byen vises kun, hvis den staar i profilen. */}
+      <p className="pm-home-where">
+        {[regionDisplayLabel(user?.area) || user?.area || null, todayLabel].filter(Boolean).join(' · ')}
+      </p>
       <ScreenHeader
-        // Kort hilsen (redesign v4), saa der er plads til ELO, beskeder og klokken paa telefonen.
-        title={firstName ? `Hej, ${firstName}` : greetingText}
+        // Kort hilsen, saa der er plads til beskeder og klokken paa telefonen.
+        title={firstName ? `Klar til kamp, ${firstName}?` : greetingText}
         bellTourForceOpen={tourForceNotificationOpen}
       />
       <EmailConfirmReminder user={authUser} />
@@ -1190,68 +1220,6 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
 
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} deferred={deferOnboardingPrompt} /> : null}
-
-      {/* Pulje: meld dig klar i et tidsrum — appen samler de fire */}
-      {showToast ? (
-        <PlayIntentPanel
-          user={user}
-          showToast={showToast}
-          onMatchCreated={() => setTab('kampe')}
-          onMessagePlayer={(playerOrId) => {
-            const player = playerOrId && typeof playerOrId === 'object' ? playerOrId : { id: playerOrId };
-            setTab('beskeder', { search: playerChatSearch(player.id), state: playerChatState(player) });
-          }}
-        />
-      ) : null}
-
-      {/* Kun én hjælpeboks ad gangen: ELO-forklaringen venter, til iPhone-tippet er skjult. */}
-      {showNiveauEloHint && !showIosInstallHint && (
-        <div
-          style={{
-            background: theme.surfaceMuted,
-            border: `1px solid ${theme.border}`,
-            borderRadius: '12px',
-            padding: '12px 14px',
-            marginBottom: '14px',
-            fontSize: '13px',
-            color: theme.textMid,
-            lineHeight: 1.5,
-          }}
-        >
-          <strong style={{ color: theme.text }}>Niveau og ELO er ikke det samme.</strong>{' '}
-          Dit valgte niveau bruges til matching. ELO opdateres først, når du spiller kampe med resultat.{' '}
-          <a href="/elo" style={{ color: theme.accent, fontWeight: 700 }}>
-            Læs hvordan ELO virker
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                localStorage.setItem('pm_niveau_elo_hint_v1', '1');
-              } catch {
-                /* ignore */
-              }
-              setShowNiveauEloHint(false);
-            }}
-            style={{
-              display: 'block',
-              marginBottom: '-18px',
-              background: 'transparent',
-              border: 'none',
-              color: theme.textMid,
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              // Ekstra luft nedad og til højre giver 44x44 trykflade uden at flytte teksten
-              // eller ramme linket lige ovenover; den negative margin holder layoutet.
-              padding: '8px 16px 18px 0',
-              fontFamily: font,
-            }}
-          >
-            Forstået
-          </button>
-        </div>
-      )}
 
       {/* Invitationer */}
       {(inviteItems.length > 0 || invitesLoadError) && (
@@ -1373,10 +1341,13 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 {it.statusLabel ? <span className="pm-home-next-pill">{it.statusLabel}</span> : null}
               </span>
               <span className="pm-home-next-title">
-                {it.kind === 'liga' ? `${it.badge.top} · Liga` : `${it.badge.top}. ${it.badge.bottom}`}
+                {it.kind === 'liga' ? `${it.badge.top} · Liga` : (it.when || `${it.badge.top}. ${it.badge.bottom}`)}
               </span>
               <span className="pm-home-next-name">{it.tag} · {it.title}</span>
-              {it.subtitle ? <span className="pm-home-next-sub">{it.subtitle}</span> : null}
+              {it.subtitle ? (
+                // Klokken staar allerede i overskriften, saa den gentages ikke her.
+                <span className="pm-home-next-sub">{it.when ? String(it.subtitle).replace(/^Kl\. \d{2}:\d{2} · /, '') : it.subtitle}</span>
+              ) : null}
             </button>
           ) : (
             <button
@@ -1436,6 +1407,68 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           </button>
         );
       })()}
+
+      {/* Pulje: meld dig klar i et tidsrum — appen samler de fire */}
+      {showToast ? (
+        <PlayIntentPanel
+          user={user}
+          showToast={showToast}
+          onMatchCreated={() => setTab('kampe')}
+          onMessagePlayer={(playerOrId) => {
+            const player = playerOrId && typeof playerOrId === 'object' ? playerOrId : { id: playerOrId };
+            setTab('beskeder', { search: playerChatSearch(player.id), state: playerChatState(player) });
+          }}
+        />
+      ) : null}
+
+      {/* Kun én hjælpeboks ad gangen: ELO-forklaringen venter, til iPhone-tippet er skjult. */}
+      {showNiveauEloHint && !showIosInstallHint && (
+        <div
+          style={{
+            background: theme.surfaceMuted,
+            border: `1px solid ${theme.border}`,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
+        >
+          <strong style={{ color: theme.text }}>Niveau og ELO er ikke det samme.</strong>{' '}
+          Dit valgte niveau bruges til matching. ELO opdateres først, når du spiller kampe med resultat.{' '}
+          <a href="/elo" style={{ color: theme.accent, fontWeight: 700 }}>
+            Læs hvordan ELO virker
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                localStorage.setItem('pm_niveau_elo_hint_v1', '1');
+              } catch {
+                /* ignore */
+              }
+              setShowNiveauEloHint(false);
+            }}
+            style={{
+              display: 'block',
+              marginBottom: '-18px',
+              background: 'transparent',
+              border: 'none',
+              color: theme.textMid,
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              // Ekstra luft nedad og til højre giver 44x44 trykflade uden at flytte teksten
+              // eller ramme linket lige ovenover; den negative margin holder layoutet.
+              padding: '8px 16px 18px 0',
+              fontFamily: font,
+            }}
+          >
+            Forstået
+          </button>
+        </div>
+      )}
 
       {/* Åbne kampe på dit niveau (fra de samme data som aktiviteten) */}
       {homeOpenMatches.length > 0 && (

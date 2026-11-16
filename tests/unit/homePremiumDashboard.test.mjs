@@ -13,7 +13,7 @@ test('home tab uses compact greeting header, open matches and shortcuts (redesig
 
   assert.match(homeTab, /greetingText/)
   assert.match(homeTab, /displayName/)
-  assert.match(homeTab, /`Hej, \$\{firstName\}`/)
+  assert.match(homeTab, /`Klar til kamp, \$\{firstName\}\?`/)
   assert.match(homeTab, /Åbne kampe på dit niveau/)
   assert.match(homeTab, /data-tour="quick-action-makkere"/)
   assert.match(homeTab, /data-tour="quick-action-baner"/)
