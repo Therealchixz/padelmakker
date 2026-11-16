@@ -659,3 +659,12 @@
   .pm-home-next:active,
   .pm-home-stats:active { transform: none; }
 }
+
+/* Lille linje over hilsenen: by og dato. */
+.pm-home-where {
+  margin: 14px 18px -6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-accent);
+}
+@media (min-width: 769px) { .pm-home-where { margin-left: 0; } }
