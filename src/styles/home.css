@@ -113,7 +113,6 @@
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 500;
-  text-transform: uppercase;
   color: var(--pm-text-mid);
 }
 
@@ -203,7 +202,6 @@
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 500;
-  text-transform: uppercase;
   color: var(--pm-text-mid);
 }
 .pm-home-open-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -397,8 +395,6 @@
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 .pm-home-map-place {
   position: absolute;
@@ -411,8 +407,6 @@
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--pm-text-mid);
   pointer-events: none;
 }
@@ -497,8 +491,6 @@
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
   color: var(--pm-text-light);
 }
 .pm-home-map-sel-cta {

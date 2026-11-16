@@ -126,7 +126,7 @@ export function AmericanoListCard({
     >
       {/* Smalt format-bånd — beholder Americano-identiteten uden at koste et helt hero-felt */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '8px 14px' }}>
-        <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+        <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 5 }}>
           {formatLabel}
         </span>
         <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
@@ -164,11 +164,11 @@ export function AmericanoListCard({
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12, paddingTop: 11, borderTop: '1px solid var(--pm-border)' }}>
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pris</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', marginBottom: 1 }}>Pris</div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--pm-text)' }}>{priceLabel(tournament)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pladser</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', marginBottom: 1 }}>Pladser</div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: isFull ? 'var(--pm-red)' : 'var(--pm-text)' }}>
                   {isFull ? 'FULDT' : `${filled} / ${maxPlayers}`}
                 </div>

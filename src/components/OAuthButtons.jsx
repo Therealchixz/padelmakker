@@ -65,7 +65,7 @@ export function AuthDivider() {
         fontSize: '12px',
         fontWeight: 600,
         color: theme.textLight,
-        textTransform: 'uppercase',
+
         letterSpacing: '0.04em',
       }}
     >

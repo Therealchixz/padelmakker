@@ -55,7 +55,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
   return (
     <div style={box} role="group" aria-label="Find dit niveau">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: theme.textLight }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: theme.textLight }}>
           {done ? 'Dit forslag' : `Spørgsmål ${index + 1} af ${LEVEL_QUIZ.length}`}
         </span>
         <button type="button" onClick={onClose} style={linkBtn}>Luk</button>

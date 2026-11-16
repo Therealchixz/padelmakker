@@ -806,7 +806,7 @@ export function RankingTab({ user }) {
                     ? `+${displayScore}`
                     : displayScore}
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.65, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10px', opacity: 0.65 }}>
               {period === 'all' ? (isAmericano ? TOURNAMENT_ELO_LABEL : TWO_V_TWO_ELO_LABEL) : 'ELO-ændring'}
             </div>
           </div>

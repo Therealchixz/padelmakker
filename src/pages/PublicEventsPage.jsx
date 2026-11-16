@@ -199,7 +199,7 @@ export function PublicEventsPage() {
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        textTransform: 'uppercase',
+
                         letterSpacing: '0.06em',
                         padding: '4px 10px',
                         borderRadius: '999px',

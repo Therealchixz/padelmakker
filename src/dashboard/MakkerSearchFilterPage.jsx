@@ -33,7 +33,7 @@ const labelStyle = {
   fontSize: '12px',
   fontWeight: 700,
   color: theme.textLight,
-  textTransform: 'uppercase',
+
   letterSpacing: '0.06em',
   marginBottom: '8px',
   display: 'block',

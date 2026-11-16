@@ -74,7 +74,7 @@ export function AdminUserEditModal({
               fontSize: 10,
               fontWeight: 700,
               color: theme.textLight,
-              textTransform: 'uppercase',
+
               letterSpacing: '0.06em',
               marginBottom: 10,
             }}
