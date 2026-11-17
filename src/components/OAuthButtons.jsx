@@ -70,7 +70,7 @@ export function AuthDivider() {
         fontWeight: 600,
         color: theme.textMid,
 
-        letterSpacing: '0.04em',
+        letterSpacing: 0,
       }}
     >
       <span style={{ flex: 1, height: 1, background: theme.border }} />

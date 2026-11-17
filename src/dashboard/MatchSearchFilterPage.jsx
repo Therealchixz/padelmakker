@@ -30,11 +30,10 @@ import { ChevronLeft } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
 const labelStyle = {
-  fontSize: '12px',
+  fontSize: '17px',
   fontWeight: 700,
-  color: theme.textLight,
-
-  letterSpacing: '0.06em',
+  color: theme.text,
+  letterSpacing: '-0.01em',
   marginBottom: '8px',
   display: 'block',
 };
@@ -125,7 +124,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <h1 className="pm-subpage-head-title">Kamp-filter</h1>
+        <h1 className="pm-subpage-head-title">Kampfilter</h1>
       </div>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>

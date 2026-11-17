@@ -147,7 +147,7 @@ label.pm-kampe-v2-sheet-label { display: block; }
   font-family: var(--pm-font-data);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--pm-text-mid);
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-datetime--primary { font-size: 15px; }

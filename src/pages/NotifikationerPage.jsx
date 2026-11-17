@@ -284,7 +284,7 @@ export function NotifikationerPage({ onBack }) {
       />
 
       {/* På telefonen findes indstillingerne kun her (klokken åbner denne side). */}
-      <NotificationSettingsDisclosure />
+      <NotificationSettingsDisclosure variant="page" />
 
       <div className="pm-notifikationer-list" style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (
@@ -303,10 +303,10 @@ export function NotifikationerPage({ onBack }) {
             </div>
           </div>
         ) : displayNotifs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textLight, fontSize: 13 }}>
-            <Bell size={28} color={theme.textLight} style={{ marginBottom: 10 }} />
-            <div style={{ fontWeight: 600 }}>Ingen notifikationer</div>
-            <div style={{ marginTop: 4, fontSize: 12 }}>Du er helt à jour!</div>
+          <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textMid, fontSize: 14 }}>
+            <Bell size={28} color={theme.textLight} style={{ display: 'block', margin: '0 auto 10px' }} aria-hidden />
+            <div style={{ fontWeight: 700, fontSize: 17, color: theme.text }}>Ingen notifikationer</div>
+            <div style={{ marginTop: 4 }}>Du er helt à jour.</div>
           </div>
         ) : displayNotifs.map((n) => {
           const isMatchChatGroup = n.type === 'match_chat_group';

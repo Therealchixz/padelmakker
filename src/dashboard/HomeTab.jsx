@@ -976,7 +976,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     color: tone,
     fontSize: "11px",
     fontWeight: 700,
-    letterSpacing: "0.04em",
+    letterSpacing: 0,
 
     flexShrink: 0,
   });
@@ -1657,7 +1657,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                       fontSize: "12px",
                       color: theme.textMid,
                       fontWeight: 700,
-                      letterSpacing: "0.05em",
+                      letterSpacing: 0,
 
                       marginTop: entry.label === "Nyeste" ? 0 : "4px",
                     }}

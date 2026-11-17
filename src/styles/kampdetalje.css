@@ -633,7 +633,7 @@
   font-size: 30px;
   font-weight: 700;
   color: var(--pm-text);
-  letter-spacing: 1px;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 

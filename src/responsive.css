@@ -1466,15 +1466,15 @@ button,
 
 /* Fælles underside-header (Notifikationer, filtre, …) */
 .pm-subpage-head {
+  /* H (17. nov. 2026): samme toplinje som hovedsiderne — paa bunden, ingen hvid bjaelke. */
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 10px;
   position: sticky;
   top: 0;
   z-index: 6;
-  border-bottom: 1px solid var(--pm-border);
-  background: var(--pm-surface);
+  background: var(--pm-bg);
   flex-shrink: 0;
 }
 
@@ -1494,11 +1494,11 @@ button,
 }
 
 .pm-subpage-head-back {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--pm-border);
-  background: var(--pm-surface-alt, var(--pm-surface-muted));
+  border: 0;
+  background: var(--pm-surface);
   color: var(--pm-text);
   display: flex;
   align-items: center;
@@ -1512,28 +1512,27 @@ button,
   flex-shrink: 0;
   position: relative;
   z-index: 2;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--pm-accent);
   background: none;
   border: none;
   cursor: pointer;
   padding: 8px 4px;
   white-space: nowrap;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .pm-notifikationer-head {
   /* Alias — samme look som pm-subpage-head */
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 10px;
   position: sticky;
   top: 0;
   z-index: 6;
-  border-bottom: 1px solid var(--pm-border);
-  background: var(--pm-surface);
+  background: var(--pm-bg);
   flex-shrink: 0;
 }
 
@@ -1543,8 +1542,9 @@ button,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 17px;
-  font-weight: 800;
+  font-family: var(--pm-font-display);
+  font-size: 20px;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
   color: var(--pm-text);
@@ -1558,8 +1558,10 @@ button,
 
 .pm-push-controls--page {
   flex-shrink: 0;
+  margin: 0 16px 8px;
+  overflow: hidden;
+  border-radius: var(--pm-radius-lg);
   background: var(--pm-surface);
-  border-bottom: 1px solid var(--pm-border);
 }
 
 .pm-profile-header {

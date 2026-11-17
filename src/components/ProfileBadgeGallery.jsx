@@ -231,7 +231,7 @@ function ProfileBadgeGalleryFull({ badges, selectedKey, onSelectBadge }) {
               fontSize: 11,
               fontWeight: 700,
 
-              letterSpacing: '0.08em',
+              letterSpacing: 0,
               color: theme.textLight,
               marginBottom: 10,
             }}

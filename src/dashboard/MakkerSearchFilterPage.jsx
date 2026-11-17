@@ -30,11 +30,10 @@ import { ToggleSwitch } from '../components/ToggleSwitch';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
 const labelStyle = {
-  fontSize: '12px',
+  fontSize: '17px',
   fontWeight: 700,
-  color: theme.textLight,
-
-  letterSpacing: '0.06em',
+  color: theme.text,
+  letterSpacing: '-0.01em',
   marginBottom: '8px',
   display: 'block',
 };
@@ -164,7 +163,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <h1 className="pm-subpage-head-title">Filtre</h1>
+        <h1 className="pm-subpage-head-title">Makkerfilter</h1>
         <button
           type="button"
           className="pm-subpage-head-action"
