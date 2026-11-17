@@ -42,14 +42,22 @@ function spread(players) {
   return out;
 }
 
-export default function MakkerMap({ me, players, selectedId = null, onSelect }) {
+/**
+ * `players`: de foreslåede makkere (tydelige nåle med niveau).
+ * `others`: øvrige spillere i nærheden (små, rolige nåle), så kortet viser alle og ikke kun forslagene.
+ */
+export default function MakkerMap({ me, players, others = [], selectedId = null, onSelect }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const layerRef = useRef(null);
   const leafletRef = useRef(null);
   const [ready, setReady] = useState(0);
   const pins = useMemo(() => spread((players || []).filter((p) => p.latitude != null && p.longitude != null)), [players]);
-  const pinsKey = pins.map((p) => p.id).join('|');
+  const otherPins = useMemo(
+    () => spread((others || []).filter((p) => p.latitude != null && p.longitude != null)),
+    [others],
+  );
+  const pinsKey = `${pins.map((p) => p.id).join('|')}#${otherPins.map((p) => p.id).join('|')}`;
   const meLat = me?.latitude;
   const meLng = me?.longitude;
 
@@ -109,6 +117,21 @@ export default function MakkerMap({ me, players, selectedId = null, onSelect }) 
     const layer = layerRef.current;
     if (!L || !map || !layer) return;
     layer.clearLayers();
+    for (const p of otherPins) {
+      L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: 'pm-makker-pin pm-makker-pin--other',
+          html: `<span class="pm-makker-pin-init">${escapeHtml(initials(p.name))}</span>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        }),
+        title: p.name,
+        keyboard: false,
+        zIndexOffset: -50,
+      })
+        .on('click', () => onSelect?.(p.id))
+        .addTo(layer);
+    }
     for (const p of pins) {
       const active = String(selectedId) === String(p.id);
       const icon = L.divIcon({
@@ -133,7 +156,9 @@ export default function MakkerMap({ me, players, selectedId = null, onSelect }) 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || meLat == null || meLng == null) return;
-    const points = [[meLat, meLng], ...pins.filter((p) => Math.abs(p.lat - meLat) < 0.6 && Math.abs(p.lng - meLng) < 1).map((p) => [p.lat, p.lng])];
+    // Udsnittet følger forslagene; er der ingen, følger det de nærmeste øvrige spillere.
+    const frame = pins.length > 0 ? pins : otherPins.slice(0, 8);
+    const points = [[meLat, meLng], ...frame.filter((p) => Math.abs(p.lat - meLat) < 0.6 && Math.abs(p.lng - meLng) < 1).map((p) => [p.lat, p.lng])];
     if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [36, 36], paddingBottomRight: [36, 56], maxZoom: 13 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinsKey, ready, meLat, meLng]);
@@ -141,7 +166,7 @@ export default function MakkerMap({ me, players, selectedId = null, onSelect }) 
   return (
     <div className="pm-makker-map">
       <div ref={containerRef} className="pm-makker-map-stage" role="application" aria-label="Kort over foreslåede makkere" />
-      <p className="pm-makker-map-note">Nålene viser cirka hvor i byen, ikke en adresse.</p>
+      <p className="pm-makker-map-note">Blå ring er forslag til dig. Nålene viser cirka hvor i byen.</p>
     </div>
   );
 }
