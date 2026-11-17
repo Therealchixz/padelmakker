@@ -17,9 +17,11 @@ export const obInput = {
   background: theme.surface,
   color: theme.text,
   border: `1.5px solid ${theme.border}`,
-  borderRadius: 10,
-  padding: '12px 14px',
-  fontSize: 14,
+  borderRadius: 'var(--pm-radius-sm)',
+  minHeight: 52,
+  padding: '13px 16px',
+  // 16px: mindre tekst faar iPhone til at zoome ind, naar man trykker i feltet.
+  fontSize: 16,
   fontWeight: 500,
   lineHeight: 1.3,
   transition: 'border-color 0.15s',
@@ -29,7 +31,7 @@ export const obInput = {
 export const obLabel = {
   display: 'block',
   fontFamily: font,
-  fontSize: 12,
+  fontSize: 14,
   fontWeight: 600,
   color: theme.text,
   marginBottom: 7,
@@ -37,21 +39,23 @@ export const obLabel = {
 
 /** .btn-navy — fuldbredde primærknap */
 export const btnNavy = {
+  // H (ejeren 17. nov. 2026): skaermens hovedhandling er en lime, helt rund knap.
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
-  background: theme.navy,
-  color: '#fff',
+  background: 'var(--pm-lime)',
+  color: 'var(--pm-on-lime)',
   border: 'none',
   cursor: 'pointer',
-  fontFamily: font,
-  fontWeight: 600,
-  fontSize: 15,
-  borderRadius: 10,
-  padding: 14,
+  fontFamily: displayFont,
+  fontWeight: 800,
+  fontSize: 18,
+  letterSpacing: '-0.01em',
+  borderRadius: 999,
+  minHeight: 54,
+  padding: '0 20px',
   width: '100%',
-  boxShadow: '0 6px 14px rgba(22, 55, 126, 0.32)',
 };
 
 /** .btn-ghost — fuldbredde sekundærknap */
@@ -61,14 +65,15 @@ export const btnGhost = {
   justifyContent: 'center',
   gap: 8,
   background: theme.surface,
-  color: theme.navy,
+  color: theme.text,
   border: `1.5px solid ${theme.border}`,
   cursor: 'pointer',
   fontFamily: font,
-  fontWeight: 600,
-  fontSize: 15,
-  borderRadius: 10,
-  padding: 13,
+  fontWeight: 700,
+  fontSize: 16,
+  borderRadius: 999,
+  minHeight: 52,
+  padding: '0 18px',
   width: '100%',
 };
 
@@ -90,18 +95,16 @@ export const chipStyle = (active, extra = {}) => ({
 
 /** .inset-card — grå info-flade */
 export const insetCard = {
-  background: theme.surfaceAlt,
-  borderRadius: 14,
+  background: 'var(--pm-surface-muted)',
+  borderRadius: 'var(--pm-radius-sm)',
   padding: '14px 16px',
-  border: `1px solid ${theme.border}`,
 };
 
 /** Hvidt kort (mockup .card) */
 export const whiteCard = {
   background: theme.surface,
-  borderRadius: 14,
+  borderRadius: 'var(--pm-radius-lg)',
   border: `1px solid ${theme.border}`,
-  boxShadow: '0 2px 8px rgba(13,39,82,0.07)',
 };
 
 /** .circle-btn — rund tilbage-knap i topbar */
@@ -112,7 +115,7 @@ export const circleBtn = {
   height: 44,
   borderRadius: '50%',
   background: theme.surface,
-  border: `1px solid ${theme.border}`,
+  border: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -126,13 +129,10 @@ export const circleBtn = {
 export const topbarTitle = {
   flex: 1,
   fontSize: 20,
-  // Under .pm-brand: Anton, altid versaler (DESIGN.md). Uden .pm-brand: som foer.
-  fontWeight: 'var(--pm-display-weight, 700)',
-  letterSpacing: 'var(--pm-display-tracking, -0.3px)',
-  textTransform: 'var(--pm-display-case, none)',
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
   color: theme.text,
   margin: 0,
-  // Brand-skriften (Bricolage) under .pm-brand; ellers Inter.
   fontFamily: displayFont,
 };
 
@@ -152,27 +152,27 @@ export const obIcon = {
 
 /** .step-dot — trin-indikator */
 export const stepDot = (on) => ({
-  width: 26,
-  height: 4,
+  flex: 1,
+  height: 5,
   borderRadius: 99,
-  background: on ? 'var(--pm-orange)' : theme.border,
+  background: on ? 'var(--pm-accent-solid)' : theme.border,
   transition: 'background 0.3s',
 });
 
 /** Centreret skærm-intro: overskrift 18px/600/-0.3px + undertekst */
 export const screenHeading = {
-  fontSize: 20,
-  fontWeight: 'var(--pm-display-weight, 700)',
-  letterSpacing: 'var(--pm-display-tracking, -0.3px)',
-  textTransform: 'var(--pm-display-case, none)',
+  fontSize: 28,
+  fontWeight: 800,
+  letterSpacing: '-0.03em',
+  lineHeight: 1.1,
   color: theme.text,
   fontFamily: displayFont,
 };
 
 export const screenSub = {
-  fontSize: 14,
-  color: theme.textLight,
-  marginTop: 5,
+  fontSize: 15,
+  color: theme.textMid,
+  marginTop: 6,
   lineHeight: 1.5,
 };
 
