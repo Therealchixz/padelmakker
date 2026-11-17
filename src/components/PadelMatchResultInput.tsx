@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import { scrollFormFieldIntoView, scrollToFieldById } from "../lib/formValidationScroll";
+import "../styles/score-h.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Typer — resultatstruktur til gemning/API
@@ -228,6 +229,7 @@ export default function PadelMatchResultInput({
   }, [initialData]);
 
   const [forms, setForms] = useState<[SetForm, SetForm, SetForm]>(initialForms);
+  const [triedSubmit, setTriedSubmit] = useState(false);
   const setCardRefs = [
     useRef<HTMLDivElement>(null),
     useRef<HTMLDivElement>(null),
@@ -369,6 +371,7 @@ export default function PadelMatchResultInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setTriedSubmit(true);
     if (!formValid) {
       scrollToFirstInvalid();
       return;
@@ -395,29 +398,25 @@ export default function PadelMatchResultInput({
   const step = (idx: 0 | 1 | 2, field: keyof SetForm, dir: 1 | -1, maxVal: number) => {
     const cur = numOrUndef(forms[idx][field]) ?? 0;
     const next = Math.max(0, Math.min(maxVal, cur + dir));
-    updateForm(idx, { [field]: String(next) });
+    // Det andet hold viser allerede 0; gem det som 0, saa "Indtast games for begge hold" ikke dukker op.
+    const partner: Record<string, keyof SetForm> = { games1: 'games2', games2: 'games1', tb1: 'tb2', tb2: 'tb1' };
+    const other = partner[field as string];
+    const patch: Partial<SetForm> = { [field]: String(next) };
+    if (other && numOrUndef(forms[idx][other]) === undefined) patch[other] = '0';
+    updateForm(idx, patch);
   };
 
-  const cntBtn = (idx: 0 | 1 | 2, field: keyof SetForm, dir: 1 | -1, maxVal: number, disabled: boolean) => {
+  const cntBtn = (idx: 0 | 1 | 2, field: keyof SetForm, dir: 1 | -1, maxVal: number, disabled: boolean, teamName: string) => {
     const isPlus = dir === 1;
     const cur = numOrUndef(forms[idx][field]) ?? 0;
     const atLimit = isPlus ? cur >= maxVal : cur <= 0;
     return (
       <button
         type="button"
+        className={isPlus ? 'pm-score-step pm-score-step--plus' : 'pm-score-step'}
         disabled={disabled || atLimit}
         onClick={() => step(idx, field, dir, maxVal)}
-        aria-label={isPlus ? 'Tilføj' : 'Fjern'}
-        style={{
-          width: 40, height: 40, borderRadius: 999, border: isPlus ? 'none' : '1.5px solid var(--pm-border)',
-          background: isPlus ? (disabled ? 'var(--pm-text-light)' : 'var(--pm-accent)') : 'var(--pm-surface)',
-          color: isPlus ? 'var(--pm-on-accent)' : (atLimit ? 'var(--pm-text-light)' : 'var(--pm-accent)'),
-          fontSize: 18, fontWeight: 600,
-          cursor: disabled || atLimit ? 'default' : 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'inherit', flexShrink: 0, padding: 0,
-          opacity: isPlus && disabled ? 0.6 : 1,
-        }}
+        aria-label={`${isPlus ? 'Én mere' : 'Én mindre'} til ${teamName}`}
       >
         {isPlus ? '+' : '−'}
       </button>
@@ -429,158 +428,113 @@ export default function PadelMatchResultInput({
     const disabled = index === 2 && matchDecidedAfterTwo;
     const f = forms[index];
     const err = setErrors[index];
+    const empty = isSetEmpty(f);
     const tb = showTiebreak(index);
     const t1Name = team1.trim() || 'Hold 1';
     const t2Name = team2.trim() || 'Hold 2';
-    const reqLabel = n === 3
-      ? (matchDecidedAfterTwo ? 'Ikke nødvendigt' : 'Ved 1–1 i sæt')
-      : 'Obligatorisk';
+    const note = n === 3
+      ? (matchDecidedAfterTwo ? 'Ikke nødvendigt' : 'Kun ved 1–1 i sæt')
+      : 'Skal udfyldes';
+    const winner = !err && !empty ? getSetWinner(padelSets[index]) : null;
+    // Fejl vises foerst, naar man har roert saettet eller trykket "Send" (ikke med roedt fra start).
+    const showError = Boolean(err) && (triedSubmit || !empty);
+    const hint = !showError && err && empty && index > 0 ? err : null;
 
-    const scoreCol = (field: keyof SetForm, teamName: string, maxVal: number) => (
-      <div style={{ flex: 1, textAlign: 'center' }}>
-        <div style={{ fontSize: 11, color: 'var(--pm-accent)', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          {cntBtn(index, field, -1, maxVal, disabled)}
-          <span style={{ fontSize: 25, fontWeight: 700, color: 'var(--pm-accent)', width: 32, textAlign: 'center' }}>
+    const scoreRow = (field: keyof SetForm, teamName: string, maxVal: number, won: boolean) => (
+      <div className={won ? 'pm-score-row pm-score-row--won' : 'pm-score-row'}>
+        <span className="pm-score-team">{teamName}</span>
+        <div className="pm-score-stepper">
+          {cntBtn(index, field, -1, maxVal, disabled, teamName)}
+          <output className="pm-score-num" aria-label={`${teamName}: ${numOrUndef(f[field]) ?? 0}`}>
             {numOrUndef(f[field]) ?? 0}
-          </span>
-          {cntBtn(index, field, 1, maxVal, disabled)}
+          </output>
+          {cntBtn(index, field, 1, maxVal, disabled, teamName)}
         </div>
       </div>
     );
 
     return (
-      <div
+      <section
         ref={setCardRefs[index]}
         key={n}
         role="group"
         aria-label={`Sæt ${n}`}
-        style={{
-          background: 'var(--pm-surface)', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)',
-          boxShadow: '0 2px 8px rgba(13,39,82,0.06)', padding: 16, marginBottom: 13,
-          opacity: disabled ? 0.55 : 1,
-        }}
+        className={disabled ? 'pm-score-set pm-score-set--off' : 'pm-score-set'}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <b style={{ fontSize: '14px', fontWeight: 700 }}>
-            Sæt {n}{n === 3 ? ' (Tiebreak)' : ''}
-          </b>
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
-            {reqLabel}
-          </span>
-        </div>
+        <header className="pm-score-set-head">
+          <h3>Sæt {n}{n === 3 ? ' (tiebreak)' : ''}</h3>
+          <span>{note}</span>
+        </header>
 
-        <div style={{ display: 'flex', gap: 10 }}>
-          {scoreCol('games1', t1Name, 7)}
-          {scoreCol('games2', t2Name, 7)}
-        </div>
+        {scoreRow('games1', t1Name, 7, winner === 'team1')}
+        {scoreRow('games2', t2Name, 7, winner === 'team2')}
 
         {tb && (
-          <div style={{ marginTop: 14, background: 'var(--pm-amber-bg)', borderRadius: 'var(--pm-radius-sm)', padding: 12, border: '1px solid var(--pm-amber-border)' }}>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--pm-amber-text)', marginBottom: 10 }}>Tiebreak-point</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {scoreCol('tb1', t1Name, 99)}
-              {scoreCol('tb2', t2Name, 99)}
-            </div>
+          <div className="pm-score-tb">
+            <p>Tiebreak-point</p>
+            {scoreRow('tb1', t1Name, 99, false)}
+            {scoreRow('tb2', t2Name, 99, false)}
           </div>
         )}
 
-        {err && (
-          <p style={{ marginTop: 10, fontSize: '12px', color: 'var(--pm-red)' }} role="alert">
-            {err}
-          </p>
+        {showError && (
+          <p className="pm-score-msg pm-score-msg--error" role="alert">{err}</p>
         )}
-      </div>
+        {hint && <p className="pm-score-msg">{hint}</p>}
+      </section>
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: '4px 0 8px', fontFamily: 'var(--pm-font)' }} noValidate>
+    <form onSubmit={handleSubmit} className="pm-score" noValidate>
       {playersEditable && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+        <div className="pm-score-names">
           <div>
-            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 1</label>
-            <input
-              id="padel-team1"
-              type="text"
-              value={team1}
-              onChange={(e) => setTeam1(e.target.value)}
-              style={{ width: '100%', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
-              autoComplete="off"
-            />
+            <label htmlFor="padel-team1">Hold 1</label>
+            <input id="padel-team1" type="text" value={team1} onChange={(e) => setTeam1(e.target.value)} autoComplete="off" />
           </div>
           <div>
-            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 2</label>
-            <input
-              id="padel-team2"
-              type="text"
-              value={team2}
-              onChange={(e) => setTeam2(e.target.value)}
-              style={{ width: '100%', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
-              autoComplete="off"
-            />
+            <label htmlFor="padel-team2">Hold 2</label>
+            <input id="padel-team2" type="text" value={team2} onChange={(e) => setTeam2(e.target.value)} autoComplete="off" />
           </div>
         </div>
       )}
-      {playersEditable && !namesOk && (
-        <p style={{ fontSize: '12px', color: 'var(--pm-red)', marginBottom: 10 }} role="alert">Begge holdnavne skal udfyldes.</p>
+      {playersEditable && !namesOk && triedSubmit && (
+        <p className="pm-score-msg pm-score-msg--error" role="alert">Begge holdnavne skal udfyldes.</p>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 10px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
+      <div className="pm-score-head">
+        <h2 className="pm-score-title">Indtast resultat</h2>
         {(setsWon.t1 > 0 || setsWon.t2 > 0) && (
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pm-accent)' }} role="status" aria-live="polite">
-            {setsWon.t1}–{setsWon.t2} sæt
+          <span className="pm-score-tally" role="status" aria-live="polite">
+            {setsWon.t1}–{setsWon.t2} i sæt
           </span>
         )}
       </div>
 
       {/* Reglerne staar ellers ingen steder i appen, saa en afvist score (fx 6-6)
           efterlod brugeren uden forklaring. Sammenklappet, saa den ikke fylder. */}
-      <details style={{ marginBottom: 10 }}>
-        <summary style={{ fontSize: '12px', color: 'var(--pm-text-mid)', cursor: 'pointer', padding: '2px 0' }}>
-          Hvordan regnes et sæt?
-        </summary>
-        <p style={{ fontSize: '12px', color: 'var(--pm-text-mid)', lineHeight: 1.6, margin: '6px 0 0' }}>
-          {RULES_SUMMARY}
-        </p>
+      <details className="pm-score-rules">
+        <summary>Hvordan regnes et sæt?</summary>
+        <p>{RULES_SUMMARY}</p>
       </details>
 
       {setCard(0)}
       {setCard(1)}
       {setCard(2)}
 
-      <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--pm-text-mid)', lineHeight: 1.6, padding: '4px 16px 12px' }}>
-        Resultatet sendes til modstanderne til godkendelse. Sørg for at begge hold er enige før indsendelse.
+      <p className="pm-score-note">
+        Resultatet sendes til modstanderne, som skal godkende det. Sørg for, at I er enige, før du sender.
       </p>
 
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div className="pm-score-actions">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              flex: 1, padding: '13px', borderRadius: 999, border: '1.5px solid var(--pm-border)',
-              background: 'var(--pm-surface)', color: 'var(--pm-accent)', fontSize: '15px', fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
+          <button type="button" className="pm-score-cancel" onClick={onCancel}>
             Annuller
           </button>
         )}
-        <button
-          type="submit"
-          style={{
-            flex: 2, padding: '14px', borderRadius: 999, border: 'none',
-            background: formValid ? 'var(--pm-navy)' : 'var(--pm-text-light)',
-            color: 'var(--pm-on-accent)', fontSize: '15px', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            opacity: formValid ? 1 : 0.85,
-          }}
-        >
-          Bekræft resultat
+        <button type="submit" className="pm-score-send" aria-disabled={!formValid}>
+          Send resultat
         </button>
       </div>
     </form>

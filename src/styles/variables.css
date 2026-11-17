@@ -45,7 +45,8 @@
   --pm-blue-bg:     #E3ECFF;
   --pm-red:         #C4213F;
   /* Udfyldte roede maerker med hvid tekst (antal ulaeste m.m.). Samme ide som
-     --pm-accent-solid: #1463F3;
+     --pm-accent-solid: i moerk tilstand er --pm-red for lys til hvid tekst. */
+  --pm-red-solid:   #B4234A;
   --pm-red-bg:      #FCE6EA;
 
   --pm-green:       #1E6B45;

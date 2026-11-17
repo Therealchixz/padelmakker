@@ -1,0 +1,77 @@
+/* Indtast resultat i H-stil (ejeren 17. nov. 2026). Ingen prototype; bygget som de
+   andre H-skaerme: hvide kort (22), runde knapper, lime til hovedhandlingen. */
+.pm-score { font-family: var(--pm-font); padding: 2px 0 6px; color: var(--pm-text); }
+
+.pm-score-names { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.pm-score-names label { display: block; font-size: 13px; font-weight: 600; color: var(--pm-text-mid); margin-bottom: 6px; }
+.pm-score-names input {
+  width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--pm-border); border-radius: var(--pm-radius-sm);
+  background: var(--pm-surface); color: var(--pm-text); font: inherit; font-size: 15px;
+}
+
+.pm-score-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; }
+.pm-score-title {
+  margin: 0; font-family: var(--pm-font-display); font-size: 22px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1.15;
+}
+.pm-score-tally {
+  flex-shrink: 0; padding: 5px 12px; border-radius: var(--pm-radius-pill);
+  background: var(--pm-lime); color: var(--pm-on-lime); font-size: 13px; font-weight: 700;
+}
+
+.pm-score-rules { margin: 0 0 12px; }
+.pm-score-rules summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--pm-accent); padding: 4px 0; }
+.pm-score-rules p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; color: var(--pm-text-mid); }
+
+.pm-score-set {
+  background: var(--pm-surface); border: 1px solid var(--pm-border); border-radius: var(--pm-radius-lg);
+  padding: 14px 16px 12px; margin-bottom: 10px;
+}
+.pm-score-set--off { opacity: 0.5; }
+.pm-score-set-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.pm-score-set-head h3 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.pm-score-set-head span { font-size: 12px; color: var(--pm-text-light); }
+
+.pm-score-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; }
+.pm-score-row + .pm-score-row { border-top: 1px solid var(--pm-border); }
+.pm-score-team {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 15px; font-weight: 600; color: var(--pm-text-mid);
+}
+.pm-score-row--won .pm-score-team { color: var(--pm-text); font-weight: 700; }
+.pm-score-stepper { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pm-score-num {
+  min-width: 40px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--pm-radius-pill); font-family: var(--pm-font-display); font-size: 24px; font-weight: 800;
+  letter-spacing: -0.02em; color: var(--pm-text);
+}
+.pm-score-row--won .pm-score-num { background: var(--pm-lime); color: var(--pm-on-lime); }
+
+.pm-score-step {
+  width: 44px; height: 44px; padding: 0; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1.5px solid var(--pm-border); background: var(--pm-surface);
+  color: var(--pm-text); font: inherit; font-size: 22px; font-weight: 600; line-height: 1; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.12s ease, opacity 0.15s;
+}
+.pm-score-step--plus { border-color: var(--pm-text); background: var(--pm-text); color: var(--pm-surface); }
+.pm-score-step:active:not(:disabled) { transform: scale(0.94); }
+.pm-score-step:disabled { opacity: 0.35; cursor: default; }
+
+.pm-score-tb { margin-top: 10px; padding: 8px 12px 4px; border-radius: var(--pm-radius-sm); background: var(--pm-surface-muted); }
+.pm-score-tb > p { margin: 0; font-size: 13px; font-weight: 700; color: var(--pm-text-mid); }
+.pm-score-tb .pm-score-row + .pm-score-row { border-top-color: var(--pm-border); }
+
+.pm-score-msg { margin: 6px 0 2px; font-size: 13px; color: var(--pm-text-light); }
+.pm-score-msg--error { color: var(--pm-red); font-weight: 600; }
+
+.pm-score-note { margin: 4px 8px 14px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--pm-text-mid); }
+
+.pm-score-actions { display: flex; gap: 10px; }
+.pm-score-cancel, .pm-score-send {
+  min-height: 52px; border-radius: var(--pm-radius-pill); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.pm-score-cancel { flex: 1; border: 1.5px solid var(--pm-border); background: var(--pm-surface); color: var(--pm-text); }
+.pm-score-send { flex: 2; border: 0; background: var(--pm-lime); color: var(--pm-on-lime); box-shadow: 0 6px 16px rgba(11, 27, 51, 0.14); }
+.pm-score-send[aria-disabled="true"] { opacity: 0.5; box-shadow: none; }
