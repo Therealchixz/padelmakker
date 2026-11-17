@@ -18,7 +18,7 @@ Ejerens valg går altid forud for en skills egen husstil. Ejeren valgte 15. nov.
 - skrift: Bricolage Grotesque (fed, almindelige store/små bogstaver) til overskrifter og store tal, Schibsted Grotesk til tekst. Ingen versaler-overskrifter og ingen `tabular-nums` (giver huller i "19:30")
 - det gamle baggrundsfoto på forsiden (ikke en tegnet bane)
 - padel-ikonet "B" (skrå, fyldt ketsjer) som standardbillede
-- den fælles toplinje (`ScreenHeader`) på appens hovedsider, sammen med bundmenuen Hjem · Kort · Spil · Makkere · Profil (ejeren 15. nov. 2026), hvor Spil er en lime knap. "Kort" er den tidligere Kampe-side med kortet øverst; "Profil" er den tidligere Mere-side og rummer alt derfra. Beskeder har en knap i toplinjen på alle hovedsider. Adresserne er uændrede (`/dashboard/kampe`, `/dashboard/mere`)
+- den fælles toplinje (`ScreenHeader`) på appens hovedsider, sammen med bundmenuen Hjem · Kampe · Spil · Makkere · Profil (ejeren 15. nov. 2026; "Kort" omdøbt til "Kampe" 17. nov. 2026), hvor Spil er en lime knap. "Kampe" har kortet over åbne kampe øverst; "Profil" er den tidligere Mere-side og rummer alt derfra. Beskeder har en knap i toplinjen på alle hovedsider. Adresserne er uændrede (`/dashboard/kampe`, `/dashboard/mere`)
 - kun rigtige tal og navne på offentlige sider; eksempeldata mærkes "Eksempel"
 
 Design H bygges skærm for skærm efter prototyperne på Claude Design-lærredet. Ejeren bad 17. nov. 2026 om, at design-ændringer lægges ind uden at spørge først: lav en PR, vent til alle checks er grønne, og merge den selv (samme regel som "Merge selv" øverst). Fortæl bagefter i hverdagssprog, hvad der er ændret, og hvad der ikke er set tegnet op.

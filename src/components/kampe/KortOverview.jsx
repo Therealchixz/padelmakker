@@ -159,8 +159,8 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
   }, [pinsKey, ready, lat, lng]);
 
   if (!selected) return null;
-  // Kortet vises kun, naar mindst én kamp har en kendt bane (ellers ville det kun vise én selv).
-  const hasMap = lat != null && lng != null && pins.length > 0;
+  // Kortet vises altid, naar vi kender ens omraade (ejeren 17. nov. 2026), ogsaa hvis ingen kamp har en kendt bane.
+  const hasMap = lat != null && lng != null;
   const count = items.length;
   const meta = [
     selected.km != null ? formatApproxKm(selected.km) : null,

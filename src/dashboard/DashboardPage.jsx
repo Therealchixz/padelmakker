@@ -801,9 +801,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'kampe',
         tab: 'kampe',
         selector: tabTourSelector('kampe'),
-        title: 'Kort',
+        title: 'Kampe',
         description:
-          'Under Kort ser du åbne kampe og baner nær dig. Her finder du også 2v2-kampe, Americano/Mexicano og liga, tilmelder dig og håndterer resultater.',
+          'Under Kampe ser du åbne kampe nær dig på et kort. Her finder du også 2v2-kampe, Americano/Mexicano og liga, tilmelder dig og håndterer resultater.',
       },
     ];
 
@@ -1248,7 +1248,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   // Redesign v4: Hjem · Kampe · Spil · Makkere · Mere. Beskeder, Baner, Rangliste og Profil ligger under Mere.
   const navTabs = [
     { id: "hjem",     label: "Hjem",    icon: <Home size={18} /> },
-    { id: "kampe",    label: "Kort",    icon: <MapPin size={18} />, badge: kampeTabBadge, attention: hasKampeAttention },
+    { id: "kampe",    label: "Kampe",    icon: <MapPin size={18} />, badge: kampeTabBadge, attention: hasKampeAttention },
     { id: "makkere",  label: "Makkere", icon: <Users size={18} /> },
     { id: "mere",     label: "Profil",  icon: <UserRound size={18} />, badge: mereBadge > 0 ? mereBadge : null },
   ];

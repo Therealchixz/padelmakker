@@ -28,7 +28,7 @@ export function KampeRedesignToolbar({
   return (
     <div className="pm-kampe-v2-toolbar pm-kampe-v4">
       <ScreenHeader
-        title="Kort"
+        title="Kampe"
         actions={onCreate ? (
           <button
             type="button"

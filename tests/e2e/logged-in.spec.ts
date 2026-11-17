@@ -44,9 +44,9 @@ test.describe('Logged-in dashboard flows', () => {
     await expect(page.getByRole('button', { name: /ELO \d+\..*Se ranglisten/ })).toBeVisible()
   })
 
-  test('kan skifte til Kort og se 2v2-overblik', async ({ page }) => {
+  test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {
     await page.goto('/dashboard')
-    await page.getByRole('button', { name: 'Kort' }).first().click()
+    await page.getByRole('button', { name: /^Kampe/ }).first().click()
     await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible({ timeout: 20_000 })
     // Soegningen ligger i filterarket bag Filter-knappen.
     await page.getByRole('button', { name: /^Filter og søgning/ }).first().click()
