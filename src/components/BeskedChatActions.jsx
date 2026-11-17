@@ -133,7 +133,7 @@ export function BeskedChatActions({
                 minWidth: 200,
                 background: theme.surface,
                 border: `1px solid ${theme.border}`,
-                borderRadius: 10,
+                borderRadius: 'var(--pm-radius-sm)',
                 boxShadow: theme.shadowLg,
                 overflow: 'hidden',
               }}
@@ -236,7 +236,7 @@ export function BeskedChatActions({
             style={{
               background: theme.surface,
               border: `1px solid ${theme.border}`,
-              borderRadius: 14,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: 20,
               width: '100%',
               maxWidth: 360,

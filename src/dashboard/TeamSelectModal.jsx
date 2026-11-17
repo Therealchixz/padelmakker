@@ -29,7 +29,7 @@ export function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
     width: '100%',
     padding: '16px',
     marginBottom: '10px',
-    borderRadius: '10px',
+    borderRadius: 'var(--pm-radius-sm)',
     border: '2px solid ' + theme.accent,
     background: full ? theme.surfaceAlt : theme.accentBg,
     color: full ? theme.textLight : theme.accent,

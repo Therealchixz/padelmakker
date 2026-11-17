@@ -35,7 +35,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.greenBg,
           border: `1px solid color-mix(in srgb, ${theme.green} 27%, transparent)`,
           fontSize: 13,
@@ -60,7 +60,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surfaceAlt,
           border: `1px solid ${theme.border}`,
           fontSize: 13,
@@ -81,7 +81,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surfaceMuted,
           border: `1px solid ${theme.border}`,
           fontSize: 13,
@@ -111,7 +111,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.warmBg,
           border: `1px solid color-mix(in srgb, ${theme.warm} 20%, transparent)`,
           fontSize: 13,
@@ -140,7 +140,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surfaceAlt,
           border: `1px solid ${theme.border}`,
           fontSize: 13,
@@ -169,7 +169,7 @@ export function GrowthCampaignBanner() {
         style={{
           margin: '0 18px 12px',
           padding: '12px 14px',
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surfaceAlt,
           border: `1px solid ${theme.border}`,
           fontSize: 13,

@@ -93,7 +93,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
           type="button"
           onClick={onPick}
           disabled={busy}
-          style={{ width: '100%', padding: '18px', borderRadius: 14, border: `1.5px dashed ${theme.border}`, background: 'var(--pm-surface-muted)', color: theme.textLight, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+          style={{ width: '100%', padding: '18px', borderRadius: 'var(--pm-radius-sm)', border: `1.5px dashed ${theme.border}`, background: 'var(--pm-surface-muted)', color: theme.textLight, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
         >
           <ImagePlus size={20} aria-hidden />
           Tilføj det første billede fra kampen
@@ -105,7 +105,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
               key={p.id}
               type="button"
               onClick={() => setLightbox(p)}
-              style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden', border: `1px solid ${theme.border}`, padding: 0, cursor: 'pointer', background: 'var(--pm-surface-muted)' }}
+              style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 999, overflow: 'hidden', border: `1px solid ${theme.border}`, padding: 0, cursor: 'pointer', background: 'var(--pm-surface-muted)' }}
             >
               <img src={p.url} alt="Kampbillede" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </button>
@@ -132,14 +132,14 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
             src={lightbox.url}
             alt="Kampbillede"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12, objectFit: 'contain' }}
+            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 'var(--pm-radius-sm)', objectFit: 'contain' }}
           />
           {String(lightbox.user_id) === String(currentUserId) ? (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(lightbox); }}
               disabled={busy}
-              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 10, background: theme.redSolid, color: 'var(--pm-on-accent)', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 999, background: theme.redSolid, color: 'var(--pm-on-accent)', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             >
               Slet billede
             </button>

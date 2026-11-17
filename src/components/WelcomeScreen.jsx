@@ -48,12 +48,12 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
               onClick={c.onClick}
               style={{
                 display: 'flex', alignItems: 'center', gap: 13, textAlign: 'left',
-                background: theme.surface, border: '1px solid ' + theme.border, borderRadius: 14,
+                background: theme.surface, border: '1px solid ' + theme.border, borderRadius: 'var(--pm-radius-sm)',
                 padding: '14px 16px', cursor: 'pointer', fontFamily: font, width: '100%',
                 boxShadow: theme.shadowSoft || 'none',
               }}
             >
-              <span style={{ width: 40, height: 40, borderRadius: 10, background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {c.icon}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -70,7 +70,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
             type="button"
             onClick={onGoToApp}
             style={{
-              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              width: '100%', padding: '13px', borderRadius: 'var(--pm-radius-sm)', border: 'none',
               background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 15, fontWeight: 700,
               cursor: 'pointer', fontFamily: font,
             }}

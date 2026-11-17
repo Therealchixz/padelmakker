@@ -913,7 +913,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
     fontSize: "12px",
     fontWeight: 700,
     height: "auto",
-    borderRadius: "9px",
+    borderRadius: 999,
     border: "none",
     color: "var(--pm-on-accent)",
     background: "var(--pm-navy)",
@@ -1159,7 +1159,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           style={{
             background: theme.warmBg,
             border: `1px solid color-mix(in srgb, ${theme.warm} 20%, transparent)`,
-            borderRadius: '12px',
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '12px 14px',
             marginBottom: '14px',
             fontSize: '13px',
@@ -1300,7 +1300,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 key={i}
                 style={{
                   height: 72,
-                  borderRadius: 16,
+                  borderRadius: 'var(--pm-radius-sm)',
                   background: theme.border,
                   opacity: 0.45 + i * 0.12,
                   animation: 'pm-pulse 1.4s ease-in-out infinite',
@@ -1314,9 +1314,9 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             <button
               type="button"
               onClick={() => setTab('kampe')}
-              style={{ background: theme.surface, border: `1px dashed ${theme.border}`, borderRadius: 16, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+              style={{ background: theme.surface, border: `1px dashed ${theme.border}`, borderRadius: 'var(--pm-radius-sm)', padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
             >
-              <div style={{ width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.surfaceMuted, borderRadius: 10, color: theme.text }}>
+              <div style={{ width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.surfaceMuted, borderRadius: 'var(--pm-radius-sm)', color: theme.text }}>
                 <CalendarPlus size={20} aria-hidden />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -1427,7 +1427,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           style={{
             background: theme.surfaceMuted,
             border: `1px solid ${theme.border}`,
-            borderRadius: '12px',
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '12px 14px',
             marginBottom: '14px',
             fontSize: '13px',
@@ -1550,7 +1550,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {[54, 46, 54, 38, 50].map((w, i) => (
-              <div key={i} style={{ height: "54px", borderRadius: "8px", background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+              <div key={i} style={{ height: "54px", borderRadius: 'var(--pm-radius-sm)', background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
             ))}
           </div>
         </div>
@@ -1682,7 +1682,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Trophy size={16} />
                     </div>
                   ),
@@ -1735,7 +1735,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.green,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <CalendarPlus size={16} />
                     </div>
                   ),
@@ -1764,7 +1764,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <CalendarPlus size={16} />
                     </div>
                   ),
@@ -1791,7 +1791,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.green,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <TrendingUp size={16} />
                     </div>
                   ),
@@ -1824,7 +1824,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: seekTone,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: seekBg, color: seekTone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: seekBg, color: seekTone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Zap size={16} />
                     </div>
                   ),
@@ -1844,7 +1844,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.textMid,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Trophy size={16} />
                     </div>
                   ),
@@ -1872,7 +1872,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                   isHighlight,
                   tone: theme.textMid,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Swords size={16} />
                     </div>
                   ),
@@ -1903,7 +1903,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 isHighlight,
                 tone,
                 leading: (
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: won ? theme.greenBg : theme.lossBg, color: won ? theme.green : theme.loss, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 'var(--pm-radius-sm)', background: won ? theme.greenBg : theme.lossBg, color: won ? theme.green : theme.loss, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {won ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                 ),
@@ -1963,7 +1963,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
                 
                 return (
-                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? theme.warmBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isWinner ? theme.warm : theme.border) }}>
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? theme.warmBg : theme.surface, borderRadius: 'var(--pm-radius-sm)', border: "1px solid " + (isWinner ? theme.warm : theme.border) }}>
                     <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isWinner ? theme.warm : theme.textLight, textAlign: "center" }}>
                       {rankIcon || rank}
                     </div>
@@ -2234,7 +2234,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
                 const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
                 const isChamp = idx === 0;
                 return (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? theme.greenBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? `color-mix(in srgb, ${theme.green} 40%, ${theme.border})` : theme.border) }}>
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? theme.greenBg : theme.surface, borderRadius: 'var(--pm-radius-sm)', border: "1px solid " + (isChamp ? `color-mix(in srgb, ${theme.green} 40%, ${theme.border})` : theme.border) }}>
                     <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? theme.green : theme.textLight, textAlign: "center", flexShrink: 0 }}>
                       {rankIcon || idx + 1}
                     </div>

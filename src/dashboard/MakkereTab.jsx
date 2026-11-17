@@ -811,7 +811,7 @@ export function MakkereTab({ user, showToast }) {
             textAlign: 'left',
             background: theme.accentBg,
             border: `1px solid color-mix(in srgb, ${theme.accent} 35%, ${theme.border})`,
-            borderRadius: 10,
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '12px 14px',
             marginBottom: 16,
             cursor: 'pointer',
@@ -880,7 +880,7 @@ export function MakkereTab({ user, showToast }) {
       </div>
 
       {makkerFilterOn && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceMuted, border: `1px solid ${theme.border}` }}>
           <SlidersHorizontal size={15} color={theme.textMid} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dine makker-kriterier</div>
@@ -923,7 +923,7 @@ export function MakkereTab({ user, showToast }) {
               style={{
                 background: showFilters || activeFilterCount > 0 ? 'color-mix(in srgb, var(--pm-on-accent) 30%, transparent)' : theme.accent,
                 color: theme.onAccent,
-                borderRadius: '10px',
+                borderRadius: 'var(--pm-radius-sm)',
                 fontSize: '11px',
                 fontWeight: 800,
                 padding: '1px 6px',

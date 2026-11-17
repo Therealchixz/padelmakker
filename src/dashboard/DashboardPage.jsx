@@ -1377,7 +1377,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               width: "230px",
               background: theme.surface,
               border: "1px solid " + theme.border,
-              borderRadius: "12px",
+              borderRadius: 'var(--pm-radius-sm)',
               boxShadow: theme.menuShadow,
               zIndex: 9999,
               overflow: "visible",
@@ -1512,7 +1512,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
-                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.accentSolid, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.accentSolid, color: theme.onAccent, borderRadius: 'var(--pm-radius-sm)', fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                   {t.badge > 9 ? "9+" : t.badge}
                 </span>
               )}
@@ -1564,7 +1564,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               style={{
                 background: theme.surface,
                 border: "1px solid " + theme.border,
-                borderRadius: "12px",
+                borderRadius: 'var(--pm-radius-sm)',
                 padding: "18px",
                 color: theme.textLight,
                 fontSize: "13px",
@@ -1616,7 +1616,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 style={{
                   background: theme.surface,
                   border: "1px solid " + theme.border,
-                  borderRadius: "12px",
+                  borderRadius: 'var(--pm-radius-sm)',
                   padding: "18px",
                   color: theme.textLight,
                   fontSize: "13px",
@@ -1710,7 +1710,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                     style={{
                       width: "100%",
                       border: "1px solid " + theme.border,
-                      borderRadius: "10px",
+                      borderRadius: 'var(--pm-radius-sm)',
                       padding: "10px 12px",
                       fontSize: isMobileView ? "16px" : "13px",
                       fontFamily: font,
@@ -1733,7 +1733,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                     style={{
                       width: "100%",
                       border: "1px solid " + theme.border,
-                      borderRadius: "10px",
+                      borderRadius: 'var(--pm-radius-sm)',
                       padding: "10px 12px",
                       fontSize: isMobileView ? "16px" : "13px",
                       fontFamily: font,
@@ -1757,7 +1757,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 style={{
                   width: "100%",
                   border: "1px solid " + theme.border,
-                  borderRadius: "10px",
+                  borderRadius: 'var(--pm-radius-sm)',
                   padding: "10px 12px",
                   fontSize: isMobileView ? "16px" : "13px",
                   fontFamily: font,
@@ -1781,7 +1781,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   width: "100%",
                   resize: "vertical",
                   border: "1px solid " + (feedbackMessage.trim().length < 10 ? theme.warm : theme.border),
-                  borderRadius: "10px",
+                  borderRadius: 'var(--pm-radius-sm)',
                   padding: "10px 12px",
                   fontSize: isMobileView ? "16px" : "13px",
                   lineHeight: 1.5,

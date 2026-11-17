@@ -19,7 +19,7 @@
   width: 100%;
   padding: 14px;
   border: 0;
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   background: var(--pm-text);
   color: var(--pm-bg);
   text-align: left;
@@ -67,7 +67,7 @@
   justify-content: space-between;
   min-height: 40px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: color-mix(in srgb, var(--pm-bg) 12%, transparent);
   font-weight: 600;
   font-size: 14px;
@@ -88,7 +88,7 @@
   min-height: 88px;
   padding: 12px;
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   color: var(--pm-text);
   font: inherit;
@@ -107,7 +107,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-family: var(--pm-font-data);
@@ -176,7 +176,7 @@
   min-height: 50px;
   margin-top: 20px;
   border: 1.5px solid var(--pm-text);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-pill);
   background: transparent;
   color: var(--pm-text);
   font: inherit;
@@ -309,7 +309,7 @@
   min-height: 72px;
   padding: 12px 14px;
   border: 1px solid var(--pm-border);
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-bg);
   color: var(--pm-text);
   font: inherit;
@@ -323,7 +323,7 @@
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
 }
@@ -334,7 +334,7 @@
 .pm-spil-sheet-cancel {
   min-height: 48px;
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   background: transparent;
   color: var(--pm-text-mid);
   font: inherit;
@@ -441,7 +441,7 @@
   align-items: center;
   gap: 2px;
   padding: 12px 4px;
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   background: var(--pm-surface);
   box-shadow: var(--pm-shadow-soft);
 }

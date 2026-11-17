@@ -151,7 +151,7 @@ export function AdminAmericanoResultEditor({ tournament, onClose, onSaved }) {
                   key={m.id}
                   style={{
                     padding: 12,
-                    borderRadius: 10,
+                    borderRadius: 'var(--pm-radius-sm)',
                     border: `1px solid ${theme.border}`,
                     background: theme.surfaceAlt,
                   }}

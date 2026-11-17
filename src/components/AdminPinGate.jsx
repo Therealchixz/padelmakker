@@ -211,7 +211,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                   style={{
                     width: '100%',
                     border: '1px solid ' + theme.border,
-                    borderRadius: '10px',
+                    borderRadius: 'var(--pm-radius-sm)',
                     padding: '11px 12px',
                     fontSize: '16px',
                     letterSpacing: '0.2em',
@@ -240,7 +240,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                     style={{
                       width: '100%',
                       border: '1px solid ' + theme.border,
-                      borderRadius: '10px',
+                      borderRadius: 'var(--pm-radius-sm)',
                       padding: '11px 12px',
                       fontSize: '16px',
                       letterSpacing: '0.2em',
@@ -260,7 +260,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                     color: theme.dangerStrong,
                     background: theme.redBg,
                     border: `1px solid ${theme.dangerBorder}`,
-                    borderRadius: '8px',
+                    borderRadius: 'var(--pm-radius-sm)',
                     padding: '8px 10px',
                     lineHeight: 1.45,
                   }}

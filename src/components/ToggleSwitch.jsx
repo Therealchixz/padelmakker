@@ -17,7 +17,7 @@ export function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
       style={{
         width: 44,
         height: 24,
-        borderRadius: 12,
+        borderRadius: 999,
         border: 'none',
         cursor: disabled ? 'wait' : 'pointer',
         background: checked ? theme.accent : theme.border,

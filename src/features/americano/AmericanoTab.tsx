@@ -1513,7 +1513,7 @@ export function AmericanoTab({
                     padding: '12px',
                     fontSize: 14,
                     fontWeight: 700,
-                    borderRadius: 10,
+                    borderRadius: 'var(--pm-radius-sm)',
                     cursor: busyId === t.id ? 'wait' : 'pointer',
                   }}
                 >
@@ -1534,7 +1534,7 @@ export function AmericanoTab({
                     padding: '12px',
                     fontSize: 14,
                     fontWeight: 700,
-                    borderRadius: 10,
+                    borderRadius: 'var(--pm-radius-sm)',
                     cursor: busyId === t.id ? 'wait' : 'pointer',
                   }}
                 >
@@ -1814,7 +1814,7 @@ export function AmericanoTab({
               </div>
 
               {/* Summary card */}
-              <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
+              <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' as const, alignItems: 'center' }}>
                   <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>{formatLabel}</span>
                 </div>
@@ -1827,7 +1827,7 @@ export function AmericanoTab({
                 {/* Date row */}
                 {(datePart || timeStr) && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <CalendarDays size={14} color={theme.textMid} />
                     </div>
                     <div style={{ fontSize: 13, lineHeight: 1.55 }}>
@@ -1840,7 +1840,7 @@ export function AmericanoTab({
                 {/* Location row */}
                 {t.court_name && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <MapPin size={14} color={theme.textMid} />
                     </div>
                     <div style={{ fontSize: 13, lineHeight: 1.55 }}>
@@ -1860,14 +1860,14 @@ export function AmericanoTab({
               <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, padding: '16px 18px 8px' }}>
                 Del turnering
               </div>
-              <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+              <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
                 <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {tournamentUrl || 'padelmakker.dk/turnering/…'}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 7, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: receiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 999, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: receiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
                 >
                   <Copy size={12} />
                   {receiptUrlCopied ? 'Kopieret!' : 'Kopiér'}
@@ -1879,7 +1879,7 @@ export function AmericanoTab({
                 <button
                   type="button"
                   onClick={() => { void handleShare() }}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
                 >
                   <Share2 size={15} />
                   Send invitation til venner
@@ -1892,7 +1892,7 @@ export function AmericanoTab({
               <button
                 type="button"
                 onClick={() => { setCreatedTournamentReceipt(null) }}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 'var(--pm-radius-sm)', border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
               >
                 Gå til turneringer
                 <ArrowRight size={16} strokeWidth={2.4} />

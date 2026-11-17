@@ -11,7 +11,7 @@
   min-height: 40px;
   padding: 0 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-pill);
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font: inherit;
@@ -30,7 +30,7 @@
   gap: 0;
   padding: 3px;
   margin: 0 0 12px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-muted);
   overflow: visible;
 }
@@ -43,7 +43,7 @@
   font-size: 13px;
   letter-spacing: -0.01em;
   border: 0;
-  border-radius: 9px;
+  border-radius: 999px;
   background: transparent;
   color: var(--pm-text-mid);
   transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
@@ -79,7 +79,7 @@
   gap: 8px;
   padding: 0 14px;
   border: 1.5px solid var(--pm-text);
-  border-radius: 12px;
+  border-radius: 999px;
   background: transparent;
   color: var(--pm-text);
   font: inherit;
@@ -125,7 +125,7 @@ label.pm-kampe-v2-sheet-label { display: block; }
 
 /* Kampkort: roligt papir, stor dato, tydelig hovedknap */
 .pm-kampe-v4-root .pm-kampe-v2-list-card {
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: none;
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-date-badge {
@@ -157,7 +157,7 @@ label.pm-kampe-v2-sheet-label { display: block; }
 }
 .pm-kampe-v4-root .pm-kampe-v2-list-cta {
   min-height: 44px;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 14px;
@@ -177,13 +177,13 @@ label.pm-kampe-v2-sheet-label { display: block; }
   gap: 4px;
   min-height: 40px;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: 999px;
 }
 
 /* Opret kamp: ingen kort-i-kort, og trinene kan laeses */
 .pm-kampe-v4-root .pm-create-form-panel {
   border: 1px solid var(--pm-border) !important;
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   box-shadow: none !important;
 }
 .pm-kampe-v4-root .pm-create-form-panel .pm-wiz {

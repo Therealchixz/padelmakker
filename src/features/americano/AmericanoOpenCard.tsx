@@ -138,7 +138,7 @@ export function AmericanoOpenCard({
       style={{
         background: theme.surface,
         border: `1px solid ${theme.border}`,
-        borderRadius: 16,
+        borderRadius: 'var(--pm-radius-sm)',
         boxShadow: theme.shadow,
         overflow: 'hidden',
       }}
@@ -161,7 +161,7 @@ export function AmericanoOpenCard({
         return (
           <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 'var(--pm-radius-sm)', padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
                 <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>

@@ -308,7 +308,7 @@ export function PendingResultConfirmModal({ user }) {
           style={{
             background: theme.surfaceAlt,
             border: '1px solid ' + theme.border,
-            borderRadius: '10px',
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '12px',
             marginBottom: '12px',
             fontSize: '13px',
@@ -338,7 +338,7 @@ export function PendingResultConfirmModal({ user }) {
               marginBottom: '10px',
               padding: '8px 10px',
               background: theme.redBg,
-              borderRadius: '8px',
+              borderRadius: 'var(--pm-radius-sm)',
               border: '1px solid ' + `color-mix(in srgb, ${theme.red} 25%, transparent)`,
             }}
           >

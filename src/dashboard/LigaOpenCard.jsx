@@ -90,14 +90,14 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
         padding: '10px 12px',
         background: isMine ? theme.greenBg : theme.surfaceAlt,
         border: `1px solid ${isMine ? 'color-mix(in srgb, var(--pm-green) 35%, var(--pm-border))' : theme.border}`,
-        borderRadius: 10,
+        borderRadius: 'var(--pm-radius-sm)',
       }}
     >
       <div
         style={{
           width: 36,
           height: 36,
-          borderRadius: 8,
+          borderRadius: 'var(--pm-radius-sm)',
           background: isPending ? theme.warmBg : color.bg,
           color: isPending ? theme.warm : color.fg,
           display: 'flex',
@@ -205,7 +205,7 @@ function EmptyTeamSlot() {
         gap: 12,
         padding: '10px 12px',
         border: `1.5px dashed ${theme.border}`,
-        borderRadius: 10,
+        borderRadius: 'var(--pm-radius-sm)',
         background: 'transparent',
       }}
       aria-hidden
@@ -214,7 +214,7 @@ function EmptyTeamSlot() {
         style={{
           width: 36,
           height: 36,
-          borderRadius: 8,
+          borderRadius: 'var(--pm-radius-sm)',
           border: `1.5px dashed ${theme.border}`,
           display: 'flex',
           alignItems: 'center',
@@ -261,7 +261,7 @@ export function LigaOpenCard({
       style={{
         background: theme.surface,
         border: `1px solid ${theme.border}`,
-        borderRadius: 16,
+        borderRadius: 'var(--pm-radius-sm)',
         boxShadow: theme.shadow,
         overflow: 'hidden',
       }}
@@ -284,7 +284,7 @@ export function LigaOpenCard({
         return (
           <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 'var(--pm-radius-sm)', padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
                 <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>

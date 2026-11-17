@@ -173,7 +173,7 @@ export function ReportResultErrorButton({
             style={{
               background: theme.surface,
               border: `1px solid ${theme.border}`,
-              borderRadius: 14,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: 20,
               width: '100%',
               maxWidth: 360,

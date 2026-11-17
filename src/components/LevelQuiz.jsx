@@ -22,7 +22,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
   const box = {
     background: theme.surface,
     border: `1.5px solid ${theme.border}`,
-    borderRadius: 14,
+    borderRadius: 'var(--pm-radius-sm)',
     padding: '14px 14px 12px',
     margin: '4px 0 12px',
     fontFamily: font,
@@ -32,7 +32,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
     textAlign: 'left',
     background: theme.surface,
     border: `1.5px solid ${theme.border}`,
-    borderRadius: 12,
+    borderRadius: 'var(--pm-radius-sm)',
     padding: '12px 14px',
     marginBottom: 8,
     fontSize: 14,
@@ -60,13 +60,13 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
         </span>
         <button type="button" onClick={onClose} style={linkBtn}>Luk</button>
       </div>
-      <div style={{ height: 5, background: theme.border, borderRadius: 9, marginBottom: 14 }}>
+      <div style={{ height: 5, background: theme.border, borderRadius: 'var(--pm-radius-sm)', marginBottom: 14 }}>
         <div
           style={{
             height: '100%',
             width: `${(Math.min(index, LEVEL_QUIZ.length) / LEVEL_QUIZ.length) * 100}%`,
             background: theme.navy,
-            borderRadius: 9,
+            borderRadius: 'var(--pm-radius-sm)',
           }}
         />
       </div>
@@ -94,7 +94,7 @@ export function LevelQuiz({ onUse, onManual, onClose }) {
         </>
       ) : (
         <>
-          <div style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 14, padding: '16px', textAlign: 'center' }}>
+          <div style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 'var(--pm-radius-sm)', padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: 13, opacity: 0.85 }}>Vores bud på dit niveau</div>
             <div style={{ fontSize: 30, fontWeight: 800, margin: '2px 0' }}>ca. {formatPlaytomicLevel(suggestion)}</div>
             <div style={{ fontSize: 13, opacity: 0.85 }}>

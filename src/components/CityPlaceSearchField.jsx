@@ -14,7 +14,7 @@ const listStyle = {
   listStyle: 'none',
   background: theme.surface,
   border: `1.5px solid ${theme.border}`,
-  borderRadius: 10,
+  borderRadius: 'var(--pm-radius-sm)',
   boxShadow: '0 8px 24px rgba(13,39,82,0.12)',
   maxHeight: 240,
   overflowY: 'auto',

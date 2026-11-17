@@ -350,7 +350,7 @@ export function NotificationBell({ tourForceOpen = false }) {
     border: "none",
     cursor: "pointer",
     padding: "6px",
-    borderRadius: "8px",
+    borderRadius: 999,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

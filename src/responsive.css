@@ -194,7 +194,7 @@ body {
   z-index: 1;
   width: min(100%, 318px);
   min-height: 548px;
-  border-radius: 38px;
+  border-radius: var(--pm-radius-lg);
   padding: 18px 16px 20px;
   color: #061529;
   background:
@@ -291,7 +291,7 @@ body {
   overflow: hidden;
   width: 100%;
   min-height: 396px;
-  border-radius: 26px;
+  border-radius: var(--pm-radius-lg);
 }
 
 .pm-app-mockup-screen-track {
@@ -317,7 +317,7 @@ body {
   align-items: start;
   gap: 12px;
   min-height: 138px;
-  border-radius: 24px;
+  border-radius: var(--pm-radius-lg);
   padding: 18px;
   color: white;
   background: linear-gradient(135deg, #06101F, #0B1B33);
@@ -349,7 +349,7 @@ body {
 .pm-app-mockup-screen-icon {
   width: 42px;
   height: 42px;
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -411,7 +411,7 @@ body {
   gap: 10px;
   min-height: 70px;
   padding: 11px;
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.28);
   box-shadow: 0 10px 28px rgba(11, 27, 51, 0.07);
@@ -763,7 +763,7 @@ body {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-accent-bg);
   color: var(--pm-accent);
 }
@@ -867,7 +867,7 @@ body {
   .pm-app-mockup-phone {
     width: min(100%, 300px);
     min-height: 518px;
-    border-radius: 34px;
+    border-radius: var(--pm-radius-lg);
     padding: 16px 13px 17px;
   }
 
@@ -880,7 +880,7 @@ body {
   .pm-app-mockup-screen-icon {
     width: 38px;
     height: 38px;
-    border-radius: 14px;
+    border-radius: var(--pm-radius-sm);
   }
 
   .pm-app-mockup-screen-metric {
@@ -1144,7 +1144,7 @@ button,
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text);
@@ -1773,7 +1773,7 @@ button,
   .pm-mobile-bottom-btn {
     background: transparent;
     border: none;
-    border-radius: 12px;
+    border-radius: 999px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1882,7 +1882,7 @@ button,
     z-index: 45;
     background: var(--pm-surface);
     border: 1px solid var(--pm-border);
-    border-radius: 14px;
+    border-radius: var(--pm-radius-sm);
     overflow: hidden;
     box-shadow: 0 14px 38px rgba(11, 27, 51, 0.16);
   }
@@ -1960,7 +1960,7 @@ button,
 .pm-home-seeking-cta-icon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2021,7 +2021,7 @@ button,
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
 }
 
 .pm-home-stat-value {
@@ -2645,7 +2645,7 @@ button,
    sub-quadrant (deuce position øverst, ad position nederst). */
 .pm-court {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   border: 2px solid var(--pm-border);
   background: #BFE0F5;
@@ -2885,7 +2885,7 @@ button,
   gap: 2px;
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 4px;
   width: 100%;
 }
@@ -2969,7 +2969,7 @@ button,
   flex: 1 1 0;
   min-width: 0;
   border: 0;
-  border-radius: 9px;
+  border-radius: 999px;
   background: transparent;
   color: var(--pm-text-mid);
   font-family: var(--pm-font);
@@ -4271,7 +4271,7 @@ button,
        og denne er indgangen til hele menuen paa mobil. */
     min-width: 44px;
     min-height: 44px;
-    border-radius: 8px;
+    border-radius: var(--pm-radius-sm);
     color: var(--pm-text-mid);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -4338,7 +4338,7 @@ button,
 .pm-app-modal-close {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text-mid);
@@ -4404,7 +4404,7 @@ button,
 .pm-play-intent-block--active {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   box-shadow: var(--pm-shadow);
 }
@@ -4673,7 +4673,7 @@ button,
   width: 44px;
   height: 44px;
   margin-bottom: 14px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-muted);
   color: var(--pm-text);
   display: flex;
@@ -4934,7 +4934,7 @@ button,
 
 .pm-filter-panel {
   background: var(--pm-surface-alt);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   padding: 14px;
   margin-bottom: 14px;
@@ -4957,7 +4957,7 @@ button,
 .pm-theme-switch {
   width: 60px;
   height: 30px;
-  border-radius: 15px;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
   flex-shrink: 0;
@@ -5039,7 +5039,7 @@ button,
 
 .pm-landing-cta-banner {
   background: var(--pm-rank-hero-gradient);
-  border-radius: 20px;
+  border-radius: var(--pm-radius-lg);
   padding: clamp(40px, 8vw, 64px) clamp(24px, 5vw, 48px);
   text-align: center;
   position: relative;
@@ -5124,7 +5124,7 @@ button,
 
 .pm-chat-v2-inbox-head .pm-besked-compose {
   margin: 0;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: none;
 }
 
@@ -5217,7 +5217,7 @@ button,
   right: -2px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
   padding: 1px 5px;
@@ -5368,7 +5368,7 @@ button,
 
 .pm-besked-bubble {
   max-width: 76%;
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   padding: 9px 13px;
   font-size: 14px;
   line-height: 1.45;
@@ -5378,13 +5378,13 @@ button,
 .pm-besked-bubble--me {
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
-  border-radius: 14px 14px 4px 14px;
+  border-radius: var(--pm-radius-sm) var(--pm-radius-sm) 4px var(--pm-radius-sm);
 }
 
 .pm-besked-bubble--them {
   background: var(--pm-surface-alt);
   color: var(--pm-text);
-  border-radius: 4px 14px 14px 14px;
+  border-radius: 4px var(--pm-radius-sm) var(--pm-radius-sm) var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   box-shadow: var(--pm-shadow-soft);
 }
@@ -6009,14 +6009,14 @@ button,
   color: var(--pm-text-mid);
   background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px 12px;
 }
 
 .pm-admin-panel-box {
   margin-top: 8px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
 }
@@ -6160,7 +6160,7 @@ button,
   gap: 12px;
   background: var(--pm-surface-alt);
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid color-mix(in srgb, var(--pm-border) 25%, transparent);
 }
 
@@ -6321,7 +6321,7 @@ button,
   text-align: left;
   margin-bottom: 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid color-mix(in srgb, var(--pm-red) 35%, transparent);
   background: var(--pm-red-bg);
   color: var(--pm-red);
@@ -6381,7 +6381,7 @@ button,
   cursor: pointer;
   background: var(--pm-surface, #fff);
   border: 1px solid var(--pm-border, rgba(0, 0, 0, 0.08));
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -6429,7 +6429,7 @@ button,
   margin-top: 4px;
   width: 100%;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   font-size: 13px;
   font-weight: 700;
 }
@@ -6504,14 +6504,14 @@ button,
   background: var(--pm-danger-bg);
   color: var(--pm-danger);
   border: 1px solid color-mix(in srgb, var(--pm-danger) 27%, transparent);
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px 12px;
   font-size: 12px;
 }
 
 .pm-admin-flag-card {
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   margin-bottom: 10px;
   overflow: hidden;
 }
@@ -6597,7 +6597,7 @@ button,
   margin: 0;
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px;
   font-size: 11px;
   line-height: 1.4;
@@ -6616,7 +6616,7 @@ button,
 
 .pm-admin-audit-entry {
   border: 1px solid var(--pm-border);
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px 12px;
   background: var(--pm-surface-alt);
 }
@@ -6659,7 +6659,7 @@ button,
 .pm-admin-profile-overview-fold {
   margin-bottom: 14px;
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-alt);
 }
 
@@ -6753,7 +6753,7 @@ button,
   height: 36px;
   padding: 0 14px;
   gap: 6px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-pill);
   border: none;
   display: inline-flex;
   align-items: center;
@@ -6901,7 +6901,7 @@ button,
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px 10px 36px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
   color: var(--pm-text);
@@ -6916,7 +6916,7 @@ button,
 .pm-kampe-v2-filter-btn {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
   color: var(--pm-text-mid);
@@ -6988,7 +6988,7 @@ button,
   bottom: 0;
   z-index: 49;
   background: var(--pm-surface);
-  border-radius: 18px 18px 0 0;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 0 0;
   padding: max(12px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow: 0 -12px 40px rgba(11, 27, 51, 0.18);
   max-height: min(85vh, 640px);
@@ -7133,7 +7133,7 @@ button,
   padding: 13px 15px;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   margin-bottom: 8px;
 }
 
@@ -7147,7 +7147,7 @@ button,
 .pm-kampe-v2-filter-toggle {
   width: 44px;
   height: 24px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: none;
   background: var(--pm-border);
   position: relative;
@@ -7294,7 +7294,7 @@ button,
   width: 100%;
   text-align: left;
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   padding: 14px;
   cursor: pointer;
@@ -7349,7 +7349,7 @@ button,
 .pm-kampe-v2-list-cta {
   flex-shrink: 0;
   padding: 9px 16px;
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
   font-family: inherit;
@@ -7368,7 +7368,7 @@ button,
   align-items: center;
   justify-content: center;
   padding: 11px 16px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 13px;
   text-align: center;
 }
@@ -7416,7 +7416,7 @@ button,
   text-align: center;
   background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 6px 0;
 }
 
@@ -7536,7 +7536,7 @@ button,
   font-weight: 600;
   line-height: 1.25;
   padding: 4px 8px;
-  border-radius: 7px;
+  border-radius: 999px;
   white-space: nowrap;
 }
 
@@ -8184,7 +8184,7 @@ button,
 .pm-kampe-v2-detail-close {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 50%;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text-mid);
@@ -8290,7 +8290,7 @@ button,
 .pm-kampe-v2-join-requests {
   margin-bottom: 12px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
 }
@@ -8328,7 +8328,7 @@ button,
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
 }
@@ -8403,7 +8403,7 @@ button,
     right: auto;
     transform: translateX(-50%) translateY(var(--sheet-drag-y, 0px));
     width: min(480px, calc(100vw - 32px));
-    border-radius: 18px;
+    border-radius: var(--pm-radius-lg);
     bottom: 24px;
   }
 }
@@ -8415,7 +8415,7 @@ button,
   width: 100%;
   text-align: left;
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   padding: 0;
   overflow: hidden;
@@ -8743,7 +8743,7 @@ button,
 .pm-americano-v2-detail-stat {
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px 8px;
   text-align: center;
 }
@@ -8854,7 +8854,7 @@ button,
   align-items: center;
   gap: 4px;
   padding: 10px 8px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
   min-width: 0;
@@ -8974,7 +8974,7 @@ button,
   margin-top: 8px;
   padding: 12px 16px;
   border: none;
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-size: 14px;
@@ -8988,7 +8988,7 @@ button,
   margin-top: 8px;
   padding: 12px 16px;
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--pm-surface);
   color: var(--pm-text);
   font-size: 14px;
@@ -9017,7 +9017,7 @@ button,
   width: 100%;
   padding: 0;
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   overflow: hidden;
 }
@@ -9074,7 +9074,7 @@ button,
 .pm-americano-v2-match-row {
   padding: 10px 12px;
   background: var(--pm-surface);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   font-size: 12px;
   color: var(--pm-text);
@@ -9106,7 +9106,7 @@ button,
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 8px;
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   padding: 6px 8px;
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
@@ -9147,7 +9147,7 @@ button,
   width: 100%;
   text-align: left;
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   padding: 0;
   overflow: hidden;
@@ -9164,7 +9164,7 @@ button,
 .pm-liga-v2-list-icon {
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   background: rgba(255,255,255,0.16);
   display: flex;
   align-items: center;
@@ -9258,7 +9258,7 @@ button,
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border-soft);
   font-size: 11px;
@@ -9329,7 +9329,7 @@ button,
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-muted);
   margin-bottom: 12px;
 }
@@ -9341,7 +9341,7 @@ button,
 .pm-liga-v2-my-rank {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   display: flex;
@@ -9406,7 +9406,7 @@ button,
   gap: 8px;
   align-items: center;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--pm-radius-sm);
   font-size: 13px;
 }
 
@@ -9455,7 +9455,7 @@ button,
   gap: 8px;
   margin-top: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px dashed var(--pm-border);
   font-size: 12px;
   color: var(--pm-text-mid);
@@ -9637,7 +9637,7 @@ button,
 
 .pm-liga-v2-standings {
   border: 1px solid var(--pm-border-soft);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   margin-bottom: 16px;
 }
@@ -9705,7 +9705,7 @@ button,
 .pm-liga-v2-meta-card {
   flex: 1;
   background: var(--pm-surface-alt);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px;
   border: 1px solid var(--pm-border-soft);
   text-align: center;
@@ -9729,7 +9729,7 @@ button,
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border-soft);
   cursor: pointer;
@@ -9910,7 +9910,7 @@ button,
   color: var(--pm-text-light);
   padding: 12px 14px;
   background: var(--pm-surface-alt);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1px dashed var(--pm-border);
   text-align: center;
   margin-bottom: 8px;
@@ -9923,7 +9923,7 @@ button,
   padding: 12px 14px;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   margin-bottom: 8px;
   cursor: default;
 }
@@ -9971,7 +9971,7 @@ button,
   line-height: 1.55;
   padding: 12px 14px;
   background: var(--pm-surface-alt);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   margin-top: 4px;
 }
 
@@ -10049,7 +10049,7 @@ button,
 .pm-liga-v2-team-stat {
   flex: 1;
   background: var(--pm-surface-alt);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   padding: 12px 8px;
   border: 1px solid var(--pm-border-soft);
   text-align: center;
@@ -10096,7 +10096,7 @@ button,
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border-soft);
   cursor: pointer;
@@ -10132,7 +10132,7 @@ button,
   flex: 1;
   min-height: 0;
   padding: 0;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border-soft);
   background: var(--pm-surface-alt);
   overflow: hidden;
@@ -10201,7 +10201,7 @@ button,
   padding: 14px;
   font-size: 15px;
   font-weight: 800;
-  border-radius: 14px;
+  border-radius: 999px;
 }
 
 .pm-liga-v2-secondary-cta {
@@ -10210,7 +10210,7 @@ button,
   padding: 14px;
   font-size: 15px;
   font-weight: 700;
-  border-radius: 14px;
+  border-radius: 999px;
 }
 
 /* ── Chat v2 (Beskeder redesign) ── */
@@ -10271,7 +10271,7 @@ button,
   gap: 8px;
   height: 38px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text-light);
@@ -10381,7 +10381,7 @@ button,
   flex-shrink: 0;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 0 6px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
@@ -10602,19 +10602,19 @@ button,
 }
 
 .pm-chat-v2-bubble--mine-last {
-  border-radius: 18px 18px 5px 18px;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 5px var(--pm-radius-lg);
 }
 
 .pm-chat-v2-bubble--mine-mid {
-  border-radius: 18px 5px 5px 18px;
+  border-radius: var(--pm-radius-lg) 5px 5px var(--pm-radius-lg);
 }
 
 .pm-chat-v2-bubble--them-last {
-  border-radius: 18px 18px 18px 5px;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) var(--pm-radius-lg) 5px;
 }
 
 .pm-chat-v2-bubble--them-mid {
-  border-radius: 5px 18px 18px 5px;
+  border-radius: 5px var(--pm-radius-lg) var(--pm-radius-lg) 5px;
 }
 
 .pm-chat-v2-bubble-meta {
@@ -10685,7 +10685,7 @@ button,
   gap: 8px;
   min-height: 38px;
   padding: 6px 6px 6px 14px;
-  border-radius: 22px;
+  border-radius: var(--pm-radius-lg);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   transition: border-color 0.15s ease;
@@ -10794,7 +10794,7 @@ button,
 .pm-chat-v2-emoji-btn {
   border: none;
   background: var(--pm-surface-alt);
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 6px 10px;
   font-size: 18px;
   cursor: pointer;
@@ -10876,7 +10876,7 @@ button,
   align-items: center;
   gap: 4px;
   padding: 10px 14px;
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
 }
@@ -10901,7 +10901,7 @@ button,
 
 .pm-chat-v2-invite-card {
   width: min(100%, 280px);
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
@@ -11006,7 +11006,7 @@ button,
 .pm-chat-v2-rich-card {
   width: min(100%, 260px);
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
 }
@@ -11085,7 +11085,7 @@ button,
   bottom: 0;
   z-index: 1201;
   max-height: min(70vh, 520px);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 0 0;
   background: var(--pm-surface);
   border-top: 1px solid var(--pm-border);
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
@@ -11162,7 +11162,7 @@ button,
   padding: 12px 14px;
   margin-bottom: 20px;
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
   color: var(--pm-text);
   font-family: var(--pm-font);
@@ -11243,7 +11243,7 @@ button,
 
 .pm-chat-v2-time-picker .pm-date-field__facade {
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px 12px;
   font: inherit;
   font-weight: 400;
@@ -11254,7 +11254,7 @@ button,
 .pm-chat-v2-time-picker-send {
   margin-top: 4px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   padding: 12px 16px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
@@ -11310,7 +11310,7 @@ button,
   margin: 0 18px 16px;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: var(--pm-shadow);
   padding: 12px 16px;
 }
@@ -11396,7 +11396,7 @@ button,
 .pm-liga-schedule {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   padding: 14px 14px 4px;
 }
 
@@ -11499,7 +11499,7 @@ button,
 .pm-level-range-box {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   padding: 4px 10px 10px;
   margin-top: 6px;
 }
@@ -11513,7 +11513,7 @@ button,
 
 .pm-field-note {
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-muted);
   font-size: 13px;
@@ -11526,7 +11526,7 @@ button,
   display: flex;
   background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 4px;
   gap: 4px;
 }
@@ -11537,7 +11537,7 @@ button,
   font-weight: 600;
   font-size: 13px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   color: var(--pm-text-light);
   border: none;
   background: transparent;
@@ -11584,7 +11584,7 @@ button,
   justify-content: space-between;
   background: var(--pm-surface-muted);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 5px;
   gap: 8px;
 }
@@ -11600,7 +11600,7 @@ button,
 .pm-stepper-btn {
   width: 38px;
   height: 38px;
-  border-radius: 8px;
+  border-radius: 999px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
   color: var(--pm-accent);
@@ -11626,7 +11626,7 @@ button,
   padding: 12px 14px;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: var(--pm-shadow);
 }
 
@@ -11688,7 +11688,7 @@ button,
 /* format info card (gradient bg) */
 .pm-format-card {
   margin: 4px 18px 14px;
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   padding: 16px;
   color: #fff;
   background: linear-gradient(120deg, #06101F 55%, #14294A 100%);
@@ -11909,7 +11909,7 @@ button,
   width: 100%;
   min-height: 0;
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-surface);
 }
 
@@ -11921,7 +11921,7 @@ button,
   min-height: 46px;
   padding: 10px 14px;
   margin: 14px 0 16px;
-  border-radius: 10px;
+  border-radius: 999px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
   color: var(--pm-text);
@@ -11938,7 +11938,7 @@ button,
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: 999px;
   background: var(--pm-accent);
   color: var(--pm-surface);
   font-size: 13px;

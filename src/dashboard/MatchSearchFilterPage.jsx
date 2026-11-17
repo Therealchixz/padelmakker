@@ -136,7 +136,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
         style={{
           background: theme.surfaceAlt,
           border: `1px solid ${theme.border}`,
-          borderRadius: 10,
+          borderRadius: 'var(--pm-radius-sm)',
           padding: '12px 14px',
           marginBottom: 20,
           fontSize: 12,
@@ -188,6 +188,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
             onClick={o.onClick}
             style={{
               ...btn(o.active),
+              borderRadius: 'var(--pm-radius-sm)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
@@ -269,7 +270,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
                 padding: '8px 2px',
                 fontSize: 12,
                 fontWeight: 700,
-                borderRadius: 8,
+                borderRadius: 999,
                 border: `1.5px solid ${active ? theme.accent : theme.border}`,
                 background: active ? theme.accent : theme.surface,
                 color: active ? theme.onAccent : theme.textMid,

@@ -445,7 +445,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
                 marginBottom: '16px',
                 padding: '12px 14px',
                 background: theme.surfaceMuted,
-                borderRadius: '10px',
+                borderRadius: 'var(--pm-radius-sm)',
                 border: '1px solid ' + theme.border,
               }}
             >
@@ -472,7 +472,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             </div>
           )
         ) : statsMode === 'americano' ? (
-          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
+          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight }}>Americano/Mexicano-form</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
               {americanoForm.length > 0 ? (
@@ -491,7 +491,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} Americano/Mexicano</div>
           </div>
         ) : statsMode === '2v2' ? (
-          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
+          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight }}>Sejrsstreak</div>
             {streakError ? (
               <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
@@ -556,7 +556,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         </div>
 
         {pRef.bio && (
-          <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px', padding: '12px', background: theme.surfaceAlt, borderRadius: '8px', fontStyle: 'italic' }}>
+          <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px', padding: '12px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', fontStyle: 'italic' }}>
             &ldquo;{pRef.bio}&rdquo;
           </p>
         )}
@@ -564,7 +564,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         <RankedinButton rankedinId={pRef.rankedin_id} onOpen={() => setRankedinOpen(true)} />
 
         {sharedHistory && sharedHistory.count > 0 && (
-          <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
+          <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, marginBottom: 6 }}>Fælles historik</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: '13px', fontWeight: 600, color: theme.text }}>
