@@ -38,7 +38,7 @@ const MAX_AVATARS = 4
 function fmtLevel(v: number | null | undefined): string {
   const n = Number(v)
   if (!Number.isFinite(n)) return ''
-  return n.toFixed(1)
+  return n.toFixed(1).replace('.', ',')
 }
 
 function levelLabel(t: AmericanoTournament): string {

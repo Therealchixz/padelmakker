@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import '../styles/home.css';
 import { BANER_VENUES } from '../lib/banerVenues';
 import { parseGeoCoords } from '../lib/geoDistance';
-import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyVenueMeta } from '../lib/homeNearbyMap';
+import { buildDemoMatches, buildNearbyVenues, formatNearbyKm, nearbyPinTimeLabel, nearbyVenueMeta } from '../lib/homeNearbyMap';
 
 /**
  * Kort paa Hjem (redesign v4, som prototypen): pinde med antal aabne kampe (ler) eller
@@ -189,13 +189,15 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     markersRef.current = new Map();
     for (const v of mapPins) {
       const active = selected?.id === v.id;
-      const label = mode === 'kampe' && v.matchCount > 0 ? String(v.matchCount) : '';
+      // Kampe: klokkeslaet for naeste kamp paa pinden (H-prototypen), ikke et antal.
+      const label = mode === 'kampe' && v.matchCount > 0 ? nearbyPinTimeLabel(v) : '';
       const tone = active ? 'is-active' : mode === 'kampe' ? 'is-kampe' : 'is-baner';
+      const w = label ? Math.max(40, Math.round(label.length * 8 + 22)) : 20;
       const icon = L.divIcon({
         className: `pm-home-map-pin ${tone}${label ? '' : ' is-dot'}`,
         html: `<span class="pm-home-map-pin-head">${label}</span><span class="pm-home-map-pin-stem"></span>`,
-        iconSize: label ? [34, 38] : [20, 28],
-        iconAnchor: label ? [17, 38] : [10, 28],
+        iconSize: label ? [w, 40] : [20, 28],
+        iconAnchor: label ? [w / 2, 40] : [10, 28],
       });
       const marker = L.marker([v.latitude, v.longitude], {
         icon,

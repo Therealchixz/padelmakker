@@ -86,7 +86,7 @@ test('kampdetalje bundkort har chat, del, kalender og afmeld', () => {
   assert.doesNotMatch(calendar, /navigator\.share/);
   assert.doesNotMatch(calendar, /data:text\/calendar/);
   const card = readFileSync('src/components/kampe/MatchDetailActionCard.jsx', 'utf8');
-  assert.match(card, /Match chat/);
+  assert.match(card, /Kamp-chat/);
   assert.doesNotMatch(card, /formatMatchChatPreview/);
   assert.doesNotMatch(card, /Ingen beskeder endnu/);
   assert.match(card, /Du er tilmeldt/);

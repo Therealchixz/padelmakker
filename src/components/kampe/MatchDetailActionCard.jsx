@@ -42,13 +42,13 @@ export function MatchDetailActionCard({
             className="pm-kd-action-chat"
             onClick={() => onToggleChat?.()}
             aria-expanded={chatOpen}
-            aria-label="Match chat"
+            aria-label="Kamp-chat"
           >
             <span className="pm-kd-action-chat-ic" aria-hidden>
               <MessageCircle size={18} />
             </span>
             <span className="pm-kd-action-chat-copy">
-              <b>Match chat{totalChatCount > 0 ? ` (${totalChatCount})` : ''}</b>
+              <b>Kamp-chat{totalChatCount > 0 ? ` (${totalChatCount})` : ''}</b>
             </span>
             {unreadChatCount > 0 ? (
               <span className="pm-kd-action-unread" aria-label={`${unreadChatCount} ulæste beskeder`} />

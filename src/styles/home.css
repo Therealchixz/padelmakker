@@ -439,12 +439,13 @@
   min-width: 34px;
   height: 30px;
   padding: 0 9px;
-  border-radius: var(--pm-radius-sm);
+  border-radius: var(--pm-radius-pill);
   background: var(--pm-pin, var(--pm-accent-solid));
   color: #FFFFFF;
-  font-family: var(--pm-font-data);
-  font-weight: 600;
-  font-size: 12px;
+  font-family: var(--pm-font);
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
   line-height: 1;
   box-shadow: 0 2px 6px rgba(11, 27, 51, 0.28);
   border: 2px solid #FFFFFF;
@@ -460,11 +461,13 @@
   height: 20px;
   padding: 0;
 }
-.pm-home-map-pin.is-kampe { --pm-pin: var(--pm-accent-solid); }
+.pm-home-map-pin.is-kampe { --pm-pin: var(--pm-lime); }
+/* Kamp-pinde som paa Kort: lime med moerk tekst og moerk kant (H-prototypen). */
+.pm-home-map-pin.is-kampe .pm-home-map-pin-head { color: var(--pm-on-lime); border-color: var(--pm-ink); }
+.pm-home-map-pin.is-kampe .pm-home-map-pin-stem { background: var(--pm-ink); }
 .pm-home-map-pin.is-baner { --pm-pin: var(--pm-accent-solid); }
 .pm-home-map-pin.is-active { --pm-pin: var(--pm-ink); }
 .pm-home-map-pin.is-active .pm-home-map-pin-head { transform: scale(1.15); }
-[data-theme="dark"] .pm-home-map-pin.is-baner { --pm-pin: #3F7A66; }
 /* Zoomet langt ud (hele landsdele): smaa prikker uden stilk, saa pindene ikke klumper. */
 .pm-home-map-canvas.is-far .pm-home-map-pin.is-dot .pm-home-map-pin-head { transform: scale(0.55); }
 .pm-home-map-canvas.is-far .pm-home-map-pin.is-dot.is-active .pm-home-map-pin-head { transform: scale(0.8); }

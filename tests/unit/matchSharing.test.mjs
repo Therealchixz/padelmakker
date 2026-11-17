@@ -30,11 +30,11 @@ const QUICK = {
 test('delingsteksten siger hvornår, niveau og hvor mange der mangler', () => {
   assert.equal(
     buildMatchShareText(QUICK),
-    'Vi mangler 3 spillere til padel mandag 28. sep kl. 21:00–23:30 🎾\nNiveau 3.0–4.0\nMeld dig til gratis på PadelMakker.',
+    'Vi mangler 3 spillere til padel mandag 28. sep kl. 21:00–23:30 🎾\nNiveau 3,0–4,0\nMeld dig til gratis på PadelMakker.',
   );
   const booked = { ...QUICK, court_name: 'Skansen Padel', current_players: 3 };
   assert.match(buildMatchShareText(booked), /^Vi mangler 1 spiller til padel/);
-  assert.match(buildMatchShareText(booked), /Niveau 3\.0–4\.0 · Skansen Padel/);
+  assert.match(buildMatchShareText(booked), /Niveau 3,0–4,0 · Skansen Padel/);
 });
 
 test('"Padel" som banenavn (fra public_match_preview) vises ikke som en bane', () => {
@@ -75,7 +75,7 @@ test('kvitteringen tæller opretteren med (ikke "Vi mangler 4 spillere")', () =>
 test('kortet i WhatsApp: titel og tekst ud fra kampen', () => {
   const meta = matchPreviewMeta({ ...QUICK, court_name: 'Padel', creator_first_name: 'Mike' });
   assert.equal(meta.title, 'Padel mandag 28. sep kl. 21:00–23:30 · mangler 3 spillere');
-  assert.equal(meta.description, 'Niveau 3.0–4.0 · Bane ikke valgt endnu · Oprettet af Mike. Meld dig til gratis på PadelMakker.');
+  assert.equal(meta.description, 'Niveau 3,0–4,0 · Bane ikke valgt endnu · Oprettet af Mike. Meld dig til gratis på PadelMakker.');
   assert.match(matchPreviewMeta({ ...QUICK, current_players: 4 }).title, /· fuld$/);
 });
 

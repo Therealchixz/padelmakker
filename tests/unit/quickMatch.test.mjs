@@ -45,7 +45,7 @@ test('panelet opretter kampen, giver besked og viser overlappende kampe først',
 
 test('kampens niveau vises som niveau, ikke som ELO', async () => {
   const { formatMatchLevelRangeLabel } = await import('../../src/lib/padelLevelUtils.js');
-  assert.equal(formatMatchLevelRangeLabel(947, 967), 'Niveau 3.2–3.5');
+  assert.equal(formatMatchLevelRangeLabel(947, 967), 'Niveau 3,2–3,5');
   for (const f of ['src/components/kampe/KampeMatchListCard.jsx', 'src/components/kampe/KampeMatchDetailSheet.jsx', 'src/dashboard/HomeTab.jsx']) {
     const src = readFileSync(f, 'utf8');
     assert.doesNotMatch(src, /ELO \{(matchPrefs|viewMatch)\.(min|eloMin)\}|`ELO \$\{row\.eloMin\}|levelRangeParts\.elo/, f);

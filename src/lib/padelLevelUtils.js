@@ -47,8 +47,9 @@ export function eloToLevel(elo) {
   return clampPlaytomicLevel(raw);
 }
 
+/** Niveau som dansk tal med komma, fx "3,0" (H-prototyperne, ejeren 17. nov. 2026). */
 export function formatPlaytomicLevel(level) {
-  return clampPlaytomicLevel(level).toFixed(1);
+  return clampPlaytomicLevel(level).toFixed(1).replace('.', ',');
 }
 
 /** Playtomic-interval med luft omkring tankestreg, fx "3.3 – 6.6". */

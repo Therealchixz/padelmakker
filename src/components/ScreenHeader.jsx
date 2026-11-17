@@ -61,7 +61,8 @@ function HeaderBack({ to }) {
  */
 export function ScreenHeader({ title, back = false, backTo = '/dashboard/mere', leading = null, actions = null, showBell = true, showMessages = true, bellTourForceOpen = false, className = '' }) {
   const isMobile = useIsMobileView();
-  const bell = showBell && isMobile;
+  // Klokken staar i toplinjen paa baade telefon og computer (paa computer laa den foer gemt i konto-menuen).
+  const bell = showBell;
   const messages = useContext(MessagesShortcutContext);
   const chat = showMessages && messages ? messages : null;
   const unread = chat ? Number(chat.unread) || 0 : 0;

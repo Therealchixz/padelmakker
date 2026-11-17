@@ -101,6 +101,29 @@ export function nearbyVenueMeta(v, mode, now = new Date()) {
 }
 
 /**
+ * Teksten paa en kamp-pind paa Hjem-kortet (som i H-prototypen): klokkeslaettet for
+ * naeste aabne kamp, med dag foran, hvis den ikke er i dag, og "+N" for flere kampe.
+ * Fx "19:30", "tor 10:00", "19:30 +2". Uden tid: antal kampe.
+ * @param {{ matchCount: number, nextMatch?: { date?: string|null, time?: string|null } | null }} v
+ * @param {Date} [now]
+ */
+export function nearbyPinTimeLabel(v, now = new Date()) {
+  if (!v?.matchCount) return '';
+  const n = v.nextMatch;
+  const time = n?.time ? String(n.time).slice(0, 5) : '';
+  if (!time) return String(v.matchCount);
+  let day = '';
+  if (n?.date) {
+    const d = new Date(`${String(n.date).slice(0, 10)}T00:00:00`);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diff = Math.round((d - today) / 86400000);
+    if (diff !== 0 && Number.isFinite(diff)) day = `${DAYS_SHORT[d.getDay()]} `;
+  }
+  const more = v.matchCount > 1 ? ` +${v.matchCount - 1}` : '';
+  return `${day}${time}${more}`;
+}
+
+/**
  * Eksempel-kampe til kortet (kun i eksempel-visningen ?demo=kampe; gemmes aldrig i databasen).
  * Fordeler kampe paa de 3 naermeste centre med praecis placering og et center langt vaek,
  * plus een kamp uden kendt bane.

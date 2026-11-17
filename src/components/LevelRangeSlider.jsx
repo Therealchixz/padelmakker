@@ -1,7 +1,6 @@
 import { theme } from '../lib/platformTheme';
 import {
   clampPlaytomicLevel,
-  formatPlaytomicLevel,
   PLAYTOMIC_LEVEL_MIN,
   PLAYTOMIC_LEVEL_MAX,
 } from '../lib/padelLevelUtils';
@@ -65,7 +64,7 @@ export function LevelRangeSlider({
             min={min}
             max={max}
             step={step}
-            value={formatPlaytomicLevel(minVal)}
+            value={clampPlaytomicLevel(minVal).toFixed(1)}
             onChange={(e) => {
               const raw = e.target.value;
               if (raw === '') return;
@@ -96,7 +95,7 @@ export function LevelRangeSlider({
             min={min}
             max={max}
             step={step}
-            value={formatPlaytomicLevel(maxVal)}
+            value={clampPlaytomicLevel(maxVal).toFixed(1)}
             onChange={(e) => {
               const raw = e.target.value;
               if (raw === '') return;
