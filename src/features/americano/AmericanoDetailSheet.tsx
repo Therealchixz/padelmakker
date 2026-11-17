@@ -46,6 +46,7 @@ export type AmericanoDetailPlayer = {
 }
 
 type Props = {
+  me?: object | null
   open: boolean
   onClose: () => void
   presentation?: 'sheet' | 'page'
@@ -184,6 +185,7 @@ export function AmericanoDetailSheet({
   extras,
   resultsPanel,
   completedTournament,
+  me = null,
 }: Props) {
   const isPage = presentation === 'page'
   const [resultsExpanded, setResultsExpanded] = useState(false)
@@ -275,6 +277,7 @@ export function AmericanoDetailSheet({
           timeLabel={tournamentTimeLabel(tournament.time_slot, tournament.duration_minutes)}
           courts={courtCount}
           players={courtPlayers}
+          me={me}
         />
 
         <div className="pm-americano-v2-detail-stats">

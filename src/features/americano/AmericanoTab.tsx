@@ -1680,6 +1680,7 @@ export function AmericanoTab({
         return (
           <AmericanoDetailSheet
             open
+            me={profile}
             presentation={embedInKampe ? 'page' : 'sheet'}
             onClose={() => (embedInKampe ? closeAmericanoDetail() : setDetailTournamentId(null))}
             tournament={t}

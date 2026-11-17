@@ -19,6 +19,15 @@ test('begge detaljesider bruger EventDetailHero', () => {
   }
 });
 
+test('toppen viser et kort over stedet, når banen er kendt, ellers banen set oppefra', () => {
+  const hero = read('src/components/kampe/EventDetailHero.jsx');
+  assert.match(hero, /venueCoords \? \(\s*<VenueHeroMap venue=\{venue\} coords=\{venueCoords\} me=\{me\}/);
+  const map = read('src/components/kampe/VenueHeroMap.jsx');
+  assert.match(map, /dragging: false/); // kortet må ikke tage fat i siden, når man ruller
+  assert.match(map, /fra dig/);
+  assert.match(read('src/dashboard/KampeTab.jsx'), /<KampeMatchDetailSheet\s+open\s+me=\{user\}/);
+});
+
 test('toppen har bane-billede, dag og tidsrum som overskrift og banens navn under', () => {
   const hero = read('src/components/kampe/EventDetailHero.jsx');
   assert.match(hero, /<PadelCourtTopView/);

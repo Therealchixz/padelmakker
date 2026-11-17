@@ -3397,6 +3397,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {detailMatch && detailBundle ? (
         <KampeMatchDetailSheet
           open
+          me={user}
           onClose={close2v2DetailToOrigin}
           presentation="page"
           match={detailMatch}

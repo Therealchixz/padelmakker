@@ -2,14 +2,16 @@
  * Fælles top på detaljesiden for 2v2-kampe og Americano/Mexicano
  * (ejeren 25. sep. 2026: "2v2 og americano kamp kortet er lidt forskellige").
  *
- * Banen set oppefra med spillernes profilbilleder på deres pladser og mærker
- * (type · niveau · ledige pladser). Derunder et kort, hvor dag og tidsrum er
+ * Et kort over stedet med banens navn på en nål (H-designet) og mærker
+ * (type · niveau · ledige pladser). Kender vi ikke stedet, vises banen set oppefra
+ * med spillernes profilbilleder i stedet. Derunder et kort, hvor dag og tidsrum er
  * overskriften (H-designet: "hvornår" er det, man kigger efter først), og
  * banens navn, "Vis på kort" og små mærker (booket/pris/ulæst) står under.
  */
 import { ArrowUpRight } from 'lucide-react';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { PadelCourtTopView } from './PadelCourtTopView';
+import { VenueHeroMap, venueCoordsByName } from './VenueHeroMap';
 
 /**
  * @param {{
@@ -23,6 +25,7 @@ import { PadelCourtTopView } from './PadelCourtTopView';
  *   timeLabel?: string | null,
  *   courts?: number,
  *   players?: ({ name?: string, avatar?: string | null } | null)[] | null,
+ *   me?: { latitude?: unknown, longitude?: unknown } | null,
  * }} props
  */
 export function EventDetailHero({
@@ -36,13 +39,19 @@ export function EventDetailHero({
   timeLabel = null,
   courts = 1,
   players = null,
+  me = null,
 }) {
   const isLive = status?.tone === 'live';
+  const venueCoords = venueCoordsByName(venue);
   const visibleTags = tags.filter((t) => t && t.label);
   return (
     <>
-      <div className="pm-kd-hero pm-kd-hero--court">
-        <PadelCourtTopView className="pm-kd-hero-court" courts={courts} players={players} />
+      <div className={`pm-kd-hero ${venueCoords ? 'pm-kd-hero--map' : 'pm-kd-hero--court'}`}>
+        {venueCoords ? (
+          <VenueHeroMap venue={venue} coords={venueCoords} me={me} />
+        ) : (
+          <PadelCourtTopView className="pm-kd-hero-court" courts={courts} players={players} />
+        )}
         <div className="pm-kd-hero-badges">
           <span className="pm-kd-chip pm-kd-chip--navy">{typeLabel}</span>
           {levelLabel ? <span className="pm-kd-chip pm-kd-chip--amber">{levelLabel}</span> : null}
