@@ -433,8 +433,8 @@ export default function PadelMatchResultInput({
     const t1Name = team1.trim() || 'Hold 1';
     const t2Name = team2.trim() || 'Hold 2';
     const reqLabel = n === 3
-      ? (matchDecidedAfterTwo ? 'IKKE NØDVENDIGT' : 'VED 1–1 I SÆT')
-      : 'OBLIGATORISK';
+      ? (matchDecidedAfterTwo ? 'Ikke nødvendigt' : 'Ved 1–1 i sæt')
+      : 'Obligatorisk';
 
     const scoreCol = (field: keyof SetForm, teamName: string, maxVal: number) => (
       <div style={{ flex: 1, textAlign: 'center' }}>
@@ -465,7 +465,7 @@ export default function PadelMatchResultInput({
           <b style={{ fontSize: '14px', fontWeight: 700 }}>
             Sæt {n}{n === 3 ? ' (Tiebreak)' : ''}
           </b>
-          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
             {reqLabel}
           </span>
         </div>

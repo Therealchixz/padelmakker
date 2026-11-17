@@ -93,12 +93,14 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
       mapRef.current = map;
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => {
+          if (cancelled) return;
           map.invalidateSize({ pan: false });
           setReady((n) => n + 1);
         });
         ro.observe(containerRef.current);
       }
       requestAnimationFrame(() => {
+        if (cancelled) return;
         map.invalidateSize({ pan: false });
         setReady((n) => n + 1);
       });
@@ -151,7 +153,7 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
     if (!map || lat == null || lng == null) return;
     const near = pins.filter((p) => (p.km ?? Infinity) <= 40).slice(0, 6);
     const points = [[lat, lng], ...near.map((p) => [p.coords.latitude, p.coords.longitude])];
-    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [50, 50], paddingBottomRight: [50, 60], maxZoom: 14 });
+    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [50, 50], paddingBottomRight: [50, 60], maxZoom: 14, animate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinsKey, ready, lat, lng]);
 

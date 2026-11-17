@@ -82,7 +82,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
             <div style={{ fontSize: 18, fontWeight: 800, color: expired ? theme.textLight : theme.text, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {acceptedCount}/{members.length}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: theme.textLight, marginTop: 2 }}>har sagt ja</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: theme.textLight, marginTop: 2 }}>har sagt ja</div>
           </div>
         )}
       </div>
@@ -413,7 +413,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
   if (!userId) return null;
 
   return (
-    <div style={{ margin: '0 18px 18px', ...style }}>
+    <div style={{ margin: '0 0 18px', ...style }}>
       {proposals.map((p) => {
         if (focusedProposal && String(p.id) === String(focusedProposal.id)) return null;
         const expired = Boolean(deadlineInfo(p.expires_at, now)?.expired);

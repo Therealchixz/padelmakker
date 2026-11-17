@@ -124,7 +124,7 @@ function StandingsMiniAvatar({
         justifyContent: 'center',
         flexShrink: 0,
         overflow: 'hidden',
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 700,
         color: theme.textMid,
       }}
@@ -543,7 +543,7 @@ export function AmericanoCompletedCard({
                     {eloSnap ? `${eloSnap.change > 0 ? '+' : ''}${eloSnap.change}` : '–'}
                   </div>
                   {eloSnap?.newRating != null ? (
-                    <div style={{ fontSize: 10, color: theme.textLight, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
                       nu {eloSnap.newRating}
                     </div>
                   ) : null}
@@ -704,7 +704,7 @@ export function AmericanoCompletedCard({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
-                <span style={{ fontSize: 10, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -762,7 +762,7 @@ export function AmericanoCompletedCard({
           >
             <div
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 color: theme.textLight,
 
@@ -785,7 +785,7 @@ export function AmericanoCompletedCard({
           >
             <div
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 color: theme.textLight,
 
@@ -808,7 +808,7 @@ export function AmericanoCompletedCard({
           >
             <div
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 color: theme.textLight,
 
@@ -840,7 +840,7 @@ export function AmericanoCompletedCard({
         <div style={{ padding: '14px 16px 0' }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               color: theme.textLight,
 
@@ -944,7 +944,7 @@ export function AmericanoCompletedCard({
                         {row.points} pt
                       </div>
                       {eloSnap ? (
-                        <div style={{ fontSize: 10, opacity: 0.92, marginTop: 1 }}>
+                        <div style={{ fontSize: 11, opacity: 0.92, marginTop: 1 }}>
                           {eloSnap.change > 0 ? '+' : ''}
                           {eloSnap.change} ELO
                         </div>
@@ -963,7 +963,7 @@ export function AmericanoCompletedCard({
         <div style={{ padding: '14px 16px 0' }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               color: theme.textLight,
 
@@ -1273,7 +1273,7 @@ export function AmericanoCompletedCard({
                                 : '–'}
                             </div>
                             {eloSnap?.newRating != null ? (
-                              <div style={{ fontSize: 10, color: theme.textLight, marginTop: 2 }}>
+                              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
                                 nu {eloSnap.newRating}
                               </div>
                             ) : null}
@@ -1371,7 +1371,7 @@ export function AmericanoCompletedCard({
                           >
                             <span
                               style={{
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: 700,
                                 color: theme.textLight,
                                 letterSpacing: '0.04em',
@@ -1386,7 +1386,7 @@ export function AmericanoCompletedCard({
                             </span>
                             <span
                               style={{
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: 700,
                                 color: mpal.text,
                                 background: mpal.bg,
@@ -1400,7 +1400,7 @@ export function AmericanoCompletedCard({
                             </span>
                           </div>
                           <span
-                            style={{ fontSize: 10, color: theme.textLight, fontWeight: 700 }}
+                            style={{ fontSize: 11, color: theme.textLight, fontWeight: 700 }}
                           >
                             #{i + 1}
                           </span>
@@ -1450,7 +1450,7 @@ export function AmericanoCompletedCard({
 
                           <div
                             style={{
-                              fontSize: 10,
+                              fontSize: 11,
                               color: theme.textLight,
                               textAlign: 'center',
 

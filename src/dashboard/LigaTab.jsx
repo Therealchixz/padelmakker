@@ -1314,7 +1314,7 @@ export function LigaTab({
           ) : null}
           <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Placering</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Placering</div>
               <div style={{ fontSize: '20px', fontWeight: 700 }}>
                 {myActiveLeagueHero.rank != null ? (
                   <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: 'var(--pm-hero-subtitle)', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
@@ -1323,12 +1323,12 @@ export function LigaTab({
             </div>
             {myActiveLeagueHero.nextMatchDate ? (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Næste kamp</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Næste kamp</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.nextMatchDate}</div>
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Hold</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Hold</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.myTeam?.name || '—'}</div>
               </div>
             )}
@@ -1725,7 +1725,7 @@ export function LigaTab({
               {/* Summary card */}
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>Liga</span>
                   {Number(r.num_divisions) > 1 ? (
                     <span style={{ background: theme.navyBg || 'var(--pm-navy-bg)', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
                   ) : null}

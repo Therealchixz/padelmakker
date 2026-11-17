@@ -266,7 +266,7 @@ export function AmericanoDetailSheet({
           typeLabel={getTournamentFormatLabel(tournament.format)}
           levelLabel={
             tournament.level_min != null && tournament.level_max != null
-              ? `Niveau ${Number(tournament.level_min).toFixed(1)} – ${Number(tournament.level_max).toFixed(1)}`
+              ? `Niveau ${Number(tournament.level_min).toFixed(1)}–${Number(tournament.level_max).toFixed(1)}`
               : null
           }
           status={heroStatus}

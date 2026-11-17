@@ -192,7 +192,7 @@ export function LevelRangeSlider({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px' }}>
         {[1, 2, 3, 4, 5, 6, 7].map((l) => (
-          <span key={l} style={{ fontSize: 10, color: 'var(--pm-text-light)' }}>
+          <span key={l} style={{ fontSize: 11, color: 'var(--pm-text-light)' }}>
             {l === 7 ? '7.0' : `${l}.0`}
           </span>
         ))}

@@ -129,7 +129,7 @@ test('dayLabel viser dansk ugedag og dato', () => {
 });
 
 test('dateBadge giver dagtal og trebogstavs-måned til kortet', () => {
-  assert.deepEqual(dateBadge('2026-08-24'), { day: '24', month: 'AUG' });
+  assert.deepEqual(dateBadge('2026-08-24'), { day: '24', month: 'aug' });
   assert.deepEqual(dateBadge(''), { day: '', month: '' });
 });
 

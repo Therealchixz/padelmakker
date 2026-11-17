@@ -1224,7 +1224,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
       {/* Invitationer */}
       {(inviteItems.length > 0 || invitesLoadError) && (
         <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 0 10px' }}>
             <h2 className="pm-home-h">Invitationer</h2>
             {inviteItems.length > 0 && (
               <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-accent)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
@@ -1233,7 +1233,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             )}
           </div>
           {invitesLoadError ? (
-            <div style={{ padding: '0 18px' }}>
+            <div>
               <div className="pm-state-card pm-state-card--error">
                 <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
                 <div className="pm-state-title">Kunne ikke hente invitationer</div>
@@ -1241,7 +1241,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
               </div>
             </div>
           ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {inviteItems.map((it) => (
               <div key={it.key} className="pm-home-invite">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -1279,14 +1279,14 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
 
       {/* Kommende kampe */}
       <div style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 0 10px' }}>
           <h2 className="pm-home-h">Dine kommende</h2>
           {!upcomingLoading && upcomingItems.length > 0 && (
             <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           )}
         </div>
         {upcomingLoadError ? (
-          <div style={{ padding: '0 18px' }}>
+          <div>
             <div className="pm-state-card pm-state-card--error">
               <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
               <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
@@ -1294,7 +1294,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             </div>
           </div>
         ) : upcomingLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[0, 1].map((i) => (
               <div
                 key={i}
@@ -1310,7 +1310,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             ))}
           </div>
         ) : upcomingItems.length === 0 ? (
-          <div style={{ padding: '0 18px' }}>
+          <div>
             <button
               type="button"
               onClick={() => setTab('kampe')}
@@ -1327,7 +1327,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             </button>
           </div>
         ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {upcomingItems.map((it, idx) => (idx === 0 ? (
             // Den naeste kamp staar som et moerkt kort oeverst (H-designet); resten er rolige raekker.
             <button
@@ -1546,7 +1546,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
 
       {/* Aktivitetsfeed */}
       {feedLoading ? (
-        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
+        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px" }}>
           <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {[54, 46, 54, 38, 50].map((w, i) => (
@@ -1555,7 +1555,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
           </div>
         </div>
       ) : feedLoadError && allFeedRows.length === 0 ? (
-        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
+        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px" }}>
           <h2 className="pm-home-h" style={{ margin: '18px 0 10px' }}>Seneste aktivitet</h2>
           <div className="pm-state-card pm-state-card--error">
             <div className="pm-state-icon" aria-hidden="true"><AlertTriangle size={24} /></div>
@@ -1593,7 +1593,7 @@ export function HomeTab({ user, setTab, showToast, tourForceNotificationOpen = f
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <h2 className="pm-home-h" style={{ margin: '18px 18px 0' }}>Seneste aktivitet</h2>
+            <h2 className="pm-home-h" style={{ margin: '18px 0 0' }}>Seneste aktivitet</h2>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button

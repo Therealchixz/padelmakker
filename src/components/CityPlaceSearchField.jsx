@@ -198,7 +198,7 @@ export function CityPlaceSearchField({
               </button>
             </li>
           ))}
-          <li role="presentation" style={{ fontSize: 10, color: theme.textLight, padding: '6px 14px 2px' }}>
+          <li role="presentation" style={{ fontSize: 11, color: theme.textLight, padding: '6px 14px 2px' }}>
             Bydata © OpenStreetMap-bidragydere
           </li>
         </ul>

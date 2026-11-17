@@ -208,7 +208,7 @@ export function LigaListCard({
                 </div>
                 <div className="pm-liga-v2-my-points">
                   <div className="pm-liga-v2-my-points-val">{myStanding.points}</div>
-                  <div className="pm-liga-v2-my-points-lbl">POINT</div>
+                  <div className="pm-liga-v2-my-points-lbl">Point</div>
                 </div>
               </div>
             ) : null}

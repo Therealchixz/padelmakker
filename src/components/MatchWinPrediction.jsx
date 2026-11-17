@@ -31,7 +31,7 @@ export function MatchWinPrediction({ prediction }) {
         }}
       >
         <span style={{ color: theme.text }}>{t1Label}</span>
-        <span style={{ color: theme.textMid, fontWeight: 600, fontSize: 10 }}>
+        <span style={{ color: theme.textMid, fontWeight: 600, fontSize: 11 }}>
           Sejrschance
         </span>
         <span style={{ color: theme.textMid }}>{t2Label}</span>
@@ -47,7 +47,7 @@ export function MatchWinPrediction({ prediction }) {
         {quality}
         {eloDiff > 0 ? ` — ${eloDiff} ELO forskel` : ''}
         {approximate ? (
-          <span style={{ display: 'block', marginTop: 2, fontSize: 10, opacity: 0.9 }}>
+          <span style={{ display: 'block', marginTop: 2, fontSize: 11, opacity: 0.9 }}>
             Baseret på 2v2-ELO · lav datamængde på mindst én spiller
           </span>
         ) : null}

@@ -32,13 +32,13 @@ test('match filter core stores myLevel and levelWindow', () => {
   assert.match(core, /matchPassesLevelFilter/);
 });
 
-test('padelLevelUtils exports spaced ELO and niveau range labels', () => {
+test('padelLevelUtils exports ELO and niveau range labels (tankestreg uden mellemrum, som resten af appen)', () => {
   const src = readFileSync(join(root, 'src/lib/padelLevelUtils.js'), 'utf8');
   assert.match(src, /export function formatPlaytomicLevelRange/);
   assert.match(src, /export function formatEloRange/);
   assert.match(src, /export function formatMatchLevelRangeLabel/);
-  assert.match(src, /\$\{formatPlaytomicLevel\(min\)\} – \$\{formatPlaytomicLevel\(max\)\}/);
-  assert.match(src, /\$\{lo\} – \$\{hi\} ELO/);
+  assert.match(src, /\$\{formatPlaytomicLevel\(min\)\}–\$\{formatPlaytomicLevel\(max\)\}/);
+  assert.match(src, /\$\{lo\}–\$\{hi\} ELO/);
   assert.match(src, /export function formatMatchLevelRangeParts/);
   assert.match(src, /Niveau \$\{formatPlaytomicLevelRange/);
 });

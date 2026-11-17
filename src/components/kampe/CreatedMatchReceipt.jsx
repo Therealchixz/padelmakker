@@ -73,7 +73,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 16, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>
-              {isClosed ? 'LUKKET' : '2V2'}
+              {isClosed ? 'Lukket' : '2v2'}
             </span>
             {levelStr && (
               <span style={{ background: theme.surfaceMuted, color: theme.text, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>

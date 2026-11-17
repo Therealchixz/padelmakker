@@ -72,7 +72,7 @@ export function LigaTeamProfileSheet({
             <AvatarCircle avatar={team.player2_avatar} size={52} emojiSize="22px" className="pm-liga-v2-team-avatar pm-liga-v2-team-avatar--overlap" />
           </div>
           <div>
-            <div className="pm-liga-v2-team-kicker">HOLD</div>
+            <div className="pm-liga-v2-team-kicker">Hold</div>
             {!isPage ? <h2 className="pm-liga-v2-team-title">{team.name}</h2> : null}
           </div>
         </div>

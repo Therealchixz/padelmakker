@@ -10,7 +10,7 @@ function SetDisplay({ set, setNum }) {
       <b style={{ fontSize: 21, fontWeight: 700, color: 'var(--pm-accent)', letterSpacing: 1, display: 'block' }}>
         {g1}–{g2}
       </b>
-      <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
+      <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
         SÆT {setNum}
       </span>
     </div>

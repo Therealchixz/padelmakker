@@ -4,7 +4,7 @@ import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
 import { parseRankedinId } from '../lib/rankedin.js';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
-import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
+import { font, theme, btn, inputStyle, labelStyle, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, displayUserText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
@@ -97,12 +97,11 @@ function formatUpdatedAtDa(value) {
   if (!value) return "ukendt";
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "ukendt";
-  return date.toLocaleString("da-DK", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // Samme skrivemaade som resten af appen: "17. nov. kl. 00:45".
+  const day = date.toLocaleDateString("da-DK", { day: "numeric", month: "short" });
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${day} kl. ${hh}:${mm}`;
 }
 
 function persistRankingModeForProfile(mode) {
@@ -1008,7 +1007,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     )) : <div style={{ fontSize: '13px', color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 23, fontWeight: 700, color: s.color || theme.text, marginTop: 4 }}>{s.value}</div>
+                  <div style={{ fontFamily: 'var(--pm-font-brand)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', color: s.color || theme.text, marginTop: 4 }}>{s.value}</div>
                 )}
               </div>
             ))}
@@ -1456,7 +1455,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       ) : (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
+        <h2 className="pm-subpage-head-title">Rediger profil</h2>
         <button onClick={() => { setForm(profileFormState(user, authUser?.user_metadata)); setPendingAvatarFile(null); if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl); setAvatarPreviewUrl(null); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
           <X size={14} /> Annullér
         </button>

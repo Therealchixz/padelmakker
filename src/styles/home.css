@@ -9,7 +9,7 @@
   color: var(--pm-text);
 }
 
-.pm-home-section { margin: 8px 18px 18px; }
+.pm-home-section { margin: 8px 0 18px; }
 .pm-home-section-head {
   display: flex;
   align-items: center;
@@ -246,7 +246,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin: 4px 18px 8px;
+  margin: 4px 0 8px;
 }
 .pm-home-tile {
   display: flex;
@@ -617,8 +617,8 @@
 .pm-home-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: calc(100% - 36px);
-  margin: 0 18px 18px;
+  width: 100%;
+  margin: 0 0 18px;
   padding: 14px 6px;
   border: 0;
   border-radius: var(--pm-radius-xl);
@@ -654,7 +654,7 @@
 
 /* Lille linje over hilsenen: by og dato. */
 .pm-home-where {
-  margin: 14px 18px -6px;
+  margin: 14px 0 -6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--pm-accent);

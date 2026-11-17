@@ -150,7 +150,7 @@ function BadgeItem({ badge, compact = false, selected = false, onSelect }) {
       <span
         style={{
           display: 'block',
-          fontSize: compact ? 9 : 10,
+          fontSize: 11,
           fontWeight: 600,
           marginTop: compact ? 4 : 5,
           color: badge.earned ? theme.textMid : theme.textLight,
@@ -166,7 +166,7 @@ function BadgeItem({ badge, compact = false, selected = false, onSelect }) {
         <span
           style={{
             display: 'block',
-            fontSize: 9,
+            fontSize: 11,
             lineHeight: 1.25,
             marginTop: 2,
             color: badge.earned ? theme.green : theme.textLight,
@@ -228,7 +228,7 @@ function ProfileBadgeGalleryFull({ badges, selectedKey, onSelectBadge }) {
         <div key={group.category}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
 
               letterSpacing: '0.08em',
@@ -302,7 +302,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
     <>
       <div style={{ marginTop: 4, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>
+          <h3 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', color: theme.text, margin: 0 }}>
             Mærker
           </h3>
           <button
@@ -371,7 +371,7 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
               >
                 +{badges.length - previewBadges.length}
               </div>
-              <span style={{ display: 'block', fontSize: 9, fontWeight: 600, marginTop: 4, color: theme.textLight }}>
+              <span style={{ display: 'block', fontSize: 11, fontWeight: 600, marginTop: 4, color: theme.textLight }}>
                 Flere
               </span>
             </button>

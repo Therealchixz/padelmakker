@@ -1,4 +1,4 @@
-import { Plus, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
+import { Plus, SlidersHorizontal, ChevronLeft, Info } from 'lucide-react';
 import '../../styles/kampe-v4.css';
 import { ScreenHeader } from '../ScreenHeader';
 
@@ -98,7 +98,7 @@ export function KampeCreateHeader({ title, onBack, onInfo = undefined }) {
         onClick={onBack}
         aria-label="Tilbage"
       >
-        <ArrowLeft size={18} strokeWidth={2.2} aria-hidden />
+        <ChevronLeft size={20} aria-hidden />
       </button>
       <h2 className="pm-kampe-v2-create-title">{title}</h2>
       {onInfo ? (
