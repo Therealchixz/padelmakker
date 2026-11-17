@@ -7,7 +7,11 @@ const oauthBtnStyle = {
   width: '100%',
   justifyContent: 'center',
   gap: '10px',
-  fontWeight: 600,
+  minHeight: '52px',
+  fontSize: '16px',
+  fontWeight: 700,
+  border: '1.5px solid var(--pm-border)',
+  boxShadow: 'none',
 }
 
 function GoogleIcon() {
@@ -62,9 +66,9 @@ export function AuthDivider() {
         gap: '12px',
         margin: '4px 0 18px',
         fontFamily: font,
-        fontSize: '12px',
+        fontSize: '13px',
         fontWeight: 600,
-        color: theme.textLight,
+        color: theme.textMid,
 
         letterSpacing: '0.04em',
       }}

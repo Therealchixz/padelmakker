@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
-import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { font, theme } from '../lib/platformTheme';
+import { obInput, obLabel, btnNavy, circleBtn, screenHeading, screenSub } from '../lib/onboardingStyles';
 import { mapAuthErrorMessage } from '../lib/authErrorMessages';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { TurnstileWidget } from '../components/TurnstileWidget';
@@ -91,8 +92,8 @@ export function LoginPage() {
     return (
       <main className="pm-root pm-brand" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
         <div className="pm-auth-narrow">
-          <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px", minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={16} aria-hidden="true" />Tilbage til login</button>
-          <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
+          <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} aria-label="Tilbage til log ind" style={{ ...circleBtn, marginBottom: "28px" }}><ChevronLeft size={22} aria-hidden="true" /></button>
+          <h1 style={{ ...screenHeading, margin: "0 0 8px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
             <div className="pm-auth-success-card">
               <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Tjek din mail</p>
@@ -107,9 +108,9 @@ export function LoginPage() {
                 void handleForgotPassword();
               }}
             >
-              <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
-              <label htmlFor="forgot-email" style={labelStyle}>Email</label>
-              <input id="forgot-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+              <p style={{ ...screenSub, marginTop: 0, marginBottom: "24px" }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
+              <label htmlFor="forgot-email" style={obLabel}>E-mail</label>
+              <input id="forgot-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...obInput, marginBottom: "16px" }} />
               {turnstileEnabled && (
                 <div id="forgot-captcha" style={{ marginBottom: "14px" }}>
                   <TurnstileWidget
@@ -120,7 +121,7 @@ export function LoginPage() {
                 </div>
               )}
               <div role="alert">{err && <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
-              <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ ...btnNavy, opacity: submitting ? 0.55 : 1 }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
               </button>
             </form>
@@ -134,14 +135,16 @@ export function LoginPage() {
   return (
     <main className="pm-root pm-brand" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-narrow">
-        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "28px", padding: "8px 14px", fontSize: "13px", minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={16} aria-hidden="true" />Tilbage</button>
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+          <button type="button" onClick={() => navigate("/")} aria-label="Tilbage til forsiden" style={circleBtn}><ChevronLeft size={22} aria-hidden="true" /></button>
           <picture>
             <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
-            <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker" style={{ height: "38px", display: "inline-block" }} />
+            <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker" style={{ height: "32px", display: "block" }} />
           </picture>
-          <h1 style={{ ...heading("20px"), letterSpacing: "-0.3px", marginTop: "22px", marginBottom: 0 }}>Velkommen tilbage</h1>
-          <p style={{ color: theme.textMid, fontSize: "13px", marginTop: "5px", marginBottom: 0, lineHeight: 1.5 }}>Log ind for at finde din næste kamp</p>
+        </div>
+        <div style={{ marginBottom: "24px" }}>
+          <h1 style={{ ...screenHeading, margin: 0 }}>Velkommen tilbage</h1>
+          <p style={{ ...screenSub, marginBottom: 0 }}>Log ind for at finde din næste kamp.</p>
         </div>
         <form
           onSubmit={(e) => {
@@ -149,12 +152,12 @@ export function LoginPage() {
             void handleLogin();
           }}
         >
-          <label htmlFor="login-email" style={labelStyle}>E-mail eller telefonnummer</label>
-          <input id="login-email" autoComplete="username" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk eller 20112233" style={{ ...inputStyle, marginBottom: "13px" }} />
-          <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
-          <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "8px" }} />
+          <label htmlFor="login-email" style={obLabel}>E-mail eller telefonnummer</label>
+          <input id="login-email" autoComplete="username" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk eller 20112233" style={{ ...obInput, marginBottom: "16px" }} />
+          <label htmlFor="login-password" style={obLabel}>Adgangskode</label>
+          <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...obInput, marginBottom: "6px" }} />
           <div style={{ textAlign: "right", marginBottom: "16px" }}>
-            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: "11px 6px", margin: "-11px -6px", color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font, minHeight: "44px" }}>
+            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: "11px 6px", margin: "-11px -6px", color: theme.accent, fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: font, minHeight: "44px" }}>
               Glemt adgangskode?
             </button>
           </div>
@@ -168,13 +171,13 @@ export function LoginPage() {
             </div>
           )}
           <div role="alert">{err && <p style={{ color: theme.red, fontSize: "14px", fontWeight: 600, marginBottom: "14px", lineHeight: 1.45 }}>{err}</p>}</div>
-          <button type="submit" disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: submitting ? 0.55 : 1 }}>
+          <button type="submit" disabled={submitting} style={{ ...btnNavy, opacity: submitting ? 0.55 : 1 }}>
             {submitting ? "Logger ind..." : "Log ind"}
           </button>
         </form>
         <AuthDivider />
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
-        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "13px", color: theme.textMid }}>
+        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "15px", color: theme.textMid }}>
           Ny her?{" "}
           <Link to={signupUrl} style={{ color: theme.accent, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: "44px", padding: "0 4px" }}>
             Opret en profil

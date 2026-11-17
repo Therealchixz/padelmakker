@@ -47,7 +47,7 @@ import { CityPlaceSearchField } from '../components/CityPlaceSearchField';
 import { isValidCityPlace } from '../lib/dawaPlaceSearch';
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 import { LEGAL_INFO } from '../lib/legalInfo';
-import { ArrowRight, ArrowLeft, Check, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Check, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 /**
  * Niveau-kort — klik sætter levelNumeric. Følger Dansk Padel Forbunds skala
@@ -536,7 +536,7 @@ export function OnboardingPage() {
   const steps = [
     /* ============ Trin 1 · Konto (mockup: Onboarding · 1 Konto) ============ */
     <div key={0}>
-      <div style={{ textAlign: "center", padding: "0 8px 18px" }}>
+      <div style={{ padding: "4px 0 18px" }}>
         <div style={screenHeading}>Lad os lære dig at kende</div>
         <div style={screenSub}>Fire korte trin og en SMS-kode. Så er du inde.</div>
       </div>
@@ -723,7 +723,7 @@ export function OnboardingPage() {
 
     /* ============ Trin 2 · Niveau (mockup: Onboarding · 2 Niveau) ============ */
     <div key={1}>
-      <div style={{ textAlign: "center", padding: "0 8px 16px" }}>
+      <div style={{ padding: "4px 0 16px" }}>
         <div style={screenHeading}>Hvor godt spiller du?</div>
         <div style={screenSub}>Dit niveau bruges til at matche dig med spillere på samme niveau. Vi følger Dansk Padel Forbunds skala – 3.0 og derover er divisions- og turneringsspillere.</div>
       </div>
@@ -1144,7 +1144,7 @@ export function OnboardingPage() {
             aria-label={step > 0 ? "Tilbage" : "Annuller oprettelse"}
             style={circleBtn}
           >
-            <ArrowLeft size={18} strokeWidth={2.2} />
+            <ChevronLeft size={22} aria-hidden />
           </button>
           <h1 style={topbarTitle}>{stepTitles[step]}</h1>
           <button
@@ -1153,8 +1153,8 @@ export function OnboardingPage() {
             style={{
               border: "none",
               background: "transparent",
-              color: theme.textLight,
-              fontSize: "12px",
+              color: theme.textMid,
+              fontSize: "14px",
               fontWeight: 600,
               cursor: "pointer",
               // Trykflade: padding vokser feltet, negativ margin holder
@@ -1175,7 +1175,7 @@ export function OnboardingPage() {
           aria-valuemax={totalSteps}
           aria-valuenow={step + 1}
           aria-label={`Trin ${step + 1} af ${totalSteps}`}
-          style={{ display: "flex", gap: "6px", justifyContent: "center", padding: "4px 0 14px" }}
+          style={{ display: "flex", gap: "6px", padding: "4px 0 18px" }}
         >
           {stepTitles.map((t, i) => (
             <div key={t} style={stepDot(i <= step)} />
@@ -1223,7 +1223,7 @@ export function OnboardingPage() {
               aria-busy={checkingPassword || undefined}
               style={{ ...btnNavy, opacity: canNext() && !checkingPassword ? 1 : 0.75, cursor: checkingPassword ? "wait" : "pointer" }}
             >
-              {checkingPassword ? "Tjekker…" : <>Fortsæt <ArrowRight size={16} strokeWidth={2.4} /></>}
+              {checkingPassword ? "Tjekker…" : <>Fortsæt <ArrowRight size={18} strokeWidth={2.6} aria-hidden /></>}
             </button>
           ) : (
             <button

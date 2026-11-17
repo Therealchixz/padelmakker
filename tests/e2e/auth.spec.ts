@@ -23,7 +23,7 @@ test.describe('Auth flows', () => {
     await page.getByRole('button', { name: /Send nulstillingslink/i }).click()
     await expect(page.getByText(/^Indtast din e-mail først\.$/i)).toBeVisible()
 
-    await page.getByRole('button', { name: /Tilbage til login/i }).click()
+    await page.getByRole('button', { name: /Tilbage til log ?ind/i }).click()
     await expect(page.getByRole('heading', { name: /Velkommen tilbage/i })).toBeVisible()
   })
 
