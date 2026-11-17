@@ -36,7 +36,7 @@ export function EloExplainerPage() {
       </figure>
 
       <h2 style={h2}>Kort fortalt</h2>
-      <ul>
+      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
         <li style={{ marginBottom: '8px' }}>Vinder du, går din rating op. Taber du, går den ned.</li>
         <li style={{ marginBottom: '8px' }}>Slår du et stærkere hold, får du flere point. Taber du til et svagere hold, mister du flere.</li>
         <li style={{ marginBottom: '8px' }}>En stor sejr giver lidt mere end en tæt sejr.</li>
@@ -62,7 +62,7 @@ export function EloExplainerPage() {
 
       <h3 style={{ fontSize: '16px', fontWeight: 700, color: theme.text, margin: '20px 0 8px' }}>K: hvor meget én kamp kan flytte</h3>
       <p style={{ color: theme.textMid }}>K afhænger af, hvor mange kampe du har spillet:</p>
-      <ul>
+      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
         <li style={{ marginBottom: '6px' }}>0–9 kampe: <strong style={strong}>K = 56</strong></li>
         <li style={{ marginBottom: '6px' }}>10–29 kampe: <strong style={strong}>K = 44</strong></li>
         <li>30+ kampe: <strong style={strong}>K = 32</strong></li>
@@ -70,7 +70,7 @@ export function EloExplainerPage() {
 
       <h3 style={{ fontSize: '16px', fontWeight: 700, color: theme.text, margin: '20px 0 8px' }}>Sejrsmargin</h3>
       <p style={{ color: theme.textMid }}>Forskellen i vundne partier over alle sæt giver et lille tillæg:</p>
-      <ul>
+      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
         <li style={{ marginBottom: '6px' }}>0–4 partier: × 1,00</li>
         <li style={{ marginBottom: '6px' }}>5–9 partier: × 1,20</li>
         <li style={{ marginBottom: '6px' }}>10–14 partier: × 1,40</li>

@@ -9,7 +9,6 @@ import { resolveDisplayName } from '../lib/platformUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { Home, Users, MapPin, UserRound, Settings, LogOut, ChevronDown, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { MessagesShortcutContext } from '../lib/messagesShortcut';
-import { NotificationBell } from '../components/NotificationBell';
 
 const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
@@ -754,12 +753,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
       },
       {
         id: 'notification-bell',
-        selector: isMobileView ? '[data-tour="notification-panel"]' : '[data-tour="account-menu-btn"]',
+        selector: isMobileView ? '[data-tour="notification-panel"]' : '[data-tour="notification-bell"]',
         interactive: isMobileView,
         title: 'Notifikationer & push-indstillinger',
         description: isMobileView
           ? 'Klokken er åben. Tryk Aktiver i panelet (browseren kan bede om tilladelse). Du kan altid finde notifikationer i klokken bagefter.'
-          : 'Åbn konto-menuen øverst til højre – der finder du alle dine notifikationer og kan slå push-beskeder til og fra når som helst.',
+          : 'Klokken øverst til højre samler alle dine notifikationer. Der kan du også slå push-beskeder til og fra når som helst.',
       },
       {
         id: 'home',
@@ -1439,10 +1438,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 )}
               </button>
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
-              {!isMobileView && <NotificationBell />}
-            </div>
             <button
               type="button"
               onClick={() => {

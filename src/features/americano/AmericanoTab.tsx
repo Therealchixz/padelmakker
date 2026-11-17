@@ -978,13 +978,13 @@ export function AmericanoTab({
       if (tournament.enforce_level_interval && tournament.level_min != null && tournament.level_max != null) {
         const { data: prof } = await supabase.from('profiles').select('level').eq('id', profileId).single()
         const lvl = Number(prof?.level)
-        const range = `${Number(tournament.level_min).toFixed(1)}–${Number(tournament.level_max).toFixed(1)}`
+        const range = `${Number(tournament.level_min).toFixed(1).replace('.', ',')}–${Number(tournament.level_max).toFixed(1).replace('.', ',')}`
         if (!Number.isFinite(lvl)) {
           showToast(`Denne turnering kræver niveau ${range}. Sæt dit niveau på din profil for at tilmelde dig.`)
           return
         }
         if (lvl < Number(tournament.level_min) || lvl > Number(tournament.level_max)) {
-          showToast(`Denne turnering er for niveau ${range}. Dit niveau er ${lvl.toFixed(1)}.`)
+          showToast(`Denne turnering er for niveau ${range}. Dit niveau er ${lvl.toFixed(1).replace('.', ',')}.`)
           return
         }
       }

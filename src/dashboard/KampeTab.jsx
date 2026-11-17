@@ -238,7 +238,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
-  /** Totalt antal beskeder per kamp — vises i "Match chat (N)" labelen
+  /** Totalt antal beskeder per kamp — vises i "Kamp-chat (N)"
       uden at brugeren først skal åbne chatten. */
   const [matchChatTotalById, setMatchChatTotalById] = useState({});
   const [matchUnreadById, setMatchUnreadById] = useState({});

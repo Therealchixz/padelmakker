@@ -26,7 +26,7 @@ test('kampens niveau læses fra level_range, ellers opretterens niveau ±0,5', (
 });
 
 test('uden selvvalgt spænd skal eget niveau ligge inden for kampens niveau', () => {
-  const match = { level_range: 'elo:913-980|booked:no' }; // 2.7–3.7
+  const match = { level_range: 'elo:913-980|booked:no' }; // 2,7–3,7
   assert.equal(matchPassesLevelFilter(3.2, {}, null, match), true);
   assert.equal(matchPassesLevelFilter(3.7, {}, null, match), true);
   assert.equal(matchPassesLevelFilter(5.0, {}, null, match), false);
@@ -37,10 +37,10 @@ test('uden selvvalgt spænd skal eget niveau ligge inden for kampens niveau', ()
 
 test('selvvalgt fra-til skal overlappe kampens niveau', () => {
   const prefs = { levelMin: 3.3, levelMax: 3.6 };
-  assert.equal(matchPassesLevelFilter(5.0, prefs, null, { level_range: 'elo:953-1000' }), true); // 3.3–4.0
-  assert.equal(matchPassesLevelFilter(3.2, prefs, null, { level_range: 'elo:887-947' }), false); // 2.3–3.2
-  assert.equal(matchFilterLevelLabel(prefs, 3.2), 'Niveau 3.3–3.6');
-  assert.equal(matchFilterLevelLabel({}, 3.2), 'Kampe for niveau 3.2');
+  assert.equal(matchPassesLevelFilter(5.0, prefs, null, { level_range: 'elo:953-1000' }), true); // 3,3–4,0
+  assert.equal(matchPassesLevelFilter(3.2, prefs, null, { level_range: 'elo:887-947' }), false); // 2,3–3,2
+  assert.equal(matchFilterLevelLabel(prefs, 3.2), 'Niveau 3,3–3,6');
+  assert.equal(matchFilterLevelLabel({}, 3.2), 'Kampe for niveau 3,2');
 });
 
 test('kamp-filteret gemmer levelMin/levelMax og bruger dem i matchningen', () => {

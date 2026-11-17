@@ -93,11 +93,11 @@ test('legacy elo-bånd migreres væk', () => {
 // med ELO 1075 og niveau 3,5 fik før sine egne 3,2–3,5-kampe sorteret fra.
 test('niveau-filter beregnes omkring brugerens niveau', () => {
   assert.deepEqual(kampeLevelFilterRangeFromUser('tight', 3.5), { min: 3, max: 4 });
-  assert.equal(getKampeListLevelBandLabel('tight', 3.5), '3.0–4.0');
+  assert.equal(getKampeListLevelBandLabel('tight', 3.5), '3,0–4,0');
 });
 
 test('niveau-filter overlapper kampens niveau', () => {
-  const match = { level_range: 'elo:947-974|booked:no' }; // niveau 3.2–3.5
+  const match = { level_range: 'elo:947-974|booked:no' }; // niveau 3,2–3,5
   assert.equal(matchPassesKampeLevelBandFilter(match, 'tight', 3.5), true);
   assert.equal(matchPassesKampeLevelBandFilter(match, 'tight', 5.0), false);
   assert.equal(matchPassesKampeLevelBandFilter(match, '', 5.0), true);

@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 
-test('antal chat-beskeder naar hele vejen ud i "Match chat (N)"', () => {
+test('antal chat-beskeder naar hele vejen ud i "Kamp-chat (N)"', () => {
   const kampe = read('src/dashboard/KampeTab.jsx');
   const card = read('src/components/kampe/MatchDetailActionCard.jsx');
 
@@ -28,7 +28,7 @@ test('antal chat-beskeder naar hele vejen ud i "Match chat (N)"', () => {
   // Kortet tager imod og viser det.
   assert.match(card, /totalChatCount = 0/);
   assert.ok(
-    card.includes("<b>Match chat{totalChatCount > 0 ? ` (${totalChatCount})` : ''}</b>"),
+    card.includes("<b>Kamp-chat{totalChatCount > 0 ? ` (${totalChatCount})` : ''}</b>"),
     'labelen viser ikke tallet',
   );
 });

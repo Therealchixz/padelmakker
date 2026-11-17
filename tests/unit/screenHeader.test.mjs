@@ -38,10 +38,12 @@ test('sider under Profil har tilbage-pil, og Profil har én vej til at redigere'
   assert.match(mere, /Al statistik og mærker/);
 });
 
-test('ScreenHeader: titel er h1, klokken kun på mobil', async () => {
+test('ScreenHeader: titel er h1, klokken i toplinjen på både telefon og computer', async () => {
   const s = await src('src/components/ScreenHeader.jsx');
   assert.match(s, /<h1 className="pm-screen-header-title">/);
-  assert.match(s, /const bell = showBell && isMobile/);
+  assert.match(s, /const bell = showBell;/);
+  // Klokken lå før gemt i konto-menuen på computer (ejeren 17. nov. 2026).
+  assert.doesNotMatch(await src('src/dashboard/DashboardPage.jsx'), /<NotificationBell \/>/);
   assert.match(s, /\(max-width: 768px\)/);
 });
 

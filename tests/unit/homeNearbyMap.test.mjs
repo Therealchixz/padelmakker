@@ -87,3 +87,12 @@ test('eksempel-kampe: 3 naermeste praecise centre, et langt vaek og een uden ban
   assert.ok(out.every((m) => m.date > '2026-11-09'), 'kun kommende datoer');
   assert.equal(new Set(out.map((m) => m.matchId)).size, out.length);
 });
+
+test('kamp-pinde viser klokkeslæt (H): i dag kun tid, ellers dag foran, +N ved flere', async () => {
+  const { nearbyPinTimeLabel } = await import('../../src/lib/homeNearbyMap.js');
+  const now = new Date(2026, 10, 17, 12, 0);
+  assert.equal(nearbyPinTimeLabel({ matchCount: 1, nextMatch: { date: '2026-11-17', time: '19:30:00' } }, now), '19:30');
+  assert.equal(nearbyPinTimeLabel({ matchCount: 3, nextMatch: { date: '2026-11-19', time: '10:00' } }, now), 'tor 10:00 +2');
+  assert.equal(nearbyPinTimeLabel({ matchCount: 2, nextMatch: null }, now), '2');
+  assert.equal(nearbyPinTimeLabel({ matchCount: 0 }, now), '');
+});
