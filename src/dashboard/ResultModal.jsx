@@ -35,7 +35,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
 
       {/* Match summary card */}
       <div style={{
-        background: theme.surface, borderRadius: 14, border: `1px solid ${theme.border}`,
+        background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: `1px solid ${theme.border}`,
         boxShadow: theme.shadowSoft, padding: 16, margin: '18px 0 0',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

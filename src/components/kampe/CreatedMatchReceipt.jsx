@@ -70,7 +70,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         </div>
 
         {/* Summary card */}
-        <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 16, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
+        <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, padding: '14px 16px' }}>
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em' }}>
               {isClosed ? 'Lukket' : '2v2'}
@@ -85,7 +85,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           {/* Date + time row */}
           {(datePart || timeStr) && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 12 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <CalendarDays size={14} color={theme.textMid} />
               </div>
               <div style={{ fontSize: 13, lineHeight: 1.55 }}>
@@ -98,7 +98,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           {/* Location row */}
           {court && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 'var(--pm-radius-sm)', background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <MapPin size={14} color={theme.textMid} />
               </div>
               <div style={{ fontSize: 13, lineHeight: 1.55 }}>
@@ -129,20 +129,20 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           <button
             type="button"
             onClick={() => void onShare(m)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 'var(--pm-radius-sm)', border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
           >
             <Share2 size={16} />
             Send til venner
           </button>
         </div>
-        <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+        <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
           <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {matchUrl || 'padelmakker.dk/kamp/…'}
           </span>
           <button
             type="button"
             onClick={handleCopy}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 7, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: receiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 999, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: receiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
           >
             <Copy size={12} />
             {receiptUrlCopied ? 'Kopieret!' : 'Kopiér'}
@@ -154,7 +154,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
           <button
             type="button"
             onClick={() => onAddToCalendar(m)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
           >
             <CalendarPlus size={15} />
             Tilføj til kalender
@@ -167,7 +167,7 @@ export function CreatedMatchReceipt({ match, user, showToast, onClose, onAddToCa
         <button
           type="button"
           onClick={onClose}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 'var(--pm-radius-sm)', border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
         >
           Gå til kamp-oversigt
           <ArrowRight size={16} strokeWidth={2.4} />

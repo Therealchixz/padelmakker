@@ -84,7 +84,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--pm-border);
-  border-radius: 18px;
+  border-radius: var(--pm-radius-lg);
   box-shadow: 0 18px 48px rgba(11, 27, 51, 0.18);
   padding: 16px 16px 12px;
   z-index: 200;
@@ -107,7 +107,7 @@
   max-height: 86dvh;
   display: flex;
   flex-direction: column;
-  border-radius: 26px 26px 0 0;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 0 0;
   box-shadow: 0 -12px 40px rgba(11, 27, 51, 0.2);
   outline: none;
   transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -260,7 +260,7 @@ button.pm-notif-v4-item { cursor: pointer; }
 .pm-notif-v4-extras {
   margin-top: 16px;
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   background: var(--pm-surface);
 }
@@ -359,7 +359,7 @@ button.pm-notif-v4-item { cursor: pointer; }
   height: 18px;
   padding: 0 4px;
   border: 2px solid var(--pm-bg);
-  border-radius: 9px;
+  border-radius: 999px;
   background: var(--pm-accent-solid);
   color: var(--pm-on-accent);
   font-family: var(--pm-font-data);

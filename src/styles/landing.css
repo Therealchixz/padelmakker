@@ -91,7 +91,7 @@ html:has(.pm-lp) body {
   width: 100%;
   min-height: 60px;
   padding: 18px 20px;
-  border-radius: 16px;
+  border-radius: 999px;
   background: var(--lp-clay-solid);
   color: #fff !important;
   font-weight: 700 !important;
@@ -403,7 +403,7 @@ html:has(.pm-lp) body {
   flex: 1;
   min-height: 0;
   position: relative;
-  border-radius: 24px;
+  border-radius: var(--pm-radius-lg);
   overflow: hidden;
   background: var(--lp-raised);
   border: 1px solid var(--lp-line);
@@ -459,7 +459,7 @@ html:has(.pm-lp) body {
   height: 100%;
   max-height: 600px;
   align-self: end;
-  border-radius: 34px 34px 0 0;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 0 0;
   border: 7px solid #06101F;
   border-bottom: 0;
   background: var(--lp-paper);
@@ -501,7 +501,7 @@ html:has(.pm-lp) body {
 }
 .pm-lp-phone-opt {
   border: 1.5px solid var(--lp-ink);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-sm);
   padding: 10px;
   min-height: 84px;
   display: flex;
@@ -527,7 +527,7 @@ html:has(.pm-lp) body {
 }
 .pm-lp-phone-day {
   height: 50px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   border: 1.5px solid var(--lp-ink);
   display: grid;
   place-content: center;
@@ -563,7 +563,7 @@ html:has(.pm-lp) body {
 .pm-lp-phone-row.is-me {
   background: var(--lp-ink);
   color: #fff;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 9px 8px;
   margin: 0 -8px;
   border-bottom-color: transparent;
@@ -571,7 +571,7 @@ html:has(.pm-lp) body {
 .pm-lp-phone-btn {
   margin-top: auto;
   height: 46px;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--lp-clay-solid);
   color: #fff;
   font-weight: 700;
@@ -669,7 +669,7 @@ html:has(.pm-lp) body {
   gap: 14px;
   align-items: center;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   background: var(--lp-raised);
   border: 1px solid var(--lp-line);
   text-decoration: none;
@@ -703,7 +703,7 @@ html:has(.pm-lp) body {
 /* ── Afslutning ── */
 .pm-lp-close {
   margin: 28px var(--lp-gutter) 12px;
-  border-radius: 24px;
+  border-radius: var(--pm-radius-lg);
   padding: clamp(26px, 6vw, 56px) clamp(20px, 5vw, 56px);
   background: var(--lp-clay-solid);
   color: #fff;
@@ -886,7 +886,7 @@ html:has(.pm-lp) body {
     justify-content: center;
     height: 440px;
     margin-bottom: 18px;
-    border-radius: 24px;
+    border-radius: var(--pm-radius-lg);
     padding-top: 22px;
     overflow: hidden;
     background: var(--lp-raised);

@@ -66,7 +66,7 @@ const profilePromptCardStyle = {
   marginBottom: '16px',
   padding: '12px 14px',
   background: theme.surfaceAlt,
-  borderRadius: '10px',
+  borderRadius: 'var(--pm-radius-sm)',
   border: `1px solid ${theme.border}`,
 };
 
@@ -846,7 +846,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
           {showPerformanceSection && (
-            <div style={{ margin: '10px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
+            <div style={{ margin: '10px 18px 0', borderRadius: 'var(--pm-radius-sm)', padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: '6px' }}>
                 Aktuel {isAmericanoMode ? TOURNAMENT_ELO_LABEL : TWO_V_TWO_ELO_LABEL} · {activeModeLabel}
               </div>
@@ -996,7 +996,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, marginBottom: 20 }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: 'var(--pm-surface-muted)', borderRadius: 16, border: '1px solid var(--pm-americano-tie-border)' }}>
+              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: 'var(--pm-surface-muted)', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-americano-tie-border)' }}>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
                 {s.form ? (
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
@@ -1671,7 +1671,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     justifyContent: 'space-between',
                     gap: 10,
                     padding: '8px 10px',
-                    borderRadius: 8,
+                    borderRadius: 'var(--pm-radius-sm)',
                     background: theme.surface,
                     border: `1px solid ${theme.border}`,
                   }}

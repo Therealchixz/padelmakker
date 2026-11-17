@@ -28,7 +28,7 @@
 .pm-kd-hero {
   position: relative;
   height: 150px;
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   overflow: hidden;
   background: #0D2850;
 }
@@ -139,7 +139,7 @@
 /* ── Hvidt kort (mockup .card) ── */
 .pm-kd-card {
   background: var(--pm-surface);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-kd-card-border);
   box-shadow: var(--pm-kd-card-shadow);
   padding: 16px;
@@ -225,7 +225,7 @@
 .pm-kd-info-ic {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   background: var(--pm-kd-inset);
   border: 1px solid var(--pm-kd-card-border);
   color: var(--pm-text-mid);
@@ -377,7 +377,7 @@
   padding: 12px 15px;
   background: var(--pm-surface);
   border: 1px solid var(--pm-kd-card-border);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: var(--pm-kd-card-shadow);
   width: 100%;
   box-sizing: border-box;
@@ -498,7 +498,7 @@
   flex: none;
   width: 28px;
   height: 28px;
-  border-radius: 9px;
+  border-radius: var(--pm-radius-sm);
   border: 1px solid var(--pm-kd-card-border);
   background: var(--pm-kd-inset);
   color: var(--pm-accent);
@@ -522,7 +522,7 @@
 /* ── Inset-kort (mockup .inset-card) ── */
 .pm-kd-inset-card {
   background: var(--pm-kd-inset);
-  border-radius: 14px;
+  border-radius: var(--pm-radius-sm);
   padding: 14px 16px;
   border: 1px solid var(--pm-kd-card-border);
 }
@@ -657,7 +657,7 @@
 .pm-kd-feed-ic {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -711,7 +711,7 @@
   font-family: inherit;
   font-weight: 600;
   font-size: 15px;
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 14px;
   width: 100%;
   box-shadow: 0 6px 14px rgba(11, 27, 51, 0.32);
@@ -736,7 +736,7 @@
   font-family: inherit;
   font-weight: 600;
   font-size: 15px;
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 12px;
   width: 100%;
 }
@@ -752,7 +752,7 @@
 .pm-kd-stat {
   background: var(--pm-kd-inset);
   border: 1px solid var(--pm-kd-card-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-sm);
   padding: 9px 6px;
   text-align: center;
 }
@@ -778,7 +778,7 @@
 .pm-kd-action-card {
   background: var(--pm-surface);
   border: 1px solid var(--pm-kd-card-border);
-  border-radius: 16px;
+  border-radius: var(--pm-radius-sm);
   box-shadow: var(--pm-kd-card-shadow);
   overflow: hidden;
 }
@@ -874,7 +874,7 @@
   min-height: 40px;
   padding: 7px 10px;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--pm-kd-inset);
   color: var(--pm-text);
   font-family: inherit;

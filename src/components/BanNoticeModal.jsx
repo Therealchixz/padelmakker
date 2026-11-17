@@ -32,7 +32,7 @@ export function BanNoticeModal({ reason, onAcknowledge }) {
               marginBottom: '20px',
               padding: '10px 12px',
               background: theme.redBg,
-              borderRadius: '8px',
+              borderRadius: 'var(--pm-radius-sm)',
               border: `1px solid color-mix(in srgb, ${theme.red} 25%, transparent)`,
             }}
           >

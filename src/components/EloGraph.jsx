@@ -300,7 +300,7 @@ export function EloGraph({
             zIndex: 2,
             background: theme.surface,
             border: '1px solid ' + theme.border,
-            borderRadius: '8px',
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '6px 10px',
             boxShadow: theme.shadow,
             fontFamily: font,

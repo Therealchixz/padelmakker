@@ -14,6 +14,7 @@ Brug design-skillsene i `.claude/skills/`, når du designer eller ændrer hjemme
 Ejerens valg går altid forud for en skills egen husstil. Ejeren valgte 15. nov. 2026 designet "H" fra Claude Design-lærredet "PadelMakker – tre retninger" (bygges i etaper). Det afløser papir/ler-designet fra 4. nov. 2026:
 
 - farver: lys blågrå bund (`--pm-bg`), hvide kort (`--pm-surface`), mørk navy (`--pm-ink`, `--pm-text`), blå til knapper og links (`--pm-accent-solid`, `--pm-accent`) og lime (`--pm-lime`, altid med mørk tekst `--pm-on-lime`) til "spil nu / det er dit". De gamle navne `--pm-clay`, `--pm-paper` og `--pm-ball` findes stadig, men peger nu på blå, lys bund og lime
+- former (ejeren 17. nov. 2026): knapper, valg-knapper, faner og mærker er helt runde (`--pm-radius-pill`), kort og ark 22px (`--pm-radius-lg`), felter og små bokse inde i kort 14px (`--pm-radius-sm`), ikonknapper er cirkler. Lime kun til skærmens hovedhandling
 - skrift: Bricolage Grotesque (fed, almindelige store/små bogstaver) til overskrifter og store tal, Schibsted Grotesk til tekst. Ingen versaler-overskrifter og ingen `tabular-nums` (giver huller i "19:30")
 - det gamle baggrundsfoto på forsiden (ikke en tegnet bane)
 - padel-ikonet "B" (skrå, fyldt ketsjer) som standardbillede

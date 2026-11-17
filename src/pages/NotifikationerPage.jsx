@@ -242,7 +242,7 @@ export function NotifikationerPage({ onBack }) {
     alignItems: 'flex-start',
     padding: '13px 15px',
     background: unread ? `color-mix(in srgb, ${theme.accentBg} 25%, transparent)` : theme.surface,
-    borderRadius: 14,
+    borderRadius: 'var(--pm-radius-sm)',
     border: '1px solid ' + (unread ? `color-mix(in srgb, ${theme.accent} 19%, transparent)` : theme.border),
     borderLeft: unread ? `3px solid ${theme.accent}` : '1px solid ' + theme.border,
     margin: '0 18px 11px',
@@ -331,7 +331,7 @@ export function NotifikationerPage({ onBack }) {
                     <button
                       type="button"
                       onClick={() => void openNotif(n)}
-                      style={{ fontSize: 12, fontWeight: 700, padding: '7px 13px', borderRadius: 8, border: '1px solid ' + theme.accent, background: theme.accent, color: theme.onAccent, cursor: 'pointer', fontFamily: font }}
+                      style={{ fontSize: 12, fontWeight: 700, padding: '7px 13px', borderRadius: 999, border: '1px solid ' + theme.accent, background: theme.accent, color: theme.onAccent, cursor: 'pointer', fontFamily: font }}
                     >
                       Se resultat
                     </button>
@@ -374,7 +374,7 @@ export function NotifikationerPage({ onBack }) {
                   type="button"
                   onClick={() => void openNotif(n)}
                   aria-label="Åbn"
-                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
+                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 999 }}
                 />
               )}
               {canMarkReadOnly && (
@@ -382,7 +382,7 @@ export function NotifikationerPage({ onBack }) {
                   type="button"
                   onClick={() => void markNotifRead(n)}
                   aria-label="Markér som læst"
-                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
+                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 999 }}
                 />
               )}
             </div>

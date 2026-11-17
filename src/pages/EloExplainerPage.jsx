@@ -22,7 +22,7 @@ export function EloExplainerPage() {
           margin: '20px 0 0',
           padding: '16px 18px',
           border: `1px solid ${theme.border}`,
-          borderRadius: '12px',
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surfaceAlt,
         }}
       >

@@ -678,7 +678,7 @@ export function AmericanoCompletedCard({
           : {
               background: theme.surface,
               border: `1px solid ${theme.border}`,
-              borderRadius: 16,
+              borderRadius: 'var(--pm-radius-sm)',
               boxShadow: theme.shadow,
               overflow: 'hidden',
               scrollMarginTop: domId ? '88px' : undefined,
@@ -702,7 +702,7 @@ export function AmericanoCompletedCard({
         return (
           <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 'var(--pm-radius-sm)', padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
                 <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>
@@ -756,7 +756,7 @@ export function AmericanoCompletedCard({
             style={{
               background: theme.surfaceAlt,
               border: `1px solid ${theme.border}`,
-              borderRadius: 10,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '8px 10px',
             }}
           >
@@ -779,7 +779,7 @@ export function AmericanoCompletedCard({
             style={{
               background: theme.surfaceAlt,
               border: `1px solid ${theme.border}`,
-              borderRadius: 10,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '8px 10px',
             }}
           >
@@ -802,7 +802,7 @@ export function AmericanoCompletedCard({
             style={{
               background: theme.surfaceAlt,
               border: `1px solid ${theme.border}`,
-              borderRadius: 10,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '8px 10px',
             }}
           >
@@ -982,7 +982,7 @@ export function AmericanoCompletedCard({
                     style={{
                       background: theme.greenBg,
                       border: `1px solid color-mix(in srgb, ${theme.green} 20%, transparent)`,
-                      borderRadius: 10,
+                      borderRadius: 'var(--pm-radius-sm)',
                       padding: '8px 10px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1010,7 +1010,7 @@ export function AmericanoCompletedCard({
                     style={{
                       background: theme.warmBg,
                       border: `1px solid color-mix(in srgb, var(--pm-warm) 45%, var(--pm-border))`,
-                      borderRadius: 10,
+                      borderRadius: 'var(--pm-radius-sm)',
                       padding: '8px 10px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1037,7 +1037,7 @@ export function AmericanoCompletedCard({
                   style={{
                     background: theme.accentBg,
                     border: `1px solid color-mix(in srgb, ${theme.accent} 20%, transparent)`,
-                    borderRadius: 10,
+                    borderRadius: 'var(--pm-radius-sm)',
                     padding: '8px 10px',
                     display: 'flex',
                     alignItems: 'center',
@@ -1345,7 +1345,7 @@ export function AmericanoCompletedCard({
                         style={{
                           padding: '10px 12px',
                           background: theme.surface,
-                          borderRadius: 8,
+                          borderRadius: 'var(--pm-radius-sm)',
                           border: `1px solid ${theme.border}`,
                           borderLeft: `4px solid ${mpal.border}`,
                           fontSize: 12,
@@ -1413,7 +1413,7 @@ export function AmericanoCompletedCard({
                               gridTemplateColumns: '1fr auto',
                               alignItems: 'center',
                               gap: 8,
-                              borderRadius: 8,
+                              borderRadius: 'var(--pm-radius-sm)',
                               padding: '6px 8px',
                               background: teamAHighlighted ? mpal.bg : theme.surfaceAlt,
                               border: `1px solid ${teamAHighlighted ? mpal.border : theme.border}`,
@@ -1466,7 +1466,7 @@ export function AmericanoCompletedCard({
                               gridTemplateColumns: '1fr auto',
                               alignItems: 'center',
                               gap: 8,
-                              borderRadius: 8,
+                              borderRadius: 'var(--pm-radius-sm)',
                               padding: '6px 8px',
                               background: teamBHighlighted ? mpal.bg : theme.surfaceAlt,
                               border: `1px solid ${teamBHighlighted ? mpal.border : theme.border}`,

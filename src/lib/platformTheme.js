@@ -98,7 +98,7 @@ const BTN_RADIUS_PRESETS = {
 export const btn = (primary, options = {}) => {
   const {
     size,
-    radius = 'md',
+    radius = 'pill',
     minHeight,
     fontWeight,
   } = options;

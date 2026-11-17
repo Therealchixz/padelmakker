@@ -325,7 +325,7 @@ export function ActiveSeekingPanel({
         style={{
           background: theme.surface,
           border: `1px solid ${theme.border}`,
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           marginBottom: 14,
           boxShadow: theme.shadow,
           overflow: 'hidden',
@@ -400,7 +400,8 @@ function regionModalContent(regionModal, busyChannel, persistSeeking) {
             type="button"
             disabled={busyChannel != null}
             onClick={() => void persistSeeking(regionModal, true, r)}
-            style={{ ...btn(false), textAlign: 'left', padding: '10px 14px', fontSize: 13 }}
+            style={{ ...btn(false),
+              borderRadius: 'var(--pm-radius-sm)', textAlign: 'left', padding: '10px 14px', fontSize: 13 }}
           >
             {r}
           </button>

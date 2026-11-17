@@ -53,7 +53,7 @@ export function CourtFacilitiesGrid({ facilities, title = 'Faciliteter på centr
       style={{
         background: 'var(--pm-surface-muted)',
         border: '1px solid var(--pm-border)',
-        borderRadius: 14,
+        borderRadius: 'var(--pm-radius-sm)',
         padding: '13px 15px',
         ...style,
       }}

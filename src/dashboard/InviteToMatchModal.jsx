@@ -17,7 +17,7 @@ function DateBadge({ dateStr }) {
   return (
     <div style={{
       width: 42, flexShrink: 0, textAlign: 'center',
-      background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0',
+      background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 'var(--pm-radius-sm)', padding: '6px 0',
     }}>
       <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{day || '—'}</b>
       <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--pm-text-mid)' }}>
@@ -42,7 +42,7 @@ function MatchRow({ item, selected, onSelect }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 13,
         background: 'var(--pm-surface)', border: `1.5px solid ${isSel ? 'var(--pm-navy)' : 'var(--pm-border)'}`,
-        borderRadius: 14, padding: '12px 14px', cursor: 'pointer',
+        borderRadius: 'var(--pm-radius-sm)', padding: '12px 14px', cursor: 'pointer',
         boxShadow: isSel ? '0 0 0 3px rgba(22,55,126,0.12)' : 'none',
         marginBottom: 9, width: '100%', textAlign: 'left', fontFamily: 'inherit',
       }}
@@ -167,7 +167,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
                 key={i}
                 style={{
                   height: 64,
-                  borderRadius: 14,
+                  borderRadius: 'var(--pm-radius-sm)',
                   marginBottom: 9,
                   background: 'var(--pm-surface-muted)',
                   border: '1px solid var(--pm-border)',
@@ -197,7 +197,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
           type="button"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: '100%', padding: 11, borderRadius: 10, marginBottom: 12,
+            width: '100%', padding: 11, borderRadius: 'var(--pm-radius-sm)', marginBottom: 12,
             border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
             color: 'var(--pm-accent)', fontSize: '15px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
@@ -214,7 +214,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
           disabled={!selected || sending}
           onClick={handleSend}
           style={{
-            width: '100%', padding: 12, borderRadius: 10, border: 'none',
+            width: '100%', padding: 12, borderRadius: 'var(--pm-radius-sm)', border: 'none',
             background: selected && !sending ? 'var(--pm-navy)' : 'var(--pm-border)',
             color: 'var(--pm-on-accent)', fontSize: '15px', fontWeight: 600,
             cursor: selected && !sending ? 'pointer' : 'default',
@@ -230,7 +230,7 @@ export function InviteToMatchModal({ open = true, invitee, currentUser, showToas
           type="button"
           onClick={onClose}
           style={{
-            width: '100%', padding: 10, borderRadius: 10, marginTop: 9,
+            width: '100%', padding: 10, borderRadius: 'var(--pm-radius-sm)', marginTop: 9,
             border: 'none', background: 'none', color: 'var(--pm-text-mid)',
             fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}

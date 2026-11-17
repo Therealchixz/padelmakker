@@ -30,7 +30,7 @@ export function PlaytomicLevelPicker({ value, onChange }) {
       style={{
         background: theme.surfaceAlt,
         border: `1px solid ${theme.accent}`,
-        borderRadius: 10,
+        borderRadius: 'var(--pm-radius-sm)',
         padding: '14px',
       }}
     >
@@ -68,7 +68,7 @@ export function PlaytomicLevelPicker({ value, onChange }) {
             fontSize: 15,
             fontWeight: 700,
             textAlign: 'center',
-            borderRadius: 8,
+            borderRadius: 'var(--pm-radius-sm)',
             border: `1px solid ${theme.border}`,
             fontFamily: 'inherit',
             color: theme.text,
@@ -81,7 +81,7 @@ export function PlaytomicLevelPicker({ value, onChange }) {
         style={{
           background: theme.surface,
           border: `1px solid ${theme.border}`,
-          borderRadius: 8,
+          borderRadius: 'var(--pm-radius-sm)',
           padding: '12px 14px',
         }}
         aria-live="polite"

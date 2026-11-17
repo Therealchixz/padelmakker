@@ -91,7 +91,7 @@ export function EmailConfirmReminder({ user }) {
         alignItems: 'flex-start',
         background: theme.surface,
         border: `1px solid ${theme.border}`,
-        borderRadius: '12px',
+        borderRadius: 'var(--pm-radius-sm)',
         padding: '14px 16px',
         margin: '0 0 16px',
       }}

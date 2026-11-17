@@ -99,7 +99,7 @@ function OtpBoxes({ value, onChange, onComplete, disabled, invalid, focusFirstNo
             fontFamily: font,
             color: theme.text,
             border: `2px solid ${invalid ? theme.red : d ? theme.accent : theme.border}`,
-            borderRadius: 12,
+            borderRadius: 'var(--pm-radius-sm)',
             background: theme.surface,
             outline: 'none',
             transition: 'border-color 0.15s',

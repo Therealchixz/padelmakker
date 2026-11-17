@@ -165,7 +165,7 @@ export function AdminReportDmViewer({
                   <div
                     style={{
                       padding: '8px 12px',
-                      borderRadius: 12,
+                      borderRadius: 'var(--pm-radius-sm)',
                       fontSize: 13,
                       lineHeight: 1.45,
                       whiteSpace: 'pre-wrap',

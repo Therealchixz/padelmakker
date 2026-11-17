@@ -16,7 +16,7 @@ import { isValidUnsubscribeToken, postEmailUnsubscribe } from '../lib/emailUnsub
 const cardStyle = {
   background: theme.surface,
   border: `1px solid ${theme.border}`,
-  borderRadius: 14,
+  borderRadius: 'var(--pm-radius-sm)',
   padding: '28px 24px',
   maxWidth: 460,
   width: '100%',

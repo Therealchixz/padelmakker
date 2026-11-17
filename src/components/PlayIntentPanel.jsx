@@ -110,7 +110,7 @@ function ProposalConfirmCard({ proposal, now, busy, onAccept, onDecline, onPlaye
                 aria-label={canOpen ? `Åbn profil for ${m.name || first}` : undefined}
                 style={{
                   padding: 10,
-                  borderRadius: 10,
+                  borderRadius: 999,
                   border: `1px solid ${accepted ? 'var(--pm-success-border)' : theme.border}`,
                   background: accepted ? 'var(--pm-green-bg)' : 'var(--pm-surface)',
                   display: 'flex',
@@ -422,7 +422,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
             key={p.id}
             style={{
               border: `1.5px solid ${expired ? theme.border : theme.accent}`,
-              borderRadius: 14,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '14px 16px',
               marginBottom: 10,
               background: 'var(--pm-surface-muted)',
@@ -569,6 +569,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
                       onClick={() => openMatch(m.id)}
                       style={{
                         ...btn(true),
+              borderRadius: 'var(--pm-radius-sm)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -642,7 +643,7 @@ export function PlayIntentPanel({ user, showToast, onMatchCreated, onMessagePlay
                       onClick={() => applyPreset(p)}
                       style={{
                         padding: '9px 6px',
-                        borderRadius: 12,
+                        borderRadius: 999,
                         fontFamily: font,
                         cursor: 'pointer',
                         textAlign: 'center',

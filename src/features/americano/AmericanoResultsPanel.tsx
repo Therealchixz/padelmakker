@@ -618,7 +618,7 @@ export function AmericanoResultsPanel({
         style={{
           background: 'var(--pm-surface)',
           border: onCourt && isActiveRound ? '2px solid var(--pm-accent)' : `1px solid ${c.line}`,
-          borderRadius: 14,
+          borderRadius: 'var(--pm-radius-sm)',
           padding: '12px 14px',
           marginBottom: 12,
           boxShadow: onCourt && isActiveRound ? 'var(--pm-shadow-soft)' : 'none',
@@ -645,7 +645,7 @@ export function AmericanoResultsPanel({
                   onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: v, b: prev[m.id]?.b ?? '' } })) }}
                   onBlur={() => handleScoreBlur(m, 'a')}
                   aria-label="Point hold A"
-                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 'var(--pm-radius-sm)', border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
                 />
                 <span style={{ fontWeight: 800, color: c.muted }}>-</span>
                 <input
@@ -653,7 +653,7 @@ export function AmericanoResultsPanel({
                   onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: prev[m.id]?.a ?? '', b: v } })) }}
                   onBlur={() => handleScoreBlur(m, 'b')}
                   aria-label="Point hold B"
-                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 'var(--pm-radius-sm)', border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             ) : resolved != null ? (
@@ -676,7 +676,7 @@ export function AmericanoResultsPanel({
               type="button"
               disabled={saving || !canConfirmSave}
               onClick={() => { void saveRow({ ...m } as AmericanoMatchRow).then(() => setEntryOpenId(null)) }}
-              style={{ flex: 2, fontFamily: font, fontSize: 13, fontWeight: 700, padding: '10px', borderRadius: 10, border: 'none', background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface-muted)', color: canConfirmSave ? c.onAccent : c.muted, cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer' }}
+              style={{ flex: 2, fontFamily: font, fontSize: 13, fontWeight: 700, padding: '10px', borderRadius: 999, border: 'none', background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface-muted)', color: canConfirmSave ? c.onAccent : c.muted, cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer' }}
             >
               Gem ({scorePreview})
             </button>
@@ -684,7 +684,7 @@ export function AmericanoResultsPanel({
               type="button"
               disabled={saving}
               onClick={() => { setEntryOpenId(null); setScores((prev) => ({ ...prev, [m.id]: { a: m.team_a_score != null ? String(m.team_a_score) : '', b: m.team_b_score != null ? String(m.team_b_score) : '' } })) }}
-              style={{ flex: 1, fontFamily: font, fontSize: 13, fontWeight: 600, padding: '10px', borderRadius: 10, border: `1px solid ${c.line}`, background: 'var(--pm-surface)', color: c.muted, cursor: 'pointer' }}
+              style={{ flex: 1, fontFamily: font, fontSize: 13, fontWeight: 600, padding: '10px', borderRadius: 999, border: `1px solid ${c.line}`, background: 'var(--pm-surface)', color: c.muted, cursor: 'pointer' }}
             >
               Annullér
             </button>
@@ -695,7 +695,7 @@ export function AmericanoResultsPanel({
           <button
             type="button"
             onClick={() => setEntryOpenId(m.id)}
-            style={{ marginTop: 12, width: '100%', fontFamily: font, fontSize: 13, fontWeight: 700, padding: '11px', borderRadius: 10, border: 'none', background: 'var(--pm-accent)', color: c.onAccent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            style={{ marginTop: 12, width: '100%', fontFamily: font, fontSize: 13, fontWeight: 700, padding: '11px', borderRadius: 'var(--pm-radius-sm)', border: 'none', background: 'var(--pm-accent)', color: c.onAccent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
           >
             <ClipboardEdit size={16} aria-hidden />
             {resolved != null ? 'Ret resultat' : 'Indberet Resultat'}
@@ -707,7 +707,7 @@ export function AmericanoResultsPanel({
             type="button"
             disabled={saving}
             onClick={() => { setUnlockedIds((prev) => new Set(prev).add(m.id)); setScores((prev) => ({ ...prev, [m.id]: { a: '', b: '' } })); setEntryOpenId(m.id) }}
-            style={{ marginTop: 10, width: '100%', fontFamily: font, fontSize: 12, fontWeight: 600, padding: '8px', borderRadius: 10, border: `1px solid ${c.accent}`, background: 'var(--pm-surface)', color: c.accent, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            style={{ marginTop: 10, width: '100%', fontFamily: font, fontSize: 12, fontWeight: 600, padding: '8px', borderRadius: 'var(--pm-radius-sm)', border: `1px solid ${c.accent}`, background: 'var(--pm-surface)', color: c.accent, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
           >
             <Pencil size={14} aria-hidden /> Ret resultat
           </button>
@@ -748,7 +748,7 @@ export function AmericanoResultsPanel({
               key={row.id}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px', borderRadius: 12,
+                padding: '8px 10px', borderRadius: 'var(--pm-radius-sm)',
                 background: isMe ? 'var(--pm-accent-bg)' : 'var(--pm-surface)',
                 border: `1px solid ${isMe ? 'var(--pm-accent)' : c.line}`,
               }}
@@ -807,7 +807,7 @@ export function AmericanoResultsPanel({
             fontSize: 13,
             fontWeight: 700,
             padding: '10px 14px',
-            borderRadius: 8,
+            borderRadius: 'var(--pm-radius-sm)',
             border: 'none',
             background: 'var(--pm-accent)',
             color: c.onAccent,
@@ -828,7 +828,7 @@ export function AmericanoResultsPanel({
           fontSize: 12,
           fontWeight: 600,
           padding: '8px 14px',
-          borderRadius: 8,
+          borderRadius: 999,
           border: '1px solid var(--pm-border)',
           background: 'var(--pm-surface)',
           color: 'var(--pm-text-mid)',
@@ -851,7 +851,7 @@ export function AmericanoResultsPanel({
       </div>
 
       {/* Faner */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'var(--pm-surface-muted)', borderRadius: 10, padding: 4 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'var(--pm-surface-muted)', borderRadius: 'var(--pm-radius-sm)', padding: 4 }}>
         {([['stilling', 'Stilling'], ['mine', 'Mine Kampe'], ['alle', 'Alle Resultater']] as const).map(([id, label]) => (
           <button
             key={id}
@@ -860,7 +860,7 @@ export function AmericanoResultsPanel({
             style={{
               flex: 1,
               padding: '8px 4px',
-              borderRadius: 8,
+              borderRadius: 999,
               border: 'none',
               cursor: 'pointer',
               fontFamily: font,
@@ -906,7 +906,7 @@ export function AmericanoResultsPanel({
                   {myOnCourtNow ? (
                     renderScoreCard(myActiveMatch!, myActiveMatchIdx, { hideHeader: true })
                   ) : (
-                    <div style={{ padding: '18px', textAlign: 'center', color: c.muted, fontSize: 13, background: 'var(--pm-surface)', border: `1px solid ${c.line}`, borderRadius: 14 }}>
+                    <div style={{ padding: '18px', textAlign: 'center', color: c.muted, fontSize: 13, background: 'var(--pm-surface)', border: `1px solid ${c.line}`, borderRadius: 'var(--pm-radius-sm)' }}>
                       ☕ Du sidder over i denne runde
                     </div>
                   )}

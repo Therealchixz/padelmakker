@@ -80,7 +80,7 @@ export function ConfirmResultModal({
           disabled={busy}
           onClick={onConfirm}
           style={{
-            width: '100%', padding: 12, borderRadius: 10, border: 'none',
+            width: '100%', padding: 12, borderRadius: 'var(--pm-radius-sm)', border: 'none',
             background: busy ? 'var(--pm-text-light)' : 'var(--pm-navy)', color: 'var(--pm-on-accent)',
             fontSize: '15px', fontWeight: 600, cursor: busy ? 'default' : 'pointer',
             fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 14px rgba(22,55,126,0.32)',
@@ -95,7 +95,7 @@ export function ConfirmResultModal({
           disabled={busy}
           onClick={onReject}
           style={{
-            width: '100%', padding: 11, borderRadius: 10, marginTop: 9,
+            width: '100%', padding: 11, borderRadius: 'var(--pm-radius-sm)', marginTop: 9,
             border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
             color: 'var(--pm-red)', fontSize: '15px', fontWeight: 600,
             cursor: busy ? 'default' : 'pointer', fontFamily: 'inherit',

@@ -696,7 +696,7 @@ export function RankingTab({ user }) {
               WebkitAppearance: 'none',
               background: filterArea !== 'all' ? theme.accentBg : theme.surfaceAlt,
               border: `1px solid ${filterArea !== 'all' ? theme.accent : theme.border}`,
-              borderRadius: 8,
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '0 28px 0 12px',
               minHeight: 40,
               fontSize: 13,
@@ -848,7 +848,7 @@ export function RankingTab({ user }) {
       {hasPodium && (
         <div style={{
           margin: '14px 18px 0',
-          borderRadius: 14,
+          borderRadius: 'var(--pm-radius-sm)',
           padding: '18px 14px 14px',
           background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))',
           color: 'var(--pm-on-accent)',
@@ -900,7 +900,7 @@ export function RankingTab({ user }) {
           <div style={{
             background: theme.surface,
             border: `1px solid ${theme.border}`,
-            borderRadius: 12,
+            borderRadius: 'var(--pm-radius-sm)',
             margin: '13px 18px 0',
             padding: '4px 2px',
             overflow: 'hidden',
@@ -1020,7 +1020,7 @@ export function RankingTab({ user }) {
         <div style={{
           margin: '12px 18px 18px',
           background: theme.surface,
-          borderRadius: 12,
+          borderRadius: 'var(--pm-radius-sm)',
           border: `1.5px solid ${theme.text}`,
           padding: '11px 14px',
           display: 'flex',

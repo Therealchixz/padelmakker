@@ -47,7 +47,7 @@ export function LevelCheckCard({ user, showToast }) {
     flex: 1,
     minWidth: 0,
     padding: '11px 8px',
-    borderRadius: 12,
+    borderRadius: 999,
     border: primary ? 'none' : `1.5px solid ${theme.border}`,
     background: primary ? theme.navy : theme.surface,
     color: primary ? 'var(--pm-on-accent)' : theme.text,

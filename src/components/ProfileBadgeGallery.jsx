@@ -21,7 +21,7 @@ function BadgeDetailPanel({ badge, onClose }) {
       style={{
         background: badge.earned ? theme.greenBg : theme.surfaceAlt,
         border: `1px solid ${badge.earned ? `color-mix(in srgb, ${theme.green} 30%, transparent)` : theme.border}`,
-        borderRadius: 14,
+        borderRadius: 'var(--pm-radius-sm)',
         padding: '14px 14px 12px',
         marginBottom: 14,
       }}
@@ -97,7 +97,7 @@ function BadgeDetailPanel({ badge, onClose }) {
         style={{
           marginTop: 10,
           padding: '10px 12px',
-          borderRadius: 10,
+          borderRadius: 'var(--pm-radius-sm)',
           background: theme.surface,
           border: `1px solid ${theme.border}`,
           fontSize: 12,

@@ -35,7 +35,7 @@ function Section({ title, children }) {
       style={{
         padding: '12px 14px',
         background: theme.surfaceAlt,
-        borderRadius: 10,
+        borderRadius: 'var(--pm-radius-sm)',
         border: `1px solid ${theme.border}`,
         marginBottom: 12,
       }}
@@ -218,7 +218,7 @@ export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({
               color: theme.textMid,
               padding: '8px 10px',
               background: theme.surface,
-              borderRadius: 8,
+              borderRadius: 'var(--pm-radius-sm)',
               border: `1px solid ${theme.border}`,
             }}
           >

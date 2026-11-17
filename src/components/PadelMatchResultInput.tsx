@@ -409,7 +409,7 @@ export default function PadelMatchResultInput({
         onClick={() => step(idx, field, dir, maxVal)}
         aria-label={isPlus ? 'Tilføj' : 'Fjern'}
         style={{
-          width: 40, height: 40, borderRadius: 10, border: isPlus ? 'none' : '1.5px solid var(--pm-border)',
+          width: 40, height: 40, borderRadius: 999, border: isPlus ? 'none' : '1.5px solid var(--pm-border)',
           background: isPlus ? (disabled ? 'var(--pm-text-light)' : 'var(--pm-accent)') : 'var(--pm-surface)',
           color: isPlus ? 'var(--pm-on-accent)' : (atLimit ? 'var(--pm-text-light)' : 'var(--pm-accent)'),
           fontSize: 18, fontWeight: 600,
@@ -456,7 +456,7 @@ export default function PadelMatchResultInput({
         role="group"
         aria-label={`Sæt ${n}`}
         style={{
-          background: 'var(--pm-surface)', borderRadius: 14, border: '1px solid var(--pm-border)',
+          background: 'var(--pm-surface)', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)',
           boxShadow: '0 2px 8px rgba(13,39,82,0.06)', padding: 16, marginBottom: 13,
           opacity: disabled ? 0.55 : 1,
         }}
@@ -476,7 +476,7 @@ export default function PadelMatchResultInput({
         </div>
 
         {tb && (
-          <div style={{ marginTop: 14, background: 'var(--pm-amber-bg)', borderRadius: 10, padding: 12, border: '1px solid var(--pm-amber-border)' }}>
+          <div style={{ marginTop: 14, background: 'var(--pm-amber-bg)', borderRadius: 'var(--pm-radius-sm)', padding: 12, border: '1px solid var(--pm-amber-border)' }}>
             <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--pm-amber-text)', marginBottom: 10 }}>Tiebreak-point</p>
             <div style={{ display: 'flex', gap: 10 }}>
               {scoreCol('tb1', t1Name, 99)}
@@ -505,7 +505,7 @@ export default function PadelMatchResultInput({
               type="text"
               value={team1}
               onChange={(e) => setTeam1(e.target.value)}
-              style={{ width: '100%', borderRadius: 10, border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
+              style={{ width: '100%', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
               autoComplete="off"
             />
           </div>
@@ -516,7 +516,7 @@ export default function PadelMatchResultInput({
               type="text"
               value={team2}
               onChange={(e) => setTeam2(e.target.value)}
-              style={{ width: '100%', borderRadius: 10, border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
+              style={{ width: '100%', borderRadius: 'var(--pm-radius-sm)', border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
               autoComplete="off"
             />
           </div>
@@ -560,7 +560,7 @@ export default function PadelMatchResultInput({
             type="button"
             onClick={onCancel}
             style={{
-              flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid var(--pm-border)',
+              flex: 1, padding: '13px', borderRadius: 999, border: '1.5px solid var(--pm-border)',
               background: 'var(--pm-surface)', color: 'var(--pm-accent)', fontSize: '15px', fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
@@ -571,7 +571,7 @@ export default function PadelMatchResultInput({
         <button
           type="submit"
           style={{
-            flex: 2, padding: '14px', borderRadius: 10, border: 'none',
+            flex: 2, padding: '14px', borderRadius: 999, border: 'none',
             background: formValid ? 'var(--pm-navy)' : 'var(--pm-text-light)',
             color: 'var(--pm-on-accent)', fontSize: '15px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',

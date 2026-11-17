@@ -122,7 +122,7 @@ export function PublicEventsPage() {
             style={{
               background: theme.redBg,
               border: `1px solid ${theme.border}`,
-              borderRadius: '12px',
+              borderRadius: 'var(--pm-radius-sm)',
               padding: '16px 18px',
               fontSize: '14px',
               color: theme.textMid,
@@ -144,7 +144,7 @@ export function PublicEventsPage() {
             aria-labelledby="pm-events-empty-title"
             style={{
               background: theme.surface,
-              borderRadius: '14px',
+              borderRadius: 'var(--pm-radius-sm)',
               border: `1px solid ${theme.border}`,
               padding: 'clamp(22px, 5vw, 32px)',
               marginTop: '16px',
@@ -184,7 +184,7 @@ export function PublicEventsPage() {
                   key={row.id}
                   style={{
                     background: theme.surface,
-                    borderRadius: '12px',
+                    borderRadius: 'var(--pm-radius-sm)',
                     border: `1px solid ${theme.border}`,
                     boxShadow: theme.shadow,
                     padding: '18px 18px 16px',

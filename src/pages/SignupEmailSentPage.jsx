@@ -161,7 +161,7 @@ export function SignupEmailSentPage() {
         <div
           style={{
             background: theme.surfaceMuted,
-            borderRadius: '10px',
+            borderRadius: 'var(--pm-radius-sm)',
             padding: '16px 18px',
             textAlign: 'left',
             border: '1px solid ' + `color-mix(in srgb, ${theme.accent} 19%, transparent)`,

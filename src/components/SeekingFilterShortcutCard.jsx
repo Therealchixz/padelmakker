@@ -99,7 +99,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
       style={{
         background: theme.surfaceAlt,
         border: `1px solid ${feedVisibleNow ? `color-mix(in srgb, ${theme.green} 35%, transparent)` : theme.border}`,
-        borderRadius: 10,
+        borderRadius: 'var(--pm-radius-sm)',
         padding: '12px 14px',
         marginBottom: 16,
       }}
@@ -109,7 +109,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
           style={{
             width: 36,
             height: 36,
-            borderRadius: 10,
+            borderRadius: 'var(--pm-radius-sm)',
             background: theme.surfaceMuted,
             display: 'flex',
             alignItems: 'center',
@@ -156,7 +156,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
           style={{
             width: 44,
             height: 24,
-            borderRadius: 12,
+            borderRadius: 999,
             border: 'none',
             cursor: toggling ? 'wait' : 'pointer',
             background: prefs.feedVisible ? theme.accent : theme.border,
@@ -192,7 +192,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
           padding: '8px 10px',
           background: theme.surface,
           border: `1px solid ${theme.border}`,
-          borderRadius: 8,
+          borderRadius: 'var(--pm-radius-sm)',
           cursor: 'pointer',
           fontFamily: 'inherit',
           textAlign: 'left',

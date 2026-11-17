@@ -67,7 +67,7 @@
   z-index: 1;
   margin: 0 0 22px;
   padding: 18px 18px 6px;
-  border-radius: 26px 26px 0 0;
+  border-radius: var(--pm-radius-lg) var(--pm-radius-lg) 0 0;
   background: var(--pm-bg);
 }
 .pm-makker-sheet--flat {
@@ -108,7 +108,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  border-radius: 22px;
+  border-radius: var(--pm-radius-lg);
   background: var(--pm-lime);
   color: var(--pm-on-lime);
 }

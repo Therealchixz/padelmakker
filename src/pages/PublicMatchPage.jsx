@@ -101,7 +101,7 @@ export function PublicMatchPage() {
         )}
 
         {!loading && error && error !== 'konfiguration' && (
-          <div style={{ background: theme.surface, borderRadius: '14px', border: `1px solid ${theme.border}`, padding: '24px', boxShadow: theme.shadow }}>
+          <div style={{ background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: `1px solid ${theme.border}`, padding: '24px', boxShadow: theme.shadow }}>
             <h1 style={{ ...heading('22px'), margin: '0 0 10px' }}>Kampen er ikke tilgængelig</h1>
             <p style={{ fontSize: '14px', color: theme.textMid, lineHeight: 1.6, margin: 0 }}>
               {error === 'past'
@@ -123,7 +123,7 @@ export function PublicMatchPage() {
           const left = shareSpotsLeft(row);
           return (
             <>
-              <div style={{ background: theme.surface, borderRadius: '14px', border: `1px solid ${theme.border}`, boxShadow: theme.shadow, padding: 'clamp(22px, 5vw, 32px)', marginBottom: '16px' }}>
+              <div style={{ background: theme.surface, borderRadius: 'var(--pm-radius-sm)', border: `1px solid ${theme.border}`, boxShadow: theme.shadow, padding: 'clamp(22px, 5vw, 32px)', marginBottom: '16px' }}>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, margin: '0 0 8px' }}>
                   Padel-kamp · 2v2
                 </p>

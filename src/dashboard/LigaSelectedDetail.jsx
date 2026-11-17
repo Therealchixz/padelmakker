@@ -247,7 +247,7 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
           style={{ ...inputStyle, paddingLeft: '32px' }}
         />
         {open && results.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: 'var(--pm-radius-sm)', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px', overflow: 'hidden' }}>
             {results.map((p) => <PartnerRow key={p.id} p={p} inDropdown />)}
           </div>
         )}
@@ -387,7 +387,7 @@ function RegistrationDetail({
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: 8,
+                    borderRadius: 'var(--pm-radius-sm)',
                     background: `${color}22`,
                     color,
                     display: 'flex',
@@ -440,7 +440,7 @@ function RegistrationDetail({
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 8,
+                borderRadius: 'var(--pm-radius-sm)',
                 border: `1.5px dashed ${theme.border}`,
                 display: 'flex',
                 alignItems: 'center',
@@ -658,9 +658,9 @@ function ActiveDetail({
               </div>
               {reportingMatch === myMatch.id ? (
                 confirmPending ? (
-                  <div style={{ background: theme.surface, borderRadius: 10, padding: 16, border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.border) }}>
+                  <div style={{ background: theme.surface, borderRadius: 'var(--pm-radius-sm)', padding: 16, border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.border) }}>
                     <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: theme.text }}>Bekræft resultat</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)' }}>
                       <span style={{ fontSize: 20 }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? theme.green : theme.loss }}>
@@ -704,10 +704,10 @@ function ActiveDetail({
                       const Stepper = ({ idx, side, value }) => (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <button type="button" aria-label="minus" onClick={() => bump(idx, side, -1)}
-                            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
+                            style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
                           <span style={{ minWidth: 22, textAlign: 'center', fontSize: 18, fontWeight: 800, color: theme.text, }}>{value}</span>
                           <button type="button" aria-label="plus" onClick={() => bump(idx, side, 1)}
-                            style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: theme.accent, color: 'var(--pm-on-accent)', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                            style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: theme.accent, color: 'var(--pm-on-accent)', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
                         </div>
                       );
 
@@ -719,7 +719,7 @@ function ActiveDetail({
                             <span>{opponentTeam.name.split(' & ')[0]} …</span>
                           </div>
                           {Array.from({ length: visibleSets }, (_, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, border: '1px solid ' + theme.border, borderRadius: 10, background: theme.surface }}>
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, border: '1px solid ' + theme.border, borderRadius: 'var(--pm-radius-sm)', background: theme.surface }}>
                               <Stepper idx={idx} side="a" value={sets[idx].a} />
                               <span style={{ fontSize: 11, fontWeight: 700, color: theme.textLight }}>SÆT {idx + 1}{idx === 2 ? ' (afgørende)' : ''}</span>
                               <Stepper idx={idx} side="b" value={sets[idx].b} />

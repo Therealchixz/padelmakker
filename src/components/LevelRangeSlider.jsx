@@ -12,7 +12,7 @@ const numberInputStyle = {
   fontSize: 15,
   fontWeight: 700,
   textAlign: 'center',
-  borderRadius: 8,
+  borderRadius: 'var(--pm-radius-sm)',
   border: `1px solid ${theme.border}`,
   fontFamily: 'inherit',
   color: theme.text,

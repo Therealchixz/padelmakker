@@ -2823,7 +2823,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         />
 
         {showToolsAccordion ? (
-          <div style={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 33%, transparent)`, borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ background: theme.warmBg, border: "1px solid " + `color-mix(in srgb, ${theme.warm} 33%, transparent)`, borderRadius: 'var(--pm-radius-sm)', overflow: "hidden" }}>
             <button
               type="button"
               onClick={() => setExpandedAdminActions((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}

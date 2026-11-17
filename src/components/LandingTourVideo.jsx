@@ -50,7 +50,7 @@ export function LandingTourVideo() {
       <div
         style={{
           position: 'relative',
-          borderRadius: '16px',
+          borderRadius: 'var(--pm-radius-sm)',
           overflow: 'hidden',
           border: `1px solid ${theme.border}`,
           boxShadow: theme.shadowLg,

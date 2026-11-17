@@ -115,7 +115,7 @@ export function AmericanoListCard({
         width: '100%',
         textAlign: 'left',
         border: '1px solid var(--pm-border)',
-        borderRadius: 16,
+        borderRadius: 'var(--pm-radius-sm)',
         overflow: 'hidden',
         background: 'var(--pm-surface)',
         boxShadow: 'var(--pm-shadow-soft)',
@@ -176,7 +176,7 @@ export function AmericanoListCard({
             </div>
             <div
               style={{
-                marginTop: 12, padding: 12, borderRadius: 10, textAlign: 'center',
+                marginTop: 12, padding: 12, borderRadius: 'var(--pm-radius-sm)', textAlign: 'center',
                 fontWeight: 700, fontSize: 13,
                 background: joined ? 'var(--pm-surface)' : isFull ? 'var(--pm-surface-muted)' : 'var(--pm-navy)',
                 color: joined ? 'var(--pm-navy)' : isFull ? 'var(--pm-text-light)' : 'var(--pm-on-accent)',
