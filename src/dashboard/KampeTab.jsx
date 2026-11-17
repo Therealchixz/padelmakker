@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+﻿import { formatMatchResultScore } from '../lib/matchResultScore';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
@@ -18,6 +19,7 @@ const LigaTabLazyEmbed = lazy(() =>
 );
 const KortNearbyMapLazy = lazy(() => import('../components/HomeNearbyMap'));
 const KortOverviewLazy = lazy(() => import('../components/kampe/KortOverview'));
+const MineKampeLazy = lazy(() => import('../components/kampe/MineKampe'));
 import { theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -2977,6 +2979,80 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     });
   }, [openMatches, matchPlayers, myUidStr]);
 
+  // "Mine kampe" (H-designet): vises øverst på Kort, når man har valgt "Mine".
+  const mineData = useMemo(() => {
+    if (!isMine) return null;
+    const todayYmd = DateTime.now().toISODate();
+    const dayWord = (ymd, withPrep) => {
+      const d = String(ymd || '').slice(0, 10);
+      const dt = DateTime.fromISO(d);
+      if (!d || !dt.isValid) return '';
+      const diff = Math.round(dt.diff(DateTime.fromISO(todayYmd), 'days').days);
+      if (diff === 0) return 'i dag';
+      if (diff === 1) return 'i morgen';
+      if (diff === -1) return 'i går';
+      if (diff < 0 && diff > -7) return `i ${dt.setLocale('da').toFormat('cccc')}s`;
+      if (diff > 1 && diff < 7) return withPrep ? `på ${dt.setLocale('da').toFormat('cccc')}` : dt.setLocale('da').toFormat('cccc');
+      return dt.setLocale('da').toFormat('d. LLL');
+    };
+    const cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
+    const firstName = (n) => String(n || '').trim().split(/\s+/)[0] || '';
+    const base = (m) => {
+      const players = matchPlayers[String(m.id)] || [];
+      const me = players.find((p) => String(p.user_id) === myUidStr);
+      const partner = me ? players.find((p) => p !== me && p.team === me.team) : null;
+      return { players, me, partner };
+    };
+    const upcoming = [...openMatches, ...activeMatches.filter((m) => getStatus(m) !== 'in_progress')]
+      .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+      .map((m) => {
+        const { players } = base(m);
+        const max = Number(m.max_players) || 4;
+        const dt = DateTime.fromISO(String(m.date || '').slice(0, 10));
+        const diff = dt.isValid ? Math.round(dt.diff(DateTime.fromISO(todayYmd), 'days').days) : null;
+        const mins = Number(m.duration) || 0;
+        return {
+          id: m.id,
+          inLabel: diff == null ? '' : diff === 0 ? 'I dag' : diff === 1 ? 'I morgen' : diff > 1 ? `Om ${diff} dage` : '',
+          whenLabel: `${cap(dayWord(m.date, false))} kl. ${fmtClock(m.time) || '—'}`,
+          court: m.court_name || '',
+          meta: mins ? `${mins} min` : '',
+          left: Math.max(0, max - players.length),
+          players: players.map((p) => p.user_name || ''),
+        };
+      });
+    const needsResult = activeMatches
+      .filter((m) => getStatus(m) === 'in_progress' && !matchResults[m.id])
+      .map((m) => {
+        const { players, me, partner } = base(m);
+        const opponents = me ? players.filter((p) => p.team !== me.team).map((p) => firstName(p.user_name)).filter(Boolean) : [];
+        return {
+          id: m.id,
+          whenLabel: dayWord(m.date, true),
+          meta: [m.court_name, partner ? `med ${firstName(partner.user_name)}` : null, opponents.length ? `mod ${opponents.join(' og ')}` : null].filter(Boolean).join(' · '),
+        };
+      });
+    const played = completedMatches.map((m) => {
+      const { me, partner } = base(m);
+      const mr = matchResults[m.id];
+      const winner = mr?.confirmed && (mr.match_winner === 'team1' || mr.match_winner === 'team2') ? (mr.match_winner === 'team1' ? 1 : 2) : null;
+      const myTeam = me ? Number(me.team) : null;
+      let score = mr ? formatMatchResultScore(mr) : '—';
+      // Vis scoren set fra ens eget hold (eget hold først).
+      if (myTeam === 2) score = score.replace(/(\d+)-(\d+)/g, '$2-$1');
+      const dt = DateTime.fromISO(String(m.date || '').slice(0, 10));
+      const elo = eloChangesByMatchId[String(m.id)]?.[myUidStr];
+      return {
+        id: m.id,
+        result: winner && myTeam ? (winner === myTeam ? 'win' : 'loss') : 'none',
+        score: score.replace(/-/g, '–').replace(/, /g, ' · '),
+        meta: [partner ? `Med ${firstName(partner.user_name)}` : null, m.court_name, dt.isValid ? dt.setLocale('da').toFormat('d. LLL') : null].filter(Boolean).join(' · '),
+        elo: elo != null && Number.isFinite(Number(elo)) ? Math.round(Number(elo)) : null,
+      };
+    });
+    return { upcoming, needsResult, played };
+  }, [isMine, openMatches, activeMatches, completedMatches, matchPlayers, matchResults, eloChangesByMatchId, myUidStr, getStatus]);
+
   const renderPadelListItem = useCallback((m) => {
     const bundle = getMatchCardBundle(m);
     const { cardState, matchPrefs, status, mr, winnerTeam } = bundle;
@@ -3199,7 +3275,21 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             <>
               {/* Kort-siden (H-designet): er der åbne kampe, vises de som nåle med klokkeslæt og et ark
                   under kortet. Er der ingen, vises kortet over baner i nærheden i stedet. */}
-              {kortItems.length > 0 ? (
+              <div className="pm-kort-scope" role="group" aria-label="Hvilke kampe">
+                <button type="button" aria-pressed={!isMine} onClick={() => onScopeChange('alle')}>Alle kampe</button>
+                <button type="button" aria-pressed={isMine} onClick={() => onScopeChange('mine')}>Mine kampe</button>
+              </div>
+              {isMine && mineData ? (
+                <Suspense fallback={null}>
+                  <MineKampeLazy
+                    upcoming={mineData.upcoming}
+                    played={mineData.played}
+                    needsResult={mineData.needsResult}
+                    onOpen={(id) => open2v2Detail(id)}
+                    onCreate={() => setShowCreate(true)}
+                  />
+                </Suspense>
+              ) : kortItems.length > 0 ? (
                 <Suspense fallback={null}>
                   <KortOverviewLazy
                     me={user}
