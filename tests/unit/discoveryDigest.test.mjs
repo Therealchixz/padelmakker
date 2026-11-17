@@ -219,7 +219,7 @@ test('indstillingen kan findes både på telefon og computer', () => {
   assert.match(panel, /samles i én mail kl\. 17/);
   // Klokken åbner en side på telefonen; indstillingerne skal også være dér.
   assert.match(read('src/components/NotificationBell.jsx'), /<NotificationSettingsDisclosure \/>/);
-  assert.match(read('src/pages/NotifikationerPage.jsx'), /<NotificationSettingsDisclosure \/>/);
+  assert.match(read('src/pages/NotifikationerPage.jsx'), /<NotificationSettingsDisclosure( variant="page")? \/>/);
   // Sammenfoldet som standard, så beskederne ikke skubbes ud af syne.
-  assert.match(panel, /export function NotificationSettingsDisclosure\(\) \{\s+const \[open, setOpen\] = useState\(false\);/);
+  assert.match(panel, /export function NotificationSettingsDisclosure\([^)]*\) \{\s+const \[open, setOpen\] = useState\(false\);/);
 });

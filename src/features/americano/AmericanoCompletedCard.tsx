@@ -766,7 +766,7 @@ export function AmericanoCompletedCard({
                 fontWeight: 700,
                 color: theme.textLight,
 
-                letterSpacing: '0.04em',
+                letterSpacing: 0,
               }}
             >
               Din placering
@@ -789,7 +789,7 @@ export function AmericanoCompletedCard({
                 fontWeight: 700,
                 color: theme.textLight,
 
-                letterSpacing: '0.04em',
+                letterSpacing: 0,
               }}
             >
               Dine point
@@ -812,7 +812,7 @@ export function AmericanoCompletedCard({
                 fontWeight: 700,
                 color: theme.textLight,
 
-                letterSpacing: '0.04em',
+                letterSpacing: 0,
               }}
             >
               ELO ændring
@@ -844,7 +844,7 @@ export function AmericanoCompletedCard({
               fontWeight: 700,
               color: theme.textLight,
 
-              letterSpacing: '0.06em',
+              letterSpacing: 0,
               marginBottom: 8,
             }}
           >
@@ -967,7 +967,7 @@ export function AmericanoCompletedCard({
               fontWeight: 700,
               color: theme.textLight,
 
-              letterSpacing: '0.06em',
+              letterSpacing: 0,
               marginBottom: 8,
             }}
           >
@@ -1130,7 +1130,7 @@ export function AmericanoCompletedCard({
                   marginTop: 12,
                   marginBottom: 8,
 
-                  letterSpacing: '0.04em',
+                  letterSpacing: 0,
                 }}
               >
                 Samlet stilling
@@ -1291,7 +1291,7 @@ export function AmericanoCompletedCard({
                   marginTop: 16,
                   marginBottom: 8,
 
-                  letterSpacing: '0.04em',
+                  letterSpacing: 0,
                 }}
               >
                 Kamp for kamp (format {P} point)
@@ -1374,7 +1374,7 @@ export function AmericanoCompletedCard({
                                 fontSize: 11,
                                 fontWeight: 700,
                                 color: theme.textLight,
-                                letterSpacing: '0.04em',
+                                letterSpacing: 0,
 
                                 background: theme.surfaceAlt,
                                 border: `1px solid ${theme.border}`,
@@ -1454,7 +1454,7 @@ export function AmericanoCompletedCard({
                               color: theme.textLight,
                               textAlign: 'center',
 
-                              letterSpacing: '0.04em',
+                              letterSpacing: 0,
                             }}
                           >
                             mod

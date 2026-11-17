@@ -160,12 +160,12 @@ export const tag = (bg, color) => ({
 });
 
 export const labelStyle = {
-  fontSize: '12px',
+  // Samme feltoverskrift overalt (H, 17. nov. 2026): 14px, ikke spaerret.
+  fontSize: '14px',
   fontWeight: 600,
   display: 'block',
   marginBottom: '8px',
-  color: 'var(--pm-text-mid)',
-  letterSpacing: '0.01em',
+  color: 'var(--pm-text)',
 };
 
 export const heading = (size = '24px') => ({

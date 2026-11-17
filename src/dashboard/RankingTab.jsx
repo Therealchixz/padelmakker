@@ -649,27 +649,27 @@ export function RankingTab({ user }) {
           size={avatarSize}
           emojiSize={emojiSize}
           alt={`${p.full_name || p.name || 'Spiller'} avatar`}
-          style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
+          style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? 'var(--pm-lime)' : 'rgba(255,255,255,0.35)'}` }}
         />
-        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
+        <b style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--pm-on-accent)' }}>
           {firstName}{isMe ? <span style={{ fontWeight: 500, opacity: 0.8 }}> (dig)</span> : null}
         </b>
         {/* ELO stod før både her og i det store tal nedenunder (podiet vises kun
             for "Alle tider", hvor score er ELO), og "Niveau" brød over to linjer. */}
         {p.level ? (
-          <span style={{ display: 'block', fontSize: 11, color: 'var(--pm-hero-subtitle)', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--pm-hero-subtitle)', whiteSpace: 'nowrap' }}>
             Niveau {formatPlaytomicLevel(p.level)}
           </span>
         ) : null}
-        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)', whiteSpace: 'nowrap' }}>
+        <div style={{ fontFamily: 'var(--pm-font-display)', fontSize: isFirst ? 24 : 20, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 3, color: 'var(--pm-on-accent)', whiteSpace: 'nowrap' }}>
           {p.score}
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--pm-hero-subtitle)' }}> ELO</span>
+          <span style={{ fontFamily: 'var(--pm-font)', fontSize: 12, fontWeight: 600, letterSpacing: 0, color: 'var(--pm-hero-subtitle)' }}> ELO</span>
         </div>
         <div style={{
           width: 22, height: 22, borderRadius: '50%',
-          background: isFirst ? theme.amber : 'rgba(255,255,255,0.14)',
-          color: isFirst ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)',
-          fontSize: 11, fontWeight: 700,
+          background: isFirst ? 'var(--pm-lime)' : 'rgba(255,255,255,0.14)',
+          color: isFirst ? 'var(--pm-on-lime)' : 'var(--pm-on-accent)',
+          fontSize: 12, fontWeight: 800,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '7px auto 0',
         }}>
@@ -820,7 +820,7 @@ export function RankingTab({ user }) {
               style={{
                 width: `${Math.min((displayScore / 2000) * 100, 100)}%`,
                 height: '100%',
-                background: theme.warm,
+                background: 'var(--pm-lime)',
                 borderRadius: '6px',
               }}
             />
@@ -847,12 +847,11 @@ export function RankingTab({ user }) {
       {/* Podium – top 3, only shown for 'all' period */}
       {hasPodium && (
         <div style={{
-          margin: '14px 18px 0',
-          borderRadius: 'var(--pm-radius-sm)',
+          margin: '14px 0 0',
+          borderRadius: 'var(--pm-radius-lg)',
           padding: '18px 14px 14px',
-          background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))',
+          background: 'var(--pm-ink)',
           color: 'var(--pm-on-accent)',
-          boxShadow: theme.shadowLg,
           display: 'flex',
           alignItems: 'flex-end',
           gap: 10,

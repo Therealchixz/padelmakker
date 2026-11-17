@@ -421,7 +421,7 @@ export function PhoneVerificationPage() {
       }}
     >
       <div className="pm-auth-panel pm-auth-panel--centered">
-        <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, marginBottom: '10px', letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, marginBottom: '10px', letterSpacing: 0 }}>
           Sidste trin · SMS-kode
         </p>
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>

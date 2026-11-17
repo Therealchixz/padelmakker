@@ -200,7 +200,7 @@ export function PublicEventsPage() {
                         fontSize: '11px',
                         fontWeight: 700,
 
-                        letterSpacing: '0.06em',
+                        letterSpacing: 0,
                         padding: '4px 10px',
                         borderRadius: '999px',
                         background: st.bg,

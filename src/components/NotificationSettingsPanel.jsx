@@ -194,15 +194,19 @@ export function NotificationSettingsPanel() {
  * notifikationssiden (telefon) og i klokke-menuen (computer), så
  * indstillingerne ikke skubber selve beskederne ud af syne.
  */
-export function NotificationSettingsDisclosure() {
+export function NotificationSettingsDisclosure({ variant = 'menu' } = {}) {
   const [open, setOpen] = useState(false);
+  // Paa notifikationssiden er det et kort som resten af H; i klokke-menuen en raekke.
+  const wrap = variant === 'page'
+    ? { margin: '0 16px 8px', borderRadius: 'var(--pm-radius-lg)', overflow: 'hidden', background: theme.surface }
+    : { borderBottom: '1px solid ' + theme.border, background: theme.surface };
   return (
-    <div style={{ borderBottom: '1px solid ' + theme.border, background: theme.surface }}>
+    <div style={wrap}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', minHeight: 44, padding: '10px 18px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'left' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', minHeight: 44, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, fontSize: 15, fontWeight: 600, color: theme.text, textAlign: 'left' }}
       >
         <Settings size={16} color={theme.textMid} aria-hidden />
         <span style={{ flex: 1 }}>Indstillinger for beskeder</span>
