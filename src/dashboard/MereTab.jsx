@@ -85,7 +85,7 @@ export function MereTab({
 }) {
   const hasLevel = user?.level != null && user.level !== '';
 
-  // Samme tal som paa "Min profil": hentes fra ELO-historikken, saa graf og tal passer sammen.
+  // Samme tal som paa "Min statistik": hentes fra ELO-historikken, saa graf og tal passer sammen.
   const eloSyncKey = `${user?.elo_rating}|${user?.games_played}|${user?.games_won}`;
   const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user?.id, eloSyncKey);
   const pStats = profileFresh || user || {};
@@ -163,7 +163,7 @@ export function MereTab({
           <h2 className="pm-prof-name">{displayName}</h2>
           {whereLine ? <span className="pm-prof-where">{whereLine}</span> : (email ? <span className="pm-prof-where">{email}</span> : null)}
         </div>
-        <button type="button" className="pm-prof-edit" onClick={() => setTab('profil')}>Min profil</button>
+        <button type="button" className="pm-prof-edit" onClick={() => setTab('profil', { state: { edit: true } })}>Rediger</button>
       </div>
 
       <section className="pm-prof-elo" aria-label="Din ELO">
@@ -191,6 +191,10 @@ export function MereTab({
         <div><b>{winPct != null ? `${winPct} %` : '–'}</b><span>Vundet</span></div>
         <div><b>{currentStreak || 0}</b><span>I træk nu</span></div>
       </div>
+      <button type="button" className="pm-prof-more" onClick={() => setTab('profil')}>
+        <span>Al statistik og mærker</span>
+        <ChevronRight size={18} aria-hidden />
+      </button>
 
       {venueCounts.length > 0 ? (
         <section className="pm-prof-card" aria-labelledby="pm-prof-baner">
@@ -231,7 +235,7 @@ export function MereTab({
       </MereGroup>
 
       <MereGroup title="Konto">
-        <MereRow icon={<UserRound size={18} />} label="Min profil" onClick={() => setTab('profil')} />
+        <MereRow icon={<UserRound size={18} />} label="Rediger profil" onClick={() => setTab('profil', { state: { edit: true } })} />
         <MereRow icon={<Bell size={18} />} label="Notifikationer" onClick={() => setTab('notifikationer')} />
       </MereGroup>
 

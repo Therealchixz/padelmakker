@@ -73,7 +73,7 @@ test.describe('Logged-in dashboard flows', () => {
       await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
     }).toPass({ timeout: 20_000 })
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
-    await expect(page.getByRole('heading', { name: 'Min profil' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Profil', exact: true })).toBeVisible({ timeout: 20_000 })
   })
 
   test('kan åbne Baner og se søgning/regioner', async ({ page }) => {
@@ -139,7 +139,7 @@ test.describe('Logged-in dashboard flows', () => {
       await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
     }).toPass({ timeout: 20_000 })
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
-    await expect(page.getByRole('heading', { name: 'Min profil' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Profil', exact: true })).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: /^Rediger$/i }).first().click()
     await expect(page.locator('[data-tour="blocked-users-section"]')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('Blokerede spillere', { exact: true })).toBeVisible()

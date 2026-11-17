@@ -14,7 +14,7 @@ test('alle hovedsider bruger den fælles toplinje', async () => {
     'src/components/kampe/KampeRedesignToolbar.jsx': 'Kort',
     'src/dashboard/RankingTab.jsx': 'Rangliste',
     'src/dashboard/BeskedTab.jsx': 'Beskeder',
-    'src/dashboard/ProfilTab.jsx': 'Min profil',
+    'src/dashboard/ProfilTab.jsx': 'Min statistik',
   };
   for (const [file, title] of Object.entries(files)) {
     const s = await src(file);
@@ -24,6 +24,18 @@ test('alle hovedsider bruger den fælles toplinje', async () => {
   }
   const inbox = await src('src/components/chat/ChatInbox.jsx');
   assert.doesNotMatch(inbox, /pm-chat-v2-inbox-title/);
+});
+
+// Ejeren 17. nov. 2026: Profil og "Min profil" lignede hinanden, og man kunne ikke gå tilbage.
+test('sider under Profil har tilbage-pil, og Profil har én vej til at redigere', async () => {
+  assert.match(await src('src/dashboard/ProfilTab.jsx'), /<ScreenHeader title="Min statistik" back \/>/);
+  for (const f of ['src/dashboard/BanerTab.jsx', 'src/dashboard/RankingTab.jsx', 'src/dashboard/BeskedTab.jsx']) {
+    assert.match(await src(f), /back="mobile"/, f);
+  }
+  const mere = await src('src/dashboard/MereTab.jsx');
+  assert.doesNotMatch(mere, />Min profil</);
+  assert.match(mere, /state: \{ edit: true \}/);
+  assert.match(mere, /Al statistik og mærker/);
 });
 
 test('ScreenHeader: titel er h1, klokken kun på mobil', async () => {
