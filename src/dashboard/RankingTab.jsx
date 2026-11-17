@@ -683,6 +683,8 @@ export function RankingTab({ user }) {
     <div>
       <ScreenHeader
         title="Rangliste"
+        back="mobile"
+        showMessages={false}
         actions={(
         <div style={{ position: 'relative' }}>
           <select

@@ -1458,7 +1458,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               type="button"
               data-tour="account-menu-profile-btn"
               onClick={() => {
-                setTab("profil");
+                setTab("mere");
                 setAccountOpen(false);
               }}
               style={accountMenuRowBtnStyle()}

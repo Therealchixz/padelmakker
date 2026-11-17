@@ -12071,6 +12071,10 @@ button,
   padding: 0;
 }
 
+.pm-screen-header-back {
+  flex-shrink: 0;
+  margin-right: 2px;
+}
 .pm-screen-header-leading {
   display: flex;
   flex-shrink: 0;

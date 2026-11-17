@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { ChevronLeft, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { MessagesShortcutContext } from '../lib/messagesShortcut';
 
@@ -23,6 +24,25 @@ function useIsMobileView() {
 }
 
 /**
+ * Tilbage-pil paa sider, man naar fra Profil (ejeren 17. nov. 2026: "der er ingen
+ * mulighed for at gaa tilbage"). Gaar et skridt tilbage i historikken; er siden
+ * aabnet direkte (ingen historik i appen), gaar den til Profil.
+ */
+function HeaderBack({ to }) {
+  const navigate = useNavigate();
+  const goBack = () => {
+    const idx = typeof window !== 'undefined' ? window.history.state?.idx : null;
+    if (typeof idx === 'number' && idx > 0) navigate(-1);
+    else navigate(to, { replace: true });
+  };
+  return (
+    <button type="button" className="pm-subpage-head-back pm-screen-header-back" onClick={goBack} aria-label="Tilbage">
+      <ChevronLeft size={20} aria-hidden />
+    </button>
+  );
+}
+
+/**
  * Fælles toplinje for appens hovedsider (Hjem, Makkere, Baner, Kampe, Rangliste,
  * Beskeder, Min profil). Ejeren 4. nov. 2026: "Én fælles toplinje" — før havde
  * hver fane sin egen titel med forskellig størrelse, afstand og placering.
@@ -34,10 +54,12 @@ function useIsMobileView() {
  * - Besked-knappen staar paa alle hovedsider (H-designet), saa Beskeder altid er eet
  *   tryk vaek, selv om den ikke har sin egen plads i bundmenuen. Slaas fra med
  *   `showMessages={false}` (fx paa selve Beskeder-siden).
+ * - `back` giver en tilbage-pil foran titlen: `back` (altid) eller `back="mobile"` (kun
+ *   paa telefon, hvor siden naas fra Profil; paa computer staar den i menuen).
  * - Undersider med tilbage-pil (Notifikationer, filtre, opret kamp) har deres
  *   egen `pm-subpage-head` og bruger ikke denne.
  */
-export function ScreenHeader({ title, leading = null, actions = null, showBell = true, showMessages = true, bellTourForceOpen = false, className = '' }) {
+export function ScreenHeader({ title, back = false, backTo = '/dashboard/mere', leading = null, actions = null, showBell = true, showMessages = true, bellTourForceOpen = false, className = '' }) {
   const isMobile = useIsMobileView();
   const bell = showBell && isMobile;
   const messages = useContext(MessagesShortcutContext);
@@ -45,6 +67,7 @@ export function ScreenHeader({ title, leading = null, actions = null, showBell =
   const unread = chat ? Number(chat.unread) || 0 : 0;
   return (
     <header className={`pm-screen-header${className ? ` ${className}` : ''}`}>
+      {back === true || (back === 'mobile' && isMobile) ? <HeaderBack to={backTo} /> : null}
       {leading ? <div className="pm-screen-header-leading">{leading}</div> : null}
       <h1 className="pm-screen-header-title">{title}</h1>
       {actions || bell || chat ? (

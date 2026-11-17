@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
 import { parseRankedinId } from '../lib/rankedin.js';
 import { useAuth } from '../lib/AuthContext';
@@ -166,7 +167,13 @@ function RelationRow({ emoji, name, subtitle, statValue, statColor, statLabel, a
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
-  const [editing, setEditing] = useState(false);
+  // "Rediger" paa Profil aabner formularen direkte; naar den lukkes, gaar man tilbage til Profil.
+  const openedForEdit = useLocation().state?.edit === true;
+  const [editing, setEditingRaw] = useState(openedForEdit);
+  const setEditing = (next) => {
+    if (!next && openedForEdit && setTab) setTab('mere', { replace: true });
+    else setEditingRaw(next);
+  };
   const [saving, setSaving] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState(/** @type {{ id: string, name: string }[]} */ ([]));
   const [blockedLoading, setBlockedLoading] = useState(false);
@@ -784,7 +791,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       {!editing ? (
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
-        <ScreenHeader title="Min profil" />
+        <ScreenHeader title="Min statistik" back />
         <EmailConfirmReminder user={authUser} />
         <div className="pm-profile-top">
         {/* Profile card – centered pf-head layout matching mockup */}

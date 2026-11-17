@@ -463,7 +463,7 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <ScreenHeader title="Baner" />
+      <ScreenHeader title="Baner" back="mobile" />
 
       <div className="pm-baner-search-row">
         <div className="pm-baner-search-wrap">
