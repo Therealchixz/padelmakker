@@ -23,5 +23,7 @@ test('tom-tilstande på Kampe bruger Lucide via EmptyStateIcon', () => {
   assert.match(americano, /EmptyStateIcon icon=\{CalendarDays\}/);
   assert.match(americano, /EmptyStateIcon icon=\{Inbox\}/);
   assert.doesNotMatch(americano, /pm-state-icon">📭/);
-  assert.match(liga, /EmptyStateIcon icon=\{Trophy\}/);
+  // Liga-oversigten (H) har sin egen tomme tilstand uden ikon og uden emoji.
+  assert.match(liga, /<LigaOverview/);
+  assert.doesNotMatch(readFileSync(join(root, 'src/dashboard/LigaOverview.jsx'), 'utf8'), /💬/);
 });

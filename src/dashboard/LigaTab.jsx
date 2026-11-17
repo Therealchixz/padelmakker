@@ -4,18 +4,17 @@ import { supabase } from '../lib/supabase';
 import { mapUserFacingError } from '../lib/userFacingErrors';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, font } from '../lib/platformTheme';
-import { Trophy, Plus, Check, Copy, ArrowRight, AlertTriangle } from 'lucide-react';
-import { EmptyStateIcon } from '../components/EmptyStateIcon';
-import { PillTabs } from '../components/PillTabs';
+import { Plus, Check, Copy, ArrowRight, AlertTriangle } from 'lucide-react';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { openPlayerChat } from '../lib/playerChat';
-import { LigaListCard } from './LigaListCard';
 import { LigaDetailSheet } from './LigaDetailSheet';
 import { LigaScheduleSheet } from './LigaScheduleSheet';
 import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
 import { LigaSelectedDetail } from './LigaSelectedDetail';
+import { LigaOverview } from './LigaOverview';
+import { LigaTilmeldScreen } from './LigaTilmeldScreen';
 import { computeStandings, assignDivisionsByElo } from '../lib/ligaStandings';
 import {
   buildInitialLeagueMatches,
@@ -89,18 +88,6 @@ function matchLeagueIdsForPaint(lgList, ids) {
   });
 }
 
-function buildNextMatchLabel(league, myTeam, teams, matches) {
-  if (!myTeam || league.status !== 'active') return null;
-  const currentRoundMatches = matches.filter((m) => m.round_number === league.current_round);
-  const myMatch = currentRoundMatches.find((m) => m.team1_id === myTeam.id || m.team2_id === myTeam.id);
-  if (!myMatch) return null;
-  if (myMatch.team2_id === null) return 'Fri runde denne runde';
-  if (myMatch.status === 'reported') return null;
-  const oppId = myMatch.team1_id === myTeam.id ? myMatch.team2_id : myMatch.team1_id;
-  const opp = teams.find((t) => t.id === oppId);
-  return opp ? `Næste kamp mod ${opp.name}` : 'Næste kamp venter';
-}
-
 export function LigaTab({
   user,
   showToast,
@@ -166,13 +153,8 @@ export function LigaTab({
     }
   };
   const ask = useConfirm();
-  const [view, setView] = useState(() => {
-    const s = readLigaSessionPrefs(user?.id);
-    if (s?.ligaView === 'registration' || s?.ligaView === 'active' || s?.ligaView === 'completed') {
-      return s.ligaView;
-    }
-    return 'registration';
-  });
+  // Oversigten viser alle statusser paa én side; "view" styrer kun, hvilke hold der hentes foerst.
+  const [view, setView] = useState('registration');
   const viewRef = useRef(view);
   viewRef.current = view;
   const loadedLeagueIdsRef = useRef(new Set());
@@ -899,29 +881,39 @@ export function LigaTab({
     return true;
   }), [leagues, scope, myTeamByLeague, user?.id, listRegionFilter, creatorAreasByUserId, search]);
 
-  const visibleLeagues = useMemo(
-    () => leaguesMatchingListFilters.filter((l) => l.status === view),
-    [leaguesMatchingListFilters, view],
-  );
+
+  // Liga-oversigten (H): alle ligaer paa én side, delt efter status.
+  const overviewData = useMemo(() => {
+    const out = { open: [], active: [], completed: [] };
+    for (const league of leaguesMatchingListFilters) {
+      const teams = teamsByLeague[league.id] || [];
+      const regTeams = allTeamsByLeague[league.id] || [];
+      const myTeam = myTeamByLeague[league.id];
+      const regionLabel = creatorAreasByUserId[String(league.created_by)] || '';
+      const maxTeams = Number(league.max_teams) || null;
+      const totalRounds = league.total_rounds || (maxTeams ? Math.max(1, maxTeams - 1) : null);
+      if (league.status === 'registration') {
+        out.open.push({ league, regionLabel, regCount: regTeams.length, maxTeams, joined: !!myTeam, totalRounds });
+      } else if (league.status === 'active') {
+        const matches = matchesByLeague[league.id] || [];
+        const standings = computeStandings(teams, matches, { pointsWin: league.points_win, pointsDraw: league.points_draw, pointsLoss: league.points_loss });
+        const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
+        out.active.push({ league, regionLabel, teamCount: teams.length, totalRounds, myTeamRank: rankIdx >= 0 ? rankIdx + 1 : null });
+      } else if (league.status === 'completed') {
+        out.completed.push({ league, regionLabel });
+      }
+    }
+    return out;
+  }, [leaguesMatchingListFilters, teamsByLeague, allTeamsByLeague, myTeamByLeague, creatorAreasByUserId, matchesByLeague]);
 
   useEffect(() => {
-    onFilteredCountChange?.(visibleLeagues.length);
-  }, [visibleLeagues.length, onFilteredCountChange]);
+    onFilteredCountChange?.(overviewData.open.length + overviewData.active.length);
+  }, [overviewData.open.length, overviewData.active.length, onFilteredCountChange]);
   const leagueScopeTabs = [
     { id: 'alle', label: 'Alle ligaer' },
     { id: 'mine', label: 'Mine ligaer' },
   ];
   const leagueTopTabs = [{ id: 'liga', label: 'Liga' }];
-  const leagueStatusCount = useMemo(() => ({
-    registration: leaguesMatchingListFilters.filter((l) => l.status === 'registration').length,
-    active: leaguesMatchingListFilters.filter((l) => l.status === 'active').length,
-    completed: leaguesMatchingListFilters.filter((l) => l.status === 'completed').length,
-  }), [leaguesMatchingListFilters]);
-  const leagueStatusTabs = [
-    { id: 'registration', label: <>Tilmelding{leagueStatusCount.registration > 0 ? <span className="pm-tab-count">{leagueStatusCount.registration}</span> : null}</> },
-    { id: 'active', label: <>Aktiv{leagueStatusCount.active > 0 ? <span className="pm-tab-count">{leagueStatusCount.active}</span> : null}</> },
-    { id: 'completed', label: <>Afsluttede{leagueStatusCount.completed > 0 ? <span className="pm-tab-count">{leagueStatusCount.completed}</span> : null}</> },
-  ];
 
   const activeLeagueId = embedInKampe ? embedDetailLeagueId : selectedLeagueId;
   const selectedLeague = useMemo(
@@ -942,29 +934,6 @@ export function LigaTab({
   const showTeamProfile = embedInKampe ? !!routeProfileTeam : !!profileTeam;
   const activeProfileLeagueId = profileTeamLeagueId || embedDetailLeagueId;
 
-  const myActiveLeagueHero = useMemo(() => {
-    const activeLeague = leagues.find((l) => l.status === 'active' && myTeamByLeague[l.id]);
-    if (!activeLeague) return null;
-    const myTeam = myTeamByLeague[activeLeague.id];
-    const teams = teamsByLeague[activeLeague.id] || [];
-    const matches = matchesByLeague[activeLeague.id] || [];
-    const numDiv = Math.min(Number(activeLeague.num_divisions) || 1, teams.length);
-    // Rang inden for spillerens egen division (eller hele ligaen ved 1 division)
-    const myDivision = numDiv > 1 ? (Number(myTeam?.division) || 1) : null;
-    const divTeams = myDivision ? teams.filter((t) => (Number(t.division) || 1) === myDivision) : teams;
-    const divTeamIds = new Set(divTeams.map((t) => t.id));
-    const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id)) : matches;
-    const standings = computeStandings(divTeams, divMatches, { pointsWin: activeLeague.points_win, pointsDraw: activeLeague.points_draw, pointsLoss: activeLeague.points_loss });
-    const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
-    const rank = rankIdx >= 0 ? rankIdx + 1 : null;
-    const totalTeams = standings.length;
-    const currentRoundMatches = matches.filter((m) => m.round_number === activeLeague.current_round);
-    const myNextMatch = currentRoundMatches.find(
-      (m) => (m.team1_id === myTeam?.id || m.team2_id === myTeam?.id) && m.status !== 'reported',
-    );
-    const nextMatchDate = myNextMatch?.scheduled_date || null;
-    return { league: activeLeague, myTeam, rank, totalTeams, nextMatchDate, division: myDivision };
-  }, [leagues, myTeamByLeague, teamsByLeague, matchesByLeague]);
 
   return (
     <div>
@@ -1292,111 +1261,30 @@ export function LigaTab({
         );
       })() : !embedDetailLeagueId ? (
         <>
-      {/* Min liga hero — vis brugerens aktive liga øverst */}
-      {myActiveLeagueHero && !loading && (
-        <div style={{
-          background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)',
-          borderRadius: 'var(--pm-radius-sm)', padding: '18px 18px 16px', marginBottom: 16,
-          color: 'var(--pm-on-accent)', position: 'relative', overflow: 'hidden',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
-          </div>
-          <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
-            {myActiveLeagueHero.league.name}
-          </div>
-          {myActiveLeagueHero.league.current_round ? (
-            <div style={{ fontSize: '12px', color: 'var(--pm-hero-subtitle)', marginBottom: 14 }}>
-              {myActiveLeagueHero.division ? `Division ${myActiveLeagueHero.division}` : (myActiveLeagueHero.league.season_type === 'weekly' ? 'Ugentlig liga' : 'Månedlig liga')}
-              {myActiveLeagueHero.league.total_rounds ? ` · Runde ${myActiveLeagueHero.league.current_round}/${myActiveLeagueHero.league.total_rounds}` : ''}
-            </div>
-          ) : null}
-          <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Placering</div>
-              <div style={{ fontSize: '20px', fontWeight: 700 }}>
-                {myActiveLeagueHero.rank != null ? (
-                  <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: 'var(--pm-hero-subtitle)', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
-                ) : '—'}
-              </div>
-            </div>
-            {myActiveLeagueHero.nextMatchDate ? (
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Næste kamp</div>
-                <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.nextMatchDate}</div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', marginBottom: 3 }}>Hold</div>
-                <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.myTeam?.name || '—'}</div>
-              </div>
-            )}
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <button
-              type="button"
-              onClick={() => openLigaSchedule(myActiveLeagueHero.league.id)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'var(--pm-amber)', color: 'var(--pm-navy-deep)', border: 'none',
-                borderRadius: 999, padding: '9px 16px', fontSize: '13px', fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              Se program
-              <svg style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Ventende invitationer */}
       {pendingInvites.length > 0 && (
-        <div style={{ marginBottom: '16px' }}>
+        <div className="pm-lh-invites">
           {pendingInvites.map(invite => {
             const league = leagues.find(l => l.id === invite.league_id);
             const busy = busyId === invite.id + '-accept' || busyId === invite.id + '-decline';
             return (
-              <div key={invite.id} className="pm-feedback-panel pm-feedback-panel--warning" style={{ borderRadius: theme.radius, padding: '14px 16px', marginBottom: '8px', textAlign: 'left' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.warm, marginBottom: '6px' }}>
-                  ⚡ Holdinvitation
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>{invite.name}</div>
-                <div style={{ fontSize: '12px', color: theme.textMid, marginBottom: '10px' }}>
-                  {invite.player1_name} inviterer dig med i {league?.name || 'en liga'}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => acceptInvite(invite)} disabled={busy}
-                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
-                    {busyId === invite.id + '-accept' ? 'Accepterer…' : <><Check size={14} strokeWidth={3} aria-hidden /> Acceptér</>}
+              <section key={invite.id} className="pm-lh-invite" aria-label={`Holdinvitation: ${invite.name}`}>
+                <span className="pm-lh-invite-eyebrow">Holdinvitation</span>
+                <h3>{invite.name}</h3>
+                <p>{invite.player1_name} vil have dig med i {league?.name || 'en liga'}.</p>
+                <div className="pm-lh-invite-actions">
+                  <button type="button" className="pm-lh-invite-yes" onClick={() => acceptInvite(invite)} disabled={busy}>
+                    {busyId === invite.id + '-accept' ? 'Siger ja…' : <><Check size={16} strokeWidth={3} aria-hidden /> Sig ja</>}
                   </button>
-                  <button onClick={() => declineInvite(invite)} disabled={busy}
-                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: theme.red, borderColor: 'var(--pm-danger-border)' }}>
-                    Afvis
+                  <button type="button" className="pm-lh-invite-no" onClick={() => declineInvite(invite)} disabled={busy}>
+                    Nej tak
                   </button>
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>
       )}
-
-      {/* Sub-tabs */}
-      <PillTabs
-        tabs={leagueStatusTabs}
-        value={view}
-        onChange={(nextView) => {
-          const needed = leagueIdsForListPaint(leagues, nextView, myTeamByLeague, embedDetailLeagueId);
-          if (needed.some((id) => !loadedLeagueIdsRef.current.has(id))) {
-            setRosterLoading(true);
-          }
-          setView(nextView);
-          if (user?.id) mergeLigaSessionPrefs(user.id, { ligaView: nextView });
-        }}
-        ariaLabel="Liga status"
-        style={{ marginBottom: '16px' }}
-      />
 
       {loading || rosterLoading ? (
         <div className="pm-state-card pm-state-card--loading">
@@ -1415,73 +1303,18 @@ export function LigaTab({
             </button>
           </div>
         </div>
-      ) : visibleLeagues.length === 0 ? (
-        <div className="pm-state-card pm-state-card--empty" style={{ padding: '52px 20px' }}>
-          <EmptyStateIcon icon={Trophy} />
-          <div className="pm-state-title">
-            {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
-          </div>
-          {isAdmin && view === 'registration' ? (
-            <div className="pm-state-copy">{kampeCreateHint('liga', { embedInKampe })}</div>
-          ) : !isAdmin && view === 'registration' ? (
-            <div style={{ marginTop: '14px' }}>
-              <div className="pm-state-copy" style={{ marginBottom: '14px' }}>
-                Der er ingen åbne ligaer i øjeblikket.<br />
-                Kontakt en admin for at få oprettet en ny liga.
-              </div>
-              <button
-                onClick={openAdminChat}
-                style={{ ...btn(true), fontSize: '13px', display: 'inline-flex' }}
-              >
-                💬 Kontakt admin
-              </button>
-            </div>
-          ) : null}
-        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {visibleLeagues.map((league) => {
-            const teams = teamsByLeague[league.id] || [];
-            const regTeams = allTeamsByLeague[league.id] || [];
-            const matches = matchesByLeague[league.id] || [];
-            const myTeam = myTeamByLeague[league.id];
-            const standings = computeStandings(teams, matches, { pointsWin: league.points_win, pointsDraw: league.points_draw, pointsLoss: league.points_loss });
-            const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
-            const myTeamRank = rankIdx >= 0 ? rankIdx + 1 : null;
-            const regionLabel = creatorAreasByUserId[String(league.created_by)] || '';
-            const nextMatchLabel = buildNextMatchLabel(league, myTeam, teams, matches);
-
-            return (
-              <LigaListCard
-                key={league.id}
-                league={league}
-                regionLabel={regionLabel}
-                teams={teams}
-                regTeams={regTeams}
-                standings={standings}
-                myTeam={myTeam}
-                myTeamRank={myTeamRank}
-                nextMatchLabel={nextMatchLabel}
-                onClick={() => (embedInKampe ? openLigaDetail(league.id) : setSelectedLeagueId(league.id))}
-              />
-            );
-          })}
-
-          {/* "Start en ny liga" CTA card */}
-          {!isAdmin && view === 'registration' && (
-            <button
-              type="button"
-              onClick={openAdminChat}
-              style={{ width: '100%', textAlign: 'center', background: theme.surface, border: `1.5px dashed ${theme.border}`, borderRadius: 'var(--pm-radius-sm)', padding: '22px 20px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: theme.surfaceMuted, color: theme.text, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                <Plus size={20} strokeWidth={2.4} />
-              </div>
-              <b style={{ fontSize: 14, color: theme.text, display: 'block', marginBottom: 6 }}>Start en ny liga</b>
-              <p style={{ fontSize: 12, color: theme.textMid, margin: 0, lineHeight: 1.5 }}>Kan du ikke finde en, der passer? Kontakt en admin for at oprette din egen private eller offentlige liga.</p>
-            </button>
-          )}
-        </div>
+        <LigaOverview
+          open={overviewData.open}
+          active={overviewData.active}
+          completed={overviewData.completed}
+          isAdmin={isAdmin}
+          emptyAdminHint={kampeCreateHint('liga', { embedInKampe })}
+          onSignUp={(id) => setTeamFormLeagueId(id)}
+          onOpen={(id) => (embedInKampe ? openLigaDetail(id) : setSelectedLeagueId(id))}
+          onSchedule={(id) => openLigaSchedule(id)}
+          onContact={openAdminChat}
+        />
       )}
         </>
       ) : null}
@@ -1554,7 +1387,7 @@ export function LigaTab({
             <button
               type="button"
               className="pm-liga-v2-primary-cta"
-              style={btn(true)}
+              style={{ ...btn(true), background: 'var(--pm-lime)', borderColor: 'transparent', color: 'var(--pm-on-lime)', boxShadow: 'none' }}
               onClick={() => setTeamFormLeagueId(selectedLeague.id)}
             >
               <Plus size={15} /> Tilmeld dit hold
@@ -1616,7 +1449,7 @@ export function LigaTab({
               isAdmin={isAdmin}
               isCreator={isCreator}
               canManageTeams={canManageTeams}
-              showTeamForm={showTeamForm}
+              showTeamForm={false}
               teamName={teamName}
               setTeamName={setTeamName}
               selectedPartner={selectedPartner}
@@ -1649,6 +1482,20 @@ export function LigaTab({
           </LigaDetailSheet>
         );
       })()}
+
+      {teamFormLeagueId && leagues.find((l) => l.id === teamFormLeagueId) ? (
+        <LigaTilmeldScreen
+          league={leagues.find((l) => l.id === teamFormLeagueId)}
+          user={user}
+          teamName={teamName}
+          setTeamName={setTeamName}
+          selectedPartner={selectedPartner}
+          setSelectedPartner={setSelectedPartner}
+          busy={busyId === teamFormLeagueId + '-team'}
+          onSubmit={() => createTeam(teamFormLeagueId)}
+          onCancel={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }}
+        />
+      ) : null}
 
       {scheduleLeague ? (
         <LigaScheduleSheet
