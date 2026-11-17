@@ -62,6 +62,7 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
   const lat = myCoords?.latitude;
   const lng = myCoords?.longitude;
   const pinsKey = pins.map((p) => `${p.id}:${p.left}`).join('|');
+  const hasPins = pins.length > 0;
 
   useEffect(() => {
     if (lat == null || lng == null || !containerRef.current) return undefined;
@@ -113,7 +114,7 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
         mapRef.current = null;
       }
     };
-  }, [lat, lng]);
+  }, [lat, lng, hasPins]);
 
   // En naal pr. kamp. Flere kampe paa samme sted forskydes lidt, saa alle kan trykkes.
   useEffect(() => {
@@ -158,7 +159,8 @@ export default function KortOverview({ me, matches, onOpen, onShowList }) {
   }, [pinsKey, ready, lat, lng]);
 
   if (!selected) return null;
-  const hasMap = lat != null && lng != null;
+  // Kortet vises kun, naar mindst én kamp har en kendt bane (ellers ville det kun vise én selv).
+  const hasMap = lat != null && lng != null && pins.length > 0;
   const count = items.length;
   const meta = [
     selected.km != null ? formatApproxKm(selected.km) : null,

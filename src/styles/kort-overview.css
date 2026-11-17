@@ -224,3 +224,15 @@
 }
 /* Moerk tilstand: navy ansigter forsvinder mod den moerke flade, saa de bliver blaa. */
 [data-theme="dark"] .pm-kort-face:not(.pm-kort-face--empty) { background: var(--pm-accent-solid); }
+
+/* Pladsholder, mens kampene hentes første gang */
+.pm-kort-loading .pm-kort-over-stage { animation: pm-kort-pulse 1.4s ease-in-out infinite; }
+.pm-kort-loading .pm-kort-sheet-head h2 { color: var(--pm-text-mid); }
+.pm-kort-loading-card {
+  height: 150px; border-radius: var(--pm-radius-lg); background: var(--pm-surface);
+  animation: pm-kort-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pm-kort-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) {
+  .pm-kort-loading .pm-kort-over-stage, .pm-kort-loading-card { animation: none; }
+}

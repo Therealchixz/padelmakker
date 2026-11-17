@@ -62,7 +62,7 @@ import {
 import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, parseMatchLevelRange } from '../lib/matchLevelRange';
-import { defaultMatchLevelEloRange, profilePlaytomicLevel } from '../lib/padelLevelUtils';
+import { defaultMatchLevelEloRange, formatMatchLevelRangeLabel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   KAMPE_FORMAT_PADEL,
   KAMPE_FORMAT_AMERICANO,
@@ -78,6 +78,7 @@ import {
 import { DateTime } from 'luxon';
 import { UserMinus, Trash2, Zap, ChevronDown, ChevronUp, SendHorizontal, Users, BarChart3, RotateCcw, Pencil, Check, AlertTriangle, X } from 'lucide-react';
 import '../styles/kampe-v4.css';
+import '../styles/kort-overview.css';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -2971,7 +2972,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         dayLabel: dayLabel(m.date),
         court: m.court_name || '',
         durationLabel: mins ? `${mins} min` : null,
-        levelLabel: m.level_range ? String(m.level_range).replace('-', '–') : null,
+        // level_range gemmes som "elo:833-900|booked:no"; vises som niveau (fx "2,5–3,0").
+        levelLabel: (() => {
+          const r = parseMatchLevelRange(m.level_range);
+          if (r.min == null || r.max == null) return null;
+          return formatMatchLevelRangeLabel(r.min, r.max)?.replace(/^Niveau /, '') || null;
+        })(),
         left: Math.max(0, max - players.length),
         players: players.map((p) => p.user_name || ''),
         joined: players.some((p) => String(p.user_id) === myUidStr),
@@ -3112,7 +3118,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     {
       id: "padel",
       label: "2v2-kampe",
-      count: openMatches.length + activeMatches.length,
+      // Intet tal, mens kampene hentes første gang (ellers står der kort "0").
+      count: loadingMatches ? null : openMatches.length + activeMatches.length,
       unread: padelUnreadCounts.total,
     },
     { id: "americano", label: "Americano/Mexicano" },
@@ -3289,8 +3296,18 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     onCreate={() => setShowCreate(true)}
                   />
                 </Suspense>
+              ) : loadingMatches ? (
+                /* Mens kampene hentes: en rolig pladsholder i stedet for kortet over baner, som
+                   ellers blinkede frem et øjeblik, før kampene kom (ejeren 17. nov. 2026). */
+                <div className="pm-kort-over pm-kort-loading" aria-busy="true" aria-label="Henter kampe">
+                  <div className="pm-kort-over-map"><div className="pm-kort-over-stage" /></div>
+                  <div className="pm-kort-sheet">
+                    <div className="pm-kort-sheet-head"><h2>Henter kampe…</h2></div>
+                    <div className="pm-kort-loading-card" />
+                  </div>
+                </div>
               ) : kortItems.length > 0 ? (
-                <Suspense fallback={null}>
+                <Suspense fallback={<div className="pm-kort-over pm-kort-loading"><div className="pm-kort-over-map"><div className="pm-kort-over-stage" /></div></div>}>
                   <KortOverviewLazy
                     me={user}
                     matches={kortItems}
