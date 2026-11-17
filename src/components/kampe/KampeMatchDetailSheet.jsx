@@ -47,6 +47,7 @@ export function KampeMatchDetailSheet({
   onSetCourtSide,
   onKickPlayer,
   onProfileClick,
+  me = null,
 }) {
   const isPage = presentation === 'page';
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
@@ -107,6 +108,7 @@ export function KampeMatchDetailSheet({
         dateHeadline={formatMatchDateHeadlineDa(match.date)}
         timeLabel={matchTimeLabel(match)}
         players={courtPlayers}
+        me={me}
       />
 
       {description ? (

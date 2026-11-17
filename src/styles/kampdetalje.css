@@ -38,6 +38,63 @@
   height: 176px;
 }
 
+/* Kort over stedet (VenueHeroMap): banens navn paa en lime naal, som i H-prototypen */
+.pm-kd-hero--map {
+  height: 190px;
+  background: #E6ECF5;
+  isolation: isolate;
+}
+.pm-kd-hero-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  cursor: default;
+}
+.pm-kd-hero--map .pm-kd-hero-badges { z-index: 1; }
+.leaflet-marker-icon.pm-kd-map-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: none;
+  border: 0;
+}
+.pm-kd-map-pin-head {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 2.5px solid #0B1B33;
+  background: #D8F34A;
+  color: #0B1B33;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 3px 10px rgba(11, 27, 51, 0.25);
+}
+.pm-kd-map-pin-stem { width: 3px; height: 10px; background: #0B1B33; }
+.pm-kd-map-pin-dot { width: 10px; height: 10px; border-radius: 50%; background: #0B1B33; }
+.pm-kd-hero-km {
+  position: absolute;
+  z-index: 1;
+  left: 11px;
+  bottom: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #0B1B33;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(11, 27, 51, 0.16);
+}
+.pm-kd-hero--map .leaflet-control-attribution { font-size: 9px; }
+/* Titelkortet ligger lidt ind over kortet; kilde-linjen og afstanden skal staa fri af det */
+.pm-kd-hero--map .leaflet-bottom { bottom: 24px; }
+.pm-kd-hero--map + .pm-kd-price-card { margin-top: -24px; }
+
 /* Stiliseret padelbane (SVG) fylder hele hero'en */
 .pm-kd-hero-court {
   position: absolute;
