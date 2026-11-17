@@ -127,7 +127,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
             {feedVisibleNow ? (
               <span
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: 100,

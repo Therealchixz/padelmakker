@@ -91,12 +91,14 @@ export default function MakkerMap({ me, players, others = [], selectedId = null,
       mapRef.current = map;
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => {
+          if (cancelled) return;
           map.invalidateSize({ pan: false });
           setReady((n) => n + 1);
         });
         ro.observe(containerRef.current);
       }
       requestAnimationFrame(() => {
+        if (cancelled) return;
         map.invalidateSize({ pan: false });
         setReady((n) => n + 1);
       });
@@ -159,7 +161,7 @@ export default function MakkerMap({ me, players, others = [], selectedId = null,
     // Udsnittet følger forslagene; er der ingen, følger det de nærmeste øvrige spillere.
     const frame = pins.length > 0 ? pins : otherPins.slice(0, 8);
     const points = [[meLat, meLng], ...frame.filter((p) => Math.abs(p.lat - meLat) < 0.6 && Math.abs(p.lng - meLng) < 1).map((p) => [p.lat, p.lng])];
-    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [36, 36], paddingBottomRight: [36, 56], maxZoom: 13 });
+    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [36, 36], paddingBottomRight: [36, 56], maxZoom: 13, animate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinsKey, ready, meLat, meLng]);
 

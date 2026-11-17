@@ -4,7 +4,7 @@ import { matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 import { formatMatchLevelRangeParts } from '../../lib/padelLevelUtils';
 
-const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
+const DA_MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const MIDDOT = '\u00B7';
 const MINUS_SIGN = '\u2212';
 const ARROW_RIGHT = '\u2192';

@@ -413,3 +413,7 @@ a {
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 0.8; }
 }
+
+/* Fed tekst er altid 700. Browserens standard ("bolder") blev til 900 inde i tekst,
+   der allerede var halvfed, og saa tungere ud end resten af appen. */
+html b, html strong { font-weight: 700; }

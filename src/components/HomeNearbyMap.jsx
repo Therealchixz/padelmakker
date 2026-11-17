@@ -156,12 +156,14 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
       // Uden dette regner fitBounds med en forkert stoerrelse, og centrene havner uden for billedet.
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => {
+          if (cancelled) return;
           map.invalidateSize({ pan: false });
           setMapReady((n) => n + 1);
         });
         ro.observe(containerRef.current);
       }
       requestAnimationFrame(() => {
+        if (cancelled) return;
         map.invalidateSize({ pan: false });
         setMapReady((n) => n + 1);
       });
@@ -212,7 +214,7 @@ export default function HomeNearbyMap({ user, openMatches = [], onSeeMatches, on
     const map = mapRef.current;
     if (!map || !me) return;
     const points = [[me.latitude, me.longitude], ...framed.map((v) => [v.latitude, v.longitude])];
-    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [40, 96], paddingBottomRight: [40, 40], maxZoom: 14 });
+    if (points.length > 1) map.fitBounds(points, { paddingTopLeft: [40, 96], paddingBottomRight: [40, 40], maxZoom: 14, animate: false });
     else map.setView([me.latitude, me.longitude], 13);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pinnedKey daekker framed; kun ved nyt udvalg
   }, [pinnedKey, mapReady, me]);

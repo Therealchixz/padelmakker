@@ -46,7 +46,7 @@ function PlayerMiniAvatar({ avatar, name, onClick }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 700,
         color: theme.textMid,
         flexShrink: 0,
@@ -127,7 +127,7 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
           }}
         >
           {team.name}
-          {isMine && <span style={{ fontSize: 10, fontWeight: 700, color: theme.green }}>(dit hold)</span>}
+          {isMine && <span style={{ fontSize: 11, fontWeight: 700, color: theme.green }}>(dit hold)</span>}
         </div>
         <div
           style={{
@@ -147,7 +147,7 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
             <span
               style={{
                 marginLeft: 4,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 color: theme.warm,
                 background: theme.warmBg,
@@ -286,7 +286,7 @@ export function LigaOpenCard({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                 <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
-                <span style={{ fontSize: 10, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>{dateBadgeMon}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -367,7 +367,7 @@ export function LigaOpenCard({
             flexWrap: 'wrap',
             justifyContent: 'center',
             gap: 14,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 500,
             color: theme.textLight,
           }}

@@ -192,7 +192,7 @@ export function LigaScheduleSheet({
         <KampeCreateHeader title={pageTitle} onBack={onClose} />
         <div className="pm-liga-v2-schedule-head pm-liga-v2-schedule-head--page">
           <div className="pm-liga-v2-schedule-kicker">
-            {isCompleted ? 'SÆSONOVERSIGT' : 'KAMPPLAN & RESULTATER'}
+            {isCompleted ? 'Sæsonoversigt' : 'Kampplan og resultater'}
           </div>
           <div className="pm-liga-v2-schedule-meta">{league.name}</div>
         </div>
@@ -225,7 +225,7 @@ export function LigaScheduleSheet({
           </button>
           <div className="pm-liga-v2-schedule-head">
             <div className="pm-liga-v2-schedule-kicker">
-              {isCompleted ? 'SÆSONOVERSIGT' : 'KAMPPLAN & RESULTATER'}
+              {isCompleted ? 'Sæsonoversigt' : 'Kampplan og resultater'}
             </div>
             <h2 className="pm-liga-v2-schedule-title">{league.name}</h2>
           </div>

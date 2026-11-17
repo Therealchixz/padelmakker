@@ -81,6 +81,7 @@ export function VenueHeroMap({ venue, coords, me = null }) {
       }).addTo(map);
       // Naalen staar i den nederste del, saa navnet ikke ligger under maerkerne i toppen.
       const place = () => {
+        if (cancelled || !map) return;
         map.invalidateSize({ pan: false });
         const h = containerRef.current?.clientHeight || 0;
         const target = map.project([latitude, longitude], 14).subtract([0, h * 0.2]);

@@ -53,7 +53,7 @@ export function formatPlaytomicLevel(level) {
 
 /** Playtomic-interval med luft omkring tankestreg, fx "3.3 – 6.6". */
 export function formatPlaytomicLevelRange(min, max) {
-  return `${formatPlaytomicLevel(min)} – ${formatPlaytomicLevel(max)}`;
+  return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
 }
 
 /** ELO-interval med luft omkring tankestreg, fx "1040 – 1200 ELO". */
@@ -63,7 +63,7 @@ export function formatEloRange(eloMin, eloMax) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   const lo = Math.round(Math.min(a, b));
   const hi = Math.round(Math.max(a, b));
-  return `${lo} – ${hi} ELO`;
+  return `${lo}–${hi} ELO`;
 }
 
 /** Opdelt ELO + Playtomic-niveau til kompakte UI-chips. */

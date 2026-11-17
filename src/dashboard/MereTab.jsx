@@ -188,7 +188,7 @@ export function MereTab({
       <div className="pm-prof-tiles">
         <div><b>{games}</b><span>Kampe</span></div>
         <div><b>{wins}</b><span>Sejre</span></div>
-        <div><b>{winPct != null ? `${winPct} %` : '–'}</b><span>Vundet</span></div>
+        <div><b>{winPct != null ? `${winPct}%` : '–'}</b><span>Vundet</span></div>
         <div><b>{currentStreak || 0}</b><span>I træk nu</span></div>
       </div>
       <button type="button" className="pm-prof-more" onClick={() => setTab('profil')}>

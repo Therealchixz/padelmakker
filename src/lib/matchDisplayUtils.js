@@ -42,7 +42,8 @@ export function formatMatchDateHeadlineDa(dateVal) {
   const d = new Date(parts.y, parts.mo - 1, parts.day)
   const weekday = DA_WEEKDAYS[d.getDay()] || ''
   const month = DA_MONTHS_SHORT[parts.mo - 1] || ''
-  const label = `${weekday} ${parts.day}. ${month}`.trim()
+  // Forkortede maaneder faar punktum ("17. nov."), som datoerne andre steder i appen; "maj" er ikke forkortet.
+  const label = `${weekday} ${parts.day}. ${month}${month && month !== 'maj' ? '.' : ''}`.trim()
   return label ? label.charAt(0).toUpperCase() + label.slice(1) : '—'
 }
 

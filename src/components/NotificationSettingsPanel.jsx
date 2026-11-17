@@ -27,7 +27,7 @@ const hourTabs = (choices, current) => [...new Set([...choices, current])]
   .map((h) => ({ id: String(h), label: hourLabel(h) }));
 
 const sectionStyle = { padding: '16px 18px', borderTop: '1px solid ' + theme.border };
-const sectionTitleStyle = { fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '0 0 10px' };
+const sectionTitleStyle = { fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', color: theme.text, margin: '0 0 10px' };
 const helpStyle = { fontSize: 13, color: theme.textLight, lineHeight: 1.5, margin: '8px 0 0' };
 const smallLabelStyle = { fontSize: 13, fontWeight: 600, color: theme.textMid, margin: '12px 0 6px' };
 

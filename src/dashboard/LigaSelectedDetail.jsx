@@ -623,13 +623,13 @@ function ActiveDetail({
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <span onClick={() => onPlayerClick(myTeam.player1_id, myTeam.player1_name, myTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <span style={{ fontSize: 11, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         {ligaPlayerLabel(myTeam.player1_name, myTeam.player1_id, league.created_by, user?.id)}
                       </span>
                     </span>
                     <span onClick={() => onPlayerClick(myTeam.player2_id, myTeam.player2_name, myTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <span style={{ fontSize: 11, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         {ligaPlayerLabel(myTeam.player2_name, myTeam.player2_id, league.created_by, user?.id)}
                       </span>
                     </span>
@@ -643,13 +643,13 @@ function ActiveDetail({
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <span onClick={() => onPlayerClick(opponentTeam.player1_id, opponentTeam.player1_name, opponentTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <span style={{ fontSize: 11, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         {ligaPlayerLabel(opponentTeam.player1_name, opponentTeam.player1_id, league.created_by, user?.id)}
                       </span>
                     </span>
                     <span onClick={() => onPlayerClick(opponentTeam.player2_id, opponentTeam.player2_name, opponentTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <span style={{ fontSize: 11, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         {ligaPlayerLabel(opponentTeam.player2_name, opponentTeam.player2_id, league.created_by, user?.id)}
                       </span>
                     </span>
@@ -713,7 +713,7 @@ function ActiveDetail({
 
                       return (
                         <>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: theme.textLight, margin: '0 2px 8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: theme.textLight, margin: '0 2px 8px' }}>
                             <span>{myTeam.name.split(' & ')[0]} …</span>
                             <span>Score pr. sæt</span>
                             <span>{opponentTeam.name.split(' & ')[0]} …</span>
@@ -721,7 +721,7 @@ function ActiveDetail({
                           {Array.from({ length: visibleSets }, (_, idx) => (
                             <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, border: '1px solid ' + theme.border, borderRadius: 10, background: theme.surface }}>
                               <Stepper idx={idx} side="a" value={sets[idx].a} />
-                              <span style={{ fontSize: 10, fontWeight: 700, color: theme.textLight }}>SÆT {idx + 1}{idx === 2 ? ' (afgørende)' : ''}</span>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: theme.textLight }}>SÆT {idx + 1}{idx === 2 ? ' (afgørende)' : ''}</span>
                               <Stepper idx={idx} side="b" value={sets[idx].b} />
                             </div>
                           ))}
@@ -829,7 +829,7 @@ function CompletedDetail({ league, standings, myTeam, isCreator }) {
               <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ marginBottom: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 28, lineHeight: 1 }}>🏆</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: theme.warm, marginBottom: 3 }}>Vinder</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.warm, marginBottom: 3 }}>Vinder</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
                   <div style={{ fontSize: 11, color: theme.textMid, marginTop: 4 }}>{w.wins}W · {w.losses}L · {w.points} pt</div>
                 </div>

@@ -661,7 +661,7 @@ export function AmericanoResultsPanel({
                 <div style={{ fontSize: 20, fontWeight: 800, color: c.text, letterSpacing: '-0.02em', }}>
                   {resolved.a} - {resolved.b}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>SCORE</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>Score</div>
               </div>
             ) : (
               <div style={{ fontSize: 12, fontWeight: 700, color: c.muted, border: `1px solid ${c.line}`, borderRadius: 999, padding: '3px 0' }}>vs</div>
@@ -758,7 +758,7 @@ export function AmericanoResultsPanel({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: isMe ? 800 : 700, color: c.text, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
-                  {isMe ? <span style={{ fontSize: 9, fontWeight: 800, color: c.onAccent, background: c.accent, padding: '1px 6px', borderRadius: 999, letterSpacing: '0.04em' }}>DIG</span> : null}
+                  {isMe ? <span style={{ fontSize: 11, fontWeight: 800, color: c.onAccent, background: c.accent, padding: '1px 6px', borderRadius: 999, letterSpacing: '0.04em' }}>DIG</span> : null}
                 </div>
                 {delta != null ? (
                   <div style={{ fontSize: 11, color: c.muted, marginTop: 1 }}>Sidste runde: {delta >= 0 ? '+' : ''}{delta}</div>
@@ -766,7 +766,7 @@ export function AmericanoResultsPanel({
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: isMe ? c.accent : c.text, lineHeight: 1, }}>{row.points}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>PTS</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>PTS</div>
               </div>
             </div>
           )
@@ -958,7 +958,7 @@ export function AmericanoResultsPanel({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: c.text }}>Runde {roundNum}</div>
                       {isLatest ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--pm-warning-bg)', color: 'var(--pm-amber-text)' }}>Seneste</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--pm-warning-bg)', color: 'var(--pm-amber-text)' }}>Seneste</span>
                       ) : null}
                     </div>
                     {matchesDisplay

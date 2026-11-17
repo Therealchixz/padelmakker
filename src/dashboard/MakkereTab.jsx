@@ -831,7 +831,7 @@ export function MakkereTab({ user, showToast }) {
       {activeSuggestions.length > 0 && showAllSuggestions && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', color: theme.text, margin: 0 }}>Foreslåede makkere</h2>
             {(
               <button
                 className="pm-hit-44"
@@ -873,7 +873,7 @@ export function MakkereTab({ user, showToast }) {
 
       {/* Søg blandt alle spillere */}
       <div ref={seekingResultsRef} style={{ margin: '0 18px 8px', scrollMarginTop: '86px' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Søg makker</h3>
+        <h3 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', color: theme.text, margin: 0 }}>Søg makker</h3>
         <p style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.45, color: theme.textMid }}>
           Alle spillere på appen, rangeret efter hvor godt I passer — tæt på først, længere væk længere nede.
         </p>
@@ -924,7 +924,7 @@ export function MakkereTab({ user, showToast }) {
                 background: showFilters || activeFilterCount > 0 ? 'color-mix(in srgb, var(--pm-on-accent) 30%, transparent)' : theme.accent,
                 color: theme.onAccent,
                 borderRadius: '10px',
-                fontSize: '10px',
+                fontSize: '11px',
                 fontWeight: 800,
                 padding: '1px 6px',
                 marginLeft: '2px',

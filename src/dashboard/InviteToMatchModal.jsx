@@ -10,7 +10,7 @@ import {
   loadInviteMatchOptions,
 } from '../lib/inviteMatchOptions';
 
-const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
+const DA_MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
 function DateBadge({ dateStr }) {
   const [, month, day] = (dateStr || '').split('-').map(Number);
@@ -20,7 +20,7 @@ function DateBadge({ dateStr }) {
       background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0',
     }}>
       <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{day || '—'}</b>
-      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--pm-text-mid)' }}>
+      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--pm-text-mid)' }}>
         {month ? DA_MONTHS_SHORT[month - 1] : '—'}
       </span>
     </div>
