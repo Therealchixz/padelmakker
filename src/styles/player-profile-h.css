@@ -1,0 +1,46 @@
+/* Spillerprofil (arket, naar man trykker paa en spiller) i H-stil, som Profil. */
+.pm-pp-meta { margin-top: 4px; font-size: 13px; color: var(--pm-text-mid); }
+
+.pm-pp-seg {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+  padding: 4px; margin: 0 0 12px; border-radius: var(--pm-radius-pill); background: var(--pm-surface-muted);
+}
+.pm-pp-seg > button {
+  min-height: 40px; padding: 0 8px; border: 0; border-radius: var(--pm-radius-pill);
+  background: transparent; color: var(--pm-text-mid); font: inherit; font-size: 14px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.pm-pp-seg > button.is-active { background: var(--pm-surface); color: var(--pm-text); box-shadow: 0 1px 4px rgba(11, 27, 51, 0.12); }
+
+.pm-pp-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.pm-pp-tile { padding: 12px 14px; border-radius: var(--pm-radius-sm); background: var(--pm-surface-muted); text-align: left; }
+.pm-pp-tile-label { font-size: 13px; color: var(--pm-text-mid); }
+.pm-pp-tile-value {
+  margin-top: 2px; font-family: var(--pm-font-display); font-size: 26px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1.1; color: var(--pm-text);
+}
+.pm-pp-tile > div[style*="justify-content: center"] { justify-content: flex-start !important; }
+
+.pm-pp-box { margin-bottom: 14px; padding: 12px 14px; border-radius: var(--pm-radius-sm); background: var(--pm-surface-muted); }
+.pm-pp-box-label { margin-bottom: 4px; font-size: 13px; font-weight: 600; color: var(--pm-text-mid); }
+
+.pm-pp-info { display: flex; flex-direction: column; margin-bottom: 14px; }
+.pm-pp-info-row {
+  display: flex; justify-content: space-between; gap: 12px; padding: 11px 0;
+  border-bottom: 1px solid var(--pm-border); font-size: 14px;
+}
+.pm-pp-info-row > span, .pm-pp-info-block > span { color: var(--pm-text-mid); }
+.pm-pp-info-row > b { font-weight: 600; text-align: right; }
+.pm-pp-info-block { padding: 11px 0; border-bottom: 1px solid var(--pm-border); font-size: 14px; }
+
+.pm-pp-bio {
+  margin: 0 0 14px; padding: 12px 14px; border-radius: var(--pm-radius-sm); background: var(--pm-surface-muted);
+  font-size: 14px; line-height: 1.5; color: var(--pm-text-mid);
+}
+
+.pm-pp-action {
+  flex: 1; min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: var(--pm-radius-pill); border: 1.5px solid var(--pm-border); background: var(--pm-surface);
+  color: var(--pm-text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.pm-pp-action--main { border-color: transparent; background: var(--pm-lime); color: var(--pm-on-lime); }

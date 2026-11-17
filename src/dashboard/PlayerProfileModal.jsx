@@ -13,7 +13,7 @@ import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevel
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
-import { TWO_V_TWO_ELO_LABEL, TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
+import { TWO_V_TWO_ELO_LABEL, TOURNAMENT_ELO_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 import { useAuth } from '../lib/AuthContext';
 import { BeskedChatActions } from '../components/BeskedChatActions';
@@ -21,6 +21,7 @@ import { fetchUsersIBlocked } from '../lib/userModeration';
 import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
 import { RankedinButton, RankedinSheet } from '../components/RankedinSheet';
 import { useCloseOnBack } from '../lib/useCloseOnBack';
+import '../styles/player-profile-h.css';
 import {
   prefetchBeskedTabChunk,
   prefetchDmThread,
@@ -360,7 +361,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
           <div className="pm-v4-display" style={{ fontSize: '28px', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
           {(locationDisplay || pRef.created_at) && (
-            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>
+            <div className="pm-pp-meta">
               {[locationDisplay, pRef.created_at ? `Medlem siden ${new Date(pRef.created_at).getFullYear()}` : null].filter(Boolean).join(' · ')}
             </div>
           )}
@@ -368,11 +369,9 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             {pRef.court_side && <span style={tag(theme.surfaceMuted, theme.textMid)}>{pRef.court_side}</span>}
             {pRef.play_style && <span style={tag(theme.surfaceMuted, theme.textMid)}>{pRef.play_style}</span>}
             {pRef.intent_now && <span style={tag(theme.surfaceMuted, theme.textMid)}>{intentDisplayLabel(pRef.intent_now)}</span>}
-            {!dataLoading && elo != null && <span style={tag(theme.surfaceMuted, theme.text)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
             {levelDisplay ? (
               <span style={tag(theme.surfaceMuted, theme.text)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
-            {age && <span style={tag(theme.surfaceAlt, theme.textMid)}>{age} år</span>}
           </div>
         </div>
 
@@ -409,22 +408,25 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </SeekingCallout>
         ))}
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>
-            2v2
-          </button>
-          <button type="button" onClick={() => setStatsMode('americano')} style={{ ...btn(statsMode === 'americano'), padding: '5px 10px', fontSize: '11px' }}>
-            {TOURNAMENT_MODE_LABEL}
-          </button>
-          <button type="button" onClick={() => setStatsMode('liga')} style={{ ...btn(statsMode === 'liga'), padding: '5px 10px', fontSize: '11px' }}>
-            Liga
-          </button>
+        <div className="pm-pp-seg" role="tablist" aria-label="Vis statistik for">
+          {[['2v2', '2v2'], ['americano', 'Turnering'], ['liga', 'Liga']].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={statsMode === key}
+              className={statsMode === key ? 'is-active' : undefined}
+              onClick={() => setStatsMode(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
+        <div className="pm-pp-tiles">
           {activeOverviewCards.map((s, i) => (
-            <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textLight }}>{s.label}</div>
+            <div key={i} className="pm-pp-tile">
+              <div className="pm-pp-tile-label">{s.label}</div>
               {s.form ? (
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
                   {s.form.length > 0 ? s.form.map((r, j) => (
@@ -432,7 +434,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
                   )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
                 </div>
               ) : (
-                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.text, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                <div className="pm-pp-tile-value">{s.value}</div>
               )}
             </div>
           ))}
@@ -441,24 +443,9 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {statsMode === 'liga' ? (
           ligaStats !== null && (
             <div
-              style={{
-                marginBottom: '16px',
-                padding: '12px 14px',
-                background: theme.surfaceMuted,
-                borderRadius: 'var(--pm-radius-sm)',
-                border: '1px solid ' + theme.border,
-              }}
+              className="pm-pp-box"
             >
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: theme.textLight,
-
-                  letterSpacing: '0.05em',
-                  marginBottom: '4px',
-                }}
-              >
+              <div className="pm-pp-box-label">
                 Ligakampe vundet
               </div>
               <div className="pm-v4-num" style={{ fontSize: '30px', color: theme.text }}>
@@ -472,8 +459,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             </div>
           )
         ) : statsMode === 'americano' ? (
-          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight }}>Americano/Mexicano-form</div>
+          <div className="pm-pp-box">
+            <div className="pm-pp-box-label">Americano/Mexicano-form</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
               {americanoForm.length > 0 ? (
                 americanoForm.map((row) => (
@@ -491,8 +478,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} Americano/Mexicano</div>
           </div>
         ) : statsMode === '2v2' ? (
-          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight }}>Sejrsstreak</div>
+          <div className="pm-pp-box">
+            <div className="pm-pp-box-label">Sejrsstreak</div>
             {streakError ? (
               <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
                 Kamphistorik kunne ikke hentes.
@@ -511,22 +498,22 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
         ) : null}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+        <div className="pm-pp-info">
           {locationDisplay && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: theme.textLight }}>Område</span>
-              <span style={{ fontWeight: 600 }}>{locationDisplay}</span>
+            <div className="pm-pp-info-row">
+              <span>Område</span>
+              <b>{locationDisplay}</b>
             </div>
           )}
           {age && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: theme.textLight }}>Alder</span>
-              <span style={{ fontWeight: 600 }}>{age} år</span>
+            <div className="pm-pp-info-row">
+              <span>Alder</span>
+              <b>{age} år</b>
             </div>
           )}
           {availabilityTags(pRef).length > 0 && (
-            <div style={{ fontSize: '13px' }}>
-              <span style={{ color: theme.textLight }}>Tilgængelighed</span>
+            <div className="pm-pp-info-block">
+              <span>Tilgængelighed</span>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
                 {availabilityTags(pRef).map((a) => (
                   <span key={a} style={tag(theme.surfaceMuted, theme.textMid)}>{a}</span>
@@ -538,8 +525,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             const days = normalizeStringArrayField(pRef.available_days);
             if (!days.length) return null;
             return (
-              <div style={{ fontSize: '13px' }}>
-                <span style={{ color: theme.textLight }}>Spilledage</span>
+              <div className="pm-pp-info-block">
+                <span>Spilledage</span>
                 <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
                   {DAYS_OF_WEEK.map(({ key, label }) => {
                     const active = days.includes(key);
@@ -556,7 +543,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         </div>
 
         {pRef.bio && (
-          <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px', padding: '12px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', fontStyle: 'italic' }}>
+          <p className="pm-pp-bio">
             &ldquo;{pRef.bio}&rdquo;
           </p>
         )}
@@ -564,8 +551,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         <RankedinButton rankedinId={pRef.rankedin_id} onOpen={() => setRankedinOpen(true)} />
 
         {sharedHistory && sharedHistory.count > 0 && (
-          <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 'var(--pm-radius-sm)', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, marginBottom: 6 }}>Fælles historik</div>
+          <div className="pm-pp-box">
+            <div className="pm-pp-box-label">Fælles historik</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: '13px', fontWeight: 600, color: theme.text }}>
                 I har spillet {sharedHistory.count} kamp{sharedHistory.count !== 1 ? 'e' : ''} sammen
@@ -600,13 +587,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {(onInviteMatch || onMessage) && (
           <div className="pm-player-profile-actions">
             {onInviteMatch && (
-              <button type="button" onClick={onInviteMatch} style={{ ...btn(true), flex: 1, justifyContent: 'center', minHeight: 44 }}>
+              <button type="button" onClick={onInviteMatch} className="pm-pp-action pm-pp-action--main">
                 Invitér til kamp
               </button>
             )}
             {onMessage && (
-              <button type="button" onClick={onMessage} style={{ ...btn(false), flex: 1, justifyContent: 'center', minHeight: 44 }}>
-                <MessageCircle size={15} /> Send besked
+              <button type="button" onClick={onMessage} className="pm-pp-action">
+                <MessageCircle size={16} aria-hidden /> Send besked
               </button>
             )}
           </div>
